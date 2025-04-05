@@ -1,6 +1,7 @@
 
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
 import { Room, PropertyType, Travail } from '@/types';
+import { useLocalStorageSync } from '@/hooks/useLocalStorageSync';
 
 // Interface pour définir l'état global du projet
 interface ProjectState {
@@ -107,45 +108,38 @@ export const useProject = () => {
 export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(projectReducer, initialState);
 
+  // Utiliser le hook de synchronisation avec localStorage pour chaque partie de l'état
+  const { loadFromLocalStorage: loadRooms } = useLocalStorageSync('rooms', state.rooms);
+  const { loadFromLocalStorage: loadProperty } = useLocalStorageSync('property', state.property);
+  const { loadFromLocalStorage: loadTravaux } = useLocalStorageSync('travaux', state.travaux);
+
   // Chargement initial des données depuis localStorage
   useEffect(() => {
-    const loadData = () => {
+    const loadInitialData = () => {
       try {
-        const savedRooms = localStorage.getItem('rooms');
-        const savedProperty = localStorage.getItem('property');
-        const savedTravaux = localStorage.getItem('travaux');
+        const savedRooms = loadRooms();
+        const savedProperty = loadProperty();
+        const savedTravaux = loadTravaux();
         
         if (savedRooms) {
-          dispatch({ type: 'SET_ROOMS', payload: JSON.parse(savedRooms) });
+          dispatch({ type: 'SET_ROOMS', payload: savedRooms });
+          console.log("Pièces chargées depuis localStorage:", savedRooms);
         }
         
         if (savedProperty) {
-          dispatch({ type: 'SET_PROPERTY', payload: JSON.parse(savedProperty) });
+          dispatch({ type: 'SET_PROPERTY', payload: savedProperty });
         }
         
         if (savedTravaux) {
-          dispatch({ type: 'SET_TRAVAUX', payload: JSON.parse(savedTravaux) });
+          dispatch({ type: 'SET_TRAVAUX', payload: savedTravaux });
         }
       } catch (error) {
         console.error("Erreur lors du chargement des données:", error);
       }
     };
 
-    loadData();
+    loadInitialData();
   }, []);
-
-  // Sauvegarde des données dans localStorage quand elles changent
-  useEffect(() => {
-    localStorage.setItem('rooms', JSON.stringify(state.rooms));
-  }, [state.rooms]);
-
-  useEffect(() => {
-    localStorage.setItem('property', JSON.stringify(state.property));
-  }, [state.property]);
-
-  useEffect(() => {
-    localStorage.setItem('travaux', JSON.stringify(state.travaux));
-  }, [state.travaux]);
 
   return (
     <ProjectContext.Provider value={{ state, dispatch }}>
