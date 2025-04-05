@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { 
   Card, 
@@ -10,22 +9,21 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Printer } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
-// Type pour un travail
 interface Travail {
   id: string;
   pieceId: number;
   pieceName: string;
   typeTravauxId: string;
-  typeTravauxLabel: string; // Type de travaux (ajouté)
+  typeTravauxLabel: string;
   sousTypeId: string;
   sousTypeLabel: string;
   personnalisation: string;
   quantite: number;
   unite: string;
-  prixFournitures: number; // Prix des fournitures
-  prixMainOeuvre: number; // Prix de la main d'oeuvre
+  prixFournitures: number;
+  prixMainOeuvre: number;
   prixUnitaire: number;
-  tauxTVA: number; // Taux de TVA
+  tauxTVA: number;
 }
 
 const Recapitulatif = () => {
@@ -33,69 +31,62 @@ const Recapitulatif = () => {
   const [travaux, setTravaux] = useState<Travail[]>([]);
 
   useEffect(() => {
-    // Charger les travaux depuis le localStorage
     const travauxSauvegardes = localStorage.getItem('travaux');
     if (travauxSauvegardes) {
       setTravaux(JSON.parse(travauxSauvegardes));
     }
   }, []);
 
-  // Formater le prix avec 2 décimales
   const formaterPrix = (prix: number) => {
+    const prixArrondi = Math.round(prix * 100) / 100;
     return new Intl.NumberFormat('fr-FR', { 
       style: 'currency', 
       currency: 'EUR',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
-    }).format(prix);
+    }).format(prixArrondi);
   };
 
-  // Formater la quantité avec 2 décimales
   const formaterQuantite = (quantite: number) => {
+    const quantiteArrondie = Math.round(quantite * 100) / 100;
     return new Intl.NumberFormat('fr-FR', { 
       minimumFractionDigits: 0,
       maximumFractionDigits: 2
-    }).format(quantite);
+    }).format(quantiteArrondie);
   };
 
-  // Calculer le total général HT
   const calculerTotalGeneral = () => {
-    return parseFloat(travaux.reduce((total, travail) => {
+    return Math.round(travaux.reduce((total, travail) => {
       return total + (travail.quantite * travail.prixUnitaire);
-    }, 0).toFixed(2));
+    }, 0) * 100) / 100;
   };
 
-  // Calculer le total des fournitures
   const calculerTotalFournitures = () => {
-    return parseFloat(travaux.reduce((total, travail) => {
+    return Math.round(travaux.reduce((total, travail) => {
       return total + (travail.quantite * travail.prixFournitures);
-    }, 0).toFixed(2));
+    }, 0) * 100) / 100;
   };
 
-  // Calculer le total de la main d'oeuvre
   const calculerTotalMainOeuvre = () => {
-    return parseFloat(travaux.reduce((total, travail) => {
+    return Math.round(travaux.reduce((total, travail) => {
       return total + (travail.quantite * travail.prixMainOeuvre);
-    }, 0).toFixed(2));
+    }, 0) * 100) / 100;
   };
 
-  // Calculer le total de la TVA
   const calculerTotalTVA = () => {
-    return parseFloat(travaux.reduce((total, travail) => {
+    return Math.round(travaux.reduce((total, travail) => {
       const montantHT = travail.quantite * travail.prixUnitaire;
       const montantTVA = montantHT * (travail.tauxTVA / 100);
       return total + montantTVA;
-    }, 0).toFixed(2));
+    }, 0) * 100) / 100;
   };
 
-  // Calculer le total TTC
   const calculerTotalTTC = () => {
     const totalHT = calculerTotalGeneral();
     const totalTVA = calculerTotalTVA();
-    return parseFloat((totalHT + totalTVA).toFixed(2));
+    return Math.round((totalHT + totalTVA) * 100) / 100;
   };
 
-  // Regrouper les travaux par pièce
   const travauxParPiece = () => {
     const pieces = new Map<number, {nom: string, travaux: Travail[]}>();
     
@@ -109,23 +100,20 @@ const Recapitulatif = () => {
     return Array.from(pieces.values());
   };
 
-  // Calculer le total par pièce
   const calculerTotalPiece = (travauxPiece: Travail[]) => {
-    return parseFloat(travauxPiece.reduce((total, travail) => {
+    return Math.round(travauxPiece.reduce((total, travail) => {
       return total + (travail.quantite * travail.prixUnitaire);
-    }, 0).toFixed(2));
+    }, 0) * 100) / 100;
   };
 
-  // Calculer TVA par pièce
   const calculerTVAPiece = (travauxPiece: Travail[]) => {
-    return parseFloat(travauxPiece.reduce((total, travail) => {
+    return Math.round(travauxPiece.reduce((total, travail) => {
       const montantHT = travail.quantite * travail.prixUnitaire;
       const montantTVA = montantHT * (travail.tauxTVA / 100);
       return total + montantTVA;
-    }, 0).toFixed(2));
+    }, 0) * 100) / 100;
   };
 
-  // Imprimer le récapitulatif
   const imprimerRecapitulatif = () => {
     window.print();
   };

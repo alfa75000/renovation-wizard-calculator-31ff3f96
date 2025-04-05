@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { 
   Card, 
@@ -254,25 +253,27 @@ const Travaux = () => {
 
   // Formater le prix avec 2 décimales
   const formaterPrix = (prix: number) => {
+    const prixArrondi = Math.round(prix * 100) / 100;
     return new Intl.NumberFormat('fr-FR', { 
       style: 'currency', 
       currency: 'EUR',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
-    }).format(prix);
+    }).format(prixArrondi);
   };
 
   // Formater la quantité avec 2 décimales
   const formaterQuantite = (quantite: number) => {
+    const quantiteArrondie = Math.round(quantite * 100) / 100;
     return new Intl.NumberFormat('fr-FR', { 
       minimumFractionDigits: 0,
       maximumFractionDigits: 2
-    }).format(quantite);
+    }).format(quantiteArrondie);
   };
 
   // Calculer le prix unitaire total
   const calculerPrixUnitaire = (prixFourn: number, prixMO: number) => {
-    return prixFourn + prixMO;
+    return Math.round((prixFourn + prixMO) * 100) / 100;
   };
 
   // Ajouter un travail à la liste
@@ -291,19 +292,19 @@ const Travaux = () => {
     const typeTravauxObj = travauxTypes.find(t => t.id === typeTravauxSelectionne);
     if (!typeTravauxObj) return;
 
-    const prixFournituresDefaut = parseFloat((prixFournitures !== null ? prixFournitures : 
-      (sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux]?.find(st => st.id === sousTypeSelectionne)?.prixUnitaire || 0) * 0.4).toFixed(2));
-    const prixMainOeuvreDefaut = parseFloat((prixMainOeuvre !== null ? prixMainOeuvre : 
-      (sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux]?.find(st => st.id === sousTypeSelectionne)?.prixUnitaire || 0) * 0.6).toFixed(2));
-
-    const prixFourn = prixFournitures !== null ? parseFloat(prixFournitures.toFixed(2)) : prixFournituresDefaut;
-    const prixMO = prixMainOeuvre !== null ? parseFloat(prixMainOeuvre.toFixed(2)) : prixMainOeuvreDefaut;
-    const prixTotal = parseFloat(calculerPrixUnitaire(prixFourn, prixMO).toFixed(2));
+    const prixFournituresDefaut = Math.round(((prixFournitures !== null ? prixFournitures : 
+      (sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux]?.find(st => st.id === sousTypeSelectionne)?.prixUnitaire || 0) * 0.4)) * 100) / 100;
     
-    // Utiliser le taux TVA sélectionné ou le taux personnalisé
+    const prixMainOeuvreDefaut = Math.round(((prixMainOeuvre !== null ? prixMainOeuvre : 
+      (sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux]?.find(st => st.id === sousTypeSelectionne)?.prixUnitaire || 0) * 0.6)) * 100) / 100;
+
+    const prixFourn = prixFournitures !== null ? Math.round(prixFournitures * 100) / 100 : prixFournituresDefaut;
+    const prixMO = prixMainOeuvre !== null ? Math.round(prixMainOeuvre * 100) / 100 : prixMainOeuvreDefaut;
+    const prixTotal = calculerPrixUnitaire(prixFourn, prixMO);
+    
     let tauxFinal = tauxTVASelectionne;
     if (tauxTVASelectionne === 0 && tauxTVAAutre > 0) {
-      tauxFinal = parseFloat(tauxTVAAutre.toFixed(2));
+      tauxFinal = Math.round(tauxTVAAutre * 100) / 100;
     }
 
     const nouveauTravail: Travail = {
@@ -315,7 +316,7 @@ const Travaux = () => {
       sousTypeId: sousTypeSelectionne,
       sousTypeLabel: sousType.label,
       personnalisation: personnalisation,
-      quantite: parseFloat(quantite.toFixed(2)),
+      quantite: Math.round(quantite * 100) / 100,
       unite,
       prixFournitures: prixFourn,
       prixMainOeuvre: prixMO,
