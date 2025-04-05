@@ -17,29 +17,40 @@ export const useTravaux = () => {
 
   // Mise à jour du state quand les pièces changent
   useEffect(() => {
+    console.log("Effet de mise à jour des pièces dans useTravaux", {
+      roomsLength: state.rooms.length,
+      pieceSelectionnee
+    });
+    
     if (state.rooms.length > 0 && !pieceSelectionnee) {
+      console.log("Sélection automatique de la première pièce:", state.rooms[0].id);
       setPieceSelectionnee(state.rooms[0].id);
     } else if (state.rooms.length === 0) {
+      console.log("Aucune pièce disponible, réinitialisation de la sélection");
       setPieceSelectionnee(null);
     } else if (pieceSelectionnee && !state.rooms.find(room => room.id === pieceSelectionnee)) {
       // Si la pièce sélectionnée n'existe plus
+      console.log("La pièce sélectionnée n'existe plus, sélection d'une autre pièce");
       setPieceSelectionnee(state.rooms[0]?.id || null);
     }
   }, [state.rooms, pieceSelectionnee]);
 
   // Liste des pièces transformées pour l'interface
-  const pieces = state.rooms.map(room => ({
-    id: room.id,
-    nom: room.customName || room.name,
-    type: room.type,
-    surface: Number(room.surface),
-    surfaceMurs: Number(room.wallSurfaceRaw),
-    plinthes: Number(room.totalPlinthLength),
-    surfacePlinthes: Number(room.totalPlinthSurface),
-    surfaceMenuiseries: Number(room.totalMenuiserieSurface),
-    surfaceNetMurs: Number(room.netWallSurface),
-    menuiseries: room.menuiseries
-  }));
+  const pieces = state.rooms.map(room => {
+    console.log("Transformation de la pièce:", room);
+    return {
+      id: room.id,
+      nom: room.customName || room.name,
+      type: room.type,
+      surface: Number(room.surface),
+      surfaceMurs: Number(room.wallSurfaceRaw),
+      plinthes: Number(room.totalPlinthLength),
+      surfacePlinthes: Number(room.totalPlinthSurface),
+      surfaceMenuiseries: Number(room.totalMenuiserieSurface),
+      surfaceNetMurs: Number(room.netWallSurface),
+      menuiseries: room.menuiseries
+    };
+  });
 
   // Sélection d'une pièce
   const selectionnerPiece = (pieceId: string) => {

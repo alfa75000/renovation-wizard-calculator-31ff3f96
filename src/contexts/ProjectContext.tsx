@@ -109,37 +109,53 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [state, dispatch] = useReducer(projectReducer, initialState);
 
   // Utiliser le hook de synchronisation avec localStorage pour chaque partie de l'état
-  const { loadFromLocalStorage: loadRooms } = useLocalStorageSync('rooms', state.rooms);
-  const { loadFromLocalStorage: loadProperty } = useLocalStorageSync('property', state.property);
-  const { loadFromLocalStorage: loadTravaux } = useLocalStorageSync('travaux', state.travaux);
+  const { loadFromLocalStorage: loadRooms, saveToLocalStorage: saveRooms } = useLocalStorageSync('rooms', state.rooms);
+  const { loadFromLocalStorage: loadProperty, saveToLocalStorage: saveProperty } = useLocalStorageSync('property', state.property);
+  const { loadFromLocalStorage: loadTravaux, saveToLocalStorage: saveTravaux } = useLocalStorageSync('travaux', state.travaux);
 
   // Chargement initial des données depuis localStorage
   useEffect(() => {
     const loadInitialData = () => {
       try {
+        // Chargement des pièces
         const savedRooms = loadRooms();
-        const savedProperty = loadProperty();
-        const savedTravaux = loadTravaux();
-        
-        if (savedRooms) {
+        if (savedRooms && Array.isArray(savedRooms) && savedRooms.length > 0) {
+          console.log("Chargement initial des pièces:", savedRooms);
           dispatch({ type: 'SET_ROOMS', payload: savedRooms });
-          console.log("Pièces chargées depuis localStorage:", savedRooms);
         }
         
+        // Chargement des propriétés
+        const savedProperty = loadProperty();
         if (savedProperty) {
           dispatch({ type: 'SET_PROPERTY', payload: savedProperty });
         }
         
-        if (savedTravaux) {
+        // Chargement des travaux
+        const savedTravaux = loadTravaux();
+        if (savedTravaux && Array.isArray(savedTravaux)) {
           dispatch({ type: 'SET_TRAVAUX', payload: savedTravaux });
         }
       } catch (error) {
-        console.error("Erreur lors du chargement des données:", error);
+        console.error("Erreur lors du chargement initial des données:", error);
       }
     };
 
-    loadInitialData();
+    // Ajouter un petit délai pour s'assurer que le localStorage est disponible
+    setTimeout(loadInitialData, 100);
   }, []);
+
+  // Force la sauvegarde quand les données changent
+  useEffect(() => {
+    saveRooms(state.rooms);
+  }, [state.rooms]);
+
+  useEffect(() => {
+    saveProperty(state.property);
+  }, [state.property]);
+
+  useEffect(() => {
+    saveTravaux(state.travaux);
+  }, [state.travaux]);
 
   return (
     <ProjectContext.Provider value={{ state, dispatch }}>

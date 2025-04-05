@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { 
   Card, 
   CardContent,
@@ -36,6 +36,8 @@ import TravailForm from "@/features/travaux/components/TravailForm";
 import TravailCard from "@/features/travaux/components/TravailCard";
 import { ProjectProvider } from "@/contexts/ProjectContext";
 import { TravauxTypesProvider } from "@/contexts/TravauxTypesContext";
+import { useProject } from "@/contexts/ProjectContext";
+import { toast } from "@/hooks/use-toast";
 
 const TravauxPage = () => {
   const {
@@ -51,6 +53,21 @@ const TravauxPage = () => {
     naviguerVersRecapitulatif,
     resetProject
   } = useTravaux();
+  
+  const { state } = useProject();
+  
+  // Afficher un log pour vérifier les pièces chargées
+  useEffect(() => {
+    console.log("Pièces chargées dans TravauxPage:", pieces);
+    console.log("Rooms dans le state:", state.rooms);
+    
+    if (pieces.length === 0 && state.rooms.length > 0) {
+      toast({
+        title: "Attention",
+        description: "Les pièces sont présentes dans le state mais n'ont pas été transformées correctement.",
+      });
+    }
+  }, [pieces, state.rooms]);
 
   return (
     <div className="min-h-screen bg-gray-50 pb-12">
