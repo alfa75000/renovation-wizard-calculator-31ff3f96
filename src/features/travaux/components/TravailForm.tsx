@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -33,11 +32,10 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
   
   const [isEditing, setIsEditing] = useState<boolean>(false);
 
-  // Chargement du travail à modifier
   useEffect(() => {
     if (travailAModifier && piece) {
-      // Vérifier que le travail appartient à la pièce sélectionnée
-      if (travailAModifier.pieceId.toString() === piece.id.toString()) {
+      if (travailAModifier.pieceId === piece.id) {
+        console.log("Chargement du travail pour édition:", travailAModifier);
         setTypeTravauxSelectionne(travailAModifier.typeTravauxId);
         setSousTypeSelectionne(travailAModifier.sousTypeId);
         setDescriptif(travailAModifier.personnalisation || "");
@@ -53,7 +51,6 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
     }
   }, [travailAModifier, piece]);
 
-  // Réinitialisation quand la pièce change
   useEffect(() => {
     if (!isEditing) {
       setTypeTravauxSelectionne(null);
@@ -66,7 +63,6 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
     }
   }, [piece, isEditing]);
 
-  // Mise à jour quand le type ou sous-type change
   useEffect(() => {
     if (!isEditing && typeTravauxSelectionne && sousTypeSelectionne) {
       const typeFromContext = state.types.find(type => type.id === typeTravauxSelectionne);
@@ -75,7 +71,6 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
       if (sousTypeFromContext) {
         setUniteSelectionnee(sousTypeFromContext.unite || null);
         
-        // Remplir le descriptif avec la description du sous-type si disponible
         if (sousTypeFromContext.description) {
           setDescriptif(sousTypeFromContext.description);
         } else {
@@ -123,6 +118,7 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
   };
 
   const annulerEdition = () => {
+    console.log("Annulation de l'édition");
     setIsEditing(false);
     resetTravailAModifier();
     setTypeTravauxSelectionne(null);
@@ -151,7 +147,6 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
     const quantite = quantiteModifiee !== null ? quantiteModifiee : getQuantiteParDefaut();
     const unite = uniteSelectionnee || getUniteParDefaut();
 
-    // Utiliser les prix spécifiques pour fournitures et main d'œuvre si disponibles
     const prixFournituresDefaut = (prixFournitures !== null) 
       ? prixFournitures 
       : (sousTypeFromContext.prixFournitures !== undefined 
@@ -169,6 +164,8 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
       tauxFinal = tauxTVAAutre;
     }
 
+    console.log("Soumission du travail, mode édition:", isEditing);
+    
     onAddTravail({
       pieceId: piece.id,
       pieceName: piece.nom || piece.name || "Pièce sans nom",
@@ -185,7 +182,6 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
       tauxTVA: Number(tauxFinal.toFixed(2))
     });
 
-    // Réinitialiser le formulaire après l'ajout ou la modification
     annulerEdition();
   };
 

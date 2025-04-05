@@ -45,7 +45,7 @@ export const useTravaux = () => {
   const selectionnerPiece = (pieceId: string) => {
     setPieceSelectionnee(pieceId);
     // Ne pas réinitialiser le travail à modifier si on change vers la pièce qui contient ce travail
-    if (travailAModifier && travailAModifier.pieceId.toString() !== pieceId) {
+    if (travailAModifier && travailAModifier.pieceId !== pieceId) {
       resetTravailAModifier();
     }
   };
@@ -65,6 +65,7 @@ export const useTravaux = () => {
   const ajouterTravail = (travail: Omit<Travail, 'id'>) => {
     // Si on a un travail à modifier, on le modifie au lieu d'en ajouter un nouveau
     if (travailAModifier) {
+      console.log("Modification du travail existant:", travailAModifier.id);
       const updatedTravail = {
         ...travail,
         id: travailAModifier.id
@@ -99,11 +100,12 @@ export const useTravaux = () => {
 
   // Charger un travail pour l'édition
   const preparerModificationTravail = (travail: Travail) => {
+    console.log("Préparation pour modifier le travail:", travail);
     setTravailAModifier(travail);
     
     // Si c'est une autre pièce, on change la sélection de pièce
-    if (travail.pieceId.toString() !== pieceSelectionnee) {
-      setPieceSelectionnee(travail.pieceId.toString());
+    if (travail.pieceId !== pieceSelectionnee) {
+      setPieceSelectionnee(travail.pieceId);
     }
     
     toast({

@@ -40,7 +40,7 @@ export interface Room {
 
 export interface Travail {
   id: string;
-  pieceId: number;
+  pieceId: string;
   pieceName: string;
   typeTravauxId: string;
   typeTravauxLabel: string;
@@ -56,7 +56,7 @@ export interface Travail {
 }
 
 export interface Piece {
-  id: number | string;
+  id: string;
   nom?: string;
   name?: string;
   type?: string;

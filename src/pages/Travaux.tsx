@@ -162,7 +162,7 @@ const TravauxPage = () => {
                       onAddTravail={ajouterTravail}
                     />
 
-                    {travauxParPiece(pieceSelectionnee).length > 0 && (
+                    {pieceSelectionnee && travauxParPiece(pieceSelectionnee).length > 0 && (
                       <div className="mt-8">
                         <h3 className="text-lg font-medium mb-4">Travaux/Prestations ajoutés</h3>
                         <div className="space-y-3">

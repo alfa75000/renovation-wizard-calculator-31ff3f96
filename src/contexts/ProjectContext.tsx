@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
 import { Room, PropertyType, Travail } from '@/types';
 
@@ -55,7 +54,7 @@ const projectReducer = (state: ProjectState, action: ProjectAction): ProjectStat
         ...state, 
         rooms: state.rooms.filter(room => room.id !== action.payload),
         // Supprimer également les travaux associés à cette pièce
-        travaux: state.travaux.filter(travail => travail.pieceId.toString() !== action.payload)
+        travaux: state.travaux.filter(travail => travail.pieceId !== action.payload)
       };
     case 'SET_PROPERTY':
       return { ...state, property: action.payload };
