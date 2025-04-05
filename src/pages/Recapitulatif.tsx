@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { 
   Card, 
@@ -9,12 +8,22 @@ import {
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Printer } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { Travail } from "@/types";
 
-interface PieceAvecTravaux {
+interface Travail {
   id: string;
-  nom: string;
-  travaux: Travail[];
+  pieceId: number;
+  pieceName: string;
+  typeTravauxId: string;
+  typeTravauxLabel: string;
+  sousTypeId: string;
+  sousTypeLabel: string;
+  personnalisation: string;
+  quantite: number;
+  unite: string;
+  prixFournitures: number;
+  prixMainOeuvre: number;
+  prixUnitaire: number;
+  tauxTVA: number;
 }
 
 const Recapitulatif = () => {
@@ -79,26 +88,16 @@ const Recapitulatif = () => {
   };
 
   const travauxParPiece = () => {
-    const pieces: PieceAvecTravaux[] = [];
+    const pieces = new Map<number, {nom: string, travaux: Travail[]}>();
     
     travaux.forEach(travail => {
-      // Rechercher si la pièce existe déjà dans notre tableau
-      const pieceExistante = pieces.find(p => p.id === travail.pieceId);
-      
-      if (pieceExistante) {
-        // Si la pièce existe, ajouter le travail à cette pièce
-        pieceExistante.travaux.push(travail);
-      } else {
-        // Si la pièce n'existe pas, créer une nouvelle entrée
-        pieces.push({
-          id: travail.pieceId,
-          nom: travail.pieceName,
-          travaux: [travail]
-        });
+      if (!pieces.has(travail.pieceId)) {
+        pieces.set(travail.pieceId, {nom: travail.pieceName, travaux: []});
       }
+      pieces.get(travail.pieceId)?.travaux.push(travail);
     });
     
-    return pieces;
+    return Array.from(pieces.values());
   };
 
   const calculerTotalPiece = (travauxPiece: Travail[]) => {
@@ -173,12 +172,8 @@ const Recapitulatif = () => {
                             <div>
                               <p className="font-medium">
                                 {travail.typeTravauxLabel}: {travail.sousTypeLabel}
+                                {travail.personnalisation && ` (${travail.personnalisation})`}
                               </p>
-                              {travail.personnalisation && (
-                                <p className="text-sm text-gray-600 whitespace-pre-line">
-                                  {travail.personnalisation}
-                                </p>
-                              )}
                               <p className="text-sm text-gray-600">
                                 {formaterQuantite(travail.quantite)} {travail.unite} × {formaterPrix(travail.prixUnitaire)}/{travail.unite}
                               </p>
