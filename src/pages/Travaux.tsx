@@ -13,7 +13,8 @@ import {
   Save,
   ArrowRight,
   RefreshCw,
-  PlusCircle
+  PlusCircle,
+  Settings
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
@@ -34,6 +35,7 @@ import PieceSelect from "@/features/travaux/components/PieceSelect";
 import TravailForm from "@/features/travaux/components/TravailForm";
 import TravailCard from "@/features/travaux/components/TravailCard";
 import { ProjectProvider } from "@/contexts/ProjectContext";
+import { TravauxTypesProvider } from "@/contexts/TravauxTypesContext";
 
 const TravauxPage = () => {
   const {
@@ -59,30 +61,39 @@ const TravauxPage = () => {
           </h1>
           <p className="mt-2 text-lg">Sélectionnez les travaux pour chaque pièce</p>
           
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="reset" className="mt-4">
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Nouveau projet
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Êtes-vous sûr de vouloir créer un nouveau projet ?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Cette action va réinitialiser toutes les données de votre projet actuel.
-                  Toutes les pièces et travaux associés seront supprimés.
-                  Cette action est irréversible.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Annuler</AlertDialogCancel>
-                <AlertDialogAction onClick={resetProject} className="bg-orange-500 hover:bg-orange-600">
-                  Réinitialiser
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          <div className="flex gap-2 mt-4">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="reset" className="flex items-center gap-2">
+                  <RefreshCw className="h-4 w-4" />
+                  Nouveau projet
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Êtes-vous sûr de vouloir créer un nouveau projet ?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Cette action va réinitialiser toutes les données de votre projet actuel.
+                    Toutes les pièces et travaux associés seront supprimés.
+                    Cette action est irréversible.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                  <AlertDialogAction onClick={resetProject} className="bg-orange-500 hover:bg-orange-600">
+                    Réinitialiser
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
+            <Button variant="outline" asChild className="flex items-center gap-2 text-white border-white hover:bg-white/20 hover:text-white">
+              <Link to="/admin/travaux">
+                <Settings className="h-4 w-4" />
+                Gérer les types de travaux
+              </Link>
+            </Button>
+          </div>
         </div>
 
         <div className="mb-4 flex justify-between">
@@ -183,7 +194,9 @@ const TravauxPage = () => {
 
 const Travaux = () => (
   <ProjectProvider>
-    <TravauxPage />
+    <TravauxTypesProvider>
+      <TravauxPage />
+    </TravauxTypesProvider>
   </ProjectProvider>
 );
 
