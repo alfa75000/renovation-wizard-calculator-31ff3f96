@@ -44,6 +44,13 @@ export const useTravaux = () => {
   // Sélection d'une pièce
   const selectionnerPiece = (pieceId: string) => {
     setPieceSelectionnee(pieceId);
+    // Réinitialiser le travail à modifier lors du changement de pièce
+    resetTravailAModifier();
+  };
+
+  // Réinitialiser le travail en cours d'édition
+  const resetTravailAModifier = () => {
+    setTravailAModifier(null);
   };
 
   // Obtenir la pièce sélectionnée
@@ -60,7 +67,6 @@ export const useTravaux = () => {
         ...travail,
         id: travailAModifier.id
       });
-      setTravailAModifier(null);
       return;
     }
     
@@ -78,21 +84,6 @@ export const useTravaux = () => {
 
   // Modifier un travail
   const modifierTravail = (id: string, travail: Travail) => {
-    // Charger le travail dans le formulaire d'édition
-    const travailToEdit = state.travaux.find(t => t.id === id);
-    if (travailToEdit) {
-      setTravailAModifier(travailToEdit);
-      // Si c'est une autre pièce, on change la sélection de pièce
-      if (travailToEdit.pieceId.toString() !== pieceSelectionnee) {
-        setPieceSelectionnee(travailToEdit.pieceId.toString());
-      }
-      toast({
-        title: "Mode édition activé",
-        description: `Vous pouvez maintenant modifier le travail`,
-      });
-      return;
-    }
-    
     dispatch({ 
       type: 'UPDATE_TRAVAIL',
       payload: { id, travail }
@@ -101,14 +92,29 @@ export const useTravaux = () => {
       title: "Travail modifié",
       description: `Les modifications ont été enregistrées`,
     });
-    setTravailAModifier(null);
+    resetTravailAModifier();
+  };
+
+  // Charger un travail pour l'édition
+  const preparerModificationTravail = (travail: Travail) => {
+    setTravailAModifier(travail);
+    
+    // Si c'est une autre pièce, on change la sélection de pièce
+    if (travail.pieceId.toString() !== pieceSelectionnee) {
+      setPieceSelectionnee(travail.pieceId.toString());
+    }
+    
+    toast({
+      title: "Mode édition activé",
+      description: `Vous pouvez maintenant modifier le travail`,
+    });
   };
 
   // Supprimer un travail
   const supprimerTravail = (id: string) => {
     // Si on supprime le travail en cours d'édition, on réinitialise l'état
     if (travailAModifier && travailAModifier.id === id) {
-      setTravailAModifier(null);
+      resetTravailAModifier();
     }
     
     dispatch({ type: 'DELETE_TRAVAIL', payload: id });
@@ -169,6 +175,7 @@ export const useTravaux = () => {
     getPieceSelectionnee,
     ajouterTravail,
     modifierTravail,
+    preparerModificationTravail,
     supprimerTravail,
     travauxParPiece,
     enregistrerTravaux,
@@ -176,6 +183,7 @@ export const useTravaux = () => {
     resetProject,
     getSousTypeInfo,
     travaux: state.travaux,
-    travailAModifier
+    travailAModifier,
+    resetTravailAModifier
   };
 };

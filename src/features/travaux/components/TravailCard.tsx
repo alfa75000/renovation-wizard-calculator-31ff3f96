@@ -23,7 +23,7 @@ const TravailCard: React.FC<TravailCardProps> = ({ travail, onEdit, onDelete }) 
             {travail.typeTravauxLabel}: {travail.sousTypeLabel}
           </p>
           {travail.personnalisation && (
-            <p className="text-sm mt-1 text-gray-700">
+            <p className="text-sm mt-1 text-gray-700 whitespace-pre-line">
               {travail.personnalisation}
             </p>
           )}

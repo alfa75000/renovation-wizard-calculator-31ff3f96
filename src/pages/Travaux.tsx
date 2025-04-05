@@ -45,7 +45,7 @@ const TravauxPage = () => {
     selectionnerPiece,
     getPieceSelectionnee,
     ajouterTravail,
-    modifierTravail,
+    preparerModificationTravail,
     supprimerTravail,
     travauxParPiece,
     enregistrerTravaux,
@@ -59,11 +59,6 @@ const TravauxPage = () => {
   // Adaptateur pour gérer les différences de type (string vs number) pour pieceSelectionnee
   const handlePieceSelection = (pieceIdStr: string) => {
     selectionnerPiece(pieceIdStr);
-  };
-
-  // Adaptateur pour modifier un travail
-  const handleModifierTravail = (travail: Travail) => {
-    modifierTravail(travail.id, travail);
   };
 
   return (
@@ -184,7 +179,7 @@ const TravauxPage = () => {
                             <TravailCard 
                               key={travail.id} 
                               travail={travail}
-                              onEdit={handleModifierTravail}
+                              onEdit={preparerModificationTravail}
                               onDelete={supprimerTravail}
                             />
                           ))}

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -29,7 +28,7 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
   const [tauxTVASelectionne, setTauxTVASelectionne] = useState<number>(10);
   const [tauxTVAAutre, setTauxTVAAutre] = useState<number>(0);
   const { state } = useTravauxTypes();
-  const { travailAModifier } = useTravaux();
+  const { travailAModifier, resetTravailAModifier } = useTravaux();
   
   const [isEditing, setIsEditing] = useState<boolean>(false);
 
@@ -124,6 +123,7 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
 
   const annulerEdition = () => {
     setIsEditing(false);
+    resetTravailAModifier();
     setTypeTravauxSelectionne(null);
     setSousTypeSelectionne(null);
     setDescriptif("");
@@ -169,7 +169,7 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
     }
 
     onAddTravail({
-      pieceId: piece.id,
+      pieceId: Number(piece.id),
       pieceName: piece.nom || piece.name || "Pièce sans nom",
       typeTravauxId: typeTravauxSelectionne,
       typeTravauxLabel,
@@ -184,6 +184,7 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
       tauxTVA: Number(tauxFinal.toFixed(2))
     });
 
+    // Réinitialiser le formulaire et l'état d'édition
     setSousTypeSelectionne(null);
     setDescriptif("");
     setQuantiteModifiee(null);
@@ -191,6 +192,7 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
     setPrixFournitures(null);
     setPrixMainOeuvre(null);
     setIsEditing(false);
+    resetTravailAModifier();
   };
 
   if (!piece) {
