@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -168,7 +169,7 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
     
     onAddTravail({
       pieceId: piece.id,
-      pieceName: piece.nom || piece.name || "Pièce sans nom",
+      pieceName: piece.nom || piece.type || "Pièce sans nom",
       typeTravauxId: typeTravauxSelectionne,
       typeTravauxLabel,
       sousTypeId: sousTypeSelectionne,
