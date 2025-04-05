@@ -1,13 +1,38 @@
 
 import { useState } from 'react';
-import { sousTravaux } from '@/features/travaux/data/sousTravaux';
+import { v4 as uuidv4 } from 'uuid';
+import sousTravaux from '../data/sousTravaux';
 
 export const useCatalogueTravauxMock = () => {
-  const [catalogueData] = useState(sousTravaux);
+  // Types de travaux
+  const travauxTypes = [
+    { id: "murs", label: "Murs" },
+    { id: "plafond", label: "Plafond" },
+    { id: "sol", label: "Sol" },
+    { id: "menuiseries", label: "Menuiseries" },
+    { id: "electricite", label: "Electricité" },
+    { id: "plomberie", label: "Plomberie" },
+    { id: "platrerie", label: "Plâtrerie" },
+    { id: "maconnerie", label: "Maçonnerie" },
+    { id: "autre", label: "Autre" }
+  ];
+
+  const [types] = useState(travauxTypes);
+  
+  // Obtenir les sous-types pour un type donné
+  const getSousTypes = (typeId: string) => {
+    if (typeId in sousTravaux) {
+      return sousTravaux[typeId as keyof typeof sousTravaux];
+    }
+    return [];
+  };
+
+  // Générer un ID unique
+  const generateId = () => uuidv4();
 
   return {
-    data: catalogueData,
-    isLoading: false,
-    error: null
+    types,
+    getSousTypes,
+    generateId,
   };
 };

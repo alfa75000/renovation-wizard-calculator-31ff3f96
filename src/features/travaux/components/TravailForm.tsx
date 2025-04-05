@@ -29,14 +29,15 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
   const [tauxTVASelectionne, setTauxTVASelectionne] = useState<number>(10);
   const [tauxTVAAutre, setTauxTVAAutre] = useState<number>(0);
   const { state } = useTravauxTypes();
-  const { travailAModifier, resetTravailAModifier } = useTravaux();
+  const { travailAModifier } = useTravaux();
   
   const [isEditing, setIsEditing] = useState<boolean>(false);
 
+  // Chargement du travail à modifier
   useEffect(() => {
     if (travailAModifier && piece) {
-      if (travailAModifier.pieceId === piece.id) {
-        console.log("Chargement du travail pour édition:", travailAModifier);
+      // Vérifier que le travail appartient à la pièce sélectionnée
+      if (travailAModifier.pieceId.toString() === piece.id.toString()) {
         setTypeTravauxSelectionne(travailAModifier.typeTravauxId);
         setSousTypeSelectionne(travailAModifier.sousTypeId);
         setDescriptif(travailAModifier.personnalisation || "");
@@ -52,6 +53,7 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
     }
   }, [travailAModifier, piece]);
 
+  // Réinitialisation quand la pièce change
   useEffect(() => {
     if (!isEditing) {
       setTypeTravauxSelectionne(null);
@@ -64,6 +66,7 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
     }
   }, [piece, isEditing]);
 
+  // Mise à jour quand le type ou sous-type change
   useEffect(() => {
     if (!isEditing && typeTravauxSelectionne && sousTypeSelectionne) {
       const typeFromContext = state.types.find(type => type.id === typeTravauxSelectionne);
@@ -72,6 +75,7 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
       if (sousTypeFromContext) {
         setUniteSelectionnee(sousTypeFromContext.unite || null);
         
+        // Remplir le descriptif avec la description du sous-type si disponible
         if (sousTypeFromContext.description) {
           setDescriptif(sousTypeFromContext.description);
         } else {
@@ -119,9 +123,7 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
   };
 
   const annulerEdition = () => {
-    console.log("Annulation de l'édition");
     setIsEditing(false);
-    resetTravailAModifier();
     setTypeTravauxSelectionne(null);
     setSousTypeSelectionne(null);
     setDescriptif("");
@@ -148,6 +150,7 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
     const quantite = quantiteModifiee !== null ? quantiteModifiee : getQuantiteParDefaut();
     const unite = uniteSelectionnee || getUniteParDefaut();
 
+    // Utiliser les prix spécifiques pour fournitures et main d'œuvre si disponibles
     const prixFournituresDefaut = (prixFournitures !== null) 
       ? prixFournitures 
       : (sousTypeFromContext.prixFournitures !== undefined 
@@ -165,11 +168,9 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
       tauxFinal = tauxTVAAutre;
     }
 
-    console.log("Soumission du travail, mode édition:", isEditing);
-    
     onAddTravail({
       pieceId: piece.id,
-      pieceName: piece.nom || piece.type || "Pièce sans nom",
+      pieceName: piece.nom || piece.name || "Pièce sans nom",
       typeTravauxId: typeTravauxSelectionne,
       typeTravauxLabel,
       sousTypeId: sousTypeSelectionne,
@@ -183,7 +184,13 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
       tauxTVA: Number(tauxFinal.toFixed(2))
     });
 
-    annulerEdition();
+    setSousTypeSelectionne(null);
+    setDescriptif("");
+    setQuantiteModifiee(null);
+    setUniteSelectionnee(null);
+    setPrixFournitures(null);
+    setPrixMainOeuvre(null);
+    setIsEditing(false);
   };
 
   if (!piece) {
@@ -198,7 +205,7 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium">
-          {piece?.nom || piece?.name}
+          {piece.nom || piece.name}
         </h3>
         {isEditing && (
           <Button onClick={annulerEdition} variant="outline" size="sm" className="flex items-center">

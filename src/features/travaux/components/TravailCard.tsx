@@ -15,12 +15,6 @@ interface TravailCardProps {
 const TravailCard: React.FC<TravailCardProps> = ({ travail, onEdit, onDelete }) => {
   const total = parseFloat((travail.quantite * travail.prixUnitaire).toFixed(2));
   
-  // Fonction explicite pour gérer le clic sur le bouton d'édition
-  const handleEditClick = () => {
-    console.log("Bouton Éditer cliqué pour:", travail);
-    onEdit(travail);
-  };
-  
   return (
     <Card className="p-3">
       <div className="flex justify-between">
@@ -29,7 +23,7 @@ const TravailCard: React.FC<TravailCardProps> = ({ travail, onEdit, onDelete }) 
             {travail.typeTravauxLabel}: {travail.sousTypeLabel}
           </p>
           {travail.personnalisation && (
-            <p className="text-sm mt-1 text-gray-700 whitespace-pre-line">
+            <p className="text-sm mt-1 text-gray-700">
               {travail.personnalisation}
             </p>
           )}
@@ -46,7 +40,7 @@ const TravailCard: React.FC<TravailCardProps> = ({ travail, onEdit, onDelete }) 
             <Button 
               variant="outline" 
               size="sm" 
-              onClick={handleEditClick}
+              onClick={() => onEdit(travail)}
               className="h-7 px-2 text-xs"
             >
               <Pencil className="h-3 w-3 mr-1" />

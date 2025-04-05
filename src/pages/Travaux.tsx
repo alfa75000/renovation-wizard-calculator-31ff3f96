@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React from "react";
 import { 
   Card, 
   CardContent,
@@ -36,8 +36,7 @@ import TravailForm from "@/features/travaux/components/TravailForm";
 import TravailCard from "@/features/travaux/components/TravailCard";
 import { ProjectProvider } from "@/contexts/ProjectContext";
 import { TravauxTypesProvider } from "@/contexts/TravauxTypesContext";
-import { useProject } from "@/contexts/ProjectContext";
-import { toast } from "@/hooks/use-toast";
+import { Travail } from "@/types";
 
 const TravauxPage = () => {
   const {
@@ -46,29 +45,26 @@ const TravauxPage = () => {
     selectionnerPiece,
     getPieceSelectionnee,
     ajouterTravail,
-    preparerModificationTravail,
+    modifierTravail,
     supprimerTravail,
     travauxParPiece,
     enregistrerTravaux,
     naviguerVersRecapitulatif,
     resetProject
   } = useTravaux();
-  
-  const { state } = useProject();
-  
-  // Afficher un log pour vérifier les pièces chargées
-  useEffect(() => {
-    console.log("Pièces chargées dans TravauxPage:", pieces);
-    console.log("Rooms dans le state:", state.rooms);
-    
-    if (pieces.length === 0 && state.rooms.length > 0) {
-      console.log("Anomalie: Pièces présentes dans le state mais pas dans pieces");
-      toast({
-        title: "Anomalie détectée",
-        description: "Les pièces sont présentes mais n'ont pas été correctement chargées. Essayez de rafraîchir la page.",
-      });
-    }
-  }, [pieces, state.rooms]);
+
+  // Convertir le pieceSelectionnee en string pour le composant PieceSelect
+  const pieceSelectionneStr = pieceSelectionnee ? pieceSelectionnee.toString() : null;
+
+  // Adaptateur pour gérer les différences de type (string vs number) pour pieceSelectionnee
+  const handlePieceSelection = (pieceIdStr: string) => {
+    selectionnerPiece(pieceIdStr);
+  };
+
+  // Adaptateur pour modifier un travail
+  const handleModifierTravail = (travail: Travail) => {
+    modifierTravail(travail.id, travail);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 pb-12">
@@ -162,8 +158,8 @@ const TravauxPage = () => {
               <CardContent>
                 <PieceSelect 
                   pieces={pieces}
-                  selectedPieceId={pieceSelectionnee}
-                  onSelect={selectionnerPiece}
+                  selectedPieceId={pieceSelectionneStr}
+                  onSelect={handlePieceSelection}
                 />
               </CardContent>
             </Card>
@@ -180,15 +176,15 @@ const TravauxPage = () => {
                       onAddTravail={ajouterTravail}
                     />
 
-                    {pieceSelectionnee && travauxParPiece(pieceSelectionnee).length > 0 && (
+                    {travauxParPiece(pieceSelectionnee.toString()).length > 0 && (
                       <div className="mt-8">
                         <h3 className="text-lg font-medium mb-4">Travaux/Prestations ajoutés</h3>
                         <div className="space-y-3">
-                          {travauxParPiece(pieceSelectionnee).map(travail => (
+                          {travauxParPiece(pieceSelectionnee.toString()).map(travail => (
                             <TravailCard 
                               key={travail.id} 
                               travail={travail}
-                              onEdit={preparerModificationTravail}
+                              onEdit={handleModifierTravail}
                               onDelete={supprimerTravail}
                             />
                           ))}

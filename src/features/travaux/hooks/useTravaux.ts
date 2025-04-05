@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
-import { Travail, Piece } from '@/types';
+import { Travail } from '@/types';
 import { useProject } from '@/contexts/ProjectContext';
 import { toast } from '@/hooks/use-toast';
 import { useTravauxTypes } from '@/contexts/TravauxTypesContext';
@@ -17,55 +17,33 @@ export const useTravaux = () => {
 
   // Mise à jour du state quand les pièces changent
   useEffect(() => {
-    console.log("Effet de mise à jour des pièces dans useTravaux", {
-      roomsLength: state.rooms.length,
-      pieceSelectionnee
-    });
-    
     if (state.rooms.length > 0 && !pieceSelectionnee) {
-      console.log("Sélection automatique de la première pièce:", state.rooms[0].id);
       setPieceSelectionnee(state.rooms[0].id);
     } else if (state.rooms.length === 0) {
-      console.log("Aucune pièce disponible, réinitialisation de la sélection");
       setPieceSelectionnee(null);
     } else if (pieceSelectionnee && !state.rooms.find(room => room.id === pieceSelectionnee)) {
       // Si la pièce sélectionnée n'existe plus
-      console.log("La pièce sélectionnée n'existe plus, sélection d'une autre pièce");
       setPieceSelectionnee(state.rooms[0]?.id || null);
     }
   }, [state.rooms, pieceSelectionnee]);
 
   // Liste des pièces transformées pour l'interface
-  const pieces = state.rooms.map(room => {
-    console.log("Transformation de la pièce:", room);
-    return {
-      id: room.id,
-      nom: room.customName || room.name,
-      type: room.type,
-      surface: Number(room.surface),
-      surfaceMurs: Number(room.wallSurfaceRaw),
-      plinthes: Number(room.totalPlinthLength),
-      surfacePlinthes: Number(room.totalPlinthSurface),
-      surfaceMenuiseries: Number(room.totalMenuiserieSurface),
-      surfaceNetMurs: Number(room.netWallSurface),
-      menuiseries: room.menuiseries
-    };
-  });
+  const pieces = state.rooms.map(room => ({
+    id: room.id,
+    nom: room.customName || room.name,
+    type: room.type,
+    surface: Number(room.surface),
+    surfaceMurs: Number(room.wallSurfaceRaw),
+    plinthes: Number(room.totalPlinthLength),
+    surfacePlinthes: Number(room.totalPlinthSurface),
+    surfaceMenuiseries: Number(room.totalMenuiserieSurface),
+    surfaceNetMurs: Number(room.netWallSurface),
+    menuiseries: room.menuiseries
+  }));
 
   // Sélection d'une pièce
   const selectionnerPiece = (pieceId: string) => {
-    console.log("Sélection de la pièce:", pieceId);
     setPieceSelectionnee(pieceId);
-    // Ne pas réinitialiser le travail à modifier si on change vers la pièce qui contient ce travail
-    if (travailAModifier && travailAModifier.pieceId !== pieceId) {
-      resetTravailAModifier();
-    }
-  };
-
-  // Réinitialiser le travail en cours d'édition
-  const resetTravailAModifier = () => {
-    console.log("Réinitialisation du travail à modifier");
-    setTravailAModifier(null);
   };
 
   // Obtenir la pièce sélectionnée
@@ -74,31 +52,18 @@ export const useTravaux = () => {
     return pieces.find(piece => piece.id === pieceSelectionnee) || null;
   };
 
-  // Ajouter ou modifier un travail
-  const ajouterTravail = (travail: Omit<Travail, 'id'>) => {
+  // Ajouter un travail
+  const ajouterTravail = (travail: Travail) => {
     // Si on a un travail à modifier, on le modifie au lieu d'en ajouter un nouveau
     if (travailAModifier) {
-      console.log("Modification du travail existant:", travailAModifier.id);
-      const updatedTravail = {
+      modifierTravail(travailAModifier.id, {
         ...travail,
         id: travailAModifier.id
-      };
-      
-      dispatch({ 
-        type: 'UPDATE_TRAVAIL',
-        payload: { id: travailAModifier.id, travail: updatedTravail }
       });
-      
-      toast({
-        title: "Travail modifié",
-        description: `Les modifications ont été enregistrées`,
-      });
-      
-      resetTravailAModifier();
+      setTravailAModifier(null);
       return;
     }
     
-    // C'est un nouveau travail
     const newTravail = {
       ...travail,
       id: uuidv4()
@@ -111,27 +76,39 @@ export const useTravaux = () => {
     });
   };
 
-  // Charger un travail pour l'édition
-  const preparerModificationTravail = (travail: Travail) => {
-    console.log("Préparation pour modifier le travail:", travail);
-    setTravailAModifier(travail);
-    
-    // Si c'est une autre pièce, on change la sélection de pièce
-    if (travail.pieceId !== pieceSelectionnee) {
-      setPieceSelectionnee(travail.pieceId);
+  // Modifier un travail
+  const modifierTravail = (id: string, travail: Travail) => {
+    // Charger le travail dans le formulaire d'édition
+    const travailToEdit = state.travaux.find(t => t.id === id);
+    if (travailToEdit) {
+      setTravailAModifier(travailToEdit);
+      // Si c'est une autre pièce, on change la sélection de pièce
+      if (travailToEdit.pieceId.toString() !== pieceSelectionnee) {
+        setPieceSelectionnee(travailToEdit.pieceId.toString());
+      }
+      toast({
+        title: "Mode édition activé",
+        description: `Vous pouvez maintenant modifier le travail`,
+      });
+      return;
     }
     
-    toast({
-      title: "Mode édition activé",
-      description: `Vous pouvez maintenant modifier le travail`,
+    dispatch({ 
+      type: 'UPDATE_TRAVAIL',
+      payload: { id, travail }
     });
+    toast({
+      title: "Travail modifié",
+      description: `Les modifications ont été enregistrées`,
+    });
+    setTravailAModifier(null);
   };
 
   // Supprimer un travail
   const supprimerTravail = (id: string) => {
     // Si on supprime le travail en cours d'édition, on réinitialise l'état
     if (travailAModifier && travailAModifier.id === id) {
-      resetTravailAModifier();
+      setTravailAModifier(null);
     }
     
     dispatch({ type: 'DELETE_TRAVAIL', payload: id });
@@ -144,7 +121,7 @@ export const useTravaux = () => {
   // Obtenir les travaux pour une pièce spécifique
   const travauxParPiece = (pieceId: string) => {
     return state.travaux.filter(travail => 
-      travail.pieceId === pieceId
+      travail.pieceId.toString() === pieceId
     );
   };
 
@@ -191,7 +168,7 @@ export const useTravaux = () => {
     selectionnerPiece,
     getPieceSelectionnee,
     ajouterTravail,
-    preparerModificationTravail,
+    modifierTravail,
     supprimerTravail,
     travauxParPiece,
     enregistrerTravaux,
@@ -199,7 +176,6 @@ export const useTravaux = () => {
     resetProject,
     getSousTypeInfo,
     travaux: state.travaux,
-    travailAModifier,
-    resetTravailAModifier
+    travailAModifier
   };
 };

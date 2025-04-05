@@ -5,8 +5,8 @@ import { Piece } from '@/types';
 
 interface PieceSelectProps {
   pieces: Piece[];
-  selectedPieceId: string | null;  // Modifié: number -> string
-  onSelect: (pieceId: string) => void;  // Modifié: number -> string
+  selectedPieceId: number | null;
+  onSelect: (pieceId: number) => void;
 }
 
 const PieceSelect: React.FC<PieceSelectProps> = ({ 
@@ -20,9 +20,9 @@ const PieceSelect: React.FC<PieceSelectProps> = ({
         pieces.map(piece => (
           <Button
             key={piece.id}
-            variant={selectedPieceId === piece.id ? "default" : "outline"}  // Comparaison directe sans conversion
+            variant={selectedPieceId === Number(piece.id) ? "default" : "outline"}
             className="justify-start"
-            onClick={() => onSelect(piece.id)}  // Pas de conversion en nombre
+            onClick={() => onSelect(Number(piece.id))}
           >
             {piece.nom || piece.name} ({piece.surface?.toFixed(2) || "0.00"} m²)
           </Button>
