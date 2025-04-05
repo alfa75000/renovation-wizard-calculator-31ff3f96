@@ -105,7 +105,6 @@ const RenovationEstimator: React.FC = () => {
   const handleRoomChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     
-    // Handle nested properties
     if (name.includes(".")) {
       const [parent, child] = name.split(".");
       setNewRoom((prev) => ({
@@ -128,7 +127,6 @@ const RenovationEstimator: React.FC = () => {
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, checked } = e.target;
     
-    // Handle nested properties
     if (name.includes(".")) {
       const [parent, child] = name.split(".");
       setNewRoom((prev) => ({
@@ -143,7 +141,6 @@ const RenovationEstimator: React.FC = () => {
     }
   };
 
-  // Calculate surface based on length and width
   useEffect(() => {
     if (newRoom.length && newRoom.width) {
       const calculatedSurface = (parseFloat(newRoom.length) * parseFloat(newRoom.width)).toFixed(2);
@@ -151,7 +148,6 @@ const RenovationEstimator: React.FC = () => {
     }
   }, [newRoom.length, newRoom.width]);
 
-  // Calculate raw wall surface based on dimensions
   useEffect(() => {
     if (newRoom.length && newRoom.width && newRoom.height) {
       const perimeter = 2 * (parseFloat(newRoom.length) + parseFloat(newRoom.width));
@@ -171,7 +167,6 @@ const RenovationEstimator: React.FC = () => {
       menuiseries: [...prev.menuiseries, menuiserieItem]
     }));
     
-    // Reset fields but keep type
     setNewMenuiserie({
       type: newMenuiserie.type,
       largeur: "0.83",
@@ -190,14 +185,12 @@ const RenovationEstimator: React.FC = () => {
   };
 
   const handleAddRoom = () => {
-    // Basic validation
     if (!newRoom.length || !newRoom.width || !newRoom.height) {
       toast.error("Veuillez remplir toutes les dimensions de la pièce");
       return;
     }
 
     if (editingRoom) {
-      // Update existing room
       setRooms((prev) =>
         prev.map((room) =>
           room.id === editingRoom
@@ -208,7 +201,6 @@ const RenovationEstimator: React.FC = () => {
       setEditingRoom(null);
       toast.success("Pièce mise à jour avec succès");
     } else {
-      // Add new room
       const roomName = newRoom.name || `${newRoom.type}${newRoom.customName ? ` ${newRoom.customName}` : ''}`;
       setRooms((prev) => [
         ...prev,
@@ -217,7 +209,6 @@ const RenovationEstimator: React.FC = () => {
       toast.success(`${roomName} ajouté avec succès`);
     }
     
-    // Reset form
     setNewRoom({
       name: "",
       customName: "",
@@ -268,7 +259,6 @@ const RenovationEstimator: React.FC = () => {
       .toFixed(2);
   };
 
-  // Calculate paint needed in liters per m² (standard 0.25L per m² for 2 coats)
   const calculatePaintNeeded = (surface: number) => {
     return ((surface * 0.25) / 10).toFixed(2);
   };
@@ -286,7 +276,6 @@ const RenovationEstimator: React.FC = () => {
         <p className="mt-2 text-lg">Estimez facilement vos projets de rénovation</p>
       </div>
 
-      {/* Property Type Section */}
       <Card className="mb-8 shadow-md">
         <CardContent className="p-6">
           <div className="flex items-center mb-4">
@@ -367,7 +356,6 @@ const RenovationEstimator: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Rooms to Renovate Section */}
       <Card className="mb-8 shadow-md">
         <CardContent className="p-6">
           <div className="flex items-center mb-4">
@@ -514,7 +502,6 @@ const RenovationEstimator: React.FC = () => {
               </div>
             </div>
             
-            {/* Menuiseries */}
             <div className="mt-6 mb-4">
               <h4 className="text-md font-medium mb-3">Menuiseries</h4>
               
@@ -777,7 +764,6 @@ const RenovationEstimator: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Toggle Button for Show/Hide Sections */}
       {rooms.length > 0 && (
         <div className="flex justify-center mb-4">
           <Button 
@@ -802,7 +788,6 @@ const RenovationEstimator: React.FC = () => {
 
       {rooms.length > 0 && showAllSections && (
         <>
-          {/* Surfaces & Volumes Summary */}
           <Card className="mb-8 shadow-md">
             <CardContent className="p-6">
               <h2 className="text-xl font-semibold mb-4">Récapitulatif des surfaces et volumes</h2>
@@ -845,7 +830,6 @@ const RenovationEstimator: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* Painting Section */}
           <Card className="mb-8 shadow-md">
             <CardContent className="p-6">
               <div className="flex items-center mb-4">
@@ -926,7 +910,6 @@ const RenovationEstimator: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* Flooring Section */}
           <Card className="mb-8 shadow-md">
             <CardContent className="p-6">
               <h2 className="text-xl font-semibold mb-4">Traitements de Sol</h2>
@@ -964,3 +947,24 @@ const RenovationEstimator: React.FC = () => {
               <div className="p-4 bg-gray-50 rounded-md mb-4 room-card">
                 <h3 className="font-medium mb-2">Dépose de sol à prévoir</h3>
                 <Separator className="my-2" />
+                <p>
+                  Surface totale:{" "}
+                  {rooms
+                    .reduce(
+                      (total, room) =>
+                        total + (room.floor.removal ? parseFloat(room.surface || "0") : 0),
+                      0
+                    )
+                    .toFixed(2)}{" "}
+                  m²
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </>
+      )}
+    </div>
+  );
+};
+
+export default RenovationEstimator;
