@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
 import { Room, PropertyType, Travail } from '@/types';
 import { useLocalStorageSync } from '@/hooks/useLocalStorageSync';
+import { toast } from '@/hooks/use-toast';
 
 // Interface pour définir l'état global du projet
 interface ProjectState {
@@ -119,9 +120,16 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       try {
         // Chargement des pièces
         const savedRooms = loadRooms();
-        if (savedRooms && Array.isArray(savedRooms) && savedRooms.length > 0) {
+        if (savedRooms && Array.isArray(savedRooms)) {
           console.log("Chargement initial des pièces:", savedRooms);
-          dispatch({ type: 'SET_ROOMS', payload: savedRooms });
+          if (savedRooms.length > 0) {
+            dispatch({ type: 'SET_ROOMS', payload: savedRooms });
+            console.log("Pièces chargées avec succès:", savedRooms.length);
+          } else {
+            console.log("Aucune pièce trouvée dans localStorage");
+          }
+        } else {
+          console.log("Pas de pièces valides dans localStorage");
         }
         
         // Chargement des propriétés
@@ -137,16 +145,24 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
         }
       } catch (error) {
         console.error("Erreur lors du chargement initial des données:", error);
+        toast({
+          title: "Erreur de chargement",
+          description: "Un problème est survenu lors du chargement de vos données. Veuillez rafraîchir la page.",
+          variant: "destructive"
+        });
       }
     };
 
     // Ajouter un petit délai pour s'assurer que le localStorage est disponible
-    setTimeout(loadInitialData, 100);
+    setTimeout(loadInitialData, 300);
   }, []);
 
   // Force la sauvegarde quand les données changent
   useEffect(() => {
-    saveRooms(state.rooms);
+    if (state.rooms.length > 0) {
+      console.log("Sauvegarde des pièces:", state.rooms);
+      saveRooms(state.rooms);
+    }
   }, [state.rooms]);
 
   useEffect(() => {

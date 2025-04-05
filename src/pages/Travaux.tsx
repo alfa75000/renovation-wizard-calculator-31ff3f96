@@ -62,9 +62,10 @@ const TravauxPage = () => {
     console.log("Rooms dans le state:", state.rooms);
     
     if (pieces.length === 0 && state.rooms.length > 0) {
+      console.log("Anomalie: Pièces présentes dans le state mais pas dans pieces");
       toast({
-        title: "Attention",
-        description: "Les pièces sont présentes dans le state mais n'ont pas été transformées correctement.",
+        title: "Anomalie détectée",
+        description: "Les pièces sont présentes mais n'ont pas été correctement chargées. Essayez de rafraîchir la page.",
       });
     }
   }, [pieces, state.rooms]);

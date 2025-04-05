@@ -8,8 +8,9 @@ export const useLocalStorageSync = <T,>(key: string, data: T) => {
     try {
       // Vérifier si les données sont définies avant de les stocker
       if (data !== undefined && data !== null) {
-        localStorage.setItem(key, JSON.stringify(data));
-        console.log(`Données ${key} synchronisées avec localStorage`, data);
+        const dataString = JSON.stringify(data);
+        localStorage.setItem(key, dataString);
+        console.log(`Données ${key} synchronisées avec localStorage:`, data);
       }
     } catch (error) {
       console.error(`Erreur lors de la synchronisation des données ${key}:`, error);
