@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { 
   Card, 
@@ -671,3 +672,62 @@ const Travaux = () => {
                           
                           return (
                             <Card key={travail.id} className="p-3">
+                              <div className="flex justify-between">
+                                <div>
+                                  <p className="font-medium">
+                                    {travail.typeTravauxLabel}: {travail.sousTypeLabel}
+                                    {travail.personnalisation && ` (${travail.personnalisation})`}
+                                  </p>
+                                  <p className="text-sm text-gray-600">
+                                    {formaterQuantite(travail.quantite)} {travail.unite} × {formaterPrix(travail.prixUnitaire)}/{travail.unite}
+                                  </p>
+                                  <p className="text-xs text-gray-500">
+                                    Fournitures: {formaterPrix(travail.prixFournitures)} | Main d'œuvre: {formaterPrix(travail.prixMainOeuvre)} | TVA: {travail.tauxTVA}%
+                                  </p>
+                                </div>
+                                <div className="flex flex-col items-end">
+                                  <p className="font-medium">{formaterPrix(total)}</p>
+                                  <div className="flex space-x-1 mt-1">
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      onClick={() => modifierTravail(travail)}
+                                      className="h-7 px-2 text-xs"
+                                    >
+                                      <Pencil className="h-3 w-3 mr-1" />
+                                      Editer
+                                    </Button>
+                                    <Button 
+                                      variant="destructive" 
+                                      size="sm" 
+                                      onClick={() => supprimerTravail(travail.id)}
+                                      className="h-7 px-2 text-xs"
+                                    >
+                                      <X className="h-3 w-3 mr-1" />
+                                      Supprimer
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            </Card>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-center py-10 text-gray-500">
+                  <Home className="h-10 w-10 mx-auto mb-4 opacity-50" />
+                  <p>Veuillez sélectionner une pièce pour commencer</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Travaux;
