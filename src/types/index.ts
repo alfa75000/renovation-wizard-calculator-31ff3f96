@@ -12,11 +12,12 @@ export interface PropertyType {
 export interface Menuiserie {
   id: string;
   type: string;
-  name: string;
-  largeur: string;
-  hauteur: string;
-  quantity: number;
-  surface: string;
+  name?: string;
+  nom?: string;
+  largeur: number;
+  hauteur: number;
+  quantity?: number;
+  surface: number;
 }
 
 export interface Room {

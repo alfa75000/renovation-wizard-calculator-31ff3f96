@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
-import { Travail, Piece } from '@/types';
+import { Travail, Piece, Menuiserie } from '@/types';
 import { useProject } from '@/contexts/ProjectContext';
 import { arrondir2Decimales } from '@/lib/utils';
 
@@ -46,8 +46,8 @@ const piecesParDefaut: Piece[] = [
     surfaceMenuiseries: 4.2,
     surfaceNetMurs: 60.8,
     menuiseries: [
-      { id: "1", nom: "Porte 1", type: "porte", largeur: 0.83, hauteur: 2.04, surface: "1.69" },
-      { id: "2", nom: "Fenêtre 1", type: "fenêtre", largeur: 1.2, hauteur: 1.0, surface: "1.2" }
+      { id: "1", nom: "Porte 1", type: "porte", largeur: 0.83, hauteur: 2.04, surface: 1.69 },
+      { id: "2", nom: "Fenêtre 1", type: "fenêtre", largeur: 1.2, hauteur: 1.0, surface: 1.2 }
     ]
   },
   { 
@@ -60,8 +60,8 @@ const piecesParDefaut: Piece[] = [
     surfaceMenuiseries: 2.89,
     surfaceNetMurs: 42.11,
     menuiseries: [
-      { id: "1", nom: "Porte 1", type: "porte", largeur: 0.83, hauteur: 2.04, surface: "1.69" },
-      { id: "2", nom: "Fenêtre 1", type: "fenêtre", largeur: 1.2, hauteur: 1.0, surface: "1.2" }
+      { id: "1", nom: "Porte 1", type: "porte", largeur: 0.83, hauteur: 2.04, surface: 1.69 },
+      { id: "2", nom: "Fenêtre 1", type: "fenêtre", largeur: 1.2, hauteur: 1.0, surface: 1.2 }
     ]
   }
 ];
