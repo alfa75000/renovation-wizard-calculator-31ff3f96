@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { 
   Card, 
@@ -27,22 +26,9 @@ import {
   X,
   Pencil,
   Save,
-  ArrowRight,
-  RefreshCw
+  ArrowRight
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { formaterPrix, formaterQuantite, arrondir2Decimales } from "@/lib/utils";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 
 // Types de travaux principaux
 const travauxTypes = [
@@ -136,31 +122,8 @@ const sousTravaux = {
 // Unités disponibles
 const unites = ["M²", "Ml", "M3", "Unité", "Ens.", "Forfait"];
 
-// Définition de l'interface pour les menuiseries
-interface Menuiserie {
-  id: number;
-  nom: string;
-  type: string;
-  largeur: number;
-  hauteur: number;
-  surface: number;
-}
-
-// Définition de l'interface pour les pièces
-interface Piece {
-  id: number;
-  nom: string;
-  surface: number;
-  surfaceMurs: number;
-  plinthes: number;
-  surfacePlinthes: number;
-  surfaceMenuiseries: number;
-  surfaceNetMurs: number;
-  menuiseries: Menuiserie[];
-}
-
-// Pièces par défaut à utiliser si aucune pièce n'est trouvée dans le localStorage
-const piecesParDefaut: Piece[] = [
+// Exemple de pièces (à remplacer par les données réelles)
+const piecesExemple = [
   { 
     id: 1, 
     nom: "Salon", 
@@ -191,15 +154,6 @@ const piecesParDefaut: Piece[] = [
   }
 ];
 
-// Taux de TVA disponibles
-const tauxTVA = [
-  { id: "0", taux: 0, label: "0 %" },
-  { id: "5.5", taux: 5.5, label: "5,5 %" },
-  { id: "10", taux: 10, label: "10 %" },
-  { id: "20", taux: 20, label: "20 %" },
-  { id: "autre", taux: 0, label: "Autre" }
-];
-
 // Type pour un travail
 interface Travail {
   id: string;
@@ -215,12 +169,11 @@ interface Travail {
   prixFournitures: number;
   prixMainOeuvre: number;
   prixUnitaire: number;
-  tauxTVA: number; // Ajout du taux de TVA
 }
 
 const Travaux = () => {
   const navigate = useNavigate();
-  const [pieces, setPieces] = useState<Piece[]>([]);
+  const [pieces] = useState(piecesExemple);
   const [pieceSelectionnee, setPieceSelectionnee] = useState<number | null>(null);
   const [typeTravauxSelectionne, setTypeTravauxSelectionne] = useState<string | null>(null);
   const [sousTypeSelectionne, setSousTypeSelectionne] = useState<string | null>(null);
@@ -230,24 +183,12 @@ const Travaux = () => {
   const [travauxAjoutes, setTravauxAjoutes] = useState<Travail[]>([]);
   const [prixFournitures, setPrixFournitures] = useState<number | null>(null);
   const [prixMainOeuvre, setPrixMainOeuvre] = useState<number | null>(null);
-  const [tauxTVASelectionne, setTauxTVASelectionne] = useState<number>(10); // 10% par défaut
-  const [tauxTVAAutre, setTauxTVAAutre] = useState<number>(0);
 
-  // Chargement des données depuis le localStorage au montage du composant
+  // Chargement des travaux depuis le localStorage au montage du composant
   useEffect(() => {
-    // Chargement des travaux
     const travauxSauvegardes = localStorage.getItem('travaux');
     if (travauxSauvegardes) {
       setTravauxAjoutes(JSON.parse(travauxSauvegardes));
-    }
-    
-    // Chargement des pièces
-    const piecesSauvegardees = localStorage.getItem('rooms');
-    if (piecesSauvegardees) {
-      setPieces(JSON.parse(piecesSauvegardees));
-    } else {
-      // Utiliser les pièces par défaut si aucune n'est trouvée
-      setPieces(piecesParDefaut);
     }
   }, []);
 
@@ -298,9 +239,9 @@ const Travaux = () => {
     return sousType?.unite || "M²";
   };
 
-  // Calculer le prix unitaire total avec arrondi
+  // Calculer le prix unitaire total
   const calculerPrixUnitaire = (prixFourn: number, prixMO: number) => {
-    return arrondir2Decimales(prixFourn + prixMO);
+    return prixFourn + prixMO;
   };
 
   // Ajouter un travail à la liste
@@ -319,28 +260,14 @@ const Travaux = () => {
     const typeTravauxObj = travauxTypes.find(t => t.id === typeTravauxSelectionne);
     if (!typeTravauxObj) return;
 
-    // Calculer prix fournitures avec arrondi à 2 décimales
-    const prixFournituresDefaut = arrondir2Decimales(
-      (prixFournitures !== null ? prixFournitures : 
-      (sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux]?.find(
-        st => st.id === sousTypeSelectionne)?.prixUnitaire || 0) * 0.4)
-    );
-    
-    // Calculer prix main d'œuvre avec arrondi à 2 décimales
-    const prixMainOeuvreDefaut = arrondir2Decimales(
-      (prixMainOeuvre !== null ? prixMainOeuvre : 
-      (sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux]?.find(
-        st => st.id === sousTypeSelectionne)?.prixUnitaire || 0) * 0.6)
-    );
+    const prixFournituresDefaut = Math.round(prixFournitures !== null ? prixFournitures : 
+      (sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux]?.find(st => st.id === sousTypeSelectionne)?.prixUnitaire || 0) * 0.4 * 100) / 100;
+    const prixMainOeuvreDefaut = Math.round(prixMainOeuvre !== null ? prixMainOeuvre : 
+      (sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux]?.find(st => st.id === sousTypeSelectionne)?.prixUnitaire || 0) * 0.6 * 100) / 100;
 
-    const prixFourn = prixFournitures !== null ? arrondir2Decimales(prixFournitures) : prixFournituresDefaut;
-    const prixMO = prixMainOeuvre !== null ? arrondir2Decimales(prixMainOeuvre) : prixMainOeuvreDefaut;
+    const prixFourn = prixFournitures !== null ? prixFournitures : prixFournituresDefaut;
+    const prixMO = prixMainOeuvre !== null ? prixMainOeuvre : prixMainOeuvreDefaut;
     const prixTotal = calculerPrixUnitaire(prixFourn, prixMO);
-    
-    let tauxFinal = tauxTVASelectionne;
-    if (tauxTVASelectionne === 0 && tauxTVAAutre > 0) {
-      tauxFinal = arrondir2Decimales(tauxTVAAutre);
-    }
 
     const nouveauTravail: Travail = {
       id: `${Date.now()}`,
@@ -351,12 +278,11 @@ const Travaux = () => {
       sousTypeId: sousTypeSelectionne,
       sousTypeLabel: sousType.label,
       personnalisation: personnalisation,
-      quantite: arrondir2Decimales(quantite),
+      quantite,
       unite,
       prixFournitures: prixFourn,
       prixMainOeuvre: prixMO,
-      prixUnitaire: prixTotal,
-      tauxTVA: tauxFinal
+      prixUnitaire: prixTotal
     };
 
     setTravauxAjoutes([...travauxAjoutes, nouveauTravail]);
@@ -398,14 +324,19 @@ const Travaux = () => {
 
   // Calculer le total
   const calculerTotal = () => {
-    return parseFloat(travauxAjoutes.reduce((total, travail) => {
+    return travauxAjoutes.reduce((total, travail) => {
       return total + (travail.quantite * travail.prixUnitaire);
-    }, 0).toFixed(2));
+    }, 0);
   };
 
   // Filtrer les travaux par pièce
   const travauxParPiece = (pieceId: number) => {
     return travauxAjoutes.filter(t => t.pieceId === pieceId);
+  };
+
+  // Formater le prix
+  const formaterPrix = (prix: number) => {
+    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(prix);
   };
 
   // Enregistrer les travaux
@@ -423,33 +354,6 @@ const Travaux = () => {
     navigate('/recapitulatif');
   };
 
-  // Reset all project data
-  const resetProject = () => {
-    setPieceSelectionnee(null);
-    setTypeTravauxSelectionne(null);
-    setSousTypeSelectionne(null);
-    setPersonnalisation("");
-    setQuantiteModifiee(null);
-    setUniteSelectionnee(null);
-    setTravauxAjoutes([]);
-    setPrixFournitures(null);
-    setPrixMainOeuvre(null);
-    setTauxTVASelectionne(10);
-    setTauxTVAAutre(0);
-    setPieces(piecesParDefaut); // Réinitialiser les pièces aux valeurs par défaut
-    
-    // Clear ALL localStorage data
-    localStorage.clear();
-    
-    // Redirect to the main page to reset the rooms
-    navigate('/');
-    
-    toast({
-      title: "Projet réinitialisé",
-      description: "Toutes les données du projet ont été effacées. Vous allez être redirigé vers la page principale.",
-    });
-  };
-
   return (
     <div className="min-h-screen bg-gray-50 pb-12">
       <div className="max-w-6xl mx-auto p-4">
@@ -458,31 +362,6 @@ const Travaux = () => {
             Travaux à prévoir
           </h1>
           <p className="mt-2 text-lg">Sélectionnez les travaux pour chaque pièce</p>
-          
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="reset" className="mt-4">
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Nouveau projet
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Êtes-vous sûr de vouloir créer un nouveau projet ?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Cette action va réinitialiser toutes les données de votre projet actuel.
-                  Toutes les pièces et travaux associés seront supprimés.
-                  Cette action est irréversible.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Annuler</AlertDialogCancel>
-                <AlertDialogAction onClick={resetProject} className="bg-orange-500 hover:bg-orange-600">
-                  Réinitialiser
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
         </div>
 
         <div className="mb-4 flex justify-between">
@@ -517,23 +396,16 @@ const Travaux = () => {
             </CardHeader>
             <CardContent>
               <div className="flex flex-col space-y-2">
-                {pieces.length > 0 ? (
-                  pieces.map(piece => (
-                    <Button
-                      key={piece.id}
-                      variant={pieceSelectionnee === piece.id ? "default" : "outline"}
-                      className="justify-start"
-                      onClick={() => selectionnerPiece(piece.id)}
-                    >
-                      {piece.nom} ({piece.surface} m²)
-                    </Button>
-                  ))
-                ) : (
-                  <div className="text-center py-4 text-gray-500">
-                    <p>Aucune pièce disponible.</p>
-                    <p className="text-sm mt-1">Ajoutez des pièces depuis l'estimateur principal.</p>
-                  </div>
-                )}
+                {pieces.map(piece => (
+                  <Button
+                    key={piece.id}
+                    variant={pieceSelectionnee === piece.id ? "default" : "outline"}
+                    className="justify-start"
+                    onClick={() => selectionnerPiece(piece.id)}
+                  >
+                    {piece.nom} ({piece.surface} m²)
+                  </Button>
+                ))}
               </div>
             </CardContent>
           </Card>
@@ -584,83 +456,39 @@ const Travaux = () => {
 
                     {/* Sélection du sous-type */}
                     {typeTravauxSelectionne && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium mb-1">Prestations</label>
-                          <Select 
-                            value={sousTypeSelectionne || ""} 
-                            onValueChange={(value) => {
-                              setSousTypeSelectionne(value);
-                              // Réinitialiser personnalisation si ce n'est pas "autre"
-                              if (value !== "autre") {
-                                setPersonnalisation("");
-                              }
-                              
-                              // Définir l'unité par défaut du sous-type
-                              const sousType = sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux]?.find(
-                                st => st.id === value
-                              );
-                              setUniteSelectionnee(sousType?.unite || null);
-
-                              // Réinitialiser les prix personnalisés
-                              setPrixFournitures(null);
-                              setPrixMainOeuvre(null);
-                            }}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Sélectionnez une prestation" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux].map(sousType => (
-                                <SelectItem key={sousType.id} value={sousType.id}>
-                                  {sousType.label} ({formaterPrix(sousType.prixUnitaire)}/{sousType.unite})
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium mb-1">Taux de TVA Principal</label>
-                          <div className="flex gap-2">
-                            <Select 
-                              value={tauxTVASelectionne === 0 && tauxTVAAutre > 0 ? "autre" : tauxTVASelectionne.toString()} 
-                              onValueChange={(value) => {
-                                if (value === "autre") {
-                                  setTauxTVASelectionne(0);
-                                } else {
-                                  setTauxTVASelectionne(parseFloat(value));
-                                }
-                              }}
-                            >
-                              <SelectTrigger className="flex-grow">
-                                <SelectValue placeholder="Sélectionnez un taux de TVA" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {tauxTVA.map(taux => (
-                                  <SelectItem key={taux.id} value={taux.id}>
-                                    {taux.label}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Prestations</label>
+                        <Select 
+                          value={sousTypeSelectionne || ""} 
+                          onValueChange={(value) => {
+                            setSousTypeSelectionne(value);
+                            // Réinitialiser personnalisation si ce n'est pas "autre"
+                            if (value !== "autre") {
+                              setPersonnalisation("");
+                            }
                             
-                            {(tauxTVASelectionne === 0 || tauxTVA.find(t => t.id === "autre")?.id === tauxTVASelectionne.toString()) && (
-                              <div className="flex items-center">
-                                <Input 
-                                  type="number"
-                                  value={tauxTVAAutre}
-                                  onChange={(e) => setTauxTVAAutre(parseFloat(e.target.value) || 0)}
-                                  className="w-24"
-                                  min="0"
-                                  max="100"
-                                  step="0.1"
-                                />
-                                <span className="ml-1">%</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
+                            // Définir l'unité par défaut du sous-type
+                            const sousType = sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux]?.find(
+                              st => st.id === value
+                            );
+                            setUniteSelectionnee(sousType?.unite || null);
+
+                            // Réinitialiser les prix personnalisés
+                            setPrixFournitures(null);
+                            setPrixMainOeuvre(null);
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Sélectionnez une prestation" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux].map(sousType => (
+                              <SelectItem key={sousType.id} value={sousType.id}>
+                                {sousType.label} ({formaterPrix(sousType.prixUnitaire)}/{sousType.unite})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                     )}
 
@@ -686,7 +514,6 @@ const Travaux = () => {
                               type="number"
                               value={quantiteModifiee !== null ? quantiteModifiee : getQuantiteParDefaut()}
                               onChange={(e) => setQuantiteModifiee(parseFloat(e.target.value) || 0)}
-                              step="0.01"
                             />
                           </div>
                           <Select 
@@ -706,12 +533,12 @@ const Travaux = () => {
                           </Select>
                         </div>
                         <p className="text-xs text-gray-500 mt-1">
-                          Quantité par défaut: {formaterQuantite(getQuantiteParDefaut())} {getUniteParDefaut()}
+                          Quantité par défaut: {getQuantiteParDefaut()} {getUniteParDefaut()}
                         </p>
                       </div>
                     )}
 
-                    {/* Prix des fournitures et de la main d'œuvre */}
+                    {/* Prix des fournitures et de la main d'oeuvre */}
                     {sousTypeSelectionne && (
                       <>
                         <div>
@@ -721,7 +548,6 @@ const Travaux = () => {
                             value={prixFournitures !== null ? prixFournitures : 
                               (sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux]?.find(st => st.id === sousTypeSelectionne)?.prixUnitaire || 0) * 0.4}
                             onChange={(e) => setPrixFournitures(parseFloat(e.target.value) || 0)}
-                            step="0.01"
                           />
                         </div>
                         <div>
@@ -731,7 +557,6 @@ const Travaux = () => {
                             value={prixMainOeuvre !== null ? prixMainOeuvre : 
                               (sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux]?.find(st => st.id === sousTypeSelectionne)?.prixUnitaire || 0) * 0.6}
                             onChange={(e) => setPrixMainOeuvre(parseFloat(e.target.value) || 0)}
-                            step="0.01"
                           />
                         </div>
                         <div>
@@ -762,59 +587,53 @@ const Travaux = () => {
                       <h3 className="text-lg font-medium mb-4">Travaux ajoutés</h3>
                       <div className="space-y-3">
                         {travauxParPiece(pieceSelectionnee).map(travail => {
-                          const total = parseFloat((travail.quantite * travail.prixUnitaire).toFixed(2));
+                          const total = travail.quantite * travail.prixUnitaire;
                           const type = travauxTypes.find(t => t.id === travail.typeTravauxId);
                           
                           return (
                             <Card key={travail.id} className="p-3">
-                              <div className="flex justify-between">
+                              <div className="flex justify-between items-start">
                                 <div>
-                                  <p className="font-medium">
-                                    {travail.typeTravauxLabel}: {travail.sousTypeLabel}
-                                    {travail.personnalisation && ` (${travail.personnalisation})`}
-                                  </p>
-                                  <p className="text-sm text-gray-600">
-                                    {formaterQuantite(travail.quantite)} {travail.unite} × {formaterPrix(travail.prixUnitaire)}/{travail.unite}
-                                  </p>
-                                  <p className="text-xs text-gray-500">
-                                    Fournitures: {formaterPrix(travail.prixFournitures)} | Main d'œuvre: {formaterPrix(travail.prixMainOeuvre)} | TVA: {travail.tauxTVA}%
-                                  </p>
-                                </div>
-                                <div className="flex flex-col items-end">
-                                  <p className="font-medium">{formaterPrix(total)}</p>
-                                  <div className="flex space-x-1 mt-1">
-                                    <Button 
-                                      variant="outline" 
-                                      size="sm" 
-                                      onClick={() => modifierTravail(travail)}
-                                      className="h-7 px-2 text-xs"
-                                    >
-                                      <Pencil className="h-3 w-3 mr-1" />
-                                      Editer
-                                    </Button>
-                                    <Button 
-                                      variant="destructive" 
-                                      size="sm" 
-                                      onClick={() => supprimerTravail(travail.id)}
-                                      className="h-7 px-2 text-xs"
-                                    >
-                                      <X className="h-3 w-3 mr-1" />
-                                      Supprimer
-                                    </Button>
+                                  <div className="flex items-center">
+                                    {type?.icon}
+                                    <span className="font-medium ml-2">
+                                      {travail.typeTravauxLabel}: {travail.sousTypeLabel}
+                                      {travail.personnalisation && ` (${travail.personnalisation})`}
+                                    </span>
                                   </div>
+                                  <div className="text-sm mt-1">
+                                    {travail.quantite} {travail.unite} × {formaterPrix(travail.prixUnitaire)}/{travail.unite} = {formaterPrix(total)}
+                                  </div>
+                                  <div className="text-xs text-gray-600">
+                                    Fournitures: {formaterPrix(travail.prixFournitures)}/{travail.unite} | 
+                                    Main d'œuvre: {formaterPrix(travail.prixMainOeuvre)}/{travail.unite}
+                                  </div>
+                                </div>
+                                <div className="flex space-x-1">
+                                  <Button variant="ghost" size="sm" onClick={() => modifierTravail(travail)}>
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                  <Button variant="ghost" size="sm" onClick={() => supprimerTravail(travail.id)}>
+                                    <X className="h-4 w-4" />
+                                  </Button>
                                 </div>
                               </div>
                             </Card>
                           );
                         })}
+                        
+                        <div className="mt-4 text-right">
+                          <p className="text-lg font-bold">
+                            Total: {formaterPrix(calculerTotal())}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   )}
                 </>
               ) : (
-                <div className="text-center py-10 text-gray-500">
-                  <Home className="h-10 w-10 mx-auto mb-4 opacity-50" />
-                  <p>Veuillez sélectionner une pièce pour commencer</p>
+                <div className="text-center py-8 text-gray-500">
+                  Veuillez sélectionner une pièce pour configurer les travaux
                 </div>
               )}
             </CardContent>

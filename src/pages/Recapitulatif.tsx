@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { 
   Card, 
@@ -9,21 +10,21 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Printer } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
+// Type pour un travail
 interface Travail {
   id: string;
   pieceId: number;
   pieceName: string;
   typeTravauxId: string;
-  typeTravauxLabel: string;
+  typeTravauxLabel: string; // Type de travaux (ajouté)
   sousTypeId: string;
   sousTypeLabel: string;
   personnalisation: string;
   quantite: number;
   unite: string;
-  prixFournitures: number;
-  prixMainOeuvre: number;
+  prixFournitures: number; // Prix des fournitures
+  prixMainOeuvre: number; // Prix de la main d'oeuvre
   prixUnitaire: number;
-  tauxTVA: number;
 }
 
 const Recapitulatif = () => {
@@ -31,62 +32,40 @@ const Recapitulatif = () => {
   const [travaux, setTravaux] = useState<Travail[]>([]);
 
   useEffect(() => {
+    // Charger les travaux depuis le localStorage
     const travauxSauvegardes = localStorage.getItem('travaux');
     if (travauxSauvegardes) {
       setTravaux(JSON.parse(travauxSauvegardes));
     }
   }, []);
 
+  // Formater le prix
   const formaterPrix = (prix: number) => {
-    const prixArrondi = Math.round(prix * 100) / 100;
-    return new Intl.NumberFormat('fr-FR', { 
-      style: 'currency', 
-      currency: 'EUR',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(prixArrondi);
+    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(prix);
   };
 
-  const formaterQuantite = (quantite: number) => {
-    const quantiteArrondie = Math.round(quantite * 100) / 100;
-    return new Intl.NumberFormat('fr-FR', { 
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 2
-    }).format(quantiteArrondie);
-  };
-
+  // Calculer le total général
   const calculerTotalGeneral = () => {
-    return Math.round(travaux.reduce((total, travail) => {
+    return travaux.reduce((total, travail) => {
       return total + (travail.quantite * travail.prixUnitaire);
-    }, 0) * 100) / 100;
+    }, 0);
   };
 
+  // Calculer le total des fournitures
   const calculerTotalFournitures = () => {
-    return Math.round(travaux.reduce((total, travail) => {
+    return travaux.reduce((total, travail) => {
       return total + (travail.quantite * travail.prixFournitures);
-    }, 0) * 100) / 100;
+    }, 0);
   };
 
+  // Calculer le total de la main d'oeuvre
   const calculerTotalMainOeuvre = () => {
-    return Math.round(travaux.reduce((total, travail) => {
+    return travaux.reduce((total, travail) => {
       return total + (travail.quantite * travail.prixMainOeuvre);
-    }, 0) * 100) / 100;
+    }, 0);
   };
 
-  const calculerTotalTVA = () => {
-    return Math.round(travaux.reduce((total, travail) => {
-      const montantHT = travail.quantite * travail.prixUnitaire;
-      const montantTVA = montantHT * (travail.tauxTVA / 100);
-      return total + montantTVA;
-    }, 0) * 100) / 100;
-  };
-
-  const calculerTotalTTC = () => {
-    const totalHT = calculerTotalGeneral();
-    const totalTVA = calculerTotalTVA();
-    return Math.round((totalHT + totalTVA) * 100) / 100;
-  };
-
+  // Regrouper les travaux par pièce
   const travauxParPiece = () => {
     const pieces = new Map<number, {nom: string, travaux: Travail[]}>();
     
@@ -100,20 +79,14 @@ const Recapitulatif = () => {
     return Array.from(pieces.values());
   };
 
+  // Calculer le total par pièce
   const calculerTotalPiece = (travauxPiece: Travail[]) => {
-    return Math.round(travauxPiece.reduce((total, travail) => {
+    return travauxPiece.reduce((total, travail) => {
       return total + (travail.quantite * travail.prixUnitaire);
-    }, 0) * 100) / 100;
+    }, 0);
   };
 
-  const calculerTVAPiece = (travauxPiece: Travail[]) => {
-    return Math.round(travauxPiece.reduce((total, travail) => {
-      const montantHT = travail.quantite * travail.prixUnitaire;
-      const montantTVA = montantHT * (travail.tauxTVA / 100);
-      return total + montantTVA;
-    }, 0) * 100) / 100;
-  };
-
+  // Imprimer le récapitulatif
   const imprimerRecapitulatif = () => {
     window.print();
   };
@@ -161,10 +134,9 @@ const Recapitulatif = () => {
                 <CardContent>
                   <div className="space-y-2">
                     {piece.travaux.map(travail => {
-                      const total = parseFloat((travail.quantite * travail.prixUnitaire).toFixed(2));
-                      const totalFournitures = parseFloat((travail.quantite * travail.prixFournitures).toFixed(2));
-                      const totalMainOeuvre = parseFloat((travail.quantite * travail.prixMainOeuvre).toFixed(2));
-                      const totalTVA = parseFloat((total * (travail.tauxTVA / 100)).toFixed(2));
+                      const total = travail.quantite * travail.prixUnitaire;
+                      const totalFournitures = travail.quantite * travail.prixFournitures;
+                      const totalMainOeuvre = travail.quantite * travail.prixMainOeuvre;
                       
                       return (
                         <div key={travail.id} className="border-b pb-2 last:border-0">
@@ -175,10 +147,10 @@ const Recapitulatif = () => {
                                 {travail.personnalisation && ` (${travail.personnalisation})`}
                               </p>
                               <p className="text-sm text-gray-600">
-                                {formaterQuantite(travail.quantite)} {travail.unite} × {formaterPrix(travail.prixUnitaire)}/{travail.unite}
+                                {travail.quantite} {travail.unite} × {formaterPrix(travail.prixUnitaire)}/{travail.unite}
                               </p>
                               <p className="text-xs text-gray-500">
-                                Fournitures: {formaterPrix(totalFournitures)} | Main d'œuvre: {formaterPrix(totalMainOeuvre)} | TVA {travail.tauxTVA}%: {formaterPrix(totalTVA)}
+                                Fournitures: {formaterPrix(totalFournitures)} | Main d'œuvre: {formaterPrix(totalMainOeuvre)}
                               </p>
                             </div>
                             <p className="font-medium">{formaterPrix(total)}</p>
@@ -188,16 +160,8 @@ const Recapitulatif = () => {
                     })}
                     
                     <div className="flex justify-between pt-2 border-t mt-4">
-                      <p className="font-bold">Total {piece.nom} (HT)</p>
+                      <p className="font-bold">Total {piece.nom}</p>
                       <p className="font-bold">{formaterPrix(calculerTotalPiece(piece.travaux))}</p>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <p>TVA {piece.nom}</p>
-                      <p>{formaterPrix(calculerTVAPiece(piece.travaux))}</p>
-                    </div>
-                    <div className="flex justify-between font-bold pt-1 border-t">
-                      <p>Total {piece.nom} (TTC)</p>
-                      <p>{formaterPrix(calculerTotalPiece(piece.travaux) + calculerTVAPiece(piece.travaux))}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -216,16 +180,8 @@ const Recapitulatif = () => {
                     <p className="text-lg">{formaterPrix(calculerTotalMainOeuvre())}</p>
                   </div>
                   <div className="flex justify-between items-center pt-2 border-t">
-                    <p className="text-xl font-bold">TOTAL HT</p>
+                    <p className="text-xl font-bold">TOTAL GÉNÉRAL</p>
                     <p className="text-xl font-bold">{formaterPrix(calculerTotalGeneral())}</p>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <p className="text-lg">Total TVA</p>
-                    <p className="text-lg">{formaterPrix(calculerTotalTVA())}</p>
-                  </div>
-                  <div className="flex justify-between items-center pt-2 border-t">
-                    <p className="text-2xl font-bold">TOTAL TTC</p>
-                    <p className="text-2xl font-bold">{formaterPrix(calculerTotalTTC())}</p>
                   </div>
                 </div>
               </CardContent>

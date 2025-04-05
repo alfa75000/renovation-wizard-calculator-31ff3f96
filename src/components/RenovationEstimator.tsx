@@ -5,19 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { Check, Edit, Trash2, Plus, Home, Layout, ArrowDown, ArrowUp, RefreshCw } from "lucide-react";
-import { formaterPrix, formaterQuantite, arrondir2Decimales } from "@/lib/utils";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { Check, Edit, Trash2, Plus, Home, Layout, ArrowDown, ArrowUp } from "lucide-react";
 
 interface Room {
   id: string;
@@ -138,7 +126,7 @@ const RenovationEstimator: React.FC = () => {
 
   useEffect(() => {
     if (newRoom.length && newRoom.width) {
-      const calculatedSurface = arrondir2Decimales(parseFloat(newRoom.length) * parseFloat(newRoom.width)).toString();
+      const calculatedSurface = (parseFloat(newRoom.length) * parseFloat(newRoom.width)).toFixed(2);
       setNewRoom((prev) => ({ ...prev, surface: calculatedSurface }));
     }
   }, [newRoom.length, newRoom.width]);
@@ -146,7 +134,7 @@ const RenovationEstimator: React.FC = () => {
   useEffect(() => {
     if (newRoom.length && newRoom.width && newRoom.height) {
       const perimeter = 2 * (parseFloat(newRoom.length) + parseFloat(newRoom.width));
-      const wallSurface = arrondir2Decimales(perimeter * parseFloat(newRoom.height)).toString();
+      const wallSurface = (perimeter * parseFloat(newRoom.height)).toFixed(2);
       setNewRoom((prev) => ({ ...prev, wallSurfaceRaw: wallSurface }));
     }
   }, [newRoom.length, newRoom.width, newRoom.height]);
@@ -162,22 +150,22 @@ const RenovationEstimator: React.FC = () => {
         }
       });
       
-      const plinthLength = arrondir2Decimales(perimeter - doorWidths).toString();
+      const plinthLength = (perimeter - doorWidths).toFixed(2);
       
-      const plinthSurface = arrondir2Decimales(parseFloat(plinthLength) * parseFloat(newRoom.plinthHeight)).toString();
+      const plinthSurface = (parseFloat(plinthLength) * parseFloat(newRoom.plinthHeight)).toFixed(2);
       
       let menuiserieSurface = 0;
       newRoom.menuiseries.forEach(item => {
         menuiserieSurface += parseFloat(item.surface) * item.quantity;
       });
       
-      const netWallSurface = arrondir2Decimales(parseFloat(newRoom.wallSurfaceRaw) - menuiserieSurface).toString();
+      const netWallSurface = (parseFloat(newRoom.wallSurfaceRaw) - menuiserieSurface).toFixed(2);
       
       setNewRoom(prev => ({
         ...prev,
         totalPlinthLength: plinthLength,
         totalPlinthSurface: plinthSurface,
-        totalMenuiserieSurface: arrondir2Decimales(menuiserieSurface).toString(),
+        totalMenuiserieSurface: menuiserieSurface.toFixed(2),
         netWallSurface: netWallSurface
       }));
     }
@@ -189,7 +177,7 @@ const RenovationEstimator: React.FC = () => {
         item.id === editingMenuiserie ? {
           ...newMenuiserie,
           id: editingMenuiserie,
-          surface: arrondir2Decimales(parseFloat(newMenuiserie.largeur) * parseFloat(newMenuiserie.hauteur)).toString()
+          surface: (parseFloat(newMenuiserie.largeur) * parseFloat(newMenuiserie.hauteur)).toFixed(2)
         } : item
       );
       
@@ -218,7 +206,7 @@ const RenovationEstimator: React.FC = () => {
           largeur: newMenuiserie.largeur,
           hauteur: newMenuiserie.hauteur,
           quantity: 1,
-          surface: arrondir2Decimales(parseFloat(newMenuiserie.largeur) * parseFloat(newMenuiserie.hauteur)).toString()
+          surface: (parseFloat(newMenuiserie.largeur) * parseFloat(newMenuiserie.hauteur)).toFixed(2)
         });
       }
       
@@ -342,76 +330,10 @@ const RenovationEstimator: React.FC = () => {
   };
 
   const calculateTotalArea = () => {
-    return arrondir2Decimales(
-      rooms.reduce((total, room) => total + parseFloat(room.surface || "0"), 0)
-    ).toString();
+    return rooms
+      .reduce((total, room) => total + parseFloat(room.surface || "0"), 0)
+      .toFixed(2);
   };
-
-  const resetProject = () => {
-    setProperty({
-      type: "Appartement",
-      floors: "1",
-      totalArea: "",
-      rooms: "",
-      ceilingHeight: "",
-    });
-    
-    setNewRoom({
-      name: "",
-      customName: "",
-      type: "Salon",
-      length: "",
-      width: "",
-      height: "2.50",
-      surface: "",
-      plinthHeight: "0.1",
-      wallSurfaceRaw: "",
-      menuiseries: [],
-      totalPlinthLength: "",
-      totalPlinthSurface: "",
-      totalMenuiserieSurface: "",
-      netWallSurface: ""
-    });
-    
-    setNewMenuiserie({
-      type: "Porte",
-      name: "",
-      largeur: "0.83",
-      hauteur: "2.04",
-      quantity: 1
-    });
-    
-    setRooms([]);
-    setEditingRoom(null);
-    setEditingMenuiserie(null);
-    
-    localStorage.removeItem('rooms');
-    localStorage.removeItem('property');
-    localStorage.removeItem('travaux');
-    
-    toast.success("Projet réinitialisé avec succès");
-  };
-
-  useEffect(() => {
-    localStorage.setItem('rooms', JSON.stringify(rooms));
-  }, [rooms]);
-
-  useEffect(() => {
-    localStorage.setItem('property', JSON.stringify(property));
-  }, [property]);
-
-  useEffect(() => {
-    const savedRooms = localStorage.getItem('rooms');
-    const savedProperty = localStorage.getItem('property');
-    
-    if (savedRooms) {
-      setRooms(JSON.parse(savedRooms));
-    }
-    
-    if (savedProperty) {
-      setProperty(JSON.parse(savedProperty));
-    }
-  }, []);
 
   return (
     <div className="max-w-6xl mx-auto p-4">
@@ -420,31 +342,6 @@ const RenovationEstimator: React.FC = () => {
           Wizard Rénovation
         </h1>
         <p className="mt-2 text-lg">Estimez facilement vos projets de rénovation</p>
-        
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button variant="reset" className="mt-4">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Nouveau projet
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Êtes-vous sûr de vouloir créer un nouveau projet ?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Cette action va réinitialiser toutes les données de votre projet actuel.
-                Toutes les pièces et travaux associés seront supprimés.
-                Cette action est irréversible.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Annuler</AlertDialogCancel>
-              <AlertDialogAction onClick={resetProject} className="bg-orange-500 hover:bg-orange-600">
-                Réinitialiser
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
       </div>
 
       <Card className="mb-8 shadow-md">
