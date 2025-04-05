@@ -154,6 +154,15 @@ const piecesExemple = [
   }
 ];
 
+// Taux de TVA disponibles
+const tauxTVA = [
+  { id: "0", taux: 0, label: "0 %" },
+  { id: "5.5", taux: 5.5, label: "5,5 %" },
+  { id: "10", taux: 10, label: "10 %" },
+  { id: "20", taux: 20, label: "20 %" },
+  { id: "autre", taux: 0, label: "Autre" }
+];
+
 // Type pour un travail
 interface Travail {
   id: string;
@@ -169,6 +178,7 @@ interface Travail {
   prixFournitures: number;
   prixMainOeuvre: number;
   prixUnitaire: number;
+  tauxTVA: number; // Ajout du taux de TVA
 }
 
 const Travaux = () => {
@@ -183,6 +193,8 @@ const Travaux = () => {
   const [travauxAjoutes, setTravauxAjoutes] = useState<Travail[]>([]);
   const [prixFournitures, setPrixFournitures] = useState<number | null>(null);
   const [prixMainOeuvre, setPrixMainOeuvre] = useState<number | null>(null);
+  const [tauxTVASelectionne, setTauxTVASelectionne] = useState<number>(10); // 10% par défaut
+  const [tauxTVAAutre, setTauxTVAAutre] = useState<number>(0);
 
   // Chargement des travaux depuis le localStorage au montage du composant
   useEffect(() => {
@@ -239,6 +251,24 @@ const Travaux = () => {
     return sousType?.unite || "M²";
   };
 
+  // Formater le prix avec 2 décimales
+  const formaterPrix = (prix: number) => {
+    return new Intl.NumberFormat('fr-FR', { 
+      style: 'currency', 
+      currency: 'EUR',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(prix);
+  };
+
+  // Formater la quantité avec 2 décimales
+  const formaterQuantite = (quantite: number) => {
+    return new Intl.NumberFormat('fr-FR', { 
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2
+    }).format(quantite);
+  };
+
   // Calculer le prix unitaire total
   const calculerPrixUnitaire = (prixFourn: number, prixMO: number) => {
     return prixFourn + prixMO;
@@ -260,14 +290,20 @@ const Travaux = () => {
     const typeTravauxObj = travauxTypes.find(t => t.id === typeTravauxSelectionne);
     if (!typeTravauxObj) return;
 
-    const prixFournituresDefaut = Math.round(prixFournitures !== null ? prixFournitures : 
-      (sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux]?.find(st => st.id === sousTypeSelectionne)?.prixUnitaire || 0) * 0.4 * 100) / 100;
-    const prixMainOeuvreDefaut = Math.round(prixMainOeuvre !== null ? prixMainOeuvre : 
-      (sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux]?.find(st => st.id === sousTypeSelectionne)?.prixUnitaire || 0) * 0.6 * 100) / 100;
+    const prixFournituresDefaut = parseFloat((prixFournitures !== null ? prixFournitures : 
+      (sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux]?.find(st => st.id === sousTypeSelectionne)?.prixUnitaire || 0) * 0.4).toFixed(2));
+    const prixMainOeuvreDefaut = parseFloat((prixMainOeuvre !== null ? prixMainOeuvre : 
+      (sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux]?.find(st => st.id === sousTypeSelectionne)?.prixUnitaire || 0) * 0.6).toFixed(2));
 
-    const prixFourn = prixFournitures !== null ? prixFournitures : prixFournituresDefaut;
-    const prixMO = prixMainOeuvre !== null ? prixMainOeuvre : prixMainOeuvreDefaut;
-    const prixTotal = calculerPrixUnitaire(prixFourn, prixMO);
+    const prixFourn = prixFournitures !== null ? parseFloat(prixFournitures.toFixed(2)) : prixFournituresDefaut;
+    const prixMO = prixMainOeuvre !== null ? parseFloat(prixMainOeuvre.toFixed(2)) : prixMainOeuvreDefaut;
+    const prixTotal = parseFloat(calculerPrixUnitaire(prixFourn, prixMO).toFixed(2));
+    
+    // Utiliser le taux TVA sélectionné ou le taux personnalisé
+    let tauxFinal = tauxTVASelectionne;
+    if (tauxTVASelectionne === 0 && tauxTVAAutre > 0) {
+      tauxFinal = parseFloat(tauxTVAAutre.toFixed(2));
+    }
 
     const nouveauTravail: Travail = {
       id: `${Date.now()}`,
@@ -278,11 +314,12 @@ const Travaux = () => {
       sousTypeId: sousTypeSelectionne,
       sousTypeLabel: sousType.label,
       personnalisation: personnalisation,
-      quantite,
+      quantite: parseFloat(quantite.toFixed(2)),
       unite,
       prixFournitures: prixFourn,
       prixMainOeuvre: prixMO,
-      prixUnitaire: prixTotal
+      prixUnitaire: prixTotal,
+      tauxTVA: tauxFinal
     };
 
     setTravauxAjoutes([...travauxAjoutes, nouveauTravail]);
@@ -324,19 +361,14 @@ const Travaux = () => {
 
   // Calculer le total
   const calculerTotal = () => {
-    return travauxAjoutes.reduce((total, travail) => {
+    return parseFloat(travauxAjoutes.reduce((total, travail) => {
       return total + (travail.quantite * travail.prixUnitaire);
-    }, 0);
+    }, 0).toFixed(2));
   };
 
   // Filtrer les travaux par pièce
   const travauxParPiece = (pieceId: number) => {
     return travauxAjoutes.filter(t => t.pieceId === pieceId);
-  };
-
-  // Formater le prix
-  const formaterPrix = (prix: number) => {
-    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(prix);
   };
 
   // Enregistrer les travaux
@@ -456,39 +488,83 @@ const Travaux = () => {
 
                     {/* Sélection du sous-type */}
                     {typeTravauxSelectionne && (
-                      <div>
-                        <label className="block text-sm font-medium mb-1">Prestations</label>
-                        <Select 
-                          value={sousTypeSelectionne || ""} 
-                          onValueChange={(value) => {
-                            setSousTypeSelectionne(value);
-                            // Réinitialiser personnalisation si ce n'est pas "autre"
-                            if (value !== "autre") {
-                              setPersonnalisation("");
-                            }
-                            
-                            // Définir l'unité par défaut du sous-type
-                            const sousType = sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux]?.find(
-                              st => st.id === value
-                            );
-                            setUniteSelectionnee(sousType?.unite || null);
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Prestations</label>
+                          <Select 
+                            value={sousTypeSelectionne || ""} 
+                            onValueChange={(value) => {
+                              setSousTypeSelectionne(value);
+                              // Réinitialiser personnalisation si ce n'est pas "autre"
+                              if (value !== "autre") {
+                                setPersonnalisation("");
+                              }
+                              
+                              // Définir l'unité par défaut du sous-type
+                              const sousType = sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux]?.find(
+                                st => st.id === value
+                              );
+                              setUniteSelectionnee(sousType?.unite || null);
 
-                            // Réinitialiser les prix personnalisés
-                            setPrixFournitures(null);
-                            setPrixMainOeuvre(null);
-                          }}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Sélectionnez une prestation" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux].map(sousType => (
-                              <SelectItem key={sousType.id} value={sousType.id}>
-                                {sousType.label} ({formaterPrix(sousType.prixUnitaire)}/{sousType.unite})
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                              // Réinitialiser les prix personnalisés
+                              setPrixFournitures(null);
+                              setPrixMainOeuvre(null);
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Sélectionnez une prestation" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux].map(sousType => (
+                                <SelectItem key={sousType.id} value={sousType.id}>
+                                  {sousType.label} ({formaterPrix(sousType.prixUnitaire)}/{sousType.unite})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Taux de TVA Principal</label>
+                          <div className="flex gap-2">
+                            <Select 
+                              value={tauxTVASelectionne === 0 && tauxTVAAutre > 0 ? "autre" : tauxTVASelectionne.toString()} 
+                              onValueChange={(value) => {
+                                if (value === "autre") {
+                                  setTauxTVASelectionne(0);
+                                } else {
+                                  setTauxTVASelectionne(parseFloat(value));
+                                }
+                              }}
+                            >
+                              <SelectTrigger className="flex-grow">
+                                <SelectValue placeholder="Sélectionnez un taux de TVA" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {tauxTVA.map(taux => (
+                                  <SelectItem key={taux.id} value={taux.id}>
+                                    {taux.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            
+                            {(tauxTVASelectionne === 0 || tauxTVA.find(t => t.id === "autre")?.id === tauxTVASelectionne.toString()) && (
+                              <div className="flex items-center">
+                                <Input 
+                                  type="number"
+                                  value={tauxTVAAutre}
+                                  onChange={(e) => setTauxTVAAutre(parseFloat(e.target.value) || 0)}
+                                  className="w-24"
+                                  min="0"
+                                  max="100"
+                                  step="0.1"
+                                />
+                                <span className="ml-1">%</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     )}
 
@@ -514,6 +590,7 @@ const Travaux = () => {
                               type="number"
                               value={quantiteModifiee !== null ? quantiteModifiee : getQuantiteParDefaut()}
                               onChange={(e) => setQuantiteModifiee(parseFloat(e.target.value) || 0)}
+                              step="0.01"
                             />
                           </div>
                           <Select 
@@ -533,7 +610,7 @@ const Travaux = () => {
                           </Select>
                         </div>
                         <p className="text-xs text-gray-500 mt-1">
-                          Quantité par défaut: {getQuantiteParDefaut()} {getUniteParDefaut()}
+                          Quantité par défaut: {formaterQuantite(getQuantiteParDefaut())} {getUniteParDefaut()}
                         </p>
                       </div>
                     )}
@@ -548,6 +625,7 @@ const Travaux = () => {
                             value={prixFournitures !== null ? prixFournitures : 
                               (sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux]?.find(st => st.id === sousTypeSelectionne)?.prixUnitaire || 0) * 0.4}
                             onChange={(e) => setPrixFournitures(parseFloat(e.target.value) || 0)}
+                            step="0.01"
                           />
                         </div>
                         <div>
@@ -557,6 +635,7 @@ const Travaux = () => {
                             value={prixMainOeuvre !== null ? prixMainOeuvre : 
                               (sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux]?.find(st => st.id === sousTypeSelectionne)?.prixUnitaire || 0) * 0.6}
                             onChange={(e) => setPrixMainOeuvre(parseFloat(e.target.value) || 0)}
+                            step="0.01"
                           />
                         </div>
                         <div>
@@ -587,61 +666,8 @@ const Travaux = () => {
                       <h3 className="text-lg font-medium mb-4">Travaux ajoutés</h3>
                       <div className="space-y-3">
                         {travauxParPiece(pieceSelectionnee).map(travail => {
-                          const total = travail.quantite * travail.prixUnitaire;
+                          const total = parseFloat((travail.quantite * travail.prixUnitaire).toFixed(2));
                           const type = travauxTypes.find(t => t.id === travail.typeTravauxId);
                           
                           return (
                             <Card key={travail.id} className="p-3">
-                              <div className="flex justify-between items-start">
-                                <div>
-                                  <div className="flex items-center">
-                                    {type?.icon}
-                                    <span className="font-medium ml-2">
-                                      {travail.typeTravauxLabel}: {travail.sousTypeLabel}
-                                      {travail.personnalisation && ` (${travail.personnalisation})`}
-                                    </span>
-                                  </div>
-                                  <div className="text-sm mt-1">
-                                    {travail.quantite} {travail.unite} × {formaterPrix(travail.prixUnitaire)}/{travail.unite} = {formaterPrix(total)}
-                                  </div>
-                                  <div className="text-xs text-gray-600">
-                                    Fournitures: {formaterPrix(travail.prixFournitures)}/{travail.unite} | 
-                                    Main d'œuvre: {formaterPrix(travail.prixMainOeuvre)}/{travail.unite}
-                                  </div>
-                                </div>
-                                <div className="flex space-x-1">
-                                  <Button variant="ghost" size="sm" onClick={() => modifierTravail(travail)}>
-                                    <Pencil className="h-4 w-4" />
-                                  </Button>
-                                  <Button variant="ghost" size="sm" onClick={() => supprimerTravail(travail.id)}>
-                                    <X className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              </div>
-                            </Card>
-                          );
-                        })}
-                        
-                        <div className="mt-4 text-right">
-                          <p className="text-lg font-bold">
-                            Total: {formaterPrix(calculerTotal())}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  Veuillez sélectionner une pièce pour configurer les travaux
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default Travaux;
