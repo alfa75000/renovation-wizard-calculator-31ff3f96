@@ -29,6 +29,7 @@ import {
   ArrowRight
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import { formaterPrix, formaterQuantite, arrondir2Decimales } from "@/lib/utils";
 
 // Types de travaux principaux
 const travauxTypes = [
@@ -251,29 +252,9 @@ const Travaux = () => {
     return sousType?.unite || "M²";
   };
 
-  // Formater le prix avec 2 décimales
-  const formaterPrix = (prix: number) => {
-    const prixArrondi = Math.round(prix * 100) / 100;
-    return new Intl.NumberFormat('fr-FR', { 
-      style: 'currency', 
-      currency: 'EUR',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(prixArrondi);
-  };
-
-  // Formater la quantité avec 2 décimales
-  const formaterQuantite = (quantite: number) => {
-    const quantiteArrondie = Math.round(quantite * 100) / 100;
-    return new Intl.NumberFormat('fr-FR', { 
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 2
-    }).format(quantiteArrondie);
-  };
-
-  // Calculer le prix unitaire total
+  // Calculer le prix unitaire total avec arrondi
   const calculerPrixUnitaire = (prixFourn: number, prixMO: number) => {
-    return Math.round((prixFourn + prixMO) * 100) / 100;
+    return arrondir2Decimales(prixFourn + prixMO);
   };
 
   // Ajouter un travail à la liste
@@ -292,19 +273,27 @@ const Travaux = () => {
     const typeTravauxObj = travauxTypes.find(t => t.id === typeTravauxSelectionne);
     if (!typeTravauxObj) return;
 
-    const prixFournituresDefaut = Math.round(((prixFournitures !== null ? prixFournitures : 
-      (sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux]?.find(st => st.id === sousTypeSelectionne)?.prixUnitaire || 0) * 0.4)) * 100) / 100;
+    // Calculer prix fournitures avec arrondi à 2 décimales
+    const prixFournituresDefaut = arrondir2Decimales(
+      (prixFournitures !== null ? prixFournitures : 
+      (sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux]?.find(
+        st => st.id === sousTypeSelectionne)?.prixUnitaire || 0) * 0.4)
+    );
     
-    const prixMainOeuvreDefaut = Math.round(((prixMainOeuvre !== null ? prixMainOeuvre : 
-      (sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux]?.find(st => st.id === sousTypeSelectionne)?.prixUnitaire || 0) * 0.6)) * 100) / 100;
+    // Calculer prix main d'œuvre avec arrondi à 2 décimales
+    const prixMainOeuvreDefaut = arrondir2Decimales(
+      (prixMainOeuvre !== null ? prixMainOeuvre : 
+      (sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux]?.find(
+        st => st.id === sousTypeSelectionne)?.prixUnitaire || 0) * 0.6)
+    );
 
-    const prixFourn = prixFournitures !== null ? Math.round(prixFournitures * 100) / 100 : prixFournituresDefaut;
-    const prixMO = prixMainOeuvre !== null ? Math.round(prixMainOeuvre * 100) / 100 : prixMainOeuvreDefaut;
+    const prixFourn = prixFournitures !== null ? arrondir2Decimales(prixFournitures) : prixFournituresDefaut;
+    const prixMO = prixMainOeuvre !== null ? arrondir2Decimales(prixMainOeuvre) : prixMainOeuvreDefaut;
     const prixTotal = calculerPrixUnitaire(prixFourn, prixMO);
     
     let tauxFinal = tauxTVASelectionne;
     if (tauxTVASelectionne === 0 && tauxTVAAutre > 0) {
-      tauxFinal = Math.round(tauxTVAAutre * 100) / 100;
+      tauxFinal = arrondir2Decimales(tauxTVAAutre);
     }
 
     const nouveauTravail: Travail = {
@@ -316,7 +305,7 @@ const Travaux = () => {
       sousTypeId: sousTypeSelectionne,
       sousTypeLabel: sousType.label,
       personnalisation: personnalisation,
-      quantite: Math.round(quantite * 100) / 100,
+      quantite: arrondir2Decimales(quantite),
       unite,
       prixFournitures: prixFourn,
       prixMainOeuvre: prixMO,
@@ -617,7 +606,7 @@ const Travaux = () => {
                       </div>
                     )}
 
-                    {/* Prix des fournitures et de la main d'oeuvre */}
+                    {/* Prix des fournitures et de la main d'œuvre */}
                     {sousTypeSelectionne && (
                       <>
                         <div>
