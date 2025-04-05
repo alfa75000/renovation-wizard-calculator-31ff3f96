@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
-import { Travail } from '@/types';
+import { Travail, Piece } from '@/types';
 import { useProject } from '@/contexts/ProjectContext';
 import { toast } from '@/hooks/use-toast';
 import { useTravauxTypes } from '@/contexts/TravauxTypesContext';
@@ -43,6 +43,7 @@ export const useTravaux = () => {
 
   // Sélection d'une pièce
   const selectionnerPiece = (pieceId: string) => {
+    console.log("Sélection de la pièce:", pieceId);
     setPieceSelectionnee(pieceId);
     // Ne pas réinitialiser le travail à modifier si on change vers la pièce qui contient ce travail
     if (travailAModifier && travailAModifier.pieceId !== pieceId) {
@@ -52,6 +53,7 @@ export const useTravaux = () => {
 
   // Réinitialiser le travail en cours d'édition
   const resetTravailAModifier = () => {
+    console.log("Réinitialisation du travail à modifier");
     setTravailAModifier(null);
   };
 
@@ -131,7 +133,7 @@ export const useTravaux = () => {
   // Obtenir les travaux pour une pièce spécifique
   const travauxParPiece = (pieceId: string) => {
     return state.travaux.filter(travail => 
-      travail.pieceId.toString() === pieceId
+      travail.pieceId === pieceId
     );
   };
 

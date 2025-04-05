@@ -9,26 +9,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Printer } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-
-interface Travail {
-  id: string;
-  pieceId: number;
-  pieceName: string;
-  typeTravauxId: string;
-  typeTravauxLabel: string;
-  sousTypeId: string;
-  sousTypeLabel: string;
-  personnalisation: string;
-  quantite: number;
-  unite: string;
-  prixFournitures: number;
-  prixMainOeuvre: number;
-  prixUnitaire: number;
-  tauxTVA: number;
-}
+import { Travail } from "@/types";
 
 interface PieceAvecTravaux {
-  id: number;
+  id: string;
   nom: string;
   travaux: Travail[];
 }
