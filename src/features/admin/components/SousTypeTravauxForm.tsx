@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { SousTypeTravauxItem } from "@/contexts/TravauxTypesContext";
 import { useState, useEffect } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 
 interface SousTypeTravauxFormProps {
   isOpen: boolean;
@@ -46,23 +47,48 @@ const SousTypeTravauxForm: React.FC<SousTypeTravauxFormProps> = ({
     id: string;
     label: string;
     prixUnitaire: string;
+    prixFournitures: string;
+    prixMainOeuvre: string;
     unite: string;
     description: string;
   }>({
     id: sousTypeToEdit?.id || "",
     label: sousTypeToEdit?.label || "",
     prixUnitaire: sousTypeToEdit ? sousTypeToEdit.prixUnitaire.toString() : "0",
+    prixFournitures: sousTypeToEdit?.prixFournitures ? sousTypeToEdit.prixFournitures.toString() : "0",
+    prixMainOeuvre: sousTypeToEdit?.prixMainOeuvre ? sousTypeToEdit.prixMainOeuvre.toString() : "0",
     unite: sousTypeToEdit?.unite || "M²",
     description: sousTypeToEdit?.description || ""
   });
 
+  // Calcul automatique du prix unitaire total
+  useEffect(() => {
+    const fournitures = parseFloat(formData.prixFournitures) || 0;
+    const mainOeuvre = parseFloat(formData.prixMainOeuvre) || 0;
+    setFormData(prev => ({
+      ...prev,
+      prixUnitaire: (fournitures + mainOeuvre).toString()
+    }));
+  }, [formData.prixFournitures, formData.prixMainOeuvre]);
+
   // Mise à jour du formulaire lorsque sousTypeToEdit change
   useEffect(() => {
     if (sousTypeToEdit) {
+      // S'il n'y a pas de prix séparés, calculer approximativement
+      const prixTotal = sousTypeToEdit.prixUnitaire;
+      const prixFournitures = sousTypeToEdit.prixFournitures !== undefined 
+        ? sousTypeToEdit.prixFournitures 
+        : prixTotal * 0.4;
+      const prixMainOeuvre = sousTypeToEdit.prixMainOeuvre !== undefined 
+        ? sousTypeToEdit.prixMainOeuvre 
+        : prixTotal * 0.6;
+
       setFormData({
         id: sousTypeToEdit.id,
         label: sousTypeToEdit.label,
-        prixUnitaire: sousTypeToEdit.prixUnitaire.toString(),
+        prixUnitaire: prixTotal.toString(),
+        prixFournitures: prixFournitures.toString(),
+        prixMainOeuvre: prixMainOeuvre.toString(),
         unite: sousTypeToEdit.unite,
         description: sousTypeToEdit.description || ""
       });
@@ -71,6 +97,8 @@ const SousTypeTravauxForm: React.FC<SousTypeTravauxFormProps> = ({
         id: "",
         label: "",
         prixUnitaire: "0",
+        prixFournitures: "0",
+        prixMainOeuvre: "0",
         unite: "M²",
         description: ""
       });
@@ -87,6 +115,8 @@ const SousTypeTravauxForm: React.FC<SousTypeTravauxFormProps> = ({
       id,
       label: formData.label,
       prixUnitaire: parseFloat(formData.prixUnitaire),
+      prixFournitures: parseFloat(formData.prixFournitures),
+      prixMainOeuvre: parseFloat(formData.prixMainOeuvre),
       unite: formData.unite,
       description: formData.description
     });
@@ -116,19 +146,44 @@ const SousTypeTravauxForm: React.FC<SousTypeTravauxFormProps> = ({
             </div>
             
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="prixUnitaire" className="text-right">
-                Prix unitaire
+              <Label htmlFor="prixFournitures" className="text-right">
+                Prix fournitures
               </Label>
               <Input
-                id="prixUnitaire"
+                id="prixFournitures"
                 type="number"
                 min="0"
                 step="0.01"
-                value={formData.prixUnitaire}
-                onChange={(e) => setFormData({ ...formData, prixUnitaire: e.target.value })}
+                value={formData.prixFournitures}
+                onChange={(e) => setFormData({ ...formData, prixFournitures: e.target.value })}
                 className="col-span-3"
                 required
               />
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="prixMainOeuvre" className="text-right">
+                Prix main d'œuvre
+              </Label>
+              <Input
+                id="prixMainOeuvre"
+                type="number"
+                min="0"
+                step="0.01"
+                value={formData.prixMainOeuvre}
+                onChange={(e) => setFormData({ ...formData, prixMainOeuvre: e.target.value })}
+                className="col-span-3"
+                required
+              />
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="prixUnitaire" className="text-right">
+                Prix unitaire total
+              </Label>
+              <div className="col-span-3 py-2 px-3 bg-gray-100 rounded border border-gray-200">
+                {parseFloat(formData.prixUnitaire).toFixed(2)} €
+              </div>
             </div>
             
             <div className="grid grid-cols-4 items-center gap-4">
@@ -152,15 +207,16 @@ const SousTypeTravauxForm: React.FC<SousTypeTravauxFormProps> = ({
               </Select>
             </div>
             
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="description" className="text-right">
+            <div className="grid grid-cols-4 items-start gap-4">
+              <Label htmlFor="description" className="text-right pt-2">
                 Description
               </Label>
-              <Input
+              <Textarea
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="col-span-3"
+                className="col-span-3 min-h-[80px]"
+                placeholder="Description détaillée de la prestation"
               />
             </div>
           </div>

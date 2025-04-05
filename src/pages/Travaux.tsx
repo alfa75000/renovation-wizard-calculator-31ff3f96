@@ -53,8 +53,13 @@ const TravauxPage = () => {
     resetProject
   } = useTravaux();
 
+  // Convertir le pieceSelectionnee en string pour le composant PieceSelect
+  const pieceSelectionneStr = pieceSelectionnee ? pieceSelectionnee.toString() : null;
+
   // Adaptateur pour gérer les différences de type (string vs number) pour pieceSelectionnee
-  const handlePieceSelection = (pieceId: string) => {
+  const handlePieceSelection = (pieceIdStr: string) => {
+    // Conversion en number si nécessaire
+    const pieceId = typeof pieceSelectionnee === 'number' ? parseInt(pieceIdStr, 10) : pieceIdStr;
     selectionnerPiece(pieceId);
   };
 
@@ -155,7 +160,7 @@ const TravauxPage = () => {
               <CardContent>
                 <PieceSelect 
                   pieces={pieces}
-                  selectedPieceId={pieceSelectionnee}
+                  selectedPieceId={pieceSelectionneStr}
                   onSelect={handlePieceSelection}
                 />
               </CardContent>
@@ -173,11 +178,11 @@ const TravauxPage = () => {
                       onAddTravail={ajouterTravail}
                     />
 
-                    {travauxParPiece(pieceSelectionnee).length > 0 && (
+                    {travauxParPiece(pieceSelectionnee.toString()).length > 0 && (
                       <div className="mt-8">
                         <h3 className="text-lg font-medium mb-4">Travaux ajoutés</h3>
                         <div className="space-y-3">
-                          {travauxParPiece(pieceSelectionnee).map(travail => (
+                          {travauxParPiece(pieceSelectionnee.toString()).map(travail => (
                             <TravailCard 
                               key={travail.id} 
                               travail={travail}

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -7,7 +8,6 @@ import { Plus } from "lucide-react";
 import { Piece, Travail } from '@/types';
 import TypeTravauxSelect from './TypeTravauxSelect';
 import SousTypeSelect from './SousTypeSelect';
-import sousTravaux from '../data/sousTravaux';
 import TvaSelect from './TvaSelect';
 import UniteSelect from './UniteSelect';
 import { useTravauxTypes } from '@/contexts/TravauxTypesContext';
@@ -20,7 +20,7 @@ interface TravailFormProps {
 const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
   const [typeTravauxSelectionne, setTypeTravauxSelectionne] = useState<string | null>(null);
   const [sousTypeSelectionne, setSousTypeSelectionne] = useState<string | null>(null);
-  const [personnalisation, setPersonnalisation] = useState("");
+  const [descriptif, setDescriptif] = useState("");
   const [quantiteModifiee, setQuantiteModifiee] = useState<number | null>(null);
   const [uniteSelectionnee, setUniteSelectionnee] = useState<string | null>(null);
   const [prixFournitures, setPrixFournitures] = useState<number | null>(null);
@@ -29,16 +29,18 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
   const [tauxTVAAutre, setTauxTVAAutre] = useState<number>(0);
   const { state } = useTravauxTypes();
 
+  // Réinitialisation quand la pièce change
   useEffect(() => {
     setTypeTravauxSelectionne(null);
     setSousTypeSelectionne(null);
-    setPersonnalisation("");
+    setDescriptif("");
     setQuantiteModifiee(null);
     setUniteSelectionnee(null);
     setPrixFournitures(null);
     setPrixMainOeuvre(null);
   }, [piece]);
 
+  // Mise à jour quand le type ou sous-type change
   useEffect(() => {
     if (typeTravauxSelectionne && sousTypeSelectionne) {
       const typeFromContext = state.types.find(type => type.id === typeTravauxSelectionne);
@@ -46,16 +48,20 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
       
       if (sousTypeFromContext) {
         setUniteSelectionnee(sousTypeFromContext.unite || null);
-      } else if (typeTravauxSelectionne in sousTravaux) {
-        const sousType = sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux]?.find(
-          st => st.id === sousTypeSelectionne
-        );
-        setUniteSelectionnee(sousType?.unite || null);
+        
+        // Remplir le descriptif avec la description du sous-type si disponible
+        if (sousTypeFromContext.description) {
+          setDescriptif(sousTypeFromContext.description);
+        } else {
+          setDescriptif("");
+        }
+      } else {
+        setUniteSelectionnee(null);
+        setDescriptif("");
       }
 
       setPrixFournitures(null);
       setPrixMainOeuvre(null);
-      
       setQuantiteModifiee(null);
     }
   }, [typeTravauxSelectionne, sousTypeSelectionne, state.types]);
@@ -87,11 +93,7 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
       return sousTypeFromContext.unite || "M²";
     }
     
-    const sousType = sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux]?.find(
-      st => st.id === sousTypeSelectionne
-    );
-    
-    return sousType?.unite || "M²";
+    return "M²";
   };
 
   const handleAddTravail = () => {
@@ -102,46 +104,25 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
     const typeTravauxObj = state.types.find(t => t.id === typeTravauxSelectionne);
     const sousTypeFromContext = typeTravauxObj?.sousTypes.find(st => st.id === sousTypeSelectionne);
     
-    let sousType;
-    if (sousTypeFromContext) {
-      sousType = sousTypeFromContext;
-    } else {
-      sousType = sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux]?.find(
-        st => st.id === sousTypeSelectionne
-      );
-    }
+    if (!sousTypeFromContext || !typeTravauxObj) return;
 
-    if (!sousType) return;
-
-    let typeTravauxLabel;
-    if (typeTravauxObj) {
-      typeTravauxLabel = typeTravauxObj.label;
-    } else {
-      const travauxTypes = [
-        { id: "murs", label: "Revêtement murs" },
-        { id: "plafond", label: "Revêtement plafond" },
-        { id: "sol", label: "Revêtement sol" },
-        { id: "menuiseries", label: "Menuiseries" },
-        { id: "electricite", label: "Electricité" },
-        { id: "plomberie", label: "Plomberie" },
-        { id: "platrerie", label: "Plâtrerie" },
-        { id: "maconnerie", label: "Maçonnerie" },
-        { id: "autre", label: "Autre" }
-      ];
-      const fallbackType = travauxTypes.find(t => t.id === typeTravauxSelectionne);
-      typeTravauxLabel = fallbackType?.label || "Type inconnu";
-    }
-
+    const typeTravauxLabel = typeTravauxObj.label;
+    
     const quantite = quantiteModifiee !== null ? quantiteModifiee : getQuantiteParDefaut();
     const unite = uniteSelectionnee || getUniteParDefaut();
 
+    // Utiliser les prix spécifiques pour fournitures et main d'œuvre si disponibles
     const prixFournituresDefaut = (prixFournitures !== null) 
       ? prixFournitures 
-      : (sousType.prixUnitaire * 0.4);
+      : (sousTypeFromContext.prixFournitures !== undefined 
+          ? sousTypeFromContext.prixFournitures 
+          : sousTypeFromContext.prixUnitaire * 0.4);
     
     const prixMainOeuvreDefaut = (prixMainOeuvre !== null) 
       ? prixMainOeuvre 
-      : (sousType.prixUnitaire * 0.6);
+      : (sousTypeFromContext.prixMainOeuvre !== undefined 
+          ? sousTypeFromContext.prixMainOeuvre 
+          : sousTypeFromContext.prixUnitaire * 0.6);
 
     let tauxFinal = tauxTVASelectionne;
     if (tauxTVASelectionne === 0 && tauxTVAAutre > 0) {
@@ -154,8 +135,8 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
       typeTravauxId: typeTravauxSelectionne,
       typeTravauxLabel,
       sousTypeId: sousTypeSelectionne,
-      sousTypeLabel: sousType.label,
-      personnalisation: personnalisation,
+      sousTypeLabel: sousTypeFromContext.label,
+      personnalisation: descriptif,
       quantite: Number(quantite.toFixed(2)),
       unite,
       prixFournitures: Number(prixFournituresDefaut.toFixed(2)),
@@ -165,24 +146,12 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
     });
 
     setSousTypeSelectionne(null);
-    setPersonnalisation("");
+    setDescriptif("");
     setQuantiteModifiee(null);
     setUniteSelectionnee(null);
     setPrixFournitures(null);
     setPrixMainOeuvre(null);
   };
-
-  const travauxTypes = state.types.length > 0 ? state.types : [
-    { id: "murs", label: "Revêtement murs" },
-    { id: "plafond", label: "Revêtement plafond" },
-    { id: "sol", label: "Revêtement sol" },
-    { id: "menuiseries", label: "Menuiseries" },
-    { id: "electricite", label: "Electricité" },
-    { id: "plomberie", label: "Plomberie" },
-    { id: "platrerie", label: "Plâtrerie" },
-    { id: "maconnerie", label: "Maçonnerie" },
-    { id: "autre", label: "Autre" }
-  ];
 
   if (!piece) {
     return (
@@ -222,11 +191,11 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
 
       {sousTypeSelectionne && (
         <div>
-          <label className="block text-sm font-medium mb-1">Personnalisation</label>
+          <label className="block text-sm font-medium mb-1">Descriptif</label>
           <Textarea
-            value={personnalisation}
-            onChange={(e) => setPersonnalisation(e.target.value)}
-            placeholder="Précisez le type de travaux si nécessaire"
+            value={descriptif}
+            onChange={(e) => setDescriptif(e.target.value)}
+            placeholder="Description détaillée des travaux à réaliser"
             className="min-h-[80px] resize-y"
           />
         </div>
@@ -263,7 +232,7 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
             <Input
               type="number"
               value={prixFournitures !== null ? prixFournitures : 
-                getPrixUnitaireFromSelectedType() * 0.4}
+                getPrixFournituresFromSelectedType()}
               onChange={(e) => setPrixFournitures(parseFloat(e.target.value) || 0)}
               step="0.01"
             />
@@ -273,7 +242,7 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
             <Input
               type="number"
               value={prixMainOeuvre !== null ? prixMainOeuvre : 
-                getPrixUnitaireFromSelectedType() * 0.6}
+                getPrixMainOeuvreFromSelectedType()}
               onChange={(e) => setPrixMainOeuvre(parseFloat(e.target.value) || 0)}
               step="0.01"
             />
@@ -281,10 +250,8 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
           <div>
             <p className="text-sm font-medium">
               Prix unitaire total: {formaterPrix(
-                (prixFournitures !== null ? prixFournitures : 
-                  getPrixUnitaireFromSelectedType() * 0.4) + 
-                (prixMainOeuvre !== null ? prixMainOeuvre : 
-                  getPrixUnitaireFromSelectedType() * 0.6)
+                (prixFournitures !== null ? prixFournitures : getPrixFournituresFromSelectedType()) + 
+                (prixMainOeuvre !== null ? prixMainOeuvre : getPrixMainOeuvreFromSelectedType())
               )}/{getUniteParDefaut()}
             </p>
           </div>
@@ -310,9 +277,37 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
       return sousTypeFromContext.prixUnitaire || 0;
     }
     
-    return sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux]?.find(
-      st => st.id === sousTypeSelectionne
-    )?.prixUnitaire || 0;
+    return 0;
+  }
+  
+  function getPrixFournituresFromSelectedType() {
+    if (!typeTravauxSelectionne || !sousTypeSelectionne) return 0;
+    
+    const typeFromContext = state.types.find(type => type.id === typeTravauxSelectionne);
+    const sousTypeFromContext = typeFromContext?.sousTypes.find(st => st.id === sousTypeSelectionne);
+    
+    if (sousTypeFromContext) {
+      return sousTypeFromContext.prixFournitures !== undefined 
+        ? sousTypeFromContext.prixFournitures 
+        : sousTypeFromContext.prixUnitaire * 0.4;
+    }
+    
+    return 0;
+  }
+  
+  function getPrixMainOeuvreFromSelectedType() {
+    if (!typeTravauxSelectionne || !sousTypeSelectionne) return 0;
+    
+    const typeFromContext = state.types.find(type => type.id === typeTravauxSelectionne);
+    const sousTypeFromContext = typeFromContext?.sousTypes.find(st => st.id === sousTypeSelectionne);
+    
+    if (sousTypeFromContext) {
+      return sousTypeFromContext.prixMainOeuvre !== undefined 
+        ? sousTypeFromContext.prixMainOeuvre 
+        : sousTypeFromContext.prixUnitaire * 0.6;
+    }
+    
+    return 0;
   }
 };
 

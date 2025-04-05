@@ -18,8 +18,14 @@ const SousTypeSelect: React.FC<SousTypeSelectProps> = ({ typeTravauxId, value, o
   // Trouver le type de travaux sélectionné
   const selectedType = state.types.find(type => type.id === typeTravauxId);
   
-  // Si le type n'existe pas ou n'a pas de sous-types, ne rien afficher
-  if (!selectedType || !selectedType.sousTypes.length) return null;
+  // Si le type n'existe pas ou n'a pas de sous-types, afficher un message
+  if (!selectedType) {
+    return <div className="text-sm text-red-500">Type de travaux non trouvé</div>;
+  }
+  
+  if (!selectedType.sousTypes || selectedType.sousTypes.length === 0) {
+    return <div className="text-sm text-amber-600">Aucune prestation disponible pour ce type de travaux. Veuillez en ajouter dans l'administration des travaux.</div>;
+  }
 
   return (
     <div>

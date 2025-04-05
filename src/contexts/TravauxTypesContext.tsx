@@ -6,6 +6,8 @@ interface SousTypeTravauxItem {
   id: string;
   label: string;
   prixUnitaire: number;
+  prixFournitures?: number;
+  prixMainOeuvre?: number;
   unite: string;
   description?: string;
 }
@@ -40,22 +42,22 @@ const defaultTypes: TypeTravauxItem[] = [
     label: "Revêtement murs",
     icon: "Paintbrush",
     sousTypes: [
-      { id: "lessivage-travaux", label: "Lessivage pour travaux", prixUnitaire: 2.2, unite: "M²" },
-      { id: "lessivage-soigne", label: "Lessivage soigné en conservation", prixUnitaire: 3.5, unite: "M²" },
-      { id: "grattage", label: "Grattage, ouverture des fissures", prixUnitaire: 5, unite: "M²" },
-      { id: "rebouchage", label: "Rebouchage, ponçage", prixUnitaire: 20, unite: "M²" },
-      { id: "enduit-repassage", label: "Enduit repassé, ponçage", prixUnitaire: 25, unite: "M²" },
-      { id: "toile-renfort", label: "Toile de renfort anti-fissures", prixUnitaire: 15, unite: "M²" },
-      { id: "bande-calicot", label: "Bande Calicot anti-fissure", prixUnitaire: 10, unite: "Ml" },
-      { id: "toile-verre", label: "Toile de verre à peindre", prixUnitaire: 18, unite: "M²" },
-      { id: "peinture-acrylique", label: "Peinture type acrylique", prixUnitaire: 30, unite: "M²" },
-      { id: "peinture-glycero", label: "Peinture type glycéro", prixUnitaire: 35, unite: "M²" },
-      { id: "vernis", label: "Vernis", prixUnitaire: 40, unite: "M²" },
-      { id: "enduit-decoratif", label: "Enduit décoratif", prixUnitaire: 45, unite: "M²" },
-      { id: "papier-peint", label: "Papier peint", prixUnitaire: 22, unite: "M²" },
-      { id: "faience", label: "Faïence / Carrelage", prixUnitaire: 80, unite: "M²" },
-      { id: "lambris", label: "Lambris", prixUnitaire: 60, unite: "M²" },
-      { id: "autre", label: "Autre", prixUnitaire: 0, unite: "M²" }
+      { id: "lessivage-travaux", label: "Lessivage pour travaux", prixUnitaire: 2.2, prixFournitures: 0.8, prixMainOeuvre: 1.4, unite: "M²" },
+      { id: "lessivage-soigne", label: "Lessivage soigné en conservation", prixUnitaire: 3.5, prixFournitures: 1.2, prixMainOeuvre: 2.3, unite: "M²" },
+      { id: "grattage", label: "Grattage, ouverture des fissures", prixUnitaire: 5, prixFournitures: 1, prixMainOeuvre: 4, unite: "M²" },
+      { id: "rebouchage", label: "Rebouchage, ponçage", prixUnitaire: 20, prixFournitures: 8, prixMainOeuvre: 12, unite: "M²" },
+      { id: "enduit-repassage", label: "Enduit repassé, ponçage", prixUnitaire: 25, prixFournitures: 10, prixMainOeuvre: 15, unite: "M²" },
+      { id: "toile-renfort", label: "Toile de renfort anti-fissures", prixUnitaire: 15, prixFournitures: 9, prixMainOeuvre: 6, unite: "M²" },
+      { id: "bande-calicot", label: "Bande Calicot anti-fissure", prixUnitaire: 10, prixFournitures: 4, prixMainOeuvre: 6, unite: "Ml" },
+      { id: "toile-verre", label: "Toile de verre à peindre", prixUnitaire: 18, prixFournitures: 10, prixMainOeuvre: 8, unite: "M²" },
+      { id: "peinture-acrylique", label: "Peinture type acrylique", prixUnitaire: 30, prixFournitures: 12, prixMainOeuvre: 18, unite: "M²" },
+      { id: "peinture-glycero", label: "Peinture type glycéro", prixUnitaire: 35, prixFournitures: 15, prixMainOeuvre: 20, unite: "M²" },
+      { id: "vernis", label: "Vernis", prixUnitaire: 40, prixFournitures: 20, prixMainOeuvre: 20, unite: "M²" },
+      { id: "enduit-decoratif", label: "Enduit décoratif", prixUnitaire: 45, prixFournitures: 25, prixMainOeuvre: 20, unite: "M²" },
+      { id: "papier-peint", label: "Papier peint", prixUnitaire: 22, prixFournitures: 12, prixMainOeuvre: 10, unite: "M²" },
+      { id: "faience", label: "Faïence / Carrelage", prixUnitaire: 80, prixFournitures: 40, prixMainOeuvre: 40, unite: "M²" },
+      { id: "lambris", label: "Lambris", prixUnitaire: 60, prixFournitures: 35, prixMainOeuvre: 25, unite: "M²" },
+      { id: "autre", label: "Autre", prixUnitaire: 0, prixFournitures: 0, prixMainOeuvre: 0, unite: "M²" }
     ]
   },
   {
@@ -63,11 +65,11 @@ const defaultTypes: TypeTravauxItem[] = [
     label: "Revêtement plafond",
     icon: "Paintbrush",
     sousTypes: [
-      { id: "lessivage-travaux", label: "Lessivage pour travaux", prixUnitaire: 2.5, unite: "M²" },
-      { id: "rebouchage", label: "Rebouchage, ponçage", prixUnitaire: 22, unite: "M²" },
-      { id: "peinture-acrylique", label: "Peinture type acrylique", prixUnitaire: 32, unite: "M²" },
-      { id: "peinture-glycero", label: "Peinture type glycéro", prixUnitaire: 38, unite: "M²" },
-      { id: "autre", label: "Autre", prixUnitaire: 0, unite: "M²" }
+      { id: "lessivage-travaux", label: "Lessivage pour travaux", prixUnitaire: 2.5, prixFournitures: 0.8, prixMainOeuvre: 1.7, unite: "M²" },
+      { id: "rebouchage", label: "Rebouchage, ponçage", prixUnitaire: 22, prixFournitures: 8, prixMainOeuvre: 14, unite: "M²" },
+      { id: "peinture-acrylique", label: "Peinture type acrylique", prixUnitaire: 32, prixFournitures: 12, prixMainOeuvre: 20, unite: "M²" },
+      { id: "peinture-glycero", label: "Peinture type glycéro", prixUnitaire: 38, prixFournitures: 15, prixMainOeuvre: 23, unite: "M²" },
+      { id: "autre", label: "Autre", prixUnitaire: 0, prixFournitures: 0, prixMainOeuvre: 0, unite: "M²" }
     ]
   },
   {
@@ -75,15 +77,15 @@ const defaultTypes: TypeTravauxItem[] = [
     label: "Revêtement sol",
     icon: "Wrench",
     sousTypes: [
-      { id: "depose-ancien", label: "Dépose ancien revêtement", prixUnitaire: 15, unite: "M²" },
-      { id: "preparation", label: "Préparation support", prixUnitaire: 25, unite: "M²" },
-      { id: "carrelage", label: "Carrelage", prixUnitaire: 90, unite: "M²" },
-      { id: "parquet", label: "Parquet", prixUnitaire: 85, unite: "M²" },
-      { id: "stratifie", label: "Stratifié", prixUnitaire: 65, unite: "M²" },
-      { id: "moquette", label: "Moquette", prixUnitaire: 45, unite: "M²" },
-      { id: "linoleum", label: "Linoléum", prixUnitaire: 40, unite: "M²" },
-      { id: "beton-cire", label: "Béton ciré", prixUnitaire: 120, unite: "M²" },
-      { id: "autre", label: "Autre", prixUnitaire: 0, unite: "M²" }
+      { id: "depose-ancien", label: "Dépose ancien revêtement", prixUnitaire: 15, prixFournitures: 2, prixMainOeuvre: 13, unite: "M²" },
+      { id: "preparation", label: "Préparation support", prixUnitaire: 25, prixFournitures: 8, prixMainOeuvre: 17, unite: "M²" },
+      { id: "carrelage", label: "Carrelage", prixUnitaire: 90, prixFournitures: 45, prixMainOeuvre: 45, unite: "M²" },
+      { id: "parquet", label: "Parquet", prixUnitaire: 85, prixFournitures: 50, prixMainOeuvre: 35, unite: "M²" },
+      { id: "stratifie", label: "Stratifié", prixUnitaire: 65, prixFournitures: 40, prixMainOeuvre: 25, unite: "M²" },
+      { id: "moquette", label: "Moquette", prixUnitaire: 45, prixFournitures: 25, prixMainOeuvre: 20, unite: "M²" },
+      { id: "linoleum", label: "Linoléum", prixUnitaire: 40, prixFournitures: 22, prixMainOeuvre: 18, unite: "M²" },
+      { id: "beton-cire", label: "Béton ciré", prixUnitaire: 120, prixFournitures: 60, prixMainOeuvre: 60, unite: "M²" },
+      { id: "autre", label: "Autre", prixUnitaire: 0, prixFournitures: 0, prixMainOeuvre: 0, unite: "M²" }
     ]
   },
   {
@@ -91,13 +93,13 @@ const defaultTypes: TypeTravauxItem[] = [
     label: "Menuiseries",
     icon: "Hammer",
     sousTypes: [
-      { id: "depose-porte", label: "Dépose porte", prixUnitaire: 50, unite: "Ens." },
-      { id: "depose-fenetre", label: "Dépose fenêtre", prixUnitaire: 70, unite: "Ens." },
-      { id: "pose-porte", label: "Pose porte", prixUnitaire: 180, unite: "Ens." },
-      { id: "pose-porte-fenetre", label: "Pose porte-fenêtre", prixUnitaire: 280, unite: "Ens." },
-      { id: "pose-fenetre", label: "Pose fenêtre", prixUnitaire: 250, unite: "Ens." },
-      { id: "peinture-menuiserie", label: "Peinture menuiserie", prixUnitaire: 45, unite: "M²" },
-      { id: "autre", label: "Autre", prixUnitaire: 0, unite: "Unité" }
+      { id: "depose-porte", label: "Dépose porte", prixUnitaire: 50, prixFournitures: 5, prixMainOeuvre: 45, unite: "Ens." },
+      { id: "depose-fenetre", label: "Dépose fenêtre", prixUnitaire: 70, prixFournitures: 8, prixMainOeuvre: 62, unite: "Ens." },
+      { id: "pose-porte", label: "Pose porte", prixUnitaire: 180, prixFournitures: 120, prixMainOeuvre: 60, unite: "Ens." },
+      { id: "pose-porte-fenetre", label: "Pose porte-fenêtre", prixUnitaire: 280, prixFournitures: 200, prixMainOeuvre: 80, unite: "Ens." },
+      { id: "pose-fenetre", label: "Pose fenêtre", prixUnitaire: 250, prixFournitures: 180, prixMainOeuvre: 70, unite: "Ens." },
+      { id: "peinture-menuiserie", label: "Peinture menuiserie", prixUnitaire: 45, prixFournitures: 15, prixMainOeuvre: 30, unite: "M²" },
+      { id: "autre", label: "Autre", prixUnitaire: 0, prixFournitures: 0, prixMainOeuvre: 0, unite: "Unité" }
     ]
   },
   {
@@ -105,11 +107,11 @@ const defaultTypes: TypeTravauxItem[] = [
     label: "Electricité",
     icon: "SquarePen",
     sousTypes: [
-      { id: "interrupteur", label: "Pose interrupteur", prixUnitaire: 40, unite: "Unité" },
-      { id: "prise", label: "Pose prise", prixUnitaire: 45, unite: "Unité" },
-      { id: "luminaire", label: "Pose luminaire", prixUnitaire: 70, unite: "Unité" },
-      { id: "tableau", label: "Tableau électrique", prixUnitaire: 350, unite: "Unité" },
-      { id: "autre", label: "Autre", prixUnitaire: 0, unite: "Unité" }
+      { id: "interrupteur", label: "Pose interrupteur", prixUnitaire: 40, prixFournitures: 15, prixMainOeuvre: 25, unite: "Unité" },
+      { id: "prise", label: "Pose prise", prixUnitaire: 45, prixFournitures: 15, prixMainOeuvre: 30, unite: "Unité" },
+      { id: "luminaire", label: "Pose luminaire", prixUnitaire: 70, prixFournitures: 25, prixMainOeuvre: 45, unite: "Unité" },
+      { id: "tableau", label: "Tableau électrique", prixUnitaire: 350, prixFournitures: 200, prixMainOeuvre: 150, unite: "Unité" },
+      { id: "autre", label: "Autre", prixUnitaire: 0, prixFournitures: 0, prixMainOeuvre: 0, unite: "Unité" }
     ]
   },
   {
@@ -117,10 +119,10 @@ const defaultTypes: TypeTravauxItem[] = [
     label: "Plomberie",
     icon: "SquarePen",
     sousTypes: [
-      { id: "evacuation", label: "Évacuation", prixUnitaire: 120, unite: "Ml" },
-      { id: "alimentation", label: "Alimentation", prixUnitaire: 140, unite: "Ml" },
-      { id: "sanitaire", label: "Sanitaire", prixUnitaire: 180, unite: "Unité" },
-      { id: "autre", label: "Autre", prixUnitaire: 0, unite: "Unité" }
+      { id: "evacuation", label: "Évacuation", prixUnitaire: 120, prixFournitures: 50, prixMainOeuvre: 70, unite: "Ml" },
+      { id: "alimentation", label: "Alimentation", prixUnitaire: 140, prixFournitures: 60, prixMainOeuvre: 80, unite: "Ml" },
+      { id: "sanitaire", label: "Sanitaire", prixUnitaire: 180, prixFournitures: 100, prixMainOeuvre: 80, unite: "Unité" },
+      { id: "autre", label: "Autre", prixUnitaire: 0, prixFournitures: 0, prixMainOeuvre: 0, unite: "Unité" }
     ]
   },
   {
@@ -128,10 +130,10 @@ const defaultTypes: TypeTravauxItem[] = [
     label: "Plâtrerie",
     icon: "SquarePen",
     sousTypes: [
-      { id: "cloison", label: "Cloison placo", prixUnitaire: 85, unite: "M²" },
-      { id: "doublage", label: "Doublage", prixUnitaire: 75, unite: "M²" },
-      { id: "faux-plafond", label: "Faux plafond", prixUnitaire: 90, unite: "M²" },
-      { id: "autre", label: "Autre", prixUnitaire: 0, unite: "M²" }
+      { id: "cloison", label: "Cloison placo", prixUnitaire: 85, prixFournitures: 35, prixMainOeuvre: 50, unite: "M²" },
+      { id: "doublage", label: "Doublage", prixUnitaire: 75, prixFournitures: 30, prixMainOeuvre: 45, unite: "M²" },
+      { id: "faux-plafond", label: "Faux plafond", prixUnitaire: 90, prixFournitures: 40, prixMainOeuvre: 50, unite: "M²" },
+      { id: "autre", label: "Autre", prixUnitaire: 0, prixFournitures: 0, prixMainOeuvre: 0, unite: "M²" }
     ]
   },
   {
@@ -139,9 +141,9 @@ const defaultTypes: TypeTravauxItem[] = [
     label: "Maçonnerie",
     icon: "SquarePen",
     sousTypes: [
-      { id: "ouverture", label: "Création ouverture", prixUnitaire: 450, unite: "Forfait" },
-      { id: "demolition", label: "Démolition", prixUnitaire: 250, unite: "M3" },
-      { id: "autre", label: "Autre", prixUnitaire: 0, unite: "Forfait" }
+      { id: "ouverture", label: "Création ouverture", prixUnitaire: 450, prixFournitures: 150, prixMainOeuvre: 300, unite: "Forfait" },
+      { id: "demolition", label: "Démolition", prixUnitaire: 250, prixFournitures: 50, prixMainOeuvre: 200, unite: "M3" },
+      { id: "autre", label: "Autre", prixUnitaire: 0, prixFournitures: 0, prixMainOeuvre: 0, unite: "Forfait" }
     ]
   },
   {
@@ -149,7 +151,7 @@ const defaultTypes: TypeTravauxItem[] = [
     label: "Autre",
     icon: "Wrench",
     sousTypes: [
-      { id: "autre", label: "Personnalisé", prixUnitaire: 0, unite: "Unité" }
+      { id: "autre", label: "Personnalisé", prixUnitaire: 0, prixFournitures: 0, prixMainOeuvre: 0, unite: "Unité" }
     ]
   }
 ];
