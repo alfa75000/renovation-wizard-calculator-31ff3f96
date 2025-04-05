@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Printer } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 // Type pour un travail
 interface Travail {
@@ -25,6 +25,7 @@ interface Travail {
 }
 
 const Recapitulatif = () => {
+  const navigate = useNavigate();
   const [travaux, setTravaux] = useState<Travail[]>([]);
 
   useEffect(() => {

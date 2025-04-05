@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   Card, 
   CardContent,
@@ -29,7 +28,7 @@ import {
   Save,
   ArrowRight
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 // Types de travaux principaux
 const travauxTypes = [
@@ -170,6 +169,7 @@ interface Travail {
 }
 
 const Travaux = () => {
+  const navigate = useNavigate();
   const [pieces] = useState(piecesExemple);
   const [pieceSelectionnee, setPieceSelectionnee] = useState<number | null>(null);
   const [typeTravauxSelectionne, setTypeTravauxSelectionne] = useState<string | null>(null);
@@ -179,6 +179,14 @@ const Travaux = () => {
   const [uniteSelectionnee, setUniteSelectionnee] = useState<string | null>(null);
   const [travauxAjoutes, setTravauxAjoutes] = useState<Travail[]>([]);
   const [prixPerso, setPrixPerso] = useState<number | null>(null);
+
+  // Chargement des travaux depuis le localStorage au montage du composant
+  useEffect(() => {
+    const travauxSauvegardes = localStorage.getItem('travaux');
+    if (travauxSauvegardes) {
+      setTravauxAjoutes(JSON.parse(travauxSauvegardes));
+    }
+  }, []);
 
   // Sélectionner une pièce
   const selectionnerPiece = (pieceId: number) => {
@@ -276,26 +284,19 @@ const Travaux = () => {
 
   // Modifier un travail
   const modifierTravail = (travail: Travail) => {
-    // Sélectionner la pièce
     setPieceSelectionnee(travail.pieceId);
     
-    // Sélectionner le type de travaux
     setTypeTravauxSelectionne(travail.typeTravauxId);
     
-    // Sélectionner le sous-type
     setSousTypeSelectionne(travail.sousTypeId);
     
-    // Personnalisation
     setPersonnalisation(travail.personnalisation);
     
-    // Quantité et unité
     setQuantiteModifiee(travail.quantite);
     setUniteSelectionnee(travail.unite);
     
-    // Prix unitaire personnalisé
     setPrixPerso(travail.prixUnitaire);
     
-    // Supprimer le travail à modifier
     supprimerTravail(travail.id);
   };
 
@@ -318,12 +319,17 @@ const Travaux = () => {
 
   // Enregistrer les travaux
   const enregistrerTravaux = () => {
-    // Ici on pourrait enregistrer les travaux dans le localStorage ou envoyer à un API
     localStorage.setItem('travaux', JSON.stringify(travauxAjoutes));
     toast({
       title: "Travaux enregistrés",
       description: "Tous les travaux ont été enregistrés avec succès",
     });
+  };
+
+  // Naviguer vers la page de récapitulatif avec enregistrement automatique
+  const naviguerVersRecapitulatif = () => {
+    localStorage.setItem('travaux', JSON.stringify(travauxAjoutes));
+    navigate('/recapitulatif');
   };
 
   return (
@@ -350,11 +356,9 @@ const Travaux = () => {
               Enregistrer les travaux
             </Button>
             
-            <Button asChild variant="default" className="flex items-center gap-2">
-              <Link to="/recapitulatif">
-                Voir le récapitulatif
-                <ArrowRight className="h-4 w-4" />
-              </Link>
+            <Button onClick={naviguerVersRecapitulatif} variant="default" className="flex items-center gap-2">
+              Voir le récapitulatif
+              <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
         </div>
