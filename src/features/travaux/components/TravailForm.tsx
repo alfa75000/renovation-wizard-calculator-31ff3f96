@@ -169,7 +169,7 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
     }
 
     onAddTravail({
-      pieceId: Number(piece.id),
+      pieceId: Number(piece.id) || parseInt(piece.id.toString()),
       pieceName: piece.nom || piece.name || "Pièce sans nom",
       typeTravauxId: typeTravauxSelectionne,
       typeTravauxLabel,
@@ -185,14 +185,24 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
     });
 
     // Réinitialiser le formulaire et l'état d'édition
-    setSousTypeSelectionne(null);
-    setDescriptif("");
-    setQuantiteModifiee(null);
-    setUniteSelectionnee(null);
-    setPrixFournitures(null);
-    setPrixMainOeuvre(null);
-    setIsEditing(false);
-    resetTravailAModifier();
+    if (!isEditing) {
+      setSousTypeSelectionne(null);
+      setDescriptif("");
+      setQuantiteModifiee(null);
+      setUniteSelectionnee(null);
+      setPrixFournitures(null);
+      setPrixMainOeuvre(null);
+    } else {
+      setIsEditing(false);
+      resetTravailAModifier();
+      setTypeTravauxSelectionne(null);
+      setSousTypeSelectionne(null);
+      setDescriptif("");
+      setQuantiteModifiee(null);
+      setUniteSelectionnee(null);
+      setPrixFournitures(null);
+      setPrixMainOeuvre(null);
+    }
   };
 
   if (!piece) {
@@ -207,7 +217,7 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium">
-          {piece.nom || piece.name}
+          {piece?.nom || piece?.name}
         </h3>
         {isEditing && (
           <Button onClick={annulerEdition} variant="outline" size="sm" className="flex items-center">

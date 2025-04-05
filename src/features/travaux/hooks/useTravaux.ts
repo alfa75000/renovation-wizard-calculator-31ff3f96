@@ -44,8 +44,10 @@ export const useTravaux = () => {
   // Sélection d'une pièce
   const selectionnerPiece = (pieceId: string) => {
     setPieceSelectionnee(pieceId);
-    // Réinitialiser le travail à modifier lors du changement de pièce
-    resetTravailAModifier();
+    // Ne pas réinitialiser le travail à modifier si on change vers la pièce qui contient ce travail
+    if (travailAModifier && travailAModifier.pieceId.toString() !== pieceId) {
+      resetTravailAModifier();
+    }
   };
 
   // Réinitialiser le travail en cours d'édition
@@ -60,16 +62,29 @@ export const useTravaux = () => {
   };
 
   // Ajouter un travail
-  const ajouterTravail = (travail: Travail) => {
+  const ajouterTravail = (travail: Omit<Travail, 'id'>) => {
     // Si on a un travail à modifier, on le modifie au lieu d'en ajouter un nouveau
     if (travailAModifier) {
-      modifierTravail(travailAModifier.id, {
+      const updatedTravail = {
         ...travail,
         id: travailAModifier.id
+      };
+      
+      dispatch({ 
+        type: 'UPDATE_TRAVAIL',
+        payload: { id: travailAModifier.id, travail: updatedTravail }
       });
+      
+      toast({
+        title: "Travail modifié",
+        description: `Les modifications ont été enregistrées`,
+      });
+      
+      resetTravailAModifier();
       return;
     }
     
+    // C'est un nouveau travail
     const newTravail = {
       ...travail,
       id: uuidv4()
@@ -80,19 +95,6 @@ export const useTravaux = () => {
       title: "Travail ajouté",
       description: `${travail.typeTravauxLabel} - ${travail.sousTypeLabel} ajouté à la pièce ${travail.pieceName}`,
     });
-  };
-
-  // Modifier un travail
-  const modifierTravail = (id: string, travail: Travail) => {
-    dispatch({ 
-      type: 'UPDATE_TRAVAIL',
-      payload: { id, travail }
-    });
-    toast({
-      title: "Travail modifié",
-      description: `Les modifications ont été enregistrées`,
-    });
-    resetTravailAModifier();
   };
 
   // Charger un travail pour l'édition
@@ -174,7 +176,6 @@ export const useTravaux = () => {
     selectionnerPiece,
     getPieceSelectionnee,
     ajouterTravail,
-    modifierTravail,
     preparerModificationTravail,
     supprimerTravail,
     travauxParPiece,
