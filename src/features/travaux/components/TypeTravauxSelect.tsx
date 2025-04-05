@@ -1,7 +1,19 @@
 
 import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useTravauxTypes } from '@/contexts/TravauxTypesContext';
+
+// Types de travaux avec leurs icônes
+const travauxTypes = [
+  { id: "murs", label: "Revêtement murs", icon: "Paintbrush" },
+  { id: "plafond", label: "Revêtement plafond", icon: "Paintbrush" },
+  { id: "sol", label: "Revêtement sol", icon: "Wrench" },
+  { id: "menuiseries", label: "Menuiseries", icon: "Hammer" },
+  { id: "electricite", label: "Electricité", icon: "SquarePen" },
+  { id: "plomberie", label: "Plomberie", icon: "SquarePen" },
+  { id: "platrerie", label: "Plâtrerie", icon: "SquarePen" },
+  { id: "maconnerie", label: "Maçonnerie", icon: "SquarePen" },
+  { id: "autre", label: "Autre", icon: "Wrench" }
+];
 
 // Import dynamique des icônes
 import { Paintbrush, Hammer, Wrench, SquarePen } from 'lucide-react';
@@ -12,8 +24,6 @@ interface TypeTravauxSelectProps {
 }
 
 const TypeTravauxSelect: React.FC<TypeTravauxSelectProps> = ({ value, onChange }) => {
-  const { state } = useTravauxTypes();
-  
   // Map pour les icônes
   const iconMap: Record<string, React.ReactNode> = {
     "Paintbrush": <Paintbrush className="h-4 w-4" />,
@@ -33,7 +43,7 @@ const TypeTravauxSelect: React.FC<TypeTravauxSelectProps> = ({ value, onChange }
           <SelectValue placeholder="Sélectionnez un type de travaux" />
         </SelectTrigger>
         <SelectContent>
-          {state.types.map(type => (
+          {travauxTypes.map(type => (
             <SelectItem key={type.id} value={type.id}>
               <div className="flex items-center">
                 {iconMap[type.icon]}
