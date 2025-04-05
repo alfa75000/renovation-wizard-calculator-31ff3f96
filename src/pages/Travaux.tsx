@@ -36,7 +36,6 @@ import TravailForm from "@/features/travaux/components/TravailForm";
 import TravailCard from "@/features/travaux/components/TravailCard";
 import { ProjectProvider } from "@/contexts/ProjectContext";
 import { TravauxTypesProvider } from "@/contexts/TravauxTypesContext";
-import { Travail } from "@/types";
 
 const TravauxPage = () => {
   const {

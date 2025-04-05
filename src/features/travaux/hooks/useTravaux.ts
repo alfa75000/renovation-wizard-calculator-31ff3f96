@@ -61,7 +61,7 @@ export const useTravaux = () => {
     return pieces.find(piece => piece.id === pieceSelectionnee) || null;
   };
 
-  // Ajouter un travail
+  // Ajouter ou modifier un travail
   const ajouterTravail = (travail: Omit<Travail, 'id'>) => {
     // Si on a un travail à modifier, on le modifie au lieu d'en ajouter un nouveau
     if (travailAModifier) {

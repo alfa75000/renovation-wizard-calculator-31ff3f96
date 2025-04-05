@@ -15,6 +15,10 @@ interface TravailCardProps {
 const TravailCard: React.FC<TravailCardProps> = ({ travail, onEdit, onDelete }) => {
   const total = parseFloat((travail.quantite * travail.prixUnitaire).toFixed(2));
   
+  const handleEdit = () => {
+    onEdit(travail);
+  };
+  
   return (
     <Card className="p-3">
       <div className="flex justify-between">
@@ -40,7 +44,7 @@ const TravailCard: React.FC<TravailCardProps> = ({ travail, onEdit, onDelete }) 
             <Button 
               variant="outline" 
               size="sm" 
-              onClick={() => onEdit(travail)}
+              onClick={handleEdit}
               className="h-7 px-2 text-xs"
             >
               <Pencil className="h-3 w-3 mr-1" />
