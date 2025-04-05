@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
-import { Travail, Piece, Menuiserie } from '@/types';
+import { Travail, Piece } from '@/types';
 import { useProject } from '@/contexts/ProjectContext';
 import { arrondir2Decimales } from '@/lib/utils';
 
@@ -34,38 +34,6 @@ const normaliserPieces = (pieces: any[]): Piece[] => {
   });
 };
 
-// Données par défaut pour les tests
-const piecesParDefaut: Piece[] = [
-  { 
-    id: 1, 
-    nom: "Salon", 
-    surface: 25, 
-    surfaceMurs: 65, 
-    plinthes: 18, 
-    surfacePlinthes: 1.8,
-    surfaceMenuiseries: 4.2,
-    surfaceNetMurs: 60.8,
-    menuiseries: [
-      { id: "1", nom: "Porte 1", type: "porte", largeur: 0.83, hauteur: 2.04, surface: 1.69 },
-      { id: "2", nom: "Fenêtre 1", type: "fenêtre", largeur: 1.2, hauteur: 1.0, surface: 1.2 }
-    ]
-  },
-  { 
-    id: 2, 
-    nom: "Chambre", 
-    surface: 15, 
-    surfaceMurs: 45, 
-    plinthes: 14, 
-    surfacePlinthes: 1.4,
-    surfaceMenuiseries: 2.89,
-    surfaceNetMurs: 42.11,
-    menuiseries: [
-      { id: "1", nom: "Porte 1", type: "porte", largeur: 0.83, hauteur: 2.04, surface: 1.69 },
-      { id: "2", nom: "Fenêtre 1", type: "fenêtre", largeur: 1.2, hauteur: 1.0, surface: 1.2 }
-    ]
-  }
-];
-
 export const useTravaux = () => {
   const navigate = useNavigate();
   const { state, dispatch } = useProject();
@@ -77,12 +45,20 @@ export const useTravaux = () => {
   useEffect(() => {
     const piecesSauvegardees = state.rooms;
     if (piecesSauvegardees && piecesSauvegardees.length > 0) {
-      setPieces(normaliserPieces(piecesSauvegardees));
+      const piecesNormalisees = normaliserPieces(piecesSauvegardees);
+      setPieces(piecesNormalisees);
+      
+      // Si aucune pièce n'est sélectionnée mais qu'il y a des pièces disponibles,
+      // sélectionner la première pièce par défaut
+      if (pieceSelectionnee === null && piecesNormalisees.length > 0) {
+        setPieceSelectionnee(Number(piecesNormalisees[0].id));
+      }
     } else {
-      // Utiliser les pièces par défaut pour les tests
-      setPieces(piecesParDefaut);
+      // S'il n'y a pas de pièces, réinitialiser la sélection
+      setPieces([]);
+      setPieceSelectionnee(null);
     }
-  }, [state.rooms]);
+  }, [state.rooms, pieceSelectionnee]);
 
   // Sélectionner une pièce
   const selectionnerPiece = (pieceId: number) => {

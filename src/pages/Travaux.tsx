@@ -12,7 +12,8 @@ import {
   Home,
   Save,
   ArrowRight,
-  RefreshCw
+  RefreshCw,
+  PlusCircle
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
@@ -105,51 +106,76 @@ const TravauxPage = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="shadow-md lg:col-span-1">
+        {pieces.length === 0 ? (
+          <Card className="shadow-md">
             <CardHeader>
-              <CardTitle className="flex items-center">
-                <Home className="h-5 w-5 mr-2" />
-                Pièces à rénover
-              </CardTitle>
+              <CardTitle className="text-center">Aucune pièce disponible</CardTitle>
             </CardHeader>
-            <CardContent>
-              <PieceSelect 
-                pieces={pieces}
-                selectedPieceId={pieceSelectionnee}
-                onSelect={selectionnerPiece}
-              />
+            <CardContent className="text-center">
+              <p className="mb-4">Vous devez d'abord ajouter des pièces dans l'estimateur principal.</p>
+              <Button asChild>
+                <Link to="/" className="flex items-center gap-2">
+                  <PlusCircle className="h-4 w-4" />
+                  Ajouter des pièces
+                </Link>
+              </Button>
             </CardContent>
           </Card>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <Card className="shadow-md lg:col-span-1">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Home className="h-5 w-5 mr-2" />
+                  Pièces à rénover
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <PieceSelect 
+                  pieces={pieces}
+                  selectedPieceId={pieceSelectionnee}
+                  onSelect={selectionnerPiece}
+                />
+              </CardContent>
+            </Card>
 
-          <Card className="shadow-md lg:col-span-2">
-            <CardHeader>
-              <CardTitle>Configuration des travaux</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <TravailForm 
-                piece={getPieceSelectionnee()}
-                onAddTravail={ajouterTravail}
-              />
+            <Card className="shadow-md lg:col-span-2">
+              <CardHeader>
+                <CardTitle>Configuration des travaux</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {pieceSelectionnee ? (
+                  <>
+                    <TravailForm 
+                      piece={getPieceSelectionnee()}
+                      onAddTravail={ajouterTravail}
+                    />
 
-              {pieceSelectionnee && travauxParPiece(pieceSelectionnee).length > 0 && (
-                <div className="mt-8">
-                  <h3 className="text-lg font-medium mb-4">Travaux ajoutés</h3>
-                  <div className="space-y-3">
-                    {travauxParPiece(pieceSelectionnee).map(travail => (
-                      <TravailCard 
-                        key={travail.id} 
-                        travail={travail}
-                        onEdit={modifierTravail}
-                        onDelete={supprimerTravail}
-                      />
-                    ))}
+                    {travauxParPiece(pieceSelectionnee).length > 0 && (
+                      <div className="mt-8">
+                        <h3 className="text-lg font-medium mb-4">Travaux ajoutés</h3>
+                        <div className="space-y-3">
+                          {travauxParPiece(pieceSelectionnee).map(travail => (
+                            <TravailCard 
+                              key={travail.id} 
+                              travail={travail}
+                              onEdit={modifierTravail}
+                              onDelete={supprimerTravail}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">Veuillez sélectionner une pièce pour configurer les travaux.</p>
                   </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   );

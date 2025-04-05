@@ -75,6 +75,10 @@ const projectReducer = (state: ProjectState, action: ProjectAction): ProjectStat
     case 'DELETE_TRAVAIL':
       return { ...state, travaux: state.travaux.filter(travail => travail.id !== action.payload) };
     case 'RESET_PROJECT':
+      // Réinitialiser complètement l'état et effacer localStorage
+      localStorage.removeItem('rooms');
+      localStorage.removeItem('property');
+      localStorage.removeItem('travaux');
       return initialState;
     default:
       return state;
