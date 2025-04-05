@@ -403,14 +403,15 @@ const Travaux = () => {
     setTauxTVASelectionne(10);
     setTauxTVAAutre(0);
     
-    // Clear localStorage
-    localStorage.removeItem('travaux');
-    localStorage.removeItem('rooms');
-    localStorage.removeItem('property');
+    // Clear ALL localStorage data
+    localStorage.clear();
+    
+    // Redirect to the main page to reset the rooms
+    navigate('/');
     
     toast({
       title: "Projet réinitialisé",
-      description: "Toutes les données du projet ont été effacées",
+      description: "Toutes les données du projet ont été effacées. Vous allez être redirigé vers la page principale.",
     });
   };
 
