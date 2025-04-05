@@ -26,10 +26,22 @@ import {
   X,
   Pencil,
   Save,
-  ArrowRight
+  ArrowRight,
+  RefreshCw
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { formaterPrix, formaterQuantite, arrondir2Decimales } from "@/lib/utils";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 // Types de travaux principaux
 const travauxTypes = [
@@ -377,6 +389,31 @@ const Travaux = () => {
     navigate('/recapitulatif');
   };
 
+  // Reset all project data
+  const resetProject = () => {
+    setPieceSelectionnee(null);
+    setTypeTravauxSelectionne(null);
+    setSousTypeSelectionne(null);
+    setPersonnalisation("");
+    setQuantiteModifiee(null);
+    setUniteSelectionnee(null);
+    setTravauxAjoutes([]);
+    setPrixFournitures(null);
+    setPrixMainOeuvre(null);
+    setTauxTVASelectionne(10);
+    setTauxTVAAutre(0);
+    
+    // Clear localStorage
+    localStorage.removeItem('travaux');
+    localStorage.removeItem('rooms');
+    localStorage.removeItem('property');
+    
+    toast({
+      title: "Projet réinitialisé",
+      description: "Toutes les données du projet ont été effacées",
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 pb-12">
       <div className="max-w-6xl mx-auto p-4">
@@ -385,6 +422,31 @@ const Travaux = () => {
             Travaux à prévoir
           </h1>
           <p className="mt-2 text-lg">Sélectionnez les travaux pour chaque pièce</p>
+          
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="reset" className="mt-4">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Nouveau projet
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Êtes-vous sûr de vouloir créer un nouveau projet ?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Cette action va réinitialiser toutes les données de votre projet actuel.
+                  Toutes les pièces et travaux associés seront supprimés.
+                  Cette action est irréversible.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                <AlertDialogAction onClick={resetProject} className="bg-orange-500 hover:bg-orange-600">
+                  Réinitialiser
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
 
         <div className="mb-4 flex justify-between">
