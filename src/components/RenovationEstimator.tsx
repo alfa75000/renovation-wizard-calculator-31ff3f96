@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { Check, Edit, Trash2, Plus, Home, Paint, Layout, ArrowDown, ArrowUp } from "lucide-react";
+import { Check, Edit, Trash2, Plus, Home, Paintbrush, Layout, ArrowDown, ArrowUp } from "lucide-react";
 
 interface Room {
   id: string;
@@ -833,7 +833,7 @@ const RenovationEstimator: React.FC = () => {
           <Card className="mb-8 shadow-md">
             <CardContent className="p-6">
               <div className="flex items-center mb-4">
-                <Paint className="h-5 w-5 mr-2" />
+                <Paintbrush className="h-5 w-5 mr-2" />
                 <h2 className="text-xl font-semibold">Traitements de Peinture</h2>
               </div>
               
