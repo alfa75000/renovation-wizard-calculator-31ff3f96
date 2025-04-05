@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { 
   Card, 
@@ -14,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { 
   ArrowLeft,
@@ -146,7 +148,7 @@ interface Menuiserie {
 }
 
 interface Piece {
-  id: string | number;
+  id: number | string;
   nom?: string;
   name?: string;
   type?: string;
@@ -273,8 +275,8 @@ const Travaux = () => {
     });
   };
 
-  const selectionnerPiece = (pieceId: number) => {
-    setPieceSelectionnee(pieceId);
+  const selectionnerPiece = (pieceId: number | string) => {
+    setPieceSelectionnee(Number(pieceId));
     setTypeTravauxSelectionne(null);
     setSousTypeSelectionne(null);
     setPersonnalisation("");
@@ -285,7 +287,7 @@ const Travaux = () => {
   };
 
   const getPieceSelectionnee = () => {
-    return pieces.find(p => p.id === pieceSelectionnee) || null;
+    return pieces.find(p => Number(p.id) === pieceSelectionnee) || null;
   };
 
   const getQuantiteParDefaut = () => {
@@ -294,13 +296,13 @@ const Travaux = () => {
 
     switch (typeTravauxSelectionne) {
       case "murs":
-        return piece.surfaceNetMurs;
+        return piece.surfaceNetMurs || 0;
       case "plafond":
-        return piece.surface;
+        return piece.surface || 0;
       case "sol":
-        return piece.surface;
+        return piece.surface || 0;
       case "menuiseries":
-        return piece.surfaceMenuiseries;
+        return piece.surfaceMenuiseries || 0;
       default:
         return 1;
     }
@@ -321,19 +323,47 @@ const Travaux = () => {
   };
 
   const ajouterTravail = () => {
-    if (!pieceSelectionnee || !typeTravauxSelectionne || !sousTypeSelectionne) return;
+    if (!pieceSelectionnee || !typeTravauxSelectionne || !sousTypeSelectionne) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez sélectionner une pièce, un type de travaux et une prestation",
+        variant: "destructive"
+      });
+      return;
+    }
 
     const piece = getPieceSelectionnee();
-    if (!piece) return;
+    if (!piece) {
+      toast({
+        title: "Erreur",
+        description: "Pièce non trouvée",
+        variant: "destructive"
+      });
+      return;
+    }
 
     const quantite = quantiteModifiee !== null ? quantiteModifiee : getQuantiteParDefaut();
     const unite = uniteSelectionnee || getUniteParDefaut();
     
     const sousType = sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux].find(st => st.id === sousTypeSelectionne);
-    if (!sousType) return;
+    if (!sousType) {
+      toast({
+        title: "Erreur",
+        description: "Type de prestation non trouvé",
+        variant: "destructive"
+      });
+      return;
+    }
 
     const typeTravauxObj = travauxTypes.find(t => t.id === typeTravauxSelectionne);
-    if (!typeTravauxObj) return;
+    if (!typeTravauxObj) {
+      toast({
+        title: "Erreur",
+        description: "Type de travaux non trouvé",
+        variant: "destructive"
+      });
+      return;
+    }
 
     const prixFournituresDefaut = arrondir2Decimales(
       (prixFournitures !== null ? prixFournitures : 
@@ -358,8 +388,8 @@ const Travaux = () => {
 
     const nouveauTravail: Travail = {
       id: `${Date.now()}`,
-      pieceId: piece.id,
-      pieceName: piece.nom,
+      pieceId: Number(piece.id),
+      pieceName: piece.nom || "Pièce sans nom",
       typeTravauxId: typeTravauxSelectionne,
       typeTravauxLabel: typeTravauxObj.label,
       sousTypeId: sousTypeSelectionne,
@@ -373,7 +403,10 @@ const Travaux = () => {
       tauxTVA: tauxFinal
     };
 
-    setTravauxAjoutes([...travauxAjoutes, nouveauTravail]);
+    const newTravauxList = [...travauxAjoutes, nouveauTravail];
+    setTravauxAjoutes(newTravauxList);
+    localStorage.setItem('travaux', JSON.stringify(newTravauxList));
+    
     setSousTypeSelectionne(null);
     setPersonnalisation("");
     setQuantiteModifiee(null);
@@ -524,11 +557,11 @@ const Travaux = () => {
                   pieces.map(piece => (
                     <Button
                       key={piece.id}
-                      variant={pieceSelectionnee === piece.id ? "default" : "outline"}
+                      variant={pieceSelectionnee === Number(piece.id) ? "default" : "outline"}
                       className="justify-start"
-                      onClick={() => selectionnerPiece(Number(piece.id))}
+                      onClick={() => selectionnerPiece(piece.id)}
                     >
-                      {piece.nom} ({piece.surface} m²)
+                      {piece.nom} ({formaterQuantite(piece.surface || 0)} m²)
                     </Button>
                   ))
                 ) : (
@@ -600,8 +633,12 @@ const Travaux = () => {
                               );
                               setUniteSelectionnee(sousType?.unite || null);
 
+                              // Reset prix when changing sous-type
                               setPrixFournitures(null);
                               setPrixMainOeuvre(null);
+                              
+                              // Reset quantity to default based on new sous-type
+                              setQuantiteModifiee(null);
                             }}
                           >
                             <SelectTrigger>
@@ -664,10 +701,11 @@ const Travaux = () => {
                     {sousTypeSelectionne && (
                       <div>
                         <label className="block text-sm font-medium mb-1">Personnalisation</label>
-                        <Input
+                        <Textarea
                           value={personnalisation}
                           onChange={(e) => setPersonnalisation(e.target.value)}
                           placeholder="Précisez le type de travaux si nécessaire"
+                          className="min-h-[80px] resize-y"
                         />
                       </div>
                     )}
@@ -755,7 +793,6 @@ const Travaux = () => {
                       <div className="space-y-3">
                         {travauxParPiece(pieceSelectionnee).map(travail => {
                           const total = parseFloat((travail.quantite * travail.prixUnitaire).toFixed(2));
-                          const type = travauxTypes.find(t => t.id === travail.typeTravauxId);
                           
                           return (
                             <Card key={travail.id} className="p-3">
