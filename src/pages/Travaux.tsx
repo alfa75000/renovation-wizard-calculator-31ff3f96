@@ -36,6 +36,7 @@ import TravailForm from "@/features/travaux/components/TravailForm";
 import TravailCard from "@/features/travaux/components/TravailCard";
 import { ProjectProvider } from "@/contexts/ProjectContext";
 import { TravauxTypesProvider } from "@/contexts/TravauxTypesContext";
+import { Travail } from "@/types";
 
 const TravauxPage = () => {
   const {
@@ -51,6 +52,16 @@ const TravauxPage = () => {
     naviguerVersRecapitulatif,
     resetProject
   } = useTravaux();
+
+  // Adaptateur pour gérer les différences de type (string vs number) pour pieceSelectionnee
+  const handlePieceSelection = (pieceId: string) => {
+    selectionnerPiece(pieceId);
+  };
+
+  // Adaptateur pour modifier un travail
+  const handleModifierTravail = (travail: Travail) => {
+    modifierTravail(travail.id, travail);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 pb-12">
@@ -145,7 +156,7 @@ const TravauxPage = () => {
                 <PieceSelect 
                   pieces={pieces}
                   selectedPieceId={pieceSelectionnee}
-                  onSelect={selectionnerPiece}
+                  onSelect={handlePieceSelection}
                 />
               </CardContent>
             </Card>
@@ -170,7 +181,7 @@ const TravauxPage = () => {
                             <TravailCard 
                               key={travail.id} 
                               travail={travail}
-                              onEdit={modifierTravail}
+                              onEdit={handleModifierTravail}
                               onDelete={supprimerTravail}
                             />
                           ))}
