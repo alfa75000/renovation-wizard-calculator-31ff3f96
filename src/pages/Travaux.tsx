@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "@/hooks/use-toast";
 import { 
   ArrowLeft,
   Paintbrush,
@@ -24,7 +25,9 @@ import {
   Home,
   Plus,
   X,
-  Pencil
+  Pencil,
+  Save,
+  ArrowRight
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -37,81 +40,88 @@ const travauxTypes = [
   { id: "electricite", label: "Electricité", icon: <SquarePen className="h-4 w-4" /> },
   { id: "plomberie", label: "Plomberie", icon: <SquarePen className="h-4 w-4" /> },
   { id: "platrerie", label: "Plâtrerie", icon: <SquarePen className="h-4 w-4" /> },
-  { id: "maconnerie", label: "Maçonnerie", icon: <SquarePen className="h-4 w-4" /> }
+  { id: "maconnerie", label: "Maçonnerie", icon: <SquarePen className="h-4 w-4" /> },
+  { id: "autre", label: "Autre", icon: <Wrench className="h-4 w-4" /> }
 ];
 
 // Sous-types de travaux associés à chaque type principal
 const sousTravaux = {
   murs: [
-    { id: "lessivage-travaux", label: "Lessivage pour travaux", prixUnitaire: 2.2 },
-    { id: "lessivage-soigne", label: "Lessivage soigné en conservation", prixUnitaire: 3.5 },
-    { id: "grattage", label: "Grattage, ouverture des fissures", prixUnitaire: 5 },
-    { id: "rebouchage", label: "Rebouchage, ponçage", prixUnitaire: 20 },
-    { id: "enduit-repassage", label: "Enduit repassé, ponçage", prixUnitaire: 25 },
-    { id: "toile-renfort", label: "Toile de renfort anti-fissures", prixUnitaire: 15 },
-    { id: "bande-calicot", label: "Bande Calicot anti-fissure", prixUnitaire: 10 },
-    { id: "toile-verre", label: "Toile de verre à peindre", prixUnitaire: 18 },
-    { id: "peinture-acrylique", label: "Peinture type acrylique", prixUnitaire: 30 },
-    { id: "peinture-glycero", label: "Peinture type glycéro", prixUnitaire: 35 },
-    { id: "vernis", label: "Vernis", prixUnitaire: 40 },
-    { id: "enduit-decoratif", label: "Enduit décoratif", prixUnitaire: 45 },
-    { id: "papier-peint", label: "Papier peint", prixUnitaire: 22 },
-    { id: "faience", label: "Faïence / Carrelage", prixUnitaire: 80 },
-    { id: "lambris", label: "Lambris", prixUnitaire: 60 },
-    { id: "autre", label: "Autre", prixUnitaire: 0 }
+    { id: "lessivage-travaux", label: "Lessivage pour travaux", prixUnitaire: 2.2, unite: "M²" },
+    { id: "lessivage-soigne", label: "Lessivage soigné en conservation", prixUnitaire: 3.5, unite: "M²" },
+    { id: "grattage", label: "Grattage, ouverture des fissures", prixUnitaire: 5, unite: "M²" },
+    { id: "rebouchage", label: "Rebouchage, ponçage", prixUnitaire: 20, unite: "M²" },
+    { id: "enduit-repassage", label: "Enduit repassé, ponçage", prixUnitaire: 25, unite: "M²" },
+    { id: "toile-renfort", label: "Toile de renfort anti-fissures", prixUnitaire: 15, unite: "M²" },
+    { id: "bande-calicot", label: "Bande Calicot anti-fissure", prixUnitaire: 10, unite: "Ml" },
+    { id: "toile-verre", label: "Toile de verre à peindre", prixUnitaire: 18, unite: "M²" },
+    { id: "peinture-acrylique", label: "Peinture type acrylique", prixUnitaire: 30, unite: "M²" },
+    { id: "peinture-glycero", label: "Peinture type glycéro", prixUnitaire: 35, unite: "M²" },
+    { id: "vernis", label: "Vernis", prixUnitaire: 40, unite: "M²" },
+    { id: "enduit-decoratif", label: "Enduit décoratif", prixUnitaire: 45, unite: "M²" },
+    { id: "papier-peint", label: "Papier peint", prixUnitaire: 22, unite: "M²" },
+    { id: "faience", label: "Faïence / Carrelage", prixUnitaire: 80, unite: "M²" },
+    { id: "lambris", label: "Lambris", prixUnitaire: 60, unite: "M²" },
+    { id: "autre", label: "Autre", prixUnitaire: 0, unite: "M²" }
   ],
   plafond: [
-    { id: "lessivage-travaux", label: "Lessivage pour travaux", prixUnitaire: 2.5 },
-    { id: "rebouchage", label: "Rebouchage, ponçage", prixUnitaire: 22 },
-    { id: "peinture-acrylique", label: "Peinture type acrylique", prixUnitaire: 32 },
-    { id: "peinture-glycero", label: "Peinture type glycéro", prixUnitaire: 38 },
-    { id: "autre", label: "Autre", prixUnitaire: 0 }
+    { id: "lessivage-travaux", label: "Lessivage pour travaux", prixUnitaire: 2.5, unite: "M²" },
+    { id: "rebouchage", label: "Rebouchage, ponçage", prixUnitaire: 22, unite: "M²" },
+    { id: "peinture-acrylique", label: "Peinture type acrylique", prixUnitaire: 32, unite: "M²" },
+    { id: "peinture-glycero", label: "Peinture type glycéro", prixUnitaire: 38, unite: "M²" },
+    { id: "autre", label: "Autre", prixUnitaire: 0, unite: "M²" }
   ],
   sol: [
-    { id: "depose-ancien", label: "Dépose ancien revêtement", prixUnitaire: 15 },
-    { id: "preparation", label: "Préparation support", prixUnitaire: 25 },
-    { id: "carrelage", label: "Carrelage", prixUnitaire: 90 },
-    { id: "parquet", label: "Parquet", prixUnitaire: 85 },
-    { id: "stratifie", label: "Stratifié", prixUnitaire: 65 },
-    { id: "moquette", label: "Moquette", prixUnitaire: 45 },
-    { id: "linoleum", label: "Linoléum", prixUnitaire: 40 },
-    { id: "beton-cire", label: "Béton ciré", prixUnitaire: 120 },
-    { id: "autre", label: "Autre", prixUnitaire: 0 }
+    { id: "depose-ancien", label: "Dépose ancien revêtement", prixUnitaire: 15, unite: "M²" },
+    { id: "preparation", label: "Préparation support", prixUnitaire: 25, unite: "M²" },
+    { id: "carrelage", label: "Carrelage", prixUnitaire: 90, unite: "M²" },
+    { id: "parquet", label: "Parquet", prixUnitaire: 85, unite: "M²" },
+    { id: "stratifie", label: "Stratifié", prixUnitaire: 65, unite: "M²" },
+    { id: "moquette", label: "Moquette", prixUnitaire: 45, unite: "M²" },
+    { id: "linoleum", label: "Linoléum", prixUnitaire: 40, unite: "M²" },
+    { id: "beton-cire", label: "Béton ciré", prixUnitaire: 120, unite: "M²" },
+    { id: "autre", label: "Autre", prixUnitaire: 0, unite: "M²" }
   ],
   menuiseries: [
-    { id: "depose-porte", label: "Dépose porte", prixUnitaire: 50 },
-    { id: "depose-fenetre", label: "Dépose fenêtre", prixUnitaire: 70 },
-    { id: "pose-porte", label: "Pose porte", prixUnitaire: 180 },
-    { id: "pose-porte-fenetre", label: "Pose porte-fenêtre", prixUnitaire: 280 },
-    { id: "pose-fenetre", label: "Pose fenêtre", prixUnitaire: 250 },
-    { id: "peinture-menuiserie", label: "Peinture menuiserie", prixUnitaire: 45 },
-    { id: "autre", label: "Autre", prixUnitaire: 0 }
+    { id: "depose-porte", label: "Dépose porte", prixUnitaire: 50, unite: "Ens." },
+    { id: "depose-fenetre", label: "Dépose fenêtre", prixUnitaire: 70, unite: "Ens." },
+    { id: "pose-porte", label: "Pose porte", prixUnitaire: 180, unite: "Ens." },
+    { id: "pose-porte-fenetre", label: "Pose porte-fenêtre", prixUnitaire: 280, unite: "Ens." },
+    { id: "pose-fenetre", label: "Pose fenêtre", prixUnitaire: 250, unite: "Ens." },
+    { id: "peinture-menuiserie", label: "Peinture menuiserie", prixUnitaire: 45, unite: "M²" },
+    { id: "autre", label: "Autre", prixUnitaire: 0, unite: "Unité" }
   ],
   electricite: [
-    { id: "interrupteur", label: "Pose interrupteur", prixUnitaire: 40 },
-    { id: "prise", label: "Pose prise", prixUnitaire: 45 },
-    { id: "luminaire", label: "Pose luminaire", prixUnitaire: 70 },
-    { id: "tableau", label: "Tableau électrique", prixUnitaire: 350 },
-    { id: "autre", label: "Autre", prixUnitaire: 0 }
+    { id: "interrupteur", label: "Pose interrupteur", prixUnitaire: 40, unite: "Unité" },
+    { id: "prise", label: "Pose prise", prixUnitaire: 45, unite: "Unité" },
+    { id: "luminaire", label: "Pose luminaire", prixUnitaire: 70, unite: "Unité" },
+    { id: "tableau", label: "Tableau électrique", prixUnitaire: 350, unite: "Unité" },
+    { id: "autre", label: "Autre", prixUnitaire: 0, unite: "Unité" }
   ],
   plomberie: [
-    { id: "evacuation", label: "Évacuation", prixUnitaire: 120 },
-    { id: "alimentation", label: "Alimentation", prixUnitaire: 140 },
-    { id: "sanitaire", label: "Sanitaire", prixUnitaire: 180 },
-    { id: "autre", label: "Autre", prixUnitaire: 0 }
+    { id: "evacuation", label: "Évacuation", prixUnitaire: 120, unite: "Ml" },
+    { id: "alimentation", label: "Alimentation", prixUnitaire: 140, unite: "Ml" },
+    { id: "sanitaire", label: "Sanitaire", prixUnitaire: 180, unite: "Unité" },
+    { id: "autre", label: "Autre", prixUnitaire: 0, unite: "Unité" }
   ],
   platrerie: [
-    { id: "cloison", label: "Cloison placo", prixUnitaire: 85 },
-    { id: "doublage", label: "Doublage", prixUnitaire: 75 },
-    { id: "faux-plafond", label: "Faux plafond", prixUnitaire: 90 },
-    { id: "autre", label: "Autre", prixUnitaire: 0 }
+    { id: "cloison", label: "Cloison placo", prixUnitaire: 85, unite: "M²" },
+    { id: "doublage", label: "Doublage", prixUnitaire: 75, unite: "M²" },
+    { id: "faux-plafond", label: "Faux plafond", prixUnitaire: 90, unite: "M²" },
+    { id: "autre", label: "Autre", prixUnitaire: 0, unite: "M²" }
   ],
   maconnerie: [
-    { id: "ouverture", label: "Création ouverture", prixUnitaire: 450 },
-    { id: "demolition", label: "Démolition", prixUnitaire: 250 },
-    { id: "autre", label: "Autre", prixUnitaire: 0 }
+    { id: "ouverture", label: "Création ouverture", prixUnitaire: 450, unite: "Forfait" },
+    { id: "demolition", label: "Démolition", prixUnitaire: 250, unite: "M3" },
+    { id: "autre", label: "Autre", prixUnitaire: 0, unite: "Forfait" }
+  ],
+  autre: [
+    { id: "autre", label: "Personnalisé", prixUnitaire: 0, unite: "Unité" }
   ]
 };
+
+// Unités disponibles
+const unites = ["M²", "Ml", "M3", "Unité", "Ens.", "Forfait"];
 
 // Exemple de pièces (à remplacer par les données réelles)
 const piecesExemple = [
@@ -148,11 +158,14 @@ const piecesExemple = [
 // Type pour un travail
 interface Travail {
   id: string;
+  pieceId: number;
+  pieceName: string;
   typeTravauxId: string;
   sousTypeId: string;
   sousTypeLabel: string;
   personnalisation: string;
-  surface: number;
+  quantite: number;
+  unite: string;
   prixUnitaire: number;
 }
 
@@ -162,8 +175,10 @@ const Travaux = () => {
   const [typeTravauxSelectionne, setTypeTravauxSelectionne] = useState<string | null>(null);
   const [sousTypeSelectionne, setSousTypeSelectionne] = useState<string | null>(null);
   const [personnalisation, setPersonnalisation] = useState("");
-  const [surfaceModifiee, setSurfaceModifiee] = useState<number | null>(null);
+  const [quantiteModifiee, setQuantiteModifiee] = useState<number | null>(null);
+  const [uniteSelectionnee, setUniteSelectionnee] = useState<string | null>(null);
   const [travauxAjoutes, setTravauxAjoutes] = useState<Travail[]>([]);
+  const [prixPerso, setPrixPerso] = useState<number | null>(null);
 
   // Sélectionner une pièce
   const selectionnerPiece = (pieceId: number) => {
@@ -171,7 +186,9 @@ const Travaux = () => {
     setTypeTravauxSelectionne(null);
     setSousTypeSelectionne(null);
     setPersonnalisation("");
-    setSurfaceModifiee(null);
+    setQuantiteModifiee(null);
+    setUniteSelectionnee(null);
+    setPrixPerso(null);
   };
 
   // Obtenir la pièce sélectionnée
@@ -180,7 +197,7 @@ const Travaux = () => {
   };
 
   // Obtenir la surface appropriée selon le type de travaux
-  const getSurfaceParDefaut = () => {
+  const getQuantiteParDefaut = () => {
     const piece = getPieceSelectionnee();
     if (!piece || !typeTravauxSelectionne) return 0;
 
@@ -194,61 +211,119 @@ const Travaux = () => {
       case "menuiseries":
         return piece.surfaceMenuiseries;
       default:
-        return 0;
+        return 1; // Valeur par défaut pour les autres types
     }
+  };
+
+  // Obtenir l'unité par défaut du sous-type sélectionné
+  const getUniteParDefaut = () => {
+    if (!typeTravauxSelectionne || !sousTypeSelectionne) return "M²";
+
+    const sousType = sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux]?.find(
+      st => st.id === sousTypeSelectionne
+    );
+    
+    return sousType?.unite || "M²";
   };
 
   // Ajouter un travail à la liste
   const ajouterTravail = () => {
     if (!pieceSelectionnee || !typeTravauxSelectionne || !sousTypeSelectionne) return;
 
-    const surface = surfaceModifiee !== null ? surfaceModifiee : getSurfaceParDefaut();
-    const sousType = sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux].find(st => st.id === sousTypeSelectionne);
+    const piece = getPieceSelectionnee();
+    if (!piece) return;
+
+    const quantite = quantiteModifiee !== null ? quantiteModifiee : getQuantiteParDefaut();
+    const unite = uniteSelectionnee || getUniteParDefaut();
     
+    const sousType = sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux].find(st => st.id === sousTypeSelectionne);
     if (!sousType) return;
 
     const nouveauTravail: Travail = {
       id: `${Date.now()}`,
+      pieceId: piece.id,
+      pieceName: piece.nom,
       typeTravauxId: typeTravauxSelectionne,
       sousTypeId: sousTypeSelectionne,
       sousTypeLabel: sousType.label,
       personnalisation: personnalisation,
-      surface,
-      prixUnitaire: sousType.prixUnitaire
+      quantite,
+      unite,
+      prixUnitaire: prixPerso !== null ? prixPerso : sousType.prixUnitaire
     };
 
     setTravauxAjoutes([...travauxAjoutes, nouveauTravail]);
     setSousTypeSelectionne(null);
     setPersonnalisation("");
-    setSurfaceModifiee(null);
+    setQuantiteModifiee(null);
+    setUniteSelectionnee(null);
+    setPrixPerso(null);
+    
+    toast({
+      title: "Travail ajouté",
+      description: `${sousType.label} ajouté pour ${piece.nom}`,
+    });
   };
 
   // Supprimer un travail
   const supprimerTravail = (id: string) => {
     setTravauxAjoutes(travauxAjoutes.filter(t => t.id !== id));
+    toast({
+      title: "Travail supprimé",
+      description: "Le travail a été supprimé avec succès",
+    });
   };
 
-  // Modifier un travail (pour une future implémentation)
+  // Modifier un travail
   const modifierTravail = (travail: Travail) => {
-    // Logique de modification à implémenter
-    console.log("Modification du travail:", travail);
+    // Sélectionner la pièce
+    setPieceSelectionnee(travail.pieceId);
+    
+    // Sélectionner le type de travaux
+    setTypeTravauxSelectionne(travail.typeTravauxId);
+    
+    // Sélectionner le sous-type
+    setSousTypeSelectionne(travail.sousTypeId);
+    
+    // Personnalisation
+    setPersonnalisation(travail.personnalisation);
+    
+    // Quantité et unité
+    setQuantiteModifiee(travail.quantite);
+    setUniteSelectionnee(travail.unite);
+    
+    // Prix unitaire personnalisé
+    setPrixPerso(travail.prixUnitaire);
+    
+    // Supprimer le travail à modifier
+    supprimerTravail(travail.id);
   };
 
   // Calculer le total
   const calculerTotal = () => {
     return travauxAjoutes.reduce((total, travail) => {
-      return total + (travail.surface * travail.prixUnitaire);
+      return total + (travail.quantite * travail.prixUnitaire);
     }, 0);
   };
 
   // Filtrer les travaux par pièce
   const travauxParPiece = (pieceId: number) => {
-    return travauxAjoutes.filter(t => pieceId === pieceSelectionnee);
+    return travauxAjoutes.filter(t => t.pieceId === pieceId);
   };
 
   // Formater le prix
   const formaterPrix = (prix: number) => {
     return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(prix);
+  };
+
+  // Enregistrer les travaux
+  const enregistrerTravaux = () => {
+    // Ici on pourrait enregistrer les travaux dans le localStorage ou envoyer à un API
+    localStorage.setItem('travaux', JSON.stringify(travauxAjoutes));
+    toast({
+      title: "Travaux enregistrés",
+      description: "Tous les travaux ont été enregistrés avec succès",
+    });
   };
 
   return (
@@ -261,13 +336,27 @@ const Travaux = () => {
           <p className="mt-2 text-lg">Sélectionnez les travaux pour chaque pièce</p>
         </div>
 
-        <div className="mb-4">
+        <div className="mb-4 flex justify-between">
           <Button variant="outline" asChild className="flex items-center gap-2">
             <Link to="/">
               <ArrowLeft className="h-4 w-4" />
               Retour à l'estimateur
             </Link>
           </Button>
+
+          <div className="flex gap-2">
+            <Button onClick={enregistrerTravaux} className="flex items-center gap-2">
+              <Save className="h-4 w-4" />
+              Enregistrer les travaux
+            </Button>
+            
+            <Button asChild variant="default" className="flex items-center gap-2">
+              <Link to="/recapitulatif">
+                Voir le récapitulatif
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -317,7 +406,9 @@ const Travaux = () => {
                           setTypeTravauxSelectionne(value);
                           setSousTypeSelectionne(null);
                           setPersonnalisation("");
-                          setSurfaceModifiee(null);
+                          setQuantiteModifiee(null);
+                          setUniteSelectionnee(null);
+                          setPrixPerso(null);
                         }}
                       >
                         <SelectTrigger>
@@ -348,6 +439,12 @@ const Travaux = () => {
                             if (value !== "autre") {
                               setPersonnalisation("");
                             }
+                            
+                            // Définir l'unité par défaut du sous-type
+                            const sousType = sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux]?.find(
+                              st => st.id === value
+                            );
+                            setUniteSelectionnee(sousType?.unite || null);
                           }}
                         >
                           <SelectTrigger>
@@ -356,7 +453,7 @@ const Travaux = () => {
                           <SelectContent>
                             {sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux].map(sousType => (
                               <SelectItem key={sousType.id} value={sousType.id}>
-                                {sousType.label} ({formaterPrix(sousType.prixUnitaire)}/m²)
+                                {sousType.label} ({formaterPrix(sousType.prixUnitaire)}/{sousType.unite})
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -364,35 +461,69 @@ const Travaux = () => {
                       </div>
                     )}
 
-                    {/* Personnalisation si "autre" est sélectionné */}
-                    {sousTypeSelectionne === "autre" && (
+                    {/* Personnalisation pour tous les sous-types */}
+                    {sousTypeSelectionne && (
                       <div>
                         <label className="block text-sm font-medium mb-1">Personnalisation</label>
                         <Input
                           value={personnalisation}
                           onChange={(e) => setPersonnalisation(e.target.value)}
-                          placeholder="Précisez le type de travaux"
+                          placeholder="Précisez le type de travaux si nécessaire"
                         />
                       </div>
                     )}
 
-                    {/* Surface à traiter */}
+                    {/* Quantité à traiter */}
                     {sousTypeSelectionne && (
                       <div>
-                        <label className="block text-sm font-medium mb-1">Surface à traiter (m²)</label>
+                        <label className="block text-sm font-medium mb-1">Quantité à traiter</label>
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="col-span-2">
+                            <Input
+                              type="number"
+                              value={quantiteModifiee !== null ? quantiteModifiee : getQuantiteParDefaut()}
+                              onChange={(e) => setQuantiteModifiee(parseFloat(e.target.value) || 0)}
+                            />
+                          </div>
+                          <Select 
+                            value={uniteSelectionnee || getUniteParDefaut()} 
+                            onValueChange={setUniteSelectionnee}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Unité" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {unites.map(unite => (
+                                <SelectItem key={unite} value={unite}>
+                                  {unite}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Quantité par défaut: {getQuantiteParDefaut()} {getUniteParDefaut()}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Prix unitaire personnalisé */}
+                    {sousTypeSelectionne && (
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Prix unitaire</label>
                         <div className="flex gap-2">
                           <Input
                             type="number"
-                            value={surfaceModifiee !== null ? surfaceModifiee : getSurfaceParDefaut()}
-                            onChange={(e) => setSurfaceModifiee(parseFloat(e.target.value) || 0)}
+                            value={prixPerso !== null ? prixPerso : (sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux]?.find(st => st.id === sousTypeSelectionne)?.prixUnitaire || 0)}
+                            onChange={(e) => setPrixPerso(parseFloat(e.target.value) || 0)}
                           />
-                          <Button variant="outline" onClick={() => setSurfaceModifiee(getSurfaceParDefaut())}>
+                          <Button variant="outline" onClick={() => {
+                            const prixDefaut = sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux]?.find(st => st.id === sousTypeSelectionne)?.prixUnitaire || 0;
+                            setPrixPerso(prixDefaut);
+                          }}>
                             Réinitialiser
                           </Button>
                         </div>
-                        <p className="text-xs text-gray-500 mt-1">
-                          Surface par défaut: {getSurfaceParDefaut()} m²
-                        </p>
                       </div>
                     )}
 
@@ -411,7 +542,7 @@ const Travaux = () => {
                       <h3 className="text-lg font-medium mb-4">Travaux ajoutés</h3>
                       <div className="space-y-3">
                         {travauxParPiece(pieceSelectionnee).map(travail => {
-                          const total = travail.surface * travail.prixUnitaire;
+                          const total = travail.quantite * travail.prixUnitaire;
                           const type = travauxTypes.find(t => t.id === travail.typeTravauxId);
                           
                           return (
@@ -426,7 +557,7 @@ const Travaux = () => {
                                     </span>
                                   </div>
                                   <div className="text-sm mt-1">
-                                    {travail.surface} m² × {formaterPrix(travail.prixUnitaire)}/m² = {formaterPrix(total)}
+                                    {travail.quantite} {travail.unite} × {formaterPrix(travail.prixUnitaire)}/{travail.unite} = {formaterPrix(total)}
                                   </div>
                                 </div>
                                 <div className="flex space-x-1">
