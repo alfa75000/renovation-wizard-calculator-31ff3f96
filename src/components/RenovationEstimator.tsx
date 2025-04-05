@@ -61,7 +61,7 @@ const RenovationEstimator: React.FC = () => {
     floors: "1",
     totalArea: "",
     rooms: "",
-    ceilingHeight: "",
+    ceilingHeight: "2.50",
   });
 
   const [newRoom, setNewRoom] = useState<Omit<Room, "id">>({

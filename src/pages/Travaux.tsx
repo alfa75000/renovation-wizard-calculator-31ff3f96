@@ -58,9 +58,7 @@ const TravauxPage = () => {
 
   // Adaptateur pour gérer les différences de type (string vs number) pour pieceSelectionnee
   const handlePieceSelection = (pieceIdStr: string) => {
-    // Conversion en number si nécessaire
-    const pieceId = typeof pieceSelectionnee === 'number' ? parseInt(pieceIdStr, 10) : pieceIdStr;
-    selectionnerPiece(pieceId);
+    selectionnerPiece(pieceIdStr);
   };
 
   // Adaptateur pour modifier un travail
@@ -180,7 +178,7 @@ const TravauxPage = () => {
 
                     {travauxParPiece(pieceSelectionnee.toString()).length > 0 && (
                       <div className="mt-8">
-                        <h3 className="text-lg font-medium mb-4">Travaux ajoutés</h3>
+                        <h3 className="text-lg font-medium mb-4">Travaux/Prestations ajoutés</h3>
                         <div className="space-y-3">
                           {travauxParPiece(pieceSelectionnee.toString()).map(travail => (
                             <TravailCard 

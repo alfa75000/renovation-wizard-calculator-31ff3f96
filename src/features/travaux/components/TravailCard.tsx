@@ -21,9 +21,13 @@ const TravailCard: React.FC<TravailCardProps> = ({ travail, onEdit, onDelete }) 
         <div>
           <p className="font-medium">
             {travail.typeTravauxLabel}: {travail.sousTypeLabel}
-            {travail.personnalisation && ` (${travail.personnalisation})`}
           </p>
-          <p className="text-sm text-gray-600">
+          {travail.personnalisation && (
+            <p className="text-sm mt-1 text-gray-700">
+              {travail.personnalisation}
+            </p>
+          )}
+          <p className="text-sm text-gray-600 mt-1">
             {formaterQuantite(travail.quantite)} {travail.unite} × {formaterPrix(travail.prixUnitaire)}/{travail.unite}
           </p>
           <p className="text-xs text-gray-500">

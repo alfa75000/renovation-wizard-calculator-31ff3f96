@@ -4,13 +4,14 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { formaterPrix } from "@/lib/utils";
-import { Plus } from "lucide-react";
+import { Plus, Save, X } from "lucide-react";
 import { Piece, Travail } from '@/types';
 import TypeTravauxSelect from './TypeTravauxSelect';
 import SousTypeSelect from './SousTypeSelect';
 import TvaSelect from './TvaSelect';
 import UniteSelect from './UniteSelect';
 import { useTravauxTypes } from '@/contexts/TravauxTypesContext';
+import { useTravaux } from '../hooks/useTravaux';
 
 interface TravailFormProps {
   piece: Piece | null;
@@ -28,21 +29,46 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
   const [tauxTVASelectionne, setTauxTVASelectionne] = useState<number>(10);
   const [tauxTVAAutre, setTauxTVAAutre] = useState<number>(0);
   const { state } = useTravauxTypes();
+  const { travailAModifier } = useTravaux();
+  
+  const [isEditing, setIsEditing] = useState<boolean>(false);
+
+  // Chargement du travail à modifier
+  useEffect(() => {
+    if (travailAModifier && piece) {
+      // Vérifier que le travail appartient à la pièce sélectionnée
+      if (travailAModifier.pieceId.toString() === piece.id.toString()) {
+        setTypeTravauxSelectionne(travailAModifier.typeTravauxId);
+        setSousTypeSelectionne(travailAModifier.sousTypeId);
+        setDescriptif(travailAModifier.personnalisation || "");
+        setQuantiteModifiee(travailAModifier.quantite);
+        setUniteSelectionnee(travailAModifier.unite);
+        setPrixFournitures(travailAModifier.prixFournitures);
+        setPrixMainOeuvre(travailAModifier.prixMainOeuvre);
+        setTauxTVASelectionne(travailAModifier.tauxTVA);
+        setIsEditing(true);
+      }
+    } else {
+      setIsEditing(false);
+    }
+  }, [travailAModifier, piece]);
 
   // Réinitialisation quand la pièce change
   useEffect(() => {
-    setTypeTravauxSelectionne(null);
-    setSousTypeSelectionne(null);
-    setDescriptif("");
-    setQuantiteModifiee(null);
-    setUniteSelectionnee(null);
-    setPrixFournitures(null);
-    setPrixMainOeuvre(null);
-  }, [piece]);
+    if (!isEditing) {
+      setTypeTravauxSelectionne(null);
+      setSousTypeSelectionne(null);
+      setDescriptif("");
+      setQuantiteModifiee(null);
+      setUniteSelectionnee(null);
+      setPrixFournitures(null);
+      setPrixMainOeuvre(null);
+    }
+  }, [piece, isEditing]);
 
   // Mise à jour quand le type ou sous-type change
   useEffect(() => {
-    if (typeTravauxSelectionne && sousTypeSelectionne) {
+    if (!isEditing && typeTravauxSelectionne && sousTypeSelectionne) {
       const typeFromContext = state.types.find(type => type.id === typeTravauxSelectionne);
       const sousTypeFromContext = typeFromContext?.sousTypes.find(st => st.id === sousTypeSelectionne);
       
@@ -64,7 +90,7 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
       setPrixMainOeuvre(null);
       setQuantiteModifiee(null);
     }
-  }, [typeTravauxSelectionne, sousTypeSelectionne, state.types]);
+  }, [typeTravauxSelectionne, sousTypeSelectionne, state.types, isEditing]);
 
   const getQuantiteParDefaut = () => {
     if (!piece || !typeTravauxSelectionne) return 0;
@@ -94,6 +120,19 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
     }
     
     return "M²";
+  };
+
+  const annulerEdition = () => {
+    setIsEditing(false);
+    setTypeTravauxSelectionne(null);
+    setSousTypeSelectionne(null);
+    setDescriptif("");
+    setQuantiteModifiee(null);
+    setUniteSelectionnee(null);
+    setPrixFournitures(null);
+    setPrixMainOeuvre(null);
+    setTauxTVASelectionne(10);
+    setTauxTVAAutre(0);
   };
 
   const handleAddTravail = () => {
@@ -130,7 +169,7 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
     }
 
     onAddTravail({
-      pieceId: typeof piece.id === 'string' ? parseInt(piece.id, 10) : piece.id,
+      pieceId: piece.id,
       pieceName: piece.nom || piece.name || "Pièce sans nom",
       typeTravauxId: typeTravauxSelectionne,
       typeTravauxLabel,
@@ -151,6 +190,7 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
     setUniteSelectionnee(null);
     setPrixFournitures(null);
     setPrixMainOeuvre(null);
+    setIsEditing(false);
   };
 
   if (!piece) {
@@ -163,9 +203,17 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-medium mb-4">
-        {piece.nom || piece.name}
-      </h3>
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-medium">
+          {piece.nom || piece.name}
+        </h3>
+        {isEditing && (
+          <Button onClick={annulerEdition} variant="outline" size="sm" className="flex items-center">
+            <X className="h-4 w-4 mr-2" />
+            Annuler l'édition
+          </Button>
+        )}
+      </div>
 
       <TypeTravauxSelect 
         value={typeTravauxSelectionne} 
@@ -260,8 +308,17 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
 
       {sousTypeSelectionne && (
         <Button onClick={handleAddTravail} className="w-full mt-2">
-          <Plus className="h-4 w-4 mr-1" />
-          Ajouter ce travail
+          {isEditing ? (
+            <>
+              <Save className="h-4 w-4 mr-1" />
+              Enregistrer les modifications
+            </>
+          ) : (
+            <>
+              <Plus className="h-4 w-4 mr-1" />
+              Ajouter ce travail
+            </>
+          )}
         </Button>
       )}
     </div>
