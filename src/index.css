@@ -109,7 +109,3 @@
   transform: translateY(-3px);
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
 }
-
-.gradient-header {
-  background: linear-gradient(to right, #3b82f6, #2563eb);
-}

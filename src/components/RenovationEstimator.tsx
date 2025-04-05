@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -30,6 +29,15 @@ interface Room {
     type: string;
     removal: boolean;
   };
+  menuiseries: Menuiserie[];
+}
+
+interface Menuiserie {
+  id: string;
+  type: string;
+  largeur: string;
+  hauteur: string;
+  quantity: number;
 }
 
 interface PropertyType {
@@ -55,7 +63,7 @@ const RenovationEstimator: React.FC = () => {
     type: "Salon",
     length: "",
     width: "",
-    height: "",
+    height: "2.50",
     surface: "",
     plinthHeight: "0.1",
     wallSurfaceRaw: "",
@@ -70,6 +78,14 @@ const RenovationEstimator: React.FC = () => {
       type: "Parquet",
       removal: false,
     },
+    menuiseries: []
+  });
+
+  const [newMenuiserie, setNewMenuiserie] = useState<Omit<Menuiserie, "id">>({
+    type: "Porte",
+    largeur: "0.83",
+    hauteur: "2.04",
+    quantity: 1
   });
 
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -79,6 +95,7 @@ const RenovationEstimator: React.FC = () => {
   const propertyTypes = ["Appartement", "Maison", "Studio", "Loft", "Autre"];
   const roomTypes = ["Salon", "Chambre", "Cuisine", "Salle de bain", "Toilettes", "Bureau", "Entrée", "Couloir", "Autre"];
   const flooringTypes = ["Parquet", "Carrelage", "Moquette", "Vinyle", "Béton ciré", "Autre"];
+  const menuiserieTypes = ["Porte", "Fenêtre", "Porte-fenêtre", "Placard", "Volet", "Autre"];
 
   const handlePropertyChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -94,13 +111,18 @@ const RenovationEstimator: React.FC = () => {
       setNewRoom((prev) => ({
         ...prev,
         [parent]: {
-          ...prev[parent as keyof typeof prev],
+          ...(prev[parent as keyof typeof prev] as any),
           [child]: value === "true" ? true : value === "false" ? false : value,
         },
       }));
     } else {
       setNewRoom((prev) => ({ ...prev, [name]: value }));
     }
+  };
+
+  const handleMenuiserieChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setNewMenuiserie((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -112,7 +134,7 @@ const RenovationEstimator: React.FC = () => {
       setNewRoom((prev) => ({
         ...prev,
         [parent]: {
-          ...prev[parent as keyof typeof prev],
+          ...(prev[parent as keyof typeof prev] as any),
           [child]: checked,
         },
       }));
@@ -137,6 +159,35 @@ const RenovationEstimator: React.FC = () => {
       setNewRoom((prev) => ({ ...prev, wallSurfaceRaw: wallSurface }));
     }
   }, [newRoom.length, newRoom.width, newRoom.height]);
+
+  const handleAddMenuiserie = () => {
+    const menuiserieItem = {
+      ...newMenuiserie,
+      id: Date.now().toString()
+    };
+    
+    setNewRoom(prev => ({
+      ...prev,
+      menuiseries: [...prev.menuiseries, menuiserieItem]
+    }));
+    
+    // Reset fields but keep type
+    setNewMenuiserie({
+      type: newMenuiserie.type,
+      largeur: "0.83",
+      hauteur: "2.04",
+      quantity: 1
+    });
+    
+    toast.success(`${menuiserieItem.type} ajouté`);
+  };
+
+  const handleRemoveMenuiserie = (menuiserieId: string) => {
+    setNewRoom(prev => ({
+      ...prev,
+      menuiseries: prev.menuiseries.filter(item => item.id !== menuiserieId)
+    }));
+  };
 
   const handleAddRoom = () => {
     // Basic validation
@@ -173,7 +224,7 @@ const RenovationEstimator: React.FC = () => {
       type: "Salon",
       length: "",
       width: "",
-      height: "",
+      height: "2.50",
       surface: "",
       plinthHeight: "0.1",
       wallSurfaceRaw: "",
@@ -188,6 +239,7 @@ const RenovationEstimator: React.FC = () => {
         type: "Parquet",
         removal: false,
       },
+      menuiseries: []
     });
   };
 
@@ -462,33 +514,116 @@ const RenovationEstimator: React.FC = () => {
               </div>
             </div>
             
+            {/* Menuiseries */}
+            <div className="mt-6 mb-4">
+              <h4 className="text-md font-medium mb-3">Menuiseries</h4>
+              
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 border p-3 rounded bg-white">
+                <div>
+                  <Label htmlFor="menuiserieType">Type</Label>
+                  <select
+                    id="menuiserieType"
+                    name="type"
+                    value={newMenuiserie.type}
+                    onChange={handleMenuiserieChange}
+                    className="w-full p-2 border rounded mt-1"
+                  >
+                    {menuiserieTypes.map((type) => (
+                      <option key={type} value={type}>{type}</option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div>
+                  <Label htmlFor="menuiserieLargeur">Largeur (m)</Label>
+                  <Input
+                    id="menuiserieLargeur"
+                    name="largeur"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={newMenuiserie.largeur}
+                    onChange={handleMenuiserieChange}
+                    className="mt-1"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="menuiserieHauteur">Hauteur (m)</Label>
+                  <Input
+                    id="menuiserieHauteur"
+                    name="hauteur"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={newMenuiserie.hauteur}
+                    onChange={handleMenuiserieChange}
+                    className="mt-1"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="menuiserieQuantity">Quantité</Label>
+                  <div className="flex items-end gap-2">
+                    <Input
+                      id="menuiserieQuantity"
+                      name="quantity"
+                      type="number"
+                      min="1"
+                      value={newMenuiserie.quantity}
+                      onChange={handleMenuiserieChange}
+                      className="mt-1"
+                    />
+                    <Button 
+                      onClick={handleAddMenuiserie} 
+                      size="sm" 
+                      className="mb-0.5"
+                    >
+                      Ajouter
+                    </Button>
+                  </div>
+                </div>
+              </div>
+              
+              {newRoom.menuiseries.length > 0 && (
+                <div className="mt-3 bg-white p-3 border rounded">
+                  <h5 className="text-sm font-medium mb-2">Menuiseries ajoutées :</h5>
+                  <div className="max-h-40 overflow-y-auto">
+                    <table className="min-w-full border-collapse">
+                      <thead>
+                        <tr className="bg-gray-100">
+                          <th className="border px-2 py-1 text-left text-xs">Type</th>
+                          <th className="border px-2 py-1 text-left text-xs">Dimensions</th>
+                          <th className="border px-2 py-1 text-left text-xs">Qté</th>
+                          <th className="border px-2 py-1 text-left text-xs">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {newRoom.menuiseries.map((item) => (
+                          <tr key={item.id} className="border-t hover:bg-gray-50">
+                            <td className="border px-2 py-1 text-sm">{item.type}</td>
+                            <td className="border px-2 py-1 text-sm">{item.largeur}m × {item.hauteur}m</td>
+                            <td className="border px-2 py-1 text-sm">{item.quantity}</td>
+                            <td className="border px-2 py-1">
+                              <Button 
+                                variant="destructive" 
+                                size="sm" 
+                                onClick={() => handleRemoveMenuiserie(item.id)}
+                                className="h-6 px-2 text-xs"
+                              >
+                                Supprimer
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+            
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-              <div>
-                <Label htmlFor="doors">Portes</Label>
-                <Input
-                  id="doors"
-                  name="doors"
-                  type="number"
-                  min="0"
-                  value={newRoom.doors}
-                  onChange={handleRoomChange}
-                  className="mt-1"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="windows">Fenêtres</Label>
-                <Input
-                  id="windows"
-                  name="windows"
-                  type="number"
-                  min="0"
-                  value={newRoom.windows}
-                  onChange={handleRoomChange}
-                  className="mt-1"
-                />
-              </div>
-              
               <div>
                 <Label htmlFor="floor.type">Type de sol</Label>
                 <select
@@ -598,7 +733,7 @@ const RenovationEstimator: React.FC = () => {
                         </td>
                         <td className="py-2 px-4 border">{room.surface} m²</td>
                         <td className="py-2 px-4 border">
-                          {room.doors} porte(s), {room.windows} fenêtre(s)
+                          {room.menuiseries.length} menuiserie(s)
                         </td>
                         <td className="py-2 px-4 border">
                           <div className="flex space-x-2">
@@ -829,125 +964,3 @@ const RenovationEstimator: React.FC = () => {
               <div className="p-4 bg-gray-50 rounded-md mb-4 room-card">
                 <h3 className="font-medium mb-2">Dépose de sol à prévoir</h3>
                 <Separator className="my-2" />
-                <p>
-                  Surface totale:{" "}
-                  <span className="font-semibold">
-                    {rooms
-                      .reduce(
-                        (total, room) =>
-                          total + (room.floor.removal ? parseFloat(room.surface || "0") : 0),
-                        0
-                      )
-                      .toFixed(2)}{" "}
-                    m²
-                  </span>
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Joinery Section */}
-          <Card className="mb-8 shadow-md">
-            <CardContent className="p-6">
-              <h2 className="text-xl font-semibold mb-4">Traitements de Menuiseries</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="p-4 border rounded-md room-card">
-                  <h3 className="font-medium mb-2">Portes</h3>
-                  <Separator className="my-2" />
-                  <p className="mb-2">
-                    Nombre total:{" "}
-                    <span className="font-semibold">{rooms.reduce((total, room) => total + room.doors, 0)}</span>
-                  </p>
-                  <p>
-                    À peindre:{" "}
-                    <span className="font-semibold">
-                      {rooms.reduce(
-                        (total, room) =>
-                          total + (room.paint.woodwork ? room.doors : 0),
-                        0
-                      )}
-                    </span>
-                  </p>
-                </div>
-                <div className="p-4 border rounded-md room-card">
-                  <h3 className="font-medium mb-2">Fenêtres</h3>
-                  <Separator className="my-2" />
-                  <p className="mb-2">
-                    Nombre total:{" "}
-                    <span className="font-semibold">{rooms.reduce((total, room) => total + room.windows, 0)}</span>
-                  </p>
-                  <p>
-                    À peindre:{" "}
-                    <span className="font-semibold">
-                      {rooms.reduce(
-                        (total, room) =>
-                          total + (room.paint.woodwork ? room.windows : 0),
-                        0
-                      )}
-                    </span>
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Final Estimates Section */}
-          <Card className="mb-8 shadow-md">
-            <CardContent className="p-6">
-              <h2 className="text-xl font-semibold mb-4">Estimation Globale</h2>
-              
-              <div className="bg-blue-50 border border-blue-200 p-4 rounded-md">
-                <h3 className="font-medium text-blue-800 mb-2">Estimation des coûts</h3>
-                <p className="text-sm text-blue-700 mb-2">
-                  Basée sur votre saisie de {rooms.length} pièce(s) totalisant {calculateTotalArea()} m²
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                  <div className="p-3 bg-white rounded shadow-sm">
-                    <h4 className="font-medium">Peinture (matériel)</h4>
-                    <Separator className="my-2" />
-                    <p className="text-lg">
-                      Estimation: <span className="font-bold">
-                        {(parseFloat(calculatePaintNeeded(
-                          rooms.reduce(
-                            (total, room) =>
-                              total +
-                              (room.paint.walls
-                                ? parseFloat(room.wallSurfaceRaw || "0")
-                                : 0),
-                            0
-                          )
-                        )) * 40 + 
-                        parseFloat(calculatePaintNeeded(
-                          rooms.reduce(
-                            (total, room) =>
-                              total +
-                              (room.paint.ceiling ? parseFloat(room.surface || "0") : 0),
-                            0
-                          )
-                        )) * 35).toFixed(2)} €
-                      </span>
-                    </p>
-                  </div>
-                  <div className="p-3 bg-white rounded shadow-sm">
-                    <h4 className="font-medium">Sol (matériel)</h4>
-                    <Separator className="my-2" />
-                    <p className="text-lg">
-                      Estimation: <span className="font-bold">
-                        {(parseFloat(calculateTotalArea()) * 25).toFixed(2)} €
-                      </span>
-                    </p>
-                  </div>
-                </div>
-                <p className="text-xs text-gray-500 mt-3 italic">
-                  Cette estimation est approximative et peut varier en fonction de la qualité des matériaux choisis et des spécificités du projet.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </>
-      )}
-    </div>
-  );
-};
-
-export default RenovationEstimator;
