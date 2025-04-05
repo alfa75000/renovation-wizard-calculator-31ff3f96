@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { Check, Edit, Trash2, Plus, Home, Layout, ArrowDown, ArrowUp } from "lucide-react";
+import { formaterPrix, formaterQuantite, arrondir2Decimales } from "@/lib/utils";
 
 interface Room {
   id: string;
@@ -126,7 +127,7 @@ const RenovationEstimator: React.FC = () => {
 
   useEffect(() => {
     if (newRoom.length && newRoom.width) {
-      const calculatedSurface = (parseFloat(newRoom.length) * parseFloat(newRoom.width)).toFixed(2);
+      const calculatedSurface = arrondir2Decimales(parseFloat(newRoom.length) * parseFloat(newRoom.width)).toString();
       setNewRoom((prev) => ({ ...prev, surface: calculatedSurface }));
     }
   }, [newRoom.length, newRoom.width]);
@@ -134,7 +135,7 @@ const RenovationEstimator: React.FC = () => {
   useEffect(() => {
     if (newRoom.length && newRoom.width && newRoom.height) {
       const perimeter = 2 * (parseFloat(newRoom.length) + parseFloat(newRoom.width));
-      const wallSurface = (perimeter * parseFloat(newRoom.height)).toFixed(2);
+      const wallSurface = arrondir2Decimales(perimeter * parseFloat(newRoom.height)).toString();
       setNewRoom((prev) => ({ ...prev, wallSurfaceRaw: wallSurface }));
     }
   }, [newRoom.length, newRoom.width, newRoom.height]);
@@ -150,22 +151,22 @@ const RenovationEstimator: React.FC = () => {
         }
       });
       
-      const plinthLength = (perimeter - doorWidths).toFixed(2);
+      const plinthLength = arrondir2Decimales(perimeter - doorWidths).toString();
       
-      const plinthSurface = (parseFloat(plinthLength) * parseFloat(newRoom.plinthHeight)).toFixed(2);
+      const plinthSurface = arrondir2Decimales(parseFloat(plinthLength) * parseFloat(newRoom.plinthHeight)).toString();
       
       let menuiserieSurface = 0;
       newRoom.menuiseries.forEach(item => {
         menuiserieSurface += parseFloat(item.surface) * item.quantity;
       });
       
-      const netWallSurface = (parseFloat(newRoom.wallSurfaceRaw) - menuiserieSurface).toFixed(2);
+      const netWallSurface = arrondir2Decimales(parseFloat(newRoom.wallSurfaceRaw) - menuiserieSurface).toString();
       
       setNewRoom(prev => ({
         ...prev,
         totalPlinthLength: plinthLength,
         totalPlinthSurface: plinthSurface,
-        totalMenuiserieSurface: menuiserieSurface.toFixed(2),
+        totalMenuiserieSurface: arrondir2Decimales(menuiserieSurface).toString(),
         netWallSurface: netWallSurface
       }));
     }
@@ -177,7 +178,7 @@ const RenovationEstimator: React.FC = () => {
         item.id === editingMenuiserie ? {
           ...newMenuiserie,
           id: editingMenuiserie,
-          surface: (parseFloat(newMenuiserie.largeur) * parseFloat(newMenuiserie.hauteur)).toFixed(2)
+          surface: arrondir2Decimales(parseFloat(newMenuiserie.largeur) * parseFloat(newMenuiserie.hauteur)).toString()
         } : item
       );
       
@@ -206,7 +207,7 @@ const RenovationEstimator: React.FC = () => {
           largeur: newMenuiserie.largeur,
           hauteur: newMenuiserie.hauteur,
           quantity: 1,
-          surface: (parseFloat(newMenuiserie.largeur) * parseFloat(newMenuiserie.hauteur)).toFixed(2)
+          surface: arrondir2Decimales(parseFloat(newMenuiserie.largeur) * parseFloat(newMenuiserie.hauteur)).toString()
         });
       }
       
@@ -330,9 +331,9 @@ const RenovationEstimator: React.FC = () => {
   };
 
   const calculateTotalArea = () => {
-    return rooms
-      .reduce((total, room) => total + parseFloat(room.surface || "0"), 0)
-      .toFixed(2);
+    return arrondir2Decimales(
+      rooms.reduce((total, room) => total + parseFloat(room.surface || "0"), 0)
+    ).toString();
   };
 
   return (
