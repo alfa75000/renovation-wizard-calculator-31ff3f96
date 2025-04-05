@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { 
   Card, 
@@ -135,8 +136,31 @@ const sousTravaux = {
 // Unités disponibles
 const unites = ["M²", "Ml", "M3", "Unité", "Ens.", "Forfait"];
 
-// Exemple de pièces (à remplacer par les données réelles)
-const piecesExemple = [
+// Définition de l'interface pour les menuiseries
+interface Menuiserie {
+  id: number;
+  nom: string;
+  type: string;
+  largeur: number;
+  hauteur: number;
+  surface: number;
+}
+
+// Définition de l'interface pour les pièces
+interface Piece {
+  id: number;
+  nom: string;
+  surface: number;
+  surfaceMurs: number;
+  plinthes: number;
+  surfacePlinthes: number;
+  surfaceMenuiseries: number;
+  surfaceNetMurs: number;
+  menuiseries: Menuiserie[];
+}
+
+// Pièces par défaut à utiliser si aucune pièce n'est trouvée dans le localStorage
+const piecesParDefaut: Piece[] = [
   { 
     id: 1, 
     nom: "Salon", 
@@ -196,7 +220,7 @@ interface Travail {
 
 const Travaux = () => {
   const navigate = useNavigate();
-  const [pieces] = useState(piecesExemple);
+  const [pieces, setPieces] = useState<Piece[]>([]);
   const [pieceSelectionnee, setPieceSelectionnee] = useState<number | null>(null);
   const [typeTravauxSelectionne, setTypeTravauxSelectionne] = useState<string | null>(null);
   const [sousTypeSelectionne, setSousTypeSelectionne] = useState<string | null>(null);
@@ -209,11 +233,21 @@ const Travaux = () => {
   const [tauxTVASelectionne, setTauxTVASelectionne] = useState<number>(10); // 10% par défaut
   const [tauxTVAAutre, setTauxTVAAutre] = useState<number>(0);
 
-  // Chargement des travaux depuis le localStorage au montage du composant
+  // Chargement des données depuis le localStorage au montage du composant
   useEffect(() => {
+    // Chargement des travaux
     const travauxSauvegardes = localStorage.getItem('travaux');
     if (travauxSauvegardes) {
       setTravauxAjoutes(JSON.parse(travauxSauvegardes));
+    }
+    
+    // Chargement des pièces
+    const piecesSauvegardees = localStorage.getItem('rooms');
+    if (piecesSauvegardees) {
+      setPieces(JSON.parse(piecesSauvegardees));
+    } else {
+      // Utiliser les pièces par défaut si aucune n'est trouvée
+      setPieces(piecesParDefaut);
     }
   }, []);
 
@@ -402,6 +436,7 @@ const Travaux = () => {
     setPrixMainOeuvre(null);
     setTauxTVASelectionne(10);
     setTauxTVAAutre(0);
+    setPieces(piecesParDefaut); // Réinitialiser les pièces aux valeurs par défaut
     
     // Clear ALL localStorage data
     localStorage.clear();
@@ -482,16 +517,23 @@ const Travaux = () => {
             </CardHeader>
             <CardContent>
               <div className="flex flex-col space-y-2">
-                {pieces.map(piece => (
-                  <Button
-                    key={piece.id}
-                    variant={pieceSelectionnee === piece.id ? "default" : "outline"}
-                    className="justify-start"
-                    onClick={() => selectionnerPiece(piece.id)}
-                  >
-                    {piece.nom} ({piece.surface} m²)
-                  </Button>
-                ))}
+                {pieces.length > 0 ? (
+                  pieces.map(piece => (
+                    <Button
+                      key={piece.id}
+                      variant={pieceSelectionnee === piece.id ? "default" : "outline"}
+                      className="justify-start"
+                      onClick={() => selectionnerPiece(piece.id)}
+                    >
+                      {piece.nom} ({piece.surface} m²)
+                    </Button>
+                  ))
+                ) : (
+                  <div className="text-center py-4 text-gray-500">
+                    <p>Aucune pièce disponible.</p>
+                    <p className="text-sm mt-1">Ajoutez des pièces depuis l'estimateur principal.</p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
