@@ -136,6 +136,12 @@ const RenovationEstimator: React.FC = () => {
     }
   };
 
+  const generateRoomName = (type: string, customName: string = ""): string => {
+    const roomTypeCount = rooms.filter(r => r.type === type).length + 1;
+    const baseRoomName = `${type} ${roomTypeCount}`;
+    return customName ? `${baseRoomName} (${customName})` : baseRoomName;
+  };
+
   useEffect(() => {
     if (newRoom.length && newRoom.width) {
       const calculatedSurface = arrondir2Decimales(parseFloat(newRoom.length) * parseFloat(newRoom.width)).toString();
@@ -294,7 +300,8 @@ const RenovationEstimator: React.FC = () => {
       setEditingRoom(null);
       toast.success("Pièce mise à jour avec succès");
     } else {
-      const roomName = newRoom.name || `${newRoom.type}${newRoom.customName ? ` ${newRoom.customName}` : ''}`;
+      const roomName = generateRoomName(newRoom.type, newRoom.customName);
+      
       setRooms((prev) => [
         ...prev,
         { ...newRoom, id: Date.now().toString(), name: roomName },
@@ -575,7 +582,7 @@ const RenovationEstimator: React.FC = () => {
                 <Input
                   id="name"
                   name="name"
-                  value={newRoom.name || `${newRoom.type}${newRoom.customName ? ` ${newRoom.customName}` : ''}`}
+                  value={editingRoom ? newRoom.name : generateRoomName(newRoom.type, newRoom.customName)}
                   onChange={handleRoomChange}
                   placeholder="Automatique"
                   disabled

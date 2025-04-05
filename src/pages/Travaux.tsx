@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { 
   Card, 
@@ -44,7 +43,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-// Types de travaux principaux
 const travauxTypes = [
   { id: "murs", label: "Revêtement murs", icon: <Paintbrush className="h-4 w-4" /> },
   { id: "plafond", label: "Revêtement plafond", icon: <Paintbrush className="h-4 w-4" /> },
@@ -57,7 +55,6 @@ const travauxTypes = [
   { id: "autre", label: "Autre", icon: <Wrench className="h-4 w-4" /> }
 ];
 
-// Sous-types de travaux associés à chaque type principal
 const sousTravaux = {
   murs: [
     { id: "lessivage-travaux", label: "Lessivage pour travaux", prixUnitaire: 2.2, unite: "M²" },
@@ -133,33 +130,36 @@ const sousTravaux = {
   ]
 };
 
-// Unités disponibles
 const unites = ["M²", "Ml", "M3", "Unité", "Ens.", "Forfait"];
 
-// Définition de l'interface pour les menuiseries
 interface Menuiserie {
-  id: number;
-  nom: string;
+  id: string | number;
+  nom?: string;
+  name?: string;
   type: string;
-  largeur: number;
-  hauteur: number;
-  surface: number;
+  largeur?: number;
+  width?: number;
+  hauteur?: number;
+  height?: number;
+  surface?: number;
+  quantity?: number;
 }
 
-// Définition de l'interface pour les pièces
 interface Piece {
-  id: number;
-  nom: string;
-  surface: number;
-  surfaceMurs: number;
-  plinthes: number;
-  surfacePlinthes: number;
-  surfaceMenuiseries: number;
-  surfaceNetMurs: number;
-  menuiseries: Menuiserie[];
+  id: string | number;
+  nom?: string;
+  name?: string;
+  type?: string;
+  customName?: string;
+  surface?: number;
+  surfaceMurs?: number;
+  plinthes?: number;
+  surfacePlinthes?: number;
+  surfaceMenuiseries?: number;
+  surfaceNetMurs?: number;
+  menuiseries?: Menuiserie[];
 }
 
-// Pièces par défaut à utiliser si aucune pièce n'est trouvée dans le localStorage
 const piecesParDefaut: Piece[] = [
   { 
     id: 1, 
@@ -191,7 +191,6 @@ const piecesParDefaut: Piece[] = [
   }
 ];
 
-// Taux de TVA disponibles
 const tauxTVA = [
   { id: "0", taux: 0, label: "0 %" },
   { id: "5.5", taux: 5.5, label: "5,5 %" },
@@ -200,7 +199,6 @@ const tauxTVA = [
   { id: "autre", taux: 0, label: "Autre" }
 ];
 
-// Type pour un travail
 interface Travail {
   id: string;
   pieceId: number;
@@ -215,7 +213,7 @@ interface Travail {
   prixFournitures: number;
   prixMainOeuvre: number;
   prixUnitaire: number;
-  tauxTVA: number; // Ajout du taux de TVA
+  tauxTVA: number;
 }
 
 const Travaux = () => {
@@ -230,28 +228,51 @@ const Travaux = () => {
   const [travauxAjoutes, setTravauxAjoutes] = useState<Travail[]>([]);
   const [prixFournitures, setPrixFournitures] = useState<number | null>(null);
   const [prixMainOeuvre, setPrixMainOeuvre] = useState<number | null>(null);
-  const [tauxTVASelectionne, setTauxTVASelectionne] = useState<number>(10); // 10% par défaut
+  const [tauxTVASelectionne, setTauxTVASelectionne] = useState<number>(10);
   const [tauxTVAAutre, setTauxTVAAutre] = useState<number>(0);
 
-  // Chargement des données depuis le localStorage au montage du composant
   useEffect(() => {
-    // Chargement des travaux
     const travauxSauvegardes = localStorage.getItem('travaux');
     if (travauxSauvegardes) {
       setTravauxAjoutes(JSON.parse(travauxSauvegardes));
     }
     
-    // Chargement des pièces
     const piecesSauvegardees = localStorage.getItem('rooms');
     if (piecesSauvegardees) {
-      setPieces(JSON.parse(piecesSauvegardees));
+      const roomsData = JSON.parse(piecesSauvegardees);
+      setPieces(normaliserPieces(roomsData));
     } else {
-      // Utiliser les pièces par défaut si aucune n'est trouvée
       setPieces(piecesParDefaut);
     }
   }, []);
 
-  // Sélectionner une pièce
+  const normaliserPieces = (pieces: any[]): Piece[] => {
+    return pieces.map(piece => {
+      return {
+        id: piece.id,
+        nom: piece.name || 
+             (piece.type && piece.customName ? `${piece.type} ${piece.customName}` : null) ||
+             (piece.type ? `${piece.type}` : null) ||
+             "Pièce sans nom",
+        surface: parseFloat(piece.surface || "0"),
+        surfaceMurs: parseFloat(piece.netWallSurface || piece.wallSurfaceRaw || "0"),
+        plinthes: parseFloat(piece.totalPlinthLength || "0"),
+        surfacePlinthes: parseFloat(piece.totalPlinthSurface || "0"),
+        surfaceMenuiseries: parseFloat(piece.totalMenuiserieSurface || "0"),
+        surfaceNetMurs: parseFloat(piece.netWallSurface || "0"),
+        menuiseries: (piece.menuiseries || []).map((m: any) => ({
+          id: m.id,
+          nom: m.name,
+          type: m.type?.toLowerCase() || "",
+          largeur: parseFloat(m.largeur || m.width || "0"),
+          hauteur: parseFloat(m.hauteur || m.height || "0"),
+          surface: parseFloat(m.surface || "0"),
+          quantity: m.quantity || 1
+        }))
+      };
+    });
+  };
+
   const selectionnerPiece = (pieceId: number) => {
     setPieceSelectionnee(pieceId);
     setTypeTravauxSelectionne(null);
@@ -263,12 +284,10 @@ const Travaux = () => {
     setPrixMainOeuvre(null);
   };
 
-  // Obtenir la pièce sélectionnée
   const getPieceSelectionnee = () => {
     return pieces.find(p => p.id === pieceSelectionnee) || null;
   };
 
-  // Obtenir la surface appropriée selon le type de travaux
   const getQuantiteParDefaut = () => {
     const piece = getPieceSelectionnee();
     if (!piece || !typeTravauxSelectionne) return 0;
@@ -283,11 +302,10 @@ const Travaux = () => {
       case "menuiseries":
         return piece.surfaceMenuiseries;
       default:
-        return 1; // Valeur par défaut pour les autres types
+        return 1;
     }
   };
 
-  // Obtenir l'unité par défaut du sous-type sélectionné
   const getUniteParDefaut = () => {
     if (!typeTravauxSelectionne || !sousTypeSelectionne) return "M²";
 
@@ -298,12 +316,10 @@ const Travaux = () => {
     return sousType?.unite || "M²";
   };
 
-  // Calculer le prix unitaire total avec arrondi
   const calculerPrixUnitaire = (prixFourn: number, prixMO: number) => {
     return arrondir2Decimales(prixFourn + prixMO);
   };
 
-  // Ajouter un travail à la liste
   const ajouterTravail = () => {
     if (!pieceSelectionnee || !typeTravauxSelectionne || !sousTypeSelectionne) return;
 
@@ -319,14 +335,12 @@ const Travaux = () => {
     const typeTravauxObj = travauxTypes.find(t => t.id === typeTravauxSelectionne);
     if (!typeTravauxObj) return;
 
-    // Calculer prix fournitures avec arrondi à 2 décimales
     const prixFournituresDefaut = arrondir2Decimales(
       (prixFournitures !== null ? prixFournitures : 
       (sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux]?.find(
         st => st.id === sousTypeSelectionne)?.prixUnitaire || 0) * 0.4)
     );
     
-    // Calculer prix main d'œuvre avec arrondi à 2 décimales
     const prixMainOeuvreDefaut = arrondir2Decimales(
       (prixMainOeuvre !== null ? prixMainOeuvre : 
       (sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux]?.find(
@@ -373,7 +387,6 @@ const Travaux = () => {
     });
   };
 
-  // Supprimer un travail
   const supprimerTravail = (id: string) => {
     setTravauxAjoutes(travauxAjoutes.filter(t => t.id !== id));
     toast({
@@ -382,7 +395,6 @@ const Travaux = () => {
     });
   };
 
-  // Modifier un travail
   const modifierTravail = (travail: Travail) => {
     setPieceSelectionnee(travail.pieceId);
     setTypeTravauxSelectionne(travail.typeTravauxId);
@@ -396,19 +408,16 @@ const Travaux = () => {
     supprimerTravail(travail.id);
   };
 
-  // Calculer le total
   const calculerTotal = () => {
     return parseFloat(travauxAjoutes.reduce((total, travail) => {
       return total + (travail.quantite * travail.prixUnitaire);
     }, 0).toFixed(2));
   };
 
-  // Filtrer les travaux par pièce
   const travauxParPiece = (pieceId: number) => {
     return travauxAjoutes.filter(t => t.pieceId === pieceId);
   };
 
-  // Enregistrer les travaux
   const enregistrerTravaux = () => {
     localStorage.setItem('travaux', JSON.stringify(travauxAjoutes));
     toast({
@@ -417,13 +426,11 @@ const Travaux = () => {
     });
   };
 
-  // Naviguer vers la page de récapitulatif avec enregistrement automatique
   const naviguerVersRecapitulatif = () => {
     localStorage.setItem('travaux', JSON.stringify(travauxAjoutes));
     navigate('/recapitulatif');
   };
 
-  // Reset all project data
   const resetProject = () => {
     setPieceSelectionnee(null);
     setTypeTravauxSelectionne(null);
@@ -436,12 +443,9 @@ const Travaux = () => {
     setPrixMainOeuvre(null);
     setTauxTVASelectionne(10);
     setTauxTVAAutre(0);
-    setPieces(piecesParDefaut); // Réinitialiser les pièces aux valeurs par défaut
-    
-    // Clear ALL localStorage data
+    setPieces(piecesParDefaut);
+
     localStorage.clear();
-    
-    // Redirect to the main page to reset the rooms
     navigate('/');
     
     toast({
@@ -507,7 +511,6 @@ const Travaux = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Sélection de pièce */}
           <Card className="shadow-md lg:col-span-1">
             <CardHeader>
               <CardTitle className="flex items-center">
@@ -523,7 +526,7 @@ const Travaux = () => {
                       key={piece.id}
                       variant={pieceSelectionnee === piece.id ? "default" : "outline"}
                       className="justify-start"
-                      onClick={() => selectionnerPiece(piece.id)}
+                      onClick={() => selectionnerPiece(Number(piece.id))}
                     >
                       {piece.nom} ({piece.surface} m²)
                     </Button>
@@ -538,7 +541,6 @@ const Travaux = () => {
             </CardContent>
           </Card>
 
-          {/* Configuration des travaux */}
           <Card className="shadow-md lg:col-span-2">
             <CardHeader>
               <CardTitle>Configuration des travaux</CardTitle>
@@ -551,7 +553,6 @@ const Travaux = () => {
                   </h3>
 
                   <div className="space-y-4">
-                    {/* Sélection du type de travaux */}
                     <div>
                       <label className="block text-sm font-medium mb-1">Type de travaux</label>
                       <Select 
@@ -582,7 +583,6 @@ const Travaux = () => {
                       </Select>
                     </div>
 
-                    {/* Sélection du sous-type */}
                     {typeTravauxSelectionne && (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
@@ -591,18 +591,15 @@ const Travaux = () => {
                             value={sousTypeSelectionne || ""} 
                             onValueChange={(value) => {
                               setSousTypeSelectionne(value);
-                              // Réinitialiser personnalisation si ce n'est pas "autre"
                               if (value !== "autre") {
                                 setPersonnalisation("");
                               }
                               
-                              // Définir l'unité par défaut du sous-type
                               const sousType = sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux]?.find(
                                 st => st.id === value
                               );
                               setUniteSelectionnee(sousType?.unite || null);
 
-                              // Réinitialiser les prix personnalisés
                               setPrixFournitures(null);
                               setPrixMainOeuvre(null);
                             }}
@@ -664,7 +661,6 @@ const Travaux = () => {
                       </div>
                     )}
 
-                    {/* Personnalisation pour tous les sous-types */}
                     {sousTypeSelectionne && (
                       <div>
                         <label className="block text-sm font-medium mb-1">Personnalisation</label>
@@ -676,7 +672,6 @@ const Travaux = () => {
                       </div>
                     )}
 
-                    {/* Quantité à traiter */}
                     {sousTypeSelectionne && (
                       <div>
                         <label className="block text-sm font-medium mb-1">Quantité à traiter</label>
@@ -711,7 +706,6 @@ const Travaux = () => {
                       </div>
                     )}
 
-                    {/* Prix des fournitures et de la main d'œuvre */}
                     {sousTypeSelectionne && (
                       <>
                         <div>
@@ -747,7 +741,6 @@ const Travaux = () => {
                       </>
                     )}
 
-                    {/* Bouton d'ajout */}
                     {sousTypeSelectionne && (
                       <Button onClick={ajouterTravail} className="w-full mt-2">
                         <Plus className="h-4 w-4 mr-1" />
@@ -756,7 +749,6 @@ const Travaux = () => {
                     )}
                   </div>
 
-                  {/* Liste des travaux ajoutés */}
                   {travauxParPiece(pieceSelectionnee).length > 0 && (
                     <div className="mt-8">
                       <h3 className="text-lg font-medium mb-4">Travaux ajoutés</h3>
