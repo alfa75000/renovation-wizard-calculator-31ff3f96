@@ -160,11 +160,14 @@ interface Travail {
   pieceId: number;
   pieceName: string;
   typeTravauxId: string;
+  typeTravauxLabel: string;
   sousTypeId: string;
   sousTypeLabel: string;
   personnalisation: string;
   quantite: number;
   unite: string;
+  prixFournitures: number;
+  prixMainOeuvre: number;
   prixUnitaire: number;
 }
 
@@ -178,7 +181,8 @@ const Travaux = () => {
   const [quantiteModifiee, setQuantiteModifiee] = useState<number | null>(null);
   const [uniteSelectionnee, setUniteSelectionnee] = useState<string | null>(null);
   const [travauxAjoutes, setTravauxAjoutes] = useState<Travail[]>([]);
-  const [prixPerso, setPrixPerso] = useState<number | null>(null);
+  const [prixFournitures, setPrixFournitures] = useState<number | null>(null);
+  const [prixMainOeuvre, setPrixMainOeuvre] = useState<number | null>(null);
 
   // Chargement des travaux depuis le localStorage au montage du composant
   useEffect(() => {
@@ -196,7 +200,8 @@ const Travaux = () => {
     setPersonnalisation("");
     setQuantiteModifiee(null);
     setUniteSelectionnee(null);
-    setPrixPerso(null);
+    setPrixFournitures(null);
+    setPrixMainOeuvre(null);
   };
 
   // Obtenir la pièce sélectionnée
@@ -234,6 +239,11 @@ const Travaux = () => {
     return sousType?.unite || "M²";
   };
 
+  // Calculer le prix unitaire total
+  const calculerPrixUnitaire = (prixFourn: number, prixMO: number) => {
+    return prixFourn + prixMO;
+  };
+
   // Ajouter un travail à la liste
   const ajouterTravail = () => {
     if (!pieceSelectionnee || !typeTravauxSelectionne || !sousTypeSelectionne) return;
@@ -247,17 +257,32 @@ const Travaux = () => {
     const sousType = sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux].find(st => st.id === sousTypeSelectionne);
     if (!sousType) return;
 
+    const typeTravauxObj = travauxTypes.find(t => t.id === typeTravauxSelectionne);
+    if (!typeTravauxObj) return;
+
+    const prixFournituresDefaut = Math.round(prixFournitures !== null ? prixFournitures : 
+      (sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux]?.find(st => st.id === sousTypeSelectionne)?.prixUnitaire || 0) * 0.4 * 100) / 100;
+    const prixMainOeuvreDefaut = Math.round(prixMainOeuvre !== null ? prixMainOeuvre : 
+      (sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux]?.find(st => st.id === sousTypeSelectionne)?.prixUnitaire || 0) * 0.6 * 100) / 100;
+
+    const prixFourn = prixFournitures !== null ? prixFournitures : prixFournituresDefaut;
+    const prixMO = prixMainOeuvre !== null ? prixMainOeuvre : prixMainOeuvreDefaut;
+    const prixTotal = calculerPrixUnitaire(prixFourn, prixMO);
+
     const nouveauTravail: Travail = {
       id: `${Date.now()}`,
       pieceId: piece.id,
       pieceName: piece.nom,
       typeTravauxId: typeTravauxSelectionne,
+      typeTravauxLabel: typeTravauxObj.label,
       sousTypeId: sousTypeSelectionne,
       sousTypeLabel: sousType.label,
       personnalisation: personnalisation,
       quantite,
       unite,
-      prixUnitaire: prixPerso !== null ? prixPerso : sousType.prixUnitaire
+      prixFournitures: prixFourn,
+      prixMainOeuvre: prixMO,
+      prixUnitaire: prixTotal
     };
 
     setTravauxAjoutes([...travauxAjoutes, nouveauTravail]);
@@ -265,11 +290,12 @@ const Travaux = () => {
     setPersonnalisation("");
     setQuantiteModifiee(null);
     setUniteSelectionnee(null);
-    setPrixPerso(null);
+    setPrixFournitures(null);
+    setPrixMainOeuvre(null);
     
     toast({
       title: "Travail ajouté",
-      description: `${sousType.label} ajouté pour ${piece.nom}`,
+      description: `${typeTravauxObj.label}: ${sousType.label} ajouté pour ${piece.nom}`,
     });
   };
 
@@ -285,17 +311,13 @@ const Travaux = () => {
   // Modifier un travail
   const modifierTravail = (travail: Travail) => {
     setPieceSelectionnee(travail.pieceId);
-    
     setTypeTravauxSelectionne(travail.typeTravauxId);
-    
     setSousTypeSelectionne(travail.sousTypeId);
-    
     setPersonnalisation(travail.personnalisation);
-    
     setQuantiteModifiee(travail.quantite);
     setUniteSelectionnee(travail.unite);
-    
-    setPrixPerso(travail.prixUnitaire);
+    setPrixFournitures(travail.prixFournitures);
+    setPrixMainOeuvre(travail.prixMainOeuvre);
     
     supprimerTravail(travail.id);
   };
@@ -412,7 +434,8 @@ const Travaux = () => {
                           setPersonnalisation("");
                           setQuantiteModifiee(null);
                           setUniteSelectionnee(null);
-                          setPrixPerso(null);
+                          setPrixFournitures(null);
+                          setPrixMainOeuvre(null);
                         }}
                       >
                         <SelectTrigger>
@@ -434,7 +457,7 @@ const Travaux = () => {
                     {/* Sélection du sous-type */}
                     {typeTravauxSelectionne && (
                       <div>
-                        <label className="block text-sm font-medium mb-1">Détail des travaux</label>
+                        <label className="block text-sm font-medium mb-1">Prestations</label>
                         <Select 
                           value={sousTypeSelectionne || ""} 
                           onValueChange={(value) => {
@@ -449,10 +472,14 @@ const Travaux = () => {
                               st => st.id === value
                             );
                             setUniteSelectionnee(sousType?.unite || null);
+
+                            // Réinitialiser les prix personnalisés
+                            setPrixFournitures(null);
+                            setPrixMainOeuvre(null);
                           }}
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="Sélectionnez un détail" />
+                            <SelectValue placeholder="Sélectionnez une prestation" />
                           </SelectTrigger>
                           <SelectContent>
                             {sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux].map(sousType => (
@@ -511,24 +538,38 @@ const Travaux = () => {
                       </div>
                     )}
 
-                    {/* Prix unitaire personnalisé */}
+                    {/* Prix des fournitures et de la main d'oeuvre */}
                     {sousTypeSelectionne && (
-                      <div>
-                        <label className="block text-sm font-medium mb-1">Prix unitaire</label>
-                        <div className="flex gap-2">
+                      <>
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Prix fournitures ({getUniteParDefaut()})</label>
                           <Input
                             type="number"
-                            value={prixPerso !== null ? prixPerso : (sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux]?.find(st => st.id === sousTypeSelectionne)?.prixUnitaire || 0)}
-                            onChange={(e) => setPrixPerso(parseFloat(e.target.value) || 0)}
+                            value={prixFournitures !== null ? prixFournitures : 
+                              (sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux]?.find(st => st.id === sousTypeSelectionne)?.prixUnitaire || 0) * 0.4}
+                            onChange={(e) => setPrixFournitures(parseFloat(e.target.value) || 0)}
                           />
-                          <Button variant="outline" onClick={() => {
-                            const prixDefaut = sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux]?.find(st => st.id === sousTypeSelectionne)?.prixUnitaire || 0;
-                            setPrixPerso(prixDefaut);
-                          }}>
-                            Réinitialiser
-                          </Button>
                         </div>
-                      </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Prix main d'œuvre ({getUniteParDefaut()})</label>
+                          <Input
+                            type="number"
+                            value={prixMainOeuvre !== null ? prixMainOeuvre : 
+                              (sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux]?.find(st => st.id === sousTypeSelectionne)?.prixUnitaire || 0) * 0.6}
+                            onChange={(e) => setPrixMainOeuvre(parseFloat(e.target.value) || 0)}
+                          />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">
+                            Prix unitaire total: {formaterPrix(
+                              (prixFournitures !== null ? prixFournitures : 
+                                (sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux]?.find(st => st.id === sousTypeSelectionne)?.prixUnitaire || 0) * 0.4) + 
+                              (prixMainOeuvre !== null ? prixMainOeuvre : 
+                                (sousTravaux[typeTravauxSelectionne as keyof typeof sousTravaux]?.find(st => st.id === sousTypeSelectionne)?.prixUnitaire || 0) * 0.6)
+                            )}/{getUniteParDefaut()}
+                          </p>
+                        </div>
+                      </>
                     )}
 
                     {/* Bouton d'ajout */}
@@ -556,12 +597,16 @@ const Travaux = () => {
                                   <div className="flex items-center">
                                     {type?.icon}
                                     <span className="font-medium ml-2">
-                                      {type?.label}: {travail.sousTypeLabel}
+                                      {travail.typeTravauxLabel}: {travail.sousTypeLabel}
                                       {travail.personnalisation && ` (${travail.personnalisation})`}
                                     </span>
                                   </div>
                                   <div className="text-sm mt-1">
                                     {travail.quantite} {travail.unite} × {formaterPrix(travail.prixUnitaire)}/{travail.unite} = {formaterPrix(total)}
+                                  </div>
+                                  <div className="text-xs text-gray-600">
+                                    Fournitures: {formaterPrix(travail.prixFournitures)}/{travail.unite} | 
+                                    Main d'œuvre: {formaterPrix(travail.prixMainOeuvre)}/{travail.unite}
                                   </div>
                                 </div>
                                 <div className="flex space-x-1">

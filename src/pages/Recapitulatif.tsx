@@ -16,11 +16,14 @@ interface Travail {
   pieceId: number;
   pieceName: string;
   typeTravauxId: string;
+  typeTravauxLabel: string; // Type de travaux (ajouté)
   sousTypeId: string;
   sousTypeLabel: string;
   personnalisation: string;
   quantite: number;
   unite: string;
+  prixFournitures: number; // Prix des fournitures
+  prixMainOeuvre: number; // Prix de la main d'oeuvre
   prixUnitaire: number;
 }
 
@@ -45,6 +48,20 @@ const Recapitulatif = () => {
   const calculerTotalGeneral = () => {
     return travaux.reduce((total, travail) => {
       return total + (travail.quantite * travail.prixUnitaire);
+    }, 0);
+  };
+
+  // Calculer le total des fournitures
+  const calculerTotalFournitures = () => {
+    return travaux.reduce((total, travail) => {
+      return total + (travail.quantite * travail.prixFournitures);
+    }, 0);
+  };
+
+  // Calculer le total de la main d'oeuvre
+  const calculerTotalMainOeuvre = () => {
+    return travaux.reduce((total, travail) => {
+      return total + (travail.quantite * travail.prixMainOeuvre);
     }, 0);
   };
 
@@ -118,17 +135,22 @@ const Recapitulatif = () => {
                   <div className="space-y-2">
                     {piece.travaux.map(travail => {
                       const total = travail.quantite * travail.prixUnitaire;
+                      const totalFournitures = travail.quantite * travail.prixFournitures;
+                      const totalMainOeuvre = travail.quantite * travail.prixMainOeuvre;
                       
                       return (
                         <div key={travail.id} className="border-b pb-2 last:border-0">
                           <div className="flex justify-between">
                             <div>
                               <p className="font-medium">
-                                {travail.sousTypeLabel}
+                                {travail.typeTravauxLabel}: {travail.sousTypeLabel}
                                 {travail.personnalisation && ` (${travail.personnalisation})`}
                               </p>
                               <p className="text-sm text-gray-600">
                                 {travail.quantite} {travail.unite} × {formaterPrix(travail.prixUnitaire)}/{travail.unite}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                Fournitures: {formaterPrix(totalFournitures)} | Main d'œuvre: {formaterPrix(totalMainOeuvre)}
                               </p>
                             </div>
                             <p className="font-medium">{formaterPrix(total)}</p>
@@ -148,9 +170,19 @@ const Recapitulatif = () => {
             
             <Card className="shadow-md bg-gray-100">
               <CardContent className="p-6">
-                <div className="flex justify-between items-center">
-                  <p className="text-xl font-bold">TOTAL GÉNÉRAL</p>
-                  <p className="text-xl font-bold">{formaterPrix(calculerTotalGeneral())}</p>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <p className="text-lg">Total Fournitures</p>
+                    <p className="text-lg">{formaterPrix(calculerTotalFournitures())}</p>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <p className="text-lg">Total Main d'œuvre</p>
+                    <p className="text-lg">{formaterPrix(calculerTotalMainOeuvre())}</p>
+                  </div>
+                  <div className="flex justify-between items-center pt-2 border-t">
+                    <p className="text-xl font-bold">TOTAL GÉNÉRAL</p>
+                    <p className="text-xl font-bold">{formaterPrix(calculerTotalGeneral())}</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
