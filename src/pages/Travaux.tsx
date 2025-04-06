@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   Card, 
   CardContent,
@@ -27,8 +27,29 @@ const Travaux = () => {
   const [selectedPieceId, setSelectedPieceId] = useState<string | null>(null);
   const { travailAModifier, getTravauxForPiece, addTravail, setTravailAModifier } = useTravaux();
   
+  // Préparer les pièces avec les propriétés nécessaires pour le calcul automatique
+  const preparedRooms = rooms.map(room => {
+    return {
+      id: room.id,
+      name: room.name || room.customName || room.type,
+      type: room.type,
+      customName: room.customName,
+      surface: room.surface,
+      // Conversion et normalisation des surfaces pour le calcul automatique
+      surfaceNetteSol: room.surfaceNetteSol || room.surface,
+      surfaceNettePlafond: room.surfaceNettePlafond || room.surface,
+      surfaceNetteMurs: room.surfaceNetteMurs || room.netWallSurface,
+      lineaireNet: room.lineaireNet || room.totalPlinthLength,
+      surfaceMenuiseries: room.surfaceMenuiseries || room.totalMenuiserieSurface,
+      // Propriétés supplémentaires pour compatibilité
+      netWallSurface: room.netWallSurface,
+      totalPlinthLength: room.totalPlinthLength,
+      totalMenuiserieSurface: room.totalMenuiserieSurface
+    };
+  });
+  
   const selectedPiece = selectedPieceId 
-    ? rooms.find(room => room.id === selectedPieceId) 
+    ? preparedRooms.find(room => room.id === selectedPieceId) 
     : null;
 
   // Fonction pour démarrer l'édition
@@ -99,7 +120,7 @@ const Travaux = () => {
             </CardHeader>
             <CardContent>
               <PieceSelect 
-                pieces={rooms}
+                pieces={preparedRooms}
                 selectedPieceId={selectedPieceId}
                 onSelect={setSelectedPieceId}
               />

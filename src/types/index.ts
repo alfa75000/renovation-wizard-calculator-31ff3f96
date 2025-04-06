@@ -35,7 +35,7 @@ export interface Room {
   totalPlinthSurface: string;
   totalMenuiserieSurface: string;
   netWallSurface: string;
-  // Nouvelles propriétés pour les surfaces de référence
+  // Propriétés pour les surfaces de référence
   surfaceNetteSol?: string;
   surfaceBruteSol?: string;
   surfaceNettePlafond?: string;
@@ -45,6 +45,7 @@ export interface Room {
   surfaceNetteMurs?: string; // Équivalent à netWallSurface
   surfaceBruteMurs?: string; // Équivalent à wallSurfaceRaw
   surfaceBruteMenuiseries?: string; // Équivalent à totalMenuiserieSurface
+  surfaceMenuiseries?: string; // Équivalent à totalMenuiserieSurface
   volume?: string;
 }
 
@@ -57,9 +58,13 @@ export interface Piece {
   // Surfaces pour le calcul automatique
   surfaceNetteSol?: string;
   surfaceNettePlafond?: string;
-  lineaireNet?: string;
   surfaceNetteMurs?: string;
+  lineaireNet?: string;
   surfaceMenuiseries?: string;
+  // Propriétés supplémentaires pour la compatibilité
+  netWallSurface?: string;
+  totalPlinthLength?: string;
+  totalMenuiserieSurface?: string;
 }
 
 export interface Travail {

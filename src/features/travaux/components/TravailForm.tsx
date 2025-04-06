@@ -74,6 +74,11 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail, travailA
         setPrixMainOeuvre(prixMO);
         setUnite(selectedSousType.unite || 'M²');
         
+        // Si nous avons une description par défaut et pas de description personnalisée
+        if (selectedSousType.description && (!travailAModifier || travailAModifier.sousType !== sousType)) {
+          setDescriptif(selectedSousType.description);
+        }
+        
         // Si nous ne sommes pas en train de modifier un travail existant ou si c'est un nouveau sous-type
         if (!travailAModifier || travailAModifier.sousType !== sousType) {
           // Calculer automatiquement la quantité en fonction de la surface de référence
@@ -87,11 +92,6 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail, travailA
           } else {
             setQuantite(1); // Valeur par défaut si pas de surface de référence
           }
-          
-          // Si le sousType a une description par défaut, on l'utilise
-          if (selectedSousType.description) {
-            setDescriptif(selectedSousType.description);
-          }
         }
       }
     }
@@ -99,22 +99,28 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail, travailA
 
   // Fonction pour obtenir la valeur à partir de la référence
   const getValueFromReference = (piece: Piece, reference: string): string | undefined => {
+    // Débogage pour voir ce qui est disponible dans l'objet pièce
+    console.log("Objet pièce disponible:", piece);
+    console.log("Surface de référence demandée:", reference);
+    
     switch (reference) {
       case 'SurfaceNetteSol':
         return piece.surfaceNetteSol || piece.surface;
       case 'SurfaceNettePlafond':
         return piece.surfaceNettePlafond || piece.surface;
       case 'SurfaceNetteMurs':
-        return piece.surfaceNetteMurs;
+        // Si surfaceNetteMurs n'existe pas, on essaie netWallSurface ou surface
+        return piece.surfaceNetteMurs || piece.netWallSurface || piece.surface;
       case 'LineaireNet':
-        return piece.lineaireNet;
+        return piece.lineaireNet || piece.totalPlinthLength;
       case 'SurfaceMenuiseries':
-        return piece.surfaceMenuiseries;
+        return piece.surfaceMenuiseries || piece.totalMenuiserieSurface;
       case 'Unite':
         return '1';
       case 'Forfait':
         return '1';
       default:
+        console.log(`Surface de référence inconnue: ${reference}`);
         return '1';
     }
   };
