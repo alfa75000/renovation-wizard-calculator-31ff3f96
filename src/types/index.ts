@@ -1,4 +1,31 @@
-// Types communs utilisés dans toute l'application
+export interface Room {
+  id: string;
+  name: string;
+  width: string;
+  length: string;
+  height: string;
+  surface: string;
+  typeSol: string;
+  typeMur: string;
+  menuiseries: Menuiserie[];
+  autresSurfaces: AutreSurface[];
+}
+
+export interface Menuiserie {
+  id: string;
+  type: string;
+  largeur: string;
+  hauteur: string;
+  surface: string;
+}
+
+export interface AutreSurface {
+  id: string;
+  designation: string;
+  longueur: string;
+  hauteur: string;
+  surface: string;
+}
 
 export interface PropertyType {
   type: string;
@@ -8,139 +35,55 @@ export interface PropertyType {
   ceilingHeight: string;
 }
 
-export interface TypeMenuiserie {
-  id: string;
-  nom: string;
-  hauteur: number;
-  largeur: number;
-  surfaceReference: string;
-  impactePlinthe: boolean;
-  description?: string;
-}
-
-export interface TypeAutreSurface {
-  id: string;
-  nom: string;
-  description?: string;
-  surfaceImpacteeParDefaut?: string;  // "mur", "plafond", ou "sol"
-  estDeduction?: boolean;  // true: on déduit, false: on ajoute
-}
-
-export interface Menuiserie {
-  id: string;
-  type: string;
-  name: string;
-  largeur: number;
-  hauteur: number;
-  quantity: number;
-  surface: number;
-  surfaceImpactee?: string; // Surface impactée par la menuiserie (mur, plafond, sol)
-  impactePlinthe?: boolean;
-}
-
-export interface AutreSurface {
-  id: string;
-  type: string;           // Type de surface (ex: "Poteau", "Trémie")
-  name: string;           // Nom personnalisé
-  largeur: number;        // Largeur en m
-  hauteur: number;        // Hauteur en m
-  surface: number;        // Surface calculée en m²
-  quantity: number;       // Quantité
-  surfaceImpactee: string; // "mur", "plafond", ou "sol"
-  estDeduction: boolean;   // true: on déduit, false: on ajoute
-}
-
-export interface Room {
-  id: string;
-  name: string;
-  customName: string;
-  type: string;
-  length: string;
-  width: string;
-  height: string;
-  surface: string;
-  plinthHeight: string;
-  wallSurfaceRaw: string;
-  menuiseries: Menuiserie[];
-  autresSurfaces: AutreSurface[];  // Ajout des autres surfaces
-  totalPlinthLength: string;
-  totalPlinthSurface: string;
-  totalMenuiserieSurface: string;
-  netWallSurface: string;
-  // Propriétés pour les surfaces de référence
-  surfaceNetteSol?: string;
-  surfaceBruteSol?: string;
-  surfaceNettePlafond?: string;
-  surfaceBrutePlafond?: string;
-  lineaireNet?: string;
-  lineaireBrut?: string;
-  surfaceNetteMurs?: string; // Équivalent à netWallSurface
-  surfaceBruteMurs?: string; // Équivalent à wallSurfaceRaw
-  surfaceBruteMenuiseries?: string; // Équivalent à totalMenuiserieSurface
-  surfaceMenuiseries?: string; // Équivalent à totalMenuiserieSurface
-  menuiseriesMursSurface?: string; // Surface des menuiseries sur les murs
-  menuiseriesPlafondSurface?: string; // Surface des menuiseries au plafond
-  menuiseriesSolSurface?: string; // Surface des menuiseries au sol
-  autresSurfacesMurs?: string;    // Surface des autres surfaces sur les murs
-  autresSurfacesPlafond?: string; // Surface des autres surfaces au plafond
-  autresSurfacesSol?: string;     // Surface des autres surfaces au sol
-  volume?: string;
-}
-
-export interface Piece {
-  id: string;
-  name: string;
-  type: string;
-  customName: string;
-  surface?: string;
-  menuiseries: Menuiserie[]; // Propriété ajoutée pour les menuiseries
-  // Surfaces pour le calcul automatique
-  surfaceNetteSol?: string;
-  surfaceNettePlafond?: string;
-  surfaceNetteMurs?: string;
-  lineaireNet?: string;
-  surfaceMenuiseries?: string;
-  netWallSurface?: string; 
-  totalPlinthLength?: string;
-  totalMenuiserieSurface?: string;
-  wallSurfaceRaw?: string;
-  menuiseriesMursSurface?: string;
-  menuiseriesPlafondSurface?: string;
-  menuiseriesSolSurface?: string;
-  autresSurfacesMurs?: string;
-  autresSurfacesPlafond?: string;
-  autresSurfacesSol?: string;
-  // Propriétés supplémentaires
-  length?: string;
-  width?: string;
-  height?: string;
-  plinthHeight?: string;
-  totalPlinthSurface?: string; // Ajouté pour correspondre à Room
-  autresSurfaces?: AutreSurface[]; // Ajouté pour correspondre à Room
-}
-
 export interface Travail {
   id: string;
-  pieceId: string;
-  typeTravaux: string;
-  typeTravauxLabel: string;
-  sousType: string;
-  sousTypeLabel: string;
-  quantite: number;
+  type: string;
+  designation: string;
   unite: string;
-  tauxTVA: number;
-  prixUnitaire: number;
-  prixFournitures: number;
-  prixMainOeuvre: number;
-  personnalisation?: string;
-  surfaceReference?: string;
-  menuiserieId?: string; // Ajout de l'ID de la menuiserie (optionnel)
+  quantite: string;
+  prixUnitaire: string;
+  prixTotal: string;
 }
 
-// Nouvelle interface pour les informations de chantier/projet
+// Types pour les clients
+export interface Client {
+  id: string;
+  nom: string;
+  prenom: string;
+  adresse: string;
+  tel1: string;
+  tel2?: string;
+  email?: string;
+  typeClient: string;
+  autreInfo?: string;
+  infosComplementaires?: string;
+}
+
+// Types pour les travaux types
+export interface TravauxType {
+  id: string;
+  type: string;
+  description: string;
+  unite: string;
+  prixUnitaire: number;
+}
+
+// Types pour les menuiseries types
+export interface MenuiserieType {
+  id: string;
+  type: string;
+}
+
+// Types pour les autres surfaces types
+export interface AutreSurfaceType {
+  id: string;
+  designation: string;
+}
+
+// Types pour les projets chantier
 export interface ProjetChantier {
   id: string;
-  clientId: string; // ID du client sélectionné
+  clientId: string;
   nomProjet: string;
   descriptionProjet: string;
   adresseChantier: string;
@@ -148,26 +91,9 @@ export interface ProjetChantier {
   infoComplementaire: string;
   dateCreation: string;
   dateModification: string;
-}
-
-// Ajout des types manquants pour Travaux.tsx
-export interface Floor {
-  id: string;
-  name: string;
-}
-
-export interface RoomWithFloor extends Room {
-  floorName: string;
-}
-
-export interface Work {
-  id?: string;
-  roomId: string;
-  floorId: string;
-  typeTravauxId: string;
-  sousTypeId: string;
-  price: number;
-  tva: number;
-  quantity: number;
-  unite: string;
+  projectData?: {
+    rooms: Room[];
+    property: PropertyType;
+    travaux: Travail[];
+  };
 }

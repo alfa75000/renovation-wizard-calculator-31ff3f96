@@ -69,6 +69,7 @@ interface ProjetChantierContextType {
   sauvegarderProjet: (projetData: Omit<ProjetChantier, 'id' | 'dateCreation' | 'dateModification'>) => void;
   chargerProjet: (projetId: string) => void;
   genererNomFichier: (projet: Partial<ProjetChantier>, nomClient: string) => string;
+  nouveauProjet: () => void;
 }
 
 const ProjetChantierContext = createContext<ProjetChantierContextType | undefined>(undefined);
@@ -90,7 +91,7 @@ interface ProjetChantierProviderProps {
 export const ProjetChantierProvider: React.FC<ProjetChantierProviderProps> = ({ children }) => {
   const [state, dispatch] = useReducer(projetChantierReducer, initialState);
   const { loadFromLocalStorage, saveToLocalStorage } = useLocalStorageSync<ProjetChantierState>('projetsChantier', state);
-  const { state: projectState } = useProject();
+  const { state: projectState, dispatch: projectDispatch } = useProject();
 
   // Charger les données depuis localStorage au démarrage
   useEffect(() => {
@@ -113,17 +114,25 @@ export const ProjetChantierProvider: React.FC<ProjetChantierProviderProps> = ({ 
     return `${nomClient}_${datePart}_${intitule}_${adresse}`.replace(/\s+/g, '_');
   };
 
-  // Fonction pour sauvegarder un projet
+  // Fonction pour sauvegarder un projet complet (infos projet + pièces + travaux)
   const sauvegarderProjet = (
     projetData: Omit<ProjetChantier, 'id' | 'dateCreation' | 'dateModification'>
   ) => {
     const maintenant = new Date().toISOString();
+    
+    // Extraction des données du projectState
+    const projectData = {
+      rooms: projectState.rooms,
+      property: projectState.property,
+      travaux: projectState.travaux
+    };
     
     // Si projetActif existe et qu'on est en train de le mettre à jour
     if (state.projetActif && projetData.clientId === state.projetActif.clientId) {
       const projetMisAJour: ProjetChantier = {
         ...state.projetActif,
         ...projetData,
+        projectData: projectData, // Ajout des données du projectState
         dateModification: maintenant
       };
       
@@ -133,6 +142,7 @@ export const ProjetChantierProvider: React.FC<ProjetChantierProviderProps> = ({ 
       const nouveauProjet: ProjetChantier = {
         id: uuidv4(),
         ...projetData,
+        projectData: projectData, // Ajout des données du projectState
         dateCreation: maintenant,
         dateModification: maintenant
       };
@@ -141,13 +151,41 @@ export const ProjetChantierProvider: React.FC<ProjetChantierProviderProps> = ({ 
     }
   };
 
-  // Fonction pour charger un projet
+  // Fonction pour charger un projet complet
   const chargerProjet = (projetId: string) => {
     const projetACharger = state.projets.find(p => p.id === projetId);
     
     if (projetACharger) {
+      // Mettre à jour projetActif
       dispatch({ type: 'SET_PROJET_ACTIF', payload: projetACharger });
+      
+      // Charger les données du projet (rooms, property, travaux) si elles existent
+      if (projetACharger.projectData) {
+        // Mettre à jour les pièces
+        if (projetACharger.projectData.rooms) {
+          projectDispatch({ type: 'SET_ROOMS', payload: projetACharger.projectData.rooms });
+        }
+        
+        // Mettre à jour les propriétés
+        if (projetACharger.projectData.property) {
+          projectDispatch({ type: 'SET_PROPERTY', payload: projetACharger.projectData.property });
+        }
+        
+        // Mettre à jour les travaux
+        if (projetACharger.projectData.travaux) {
+          projectDispatch({ type: 'SET_TRAVAUX', payload: projetACharger.projectData.travaux });
+        }
+      }
     }
+  };
+  
+  // Fonction pour démarrer un nouveau projet
+  const nouveauProjet = () => {
+    // Effacer le projet actif
+    dispatch({ type: 'SET_PROJET_ACTIF', payload: null });
+    
+    // Réinitialiser le projectState
+    projectDispatch({ type: 'RESET_PROJECT' });
   };
 
   return (
@@ -157,7 +195,8 @@ export const ProjetChantierProvider: React.FC<ProjetChantierProviderProps> = ({ 
         dispatch,
         sauvegarderProjet,
         chargerProjet,
-        genererNomFichier
+        genererNomFichier,
+        nouveauProjet
       }}
     >
       {children}

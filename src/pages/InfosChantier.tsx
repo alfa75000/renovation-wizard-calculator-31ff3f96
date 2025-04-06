@@ -13,13 +13,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Calendar } from 'lucide-react';
+import { Calendar, PlusCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 const InfosChantier = () => {
   const navigate = useNavigate();
   const { state: clientsState } = useClients();
-  const { state: projetState, sauvegarderProjet, chargerProjet, genererNomFichier } = useProjetChantier();
+  const { state: projetState, sauvegarderProjet, chargerProjet, genererNomFichier, nouveauProjet } = useProjetChantier();
   const { state: projectState } = useProject();
   
   const [clientId, setClientId] = useState<string>('');
@@ -84,6 +84,20 @@ const InfosChantier = () => {
   const handleChargerProjet = (projetId: string) => {
     chargerProjet(projetId);
     toast.info('Projet chargé');
+  };
+  
+  const handleNouveauProjet = () => {
+    nouveauProjet();
+    // Réinitialiser le formulaire
+    setClientId('');
+    setNomProjet('');
+    setDescriptionProjet('');
+    setAdresseChantier('');
+    setOccupant('');
+    setInfoComplementaire('');
+    setDateDevis(format(new Date(), 'yyyy-MM-dd'));
+    setNomFichier('');
+    toast.info('Nouveau projet initialisé');
   };
   
   return (
@@ -211,12 +225,20 @@ const InfosChantier = () => {
                 </div>
               )}
               
-              <div className="pt-4 flex gap-4">
+              <div className="pt-4 flex flex-wrap gap-4">
                 <Button onClick={handleSave}>
                   Sauvegarder le projet
                 </Button>
                 <Button variant="outline" onClick={() => navigate('/travaux')}>
                   Aller aux travaux
+                </Button>
+                <Button 
+                  variant="secondary" 
+                  onClick={handleNouveauProjet}
+                  className="flex items-center gap-2"
+                >
+                  <PlusCircle className="h-4 w-4" />
+                  Nouveau projet
                 </Button>
               </div>
             </div>
@@ -243,6 +265,14 @@ const InfosChantier = () => {
                         <p className="text-sm text-gray-500">
                           {format(new Date(projet.dateModification), 'dd/MM/yyyy', { locale: fr })}
                         </p>
+                        {projet.projectData && (
+                          <div className="mt-1 text-xs text-green-600">
+                            <span className="inline-block px-2 py-1 bg-green-50 rounded-full">
+                              {projet.projectData.rooms.length} pièces | 
+                              {projet.projectData.travaux.length} travaux
+                            </span>
+                          </div>
+                        )}
                       </div>
                     );
                   })}
