@@ -62,7 +62,9 @@ const Travaux = () => {
       plinthHeight: room.plinthHeight,
       wallSurfaceRaw: room.wallSurfaceRaw,
       autresSurfaces: room.autresSurfaces || [],
-      totalPlinthSurface: room.totalPlinthSurface
+      totalPlinthSurface: room.totalPlinthSurface,
+      // Pour éviter l'erreur TS2322
+      volume: room.volume
     };
   });
   

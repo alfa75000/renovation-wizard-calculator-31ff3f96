@@ -297,7 +297,18 @@ export const TravauxTypesProvider: React.FC<{ children: ReactNode }> = ({
         const savedTypes = localStorage.getItem('travauxTypes');
         
         if (savedTypes) {
-          dispatch({ type: 'SET_TYPES', payload: JSON.parse(savedTypes) });
+          const parsedTypes = JSON.parse(savedTypes);
+          // Vérifier si "Menuiseries existantes" est présent
+          const hasMenuiseriesExistantes = parsedTypes.some((type: TypeTravauxItem) => 
+            type.id === "menuiseries-existantes"
+          );
+          
+          if (hasMenuiseriesExistantes) {
+            dispatch({ type: 'SET_TYPES', payload: parsedTypes });
+          } else {
+            console.warn("Types de travaux sauvegardés invalides, réinitialisation...");
+            dispatch({ type: 'RESET_TYPES' });
+          }
         } else {
           // Si aucune donnée n'est trouvée, utilisez les données par défaut
           dispatch({ type: 'SET_TYPES', payload: defaultTypes });
@@ -308,7 +319,8 @@ export const TravauxTypesProvider: React.FC<{ children: ReactNode }> = ({
       }
     };
 
-    loadData();
+    // Charger les données après le reset initial
+    setTimeout(loadData, 100);
   }, []);
 
   // Sauvegarde des données dans localStorage quand elles changent

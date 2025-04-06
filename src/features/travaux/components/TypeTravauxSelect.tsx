@@ -40,6 +40,11 @@ const TypeTravauxSelect: React.FC<TypeTravauxSelectProps> = ({ value, onChange }
     if (!hasMenuiseriesExistantes && state.types.length > 0) {
       console.log("Réinitialisation des types de travaux car 'Menuiseries existantes' est manquant");
       dispatch({ type: 'RESET_TYPES' });
+      
+      // Force reload de la page pour appliquer le reset
+      setTimeout(() => {
+        window.location.reload();
+      }, 100);
     }
   }, [state.types, dispatch]);
   
