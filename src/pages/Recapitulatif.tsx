@@ -89,6 +89,10 @@ const Recapitulatif = () => {
                 <span className="text-sm text-gray-500">Hauteur sous plafond</span>
                 <span className="font-medium">{property.ceilingHeight} m</span>
               </div>
+              <div className="flex flex-col">
+                <span className="text-sm text-gray-500">Nombre de pièces</span>
+                <span className="font-medium">{property.rooms}</span>
+              </div>
             </div>
             <div className="mt-4 bg-blue-50 p-3 rounded-md border border-blue-100">
               <div className="flex items-start">

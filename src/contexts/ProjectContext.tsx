@@ -25,7 +25,7 @@ const initialState: ProjectState = {
     type: "Appartement",
     floors: "1",
     totalArea: "52",
-    rooms: "",
+    rooms: "3",
     ceilingHeight: "2.50",
   },
 };
