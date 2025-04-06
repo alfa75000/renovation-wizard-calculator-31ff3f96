@@ -4,8 +4,9 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTravauxTypes } from '@/contexts/TravauxTypesContext';
-import { Piece, Travail } from '@/types';
+import { Piece, Travail, Menuiserie } from '@/types';
 import { unites } from './UniteSelect';
 import UniteSelect from './UniteSelect';
 import TypeTravauxSelect from './TypeTravauxSelect';
@@ -25,6 +26,7 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail, travailA
   
   const [typeTravaux, setTypeTravaux] = useState<string | null>(travailAModifier?.typeTravaux || null);
   const [sousType, setSousType] = useState<string | null>(travailAModifier?.sousType || null);
+  const [selectedMenuiserie, setSelectedMenuiserie] = useState<string | null>(travailAModifier?.menuiserieId || null);
   const [tauxTVAPrincipal, setTauxTVAPrincipal] = useState<number>(10);
   const [autreTauxTVAPrincipal, setAutreTauxTVAPrincipal] = useState<number>(0);
   const [tauxTVA, setTauxTVA] = useState<number>(10);
@@ -44,6 +46,7 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail, travailA
     if (travailAModifier) {
       setTypeTravaux(travailAModifier.typeTravaux);
       setSousType(travailAModifier.sousType);
+      setSelectedMenuiserie(travailAModifier.menuiserieId || null);
       setTauxTVA(travailAModifier.tauxTVA);
       setDescriptif(travailAModifier.personnalisation || '');
       setQuantite(travailAModifier.quantite);
@@ -52,6 +55,25 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail, travailA
       setPrixMainOeuvre(travailAModifier.prixMainOeuvre);
     }
   }, [travailAModifier]);
+
+  // Réinitialiser la menuiserie sélectionnée lorsqu'on change de type de travaux
+  useEffect(() => {
+    if (typeTravaux !== 'menuiseries-existantes') {
+      setSelectedMenuiserie(null);
+    }
+  }, [typeTravaux]);
+
+  // Gérer la menuiserie sélectionnée
+  useEffect(() => {
+    if (typeTravaux === 'menuiseries-existantes' && selectedMenuiserie && piece?.menuiseries) {
+      const menuiserie = piece.menuiseries.find(m => m.id === selectedMenuiserie);
+      if (menuiserie) {
+        // Mettre à jour la quantité avec la surface de la menuiserie
+        setQuantite(menuiserie.surface);
+        setUnite('M²');
+      }
+    }
+  }, [selectedMenuiserie, typeTravaux, piece]);
 
   useEffect(() => {
     if (sousType) {
@@ -69,8 +91,8 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail, travailA
           setDescriptif(selectedSousType.description);
         }
         
-        // Appliquer la surface seulement lors d'une nouvelle sélection
-        if (!travailAModifier || travailAModifier.sousType !== sousType) {
+        // Appliquer la surface seulement lors d'une nouvelle sélection et si ce n'est pas une menuiserie existante
+        if ((!travailAModifier || travailAModifier.sousType !== sousType) && typeTravaux !== 'menuiseries-existantes') {
           if (piece && selectedSousType.surfaceReference) {
             const referenceValue = getValueFromReference(piece, selectedSousType.surfaceReference);
             if (referenceValue && !isNaN(parseFloat(referenceValue))) {
@@ -84,7 +106,7 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail, travailA
         }
       }
     }
-  }, [sousType, state.types, piece, travailAModifier]);
+  }, [sousType, state.types, piece, travailAModifier, typeTravaux]);
 
   const getValueFromReference = (piece: Piece, reference: string): string | undefined => {
     switch (reference) {
@@ -112,6 +134,14 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail, travailA
   const typeTravauxLabel = state.types.find(t => t.id === typeTravaux)?.label || '';
   const sousTypeObj = state.types.flatMap(t => t.sousTypes).find(st => st.id === sousType);
   const sousTypeLabel = sousTypeObj?.label || '';
+  
+  // On récupère les menuiseries de la pièce
+  const menuiseries = piece?.menuiseries || [];
+  
+  // Fonction pour obtenir le nom complet de la menuiserie pour l'affichage
+  const getMenuiserieDisplayName = (menuiserie: Menuiserie) => {
+    return `${menuiserie.name} (${menuiserie.type}) - ${menuiserie.surface.toFixed(2)} m²`;
+  };
   
   if (!piece) {
     return (
@@ -156,6 +186,32 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail, travailA
           />
         </div>
 
+        {typeTravaux === 'menuiseries-existantes' && (
+          <div>
+            <Label className="block text-sm font-medium mb-1">Menuiserie à traiter</Label>
+            <Select 
+              value={selectedMenuiserie || ''} 
+              onValueChange={setSelectedMenuiserie}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Sélectionnez une menuiserie" />
+              </SelectTrigger>
+              <SelectContent>
+                {menuiseries.map(menuiserie => (
+                  <SelectItem key={menuiserie.id} value={menuiserie.id}>
+                    {getMenuiserieDisplayName(menuiserie)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {menuiseries.length === 0 && (
+              <p className="text-sm text-red-500 mt-1">
+                Aucune menuiserie dans cette pièce. Ajoutez-en une dans l'estimateur.
+              </p>
+            )}
+          </div>
+        )}
+
         <div>
           <SousTypeSelect 
             typeTravauxId={typeTravaux} 
@@ -183,6 +239,7 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail, travailA
                 step="0.01"
                 value={quantite}
                 onChange={(e) => setQuantite(parseFloat(e.target.value) || 0)}
+                readOnly={typeTravaux === 'menuiseries-existantes' && selectedMenuiserie !== null}
               />
               <UniteSelect 
                 value={unite}
@@ -234,6 +291,11 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail, travailA
           onClick={() => {
             if (!typeTravaux || !sousType || !piece?.id) return;
             
+            // Vérifier si une menuiserie est requise mais non sélectionnée
+            if (typeTravaux === 'menuiseries-existantes' && !selectedMenuiserie) {
+              return; // Ne pas soumettre si manque une menuiserie
+            }
+            
             onAddTravail({
               pieceId: piece.id,
               typeTravaux,
@@ -246,7 +308,8 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail, travailA
               prixUnitaire: prixUnitaireTotal,
               prixFournitures,
               prixMainOeuvre,
-              personnalisation: descriptif
+              personnalisation: descriptif,
+              menuiserieId: selectedMenuiserie || undefined
             });
           }}
         >

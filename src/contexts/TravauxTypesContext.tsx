@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
 
 // Types pour les catégories et sous-catégories de travaux
@@ -99,6 +100,18 @@ const defaultTypes: TypeTravauxItem[] = [
       { id: "pose-porte-fenetre", label: "Pose porte-fenêtre", prixUnitaire: 280, prixFournitures: 200, prixMainOeuvre: 80, unite: "Ens.", surfaceReference: "Unite", description: "Fourniture et pose de porte-fenêtre" },
       { id: "pose-fenetre", label: "Pose fenêtre", prixUnitaire: 250, prixFournitures: 180, prixMainOeuvre: 70, unite: "Ens.", surfaceReference: "Unite", description: "Fourniture et pose de fenêtre" },
       { id: "peinture-menuiserie", label: "Peinture menuiserie", prixUnitaire: 45, prixFournitures: 15, prixMainOeuvre: 30, unite: "M²", surfaceReference: "SurfaceMenuiseries", description: "Peinture de menuiseries bois" },
+      { id: "autre", label: "Autre", prixUnitaire: 0, prixFournitures: 0, prixMainOeuvre: 0, unite: "Unité", surfaceReference: "Unite" }
+    ]
+  },
+  {
+    id: "menuiseries-existantes",
+    label: "Menuiseries existantes",
+    icon: "Home",
+    sousTypes: [
+      { id: "peinture", label: "Peinture", prixUnitaire: 40, prixFournitures: 15, prixMainOeuvre: 25, unite: "M²", surfaceReference: "SurfaceMenuiseries", description: "Peinture de la menuiserie" },
+      { id: "vernis", label: "Vernis", prixUnitaire: 45, prixFournitures: 18, prixMainOeuvre: 27, unite: "M²", surfaceReference: "SurfaceMenuiseries", description: "Vernis de la menuiserie" },
+      { id: "reparation", label: "Réparation", prixUnitaire: 80, prixFournitures: 30, prixMainOeuvre: 50, unite: "Unité", surfaceReference: "Unite", description: "Réparation de la menuiserie" },
+      { id: "remplacement", label: "Remplacement", prixUnitaire: 300, prixFournitures: 200, prixMainOeuvre: 100, unite: "Unité", surfaceReference: "Unite", description: "Remplacement de la menuiserie" },
       { id: "autre", label: "Autre", prixUnitaire: 0, prixFournitures: 0, prixMainOeuvre: 0, unite: "Unité", surfaceReference: "Unite" }
     ]
   },

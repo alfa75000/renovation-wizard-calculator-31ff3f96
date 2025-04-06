@@ -1,3 +1,4 @@
+
 // Types communs utilisés dans toute l'application
 
 export interface PropertyType {
@@ -87,11 +88,11 @@ export interface Room {
   volume?: string;
 }
 
-export interface Piece extends Partial<Room> {
+export interface Piece {
   id: string;
   name: string;
   type: string;
-  customName?: string;
+  customName: string; // Changed from optional to required
   surface?: string;
   // Surfaces pour le calcul automatique
   surfaceNetteSol?: string;
@@ -123,4 +124,5 @@ export interface Travail {
   prixMainOeuvre: number;
   personnalisation?: string;
   surfaceReference?: string;
+  menuiserieId?: string; // Ajout de l'ID de la menuiserie (optionnel)
 }
