@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -35,13 +34,11 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail, travailA
   const [prixFournitures, setPrixFournitures] = useState<number>(travailAModifier?.prixFournitures || 0);
   const [prixMainOeuvre, setPrixMainOeuvre] = useState<number>(travailAModifier?.prixMainOeuvre || 0);
   
-  // Mettre à jour le tauxTVA lorsque le tauxTVAPrincipal change (seulement si pas encore modifié)
   useEffect(() => {
     setTauxTVA(tauxTVAPrincipal);
     setAutreTauxTVA(autreTauxTVAPrincipal);
   }, [tauxTVAPrincipal, autreTauxTVAPrincipal]);
 
-  // Mettre à jour les champs lorsque travailAModifier change
   useEffect(() => {
     if (travailAModifier) {
       setTypeTravaux(travailAModifier.typeTravaux);
@@ -55,66 +52,44 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail, travailA
     }
   }, [travailAModifier]);
 
-  // Mettre à jour les prix et l'unité quand le sous-type change
   useEffect(() => {
     if (sousType) {
-      // Trouver le sous-type sélectionné
       const selectedSousType = state.types
         .flatMap(t => t.sousTypes)
         .find(st => st.id === sousType);
       
       if (selectedSousType) {
-        // S'assurer que nous avons toujours les deux composantes de prix
-        const prixFourn = selectedSousType.prixFournitures !== undefined ? 
-          selectedSousType.prixFournitures : selectedSousType.prixUnitaire / 2;
-        const prixMO = selectedSousType.prixMainOeuvre !== undefined ? 
-          selectedSousType.prixMainOeuvre : selectedSousType.prixUnitaire / 2;
-        
-        setPrixFournitures(prixFourn);
-        setPrixMainOeuvre(prixMO);
+        setPrixFournitures(selectedSousType.prixFournitures || 0);
+        setPrixMainOeuvre(selectedSousType.prixMainOeuvre || 0);
         setUnite(selectedSousType.unite || 'M²');
         
-        // Si nous avons une description par défaut et pas de description personnalisée
         if (selectedSousType.description && (!travailAModifier || travailAModifier.sousType !== sousType)) {
           setDescriptif(selectedSousType.description);
         }
         
-        // Si nous ne sommes pas en train de modifier un travail existant ou si c'est un nouveau sous-type
         if (!travailAModifier || travailAModifier.sousType !== sousType) {
-          // Calculer automatiquement la quantité en fonction de la surface de référence
           if (piece && selectedSousType.surfaceReference) {
             const referenceValue = getValueFromReference(piece, selectedSousType.surfaceReference);
-            console.log(`Surface de référence pour ${selectedSousType.label}: ${selectedSousType.surfaceReference} = ${referenceValue}`);
             if (referenceValue && !isNaN(parseFloat(referenceValue))) {
               setQuantite(parseFloat(referenceValue));
             } else {
-              setQuantite(1); // Valeur par défaut si aucune référence n'est trouvée
+              setQuantite(1);
             }
           } else {
-            setQuantite(1); // Valeur par défaut si pas de surface de référence
+            setQuantite(1);
           }
         }
       }
     }
   }, [sousType, state.types, piece, travailAModifier]);
 
-  // Fonction pour obtenir la valeur à partir de la référence
   const getValueFromReference = (piece: Piece, reference: string): string | undefined => {
-    // Débogage pour voir ce qui est disponible dans l'objet pièce
-    console.log("Objet pièce disponible:", piece);
-    console.log("Surface de référence demandée:", reference);
-    
     switch (reference) {
       case 'SurfaceNetteSol':
         return piece.surfaceNetteSol || piece.surface;
       case 'SurfaceNettePlafond':
-        // Vérifier spécifiquement pour plafond
-        console.log("Valeur de surfaceNettePlafond:", piece.surfaceNettePlafond);
         return piece.surfaceNettePlafond || piece.surface;
       case 'SurfaceNetteMurs':
-        // Si surfaceNetteMurs n'existe pas, on essaie netWallSurface ou surface
-        console.log("Valeur de surfaceNetteMurs:", piece.surfaceNetteMurs);
-        console.log("Valeur de netWallSurface:", piece.netWallSurface);
         return piece.surfaceNetteMurs || piece.netWallSurface || piece.surface;
       case 'LineaireNet':
         return piece.lineaireNet || piece.totalPlinthLength;
@@ -125,15 +100,12 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail, travailA
       case 'Forfait':
         return '1';
       default:
-        console.log(`Surface de référence inconnue: ${reference}`);
         return '1';
     }
   };
 
-  // Calculer le prix unitaire total
   const prixUnitaireTotal = prixFournitures + prixMainOeuvre;
   
-  // Trouver les labels pour les types et sous-types
   const typeTravauxLabel = state.types.find(t => t.id === typeTravaux)?.label || '';
   const sousTypeObj = state.types.flatMap(t => t.sousTypes).find(st => st.id === sousType);
   const sousTypeLabel = sousTypeObj?.label || '';
@@ -154,7 +126,6 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail, travailA
             Ajouter ou modifier un travail
           </h3>
           
-          {/* Taux de TVA Principal en haut à droite */}
           <div className="w-1/3">
             <TvaSelect
               value={tauxTVAPrincipal}
@@ -168,7 +139,6 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail, travailA
         
         <Separator className="my-4" />
         
-        {/* Nom de la pièce */}
         <div>
           <Label className="block text-sm font-medium mb-1">Pièce</Label>
           <div className="p-2 border rounded-md bg-gray-50">
@@ -176,7 +146,6 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail, travailA
           </div>
         </div>
         
-        {/* Type de travaux */}
         <div>
           <TypeTravauxSelect 
             value={typeTravaux} 
@@ -184,7 +153,6 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail, travailA
           />
         </div>
 
-        {/* Sous-type */}
         <div>
           <SousTypeSelect 
             typeTravauxId={typeTravaux} 
@@ -193,7 +161,6 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail, travailA
           />
         </div>
 
-        {/* Descriptif */}
         <div>
           <Label className="block text-sm font-medium mb-1">Descriptif</Label>
           <Textarea
@@ -204,7 +171,6 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail, travailA
           />
         </div>
 
-        {/* Quantité et TVA */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="space-y-2">
             <Label className="block text-sm font-medium">Quantité à traiter</Label>
@@ -222,7 +188,6 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail, travailA
             </div>
           </div>
           
-          {/* Taux de TVA spécifique */}
           <div className="space-y-2">
             <TvaSelect
               value={tauxTVA}
@@ -233,9 +198,7 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail, travailA
           </div>
         </div>
 
-        {/* Prix */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Prix fournitures */}
           <div>
             <Label className="block text-sm font-medium mb-1">Prix fournitures ({unite})</Label>
             <Input
@@ -246,7 +209,6 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail, travailA
             />
           </div>
 
-          {/* Prix main d'œuvre */}
           <div>
             <Label className="block text-sm font-medium mb-1">Prix main d'œuvre ({unite})</Label>
             <Input
@@ -257,7 +219,6 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail, travailA
             />
           </div>
 
-          {/* Prix unitaire total */}
           <div className="flex items-end">
             <p className="text-sm font-medium p-2 border rounded-md bg-gray-50 w-full">
               Prix unitaire total: {formaterPrix(prixUnitaireTotal)}/{unite}
@@ -265,7 +226,6 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail, travailA
           </div>
         </div>
 
-        {/* Bouton d'ajout */}
         <Button 
           className="w-full mt-4"
           onClick={() => {

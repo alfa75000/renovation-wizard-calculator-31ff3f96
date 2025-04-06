@@ -29,7 +29,7 @@ const Travaux = () => {
   const { travailAModifier, getTravauxForPiece, addTravail, setTravailAModifier } = useTravaux();
   
   // Préparer les pièces avec les propriétés nécessaires pour le calcul automatique
-  const preparedRooms: Piece[] = rooms.map(room => {
+  const preparedRooms = rooms.map(room => {
     return {
       id: room.id,
       name: room.name || room.customName || room.type,

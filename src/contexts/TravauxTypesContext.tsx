@@ -68,7 +68,7 @@ const defaultTypes: TypeTravauxItem[] = [
       { id: "lessivage-travaux", label: "Lessivage pour travaux", prixUnitaire: 2.5, prixFournitures: 0.8, prixMainOeuvre: 1.7, unite: "M²", surfaceReference: "SurfaceNettePlafond", description: "Lessivage du plafond pour préparation" },
       { id: "rebouchage", label: "Rebouchage, ponçage", prixUnitaire: 22, prixFournitures: 8, prixMainOeuvre: 14, unite: "M²", surfaceReference: "SurfaceNettePlafond", description: "Rebouchage des fissures et trous, ponçage" },
       { id: "peinture-acrylique", label: "Peinture type acrylique", prixUnitaire: 32, prixFournitures: 12, prixMainOeuvre: 20, unite: "M²", surfaceReference: "SurfaceNettePlafond", description: "Peinture acrylique pour plafond" },
-      { id: "peinture-glycero", label: "Peinture type glycéro", prixUnitaire: 38, prixFournitures: 15, prixMainOeuvre: 23, unite: "M²", surfaceReference: "SurfaceNettePlafond", description: "Peinture glycérophtalique pour plafond" },
+      { id: "peinture-glycero", label: "Peinture type glycéro", prixUnitaire: 21, prixFournitures: 5, prixMainOeuvre: 16, unite: "M²", surfaceReference: "SurfaceNettePlafond", description: "Peinture glycérophtalique pour plafond" },
       { id: "autre", label: "Autre", prixUnitaire: 0, prixFournitures: 0, prixMainOeuvre: 0, unite: "M²", surfaceReference: "SurfaceNettePlafond" }
     ]
   },
