@@ -54,13 +54,16 @@ const Travaux = () => {
       menuiseriesMursSurface: room.menuiseriesMursSurface,
       menuiseriesPlafondSurface: room.menuiseriesPlafondSurface,
       menuiseriesSolSurface: room.menuiseriesSolSurface,
+      // Nouvelles propriétés pour les autres surfaces
+      autresSurfacesMurs: room.autresSurfacesMurs,
+      autresSurfacesPlafond: room.autresSurfacesPlafond,
+      autresSurfacesSol: room.autresSurfacesSol,
       // Autres propriétés nécessaires
       length: room.length,
       width: room.width,
       height: room.height,
       plinthHeight: room.plinthHeight,
-      wallSurfaceRaw: room.wallSurfaceRaw,
-      menuiseries: room.menuiseries
+      wallSurfaceRaw: room.wallSurfaceRaw
     };
   });
   

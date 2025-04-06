@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
-import { Room, PropertyType, Travail } from '@/types';
+import { Room, PropertyType, Travail, AutreSurface } from '@/types';
 
 // Interface pour définir l'état global du projet
 interface ProjectState {
@@ -111,7 +111,14 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
           const parsedRooms = JSON.parse(savedRooms);
           if (Array.isArray(parsedRooms) && parsedRooms.length > 0) {
             console.log("Chargement des pièces depuis localStorage:", parsedRooms);
-            dispatch({ type: 'SET_ROOMS', payload: parsedRooms });
+            
+            // Assurer la rétrocompatibilité en ajoutant le tableau autresSurfaces si absent
+            const roomsWithAutresSurfaces = parsedRooms.map(room => ({
+              ...room,
+              autresSurfaces: room.autresSurfaces || []
+            }));
+            
+            dispatch({ type: 'SET_ROOMS', payload: roomsWithAutresSurfaces });
           } else {
             console.log("Aucune pièce trouvée dans localStorage");
           }

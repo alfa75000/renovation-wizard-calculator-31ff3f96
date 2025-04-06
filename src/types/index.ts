@@ -19,6 +19,14 @@ export interface TypeMenuiserie {
   description?: string;
 }
 
+export interface TypeAutreSurface {
+  id: string;
+  nom: string;
+  description?: string;
+  surfaceImpacteeParDefaut?: string;  // "mur", "plafond", ou "sol"
+  estDeduction?: boolean;  // true: on déduit, false: on ajoute
+}
+
 export interface Menuiserie {
   id: string;
   type: string;
@@ -29,6 +37,18 @@ export interface Menuiserie {
   surface: number;
   surfaceImpactee?: string; // Surface impactée par la menuiserie (mur, plafond, sol)
   impactePlinthe?: boolean;
+}
+
+export interface AutreSurface {
+  id: string;
+  type: string;           // Type de surface (ex: "Poteau", "Trémie")
+  name: string;           // Nom personnalisé
+  largeur: number;        // Largeur en m
+  hauteur: number;        // Hauteur en m
+  surface: number;        // Surface calculée en m²
+  quantity: number;       // Quantité
+  surfaceImpactee: string; // "mur", "plafond", ou "sol"
+  estDeduction: boolean;   // true: on déduit, false: on ajoute
 }
 
 export interface Room {
@@ -43,6 +63,7 @@ export interface Room {
   plinthHeight: string;
   wallSurfaceRaw: string;
   menuiseries: Menuiserie[];
+  autresSurfaces: AutreSurface[];  // Ajout des autres surfaces
   totalPlinthLength: string;
   totalPlinthSurface: string;
   totalMenuiserieSurface: string;
@@ -61,13 +82,16 @@ export interface Room {
   menuiseriesMursSurface?: string; // Surface des menuiseries sur les murs
   menuiseriesPlafondSurface?: string; // Surface des menuiseries au plafond
   menuiseriesSolSurface?: string; // Surface des menuiseries au sol
+  autresSurfacesMurs?: string;    // Surface des autres surfaces sur les murs
+  autresSurfacesPlafond?: string; // Surface des autres surfaces au plafond
+  autresSurfacesSol?: string;     // Surface des autres surfaces au sol
   volume?: string;
 }
 
 export interface Piece extends Partial<Room> {
   id: string;
-  name?: string;
-  type?: string;
+  name: string;
+  type: string;
   customName?: string;
   surface?: string;
   // Surfaces pour le calcul automatique
@@ -80,6 +104,9 @@ export interface Piece extends Partial<Room> {
   menuiseriesMursSurface?: string;
   menuiseriesPlafondSurface?: string;
   menuiseriesSolSurface?: string;
+  autresSurfacesMurs?: string;
+  autresSurfacesPlafond?: string;
+  autresSurfacesSol?: string;
 }
 
 export interface Travail {
