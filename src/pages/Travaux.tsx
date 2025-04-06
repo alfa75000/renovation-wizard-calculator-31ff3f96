@@ -29,7 +29,7 @@ const Travaux = () => {
   const { travailAModifier, getTravauxForPiece, addTravail, setTravailAModifier } = useTravaux();
   
   // Préparer les pièces avec les propriétés nécessaires pour le calcul automatique
-  const preparedRooms = rooms.map(room => {
+  const preparedRooms: Piece[] = rooms.map(room => {
     return {
       id: room.id,
       name: room.name || room.customName || room.type,
@@ -37,11 +37,11 @@ const Travaux = () => {
       customName: room.customName,
       surface: room.surface,
       // Conversion et normalisation des surfaces pour le calcul automatique
-      surfaceNetteSol: room.surfaceNetteSol || room.surface,
-      surfaceNettePlafond: room.surfaceNettePlafond || room.surface,
-      surfaceNetteMurs: room.surfaceNetteMurs || room.netWallSurface,
-      lineaireNet: room.lineaireNet || room.totalPlinthLength,
-      surfaceMenuiseries: room.surfaceMenuiseries || room.totalMenuiserieSurface,
+      surfaceNetteSol: room.surface,
+      surfaceNettePlafond: room.surface,
+      surfaceNetteMurs: room.netWallSurface,
+      lineaireNet: room.totalPlinthLength,
+      surfaceMenuiseries: room.totalMenuiserieSurface,
       // Propriétés supplémentaires pour compatibilité
       netWallSurface: room.netWallSurface,
       totalPlinthLength: room.totalPlinthLength,

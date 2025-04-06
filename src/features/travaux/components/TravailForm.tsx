@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -59,6 +60,7 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail, travailA
         .find(st => st.id === sousType);
       
       if (selectedSousType) {
+        // Assigner directement les prix exactement comme définis
         setPrixFournitures(selectedSousType.prixFournitures || 0);
         setPrixMainOeuvre(selectedSousType.prixMainOeuvre || 0);
         setUnite(selectedSousType.unite || 'M²');
@@ -67,6 +69,7 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail, travailA
           setDescriptif(selectedSousType.description);
         }
         
+        // Appliquer la surface seulement lors d'une nouvelle sélection
         if (!travailAModifier || travailAModifier.sousType !== sousType) {
           if (piece && selectedSousType.surfaceReference) {
             const referenceValue = getValueFromReference(piece, selectedSousType.surfaceReference);
@@ -87,10 +90,10 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail, travailA
     switch (reference) {
       case 'SurfaceNetteSol':
         return piece.surfaceNetteSol || piece.surface;
-      case 'SurfaceNettePlafond':
+      case 'SurfaceNettePlafond': 
         return piece.surfaceNettePlafond || piece.surface;
       case 'SurfaceNetteMurs':
-        return piece.surfaceNetteMurs || piece.netWallSurface || piece.surface;
+        return piece.surfaceNetteMurs || piece.netWallSurface;
       case 'LineaireNet':
         return piece.lineaireNet || piece.totalPlinthLength;
       case 'SurfaceMenuiseries':
