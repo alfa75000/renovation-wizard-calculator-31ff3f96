@@ -19,6 +19,7 @@ import { useProject } from "@/contexts/ProjectContext";
 import TravailForm from "@/features/travaux/components/TravailForm";
 import { useTravaux } from "@/features/travaux/hooks/useTravaux";
 import TravauxList from "@/features/travaux/components/TravauxList";
+import { Piece } from "@/types";
 
 const Travaux = () => {
   const { state } = useProject();
@@ -28,7 +29,7 @@ const Travaux = () => {
   const { travailAModifier, getTravauxForPiece, addTravail, setTravailAModifier } = useTravaux();
   
   // Préparer les pièces avec les propriétés nécessaires pour le calcul automatique
-  const preparedRooms = rooms.map(room => {
+  const preparedRooms: Piece[] = rooms.map(room => {
     return {
       id: room.id,
       name: room.name || room.customName || room.type,

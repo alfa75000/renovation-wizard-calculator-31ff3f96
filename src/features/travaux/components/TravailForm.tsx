@@ -84,6 +84,7 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail, travailA
           // Calculer automatiquement la quantité en fonction de la surface de référence
           if (piece && selectedSousType.surfaceReference) {
             const referenceValue = getValueFromReference(piece, selectedSousType.surfaceReference);
+            console.log(`Surface de référence pour ${selectedSousType.label}: ${selectedSousType.surfaceReference} = ${referenceValue}`);
             if (referenceValue && !isNaN(parseFloat(referenceValue))) {
               setQuantite(parseFloat(referenceValue));
             } else {
@@ -107,9 +108,13 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail, travailA
       case 'SurfaceNetteSol':
         return piece.surfaceNetteSol || piece.surface;
       case 'SurfaceNettePlafond':
+        // Vérifier spécifiquement pour plafond
+        console.log("Valeur de surfaceNettePlafond:", piece.surfaceNettePlafond);
         return piece.surfaceNettePlafond || piece.surface;
       case 'SurfaceNetteMurs':
         // Si surfaceNetteMurs n'existe pas, on essaie netWallSurface ou surface
+        console.log("Valeur de surfaceNetteMurs:", piece.surfaceNetteMurs);
+        console.log("Valeur de netWallSurface:", piece.netWallSurface);
         return piece.surfaceNetteMurs || piece.netWallSurface || piece.surface;
       case 'LineaireNet':
         return piece.lineaireNet || piece.totalPlinthLength;
