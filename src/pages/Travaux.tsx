@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { 
   Card, 
@@ -53,7 +54,14 @@ const Travaux = () => {
       netWallSurface: room.netWallSurface,
       totalPlinthLength: room.totalPlinthLength,
       totalPlinthSurface: room.totalPlinthSurface,
-      totalMenuiserieSurface: room.totalMenuiserieSurface
+      totalMenuiserieSurface: room.totalMenuiserieSurface,
+      // Autres propriétés nécessaires
+      length: room.length,
+      width: room.width,
+      height: room.height,
+      plinthHeight: room.plinthHeight,
+      wallSurfaceRaw: room.wallSurfaceRaw,
+      menuiseries: room.menuiseries
     } as Piece;
   });
   

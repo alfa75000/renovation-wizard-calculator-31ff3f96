@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -162,7 +163,8 @@ const RenovationEstimator: React.FC = () => {
         menuiserieSurface += item.surface * item.quantity;
       });
       
-      const netWallSurface = arrondir2Decimales(parseFloat(newRoom.wallSurfaceRaw) - menuiserieSurface).toString();
+      // Calculer la surface nette des murs en déduisant la surface des menuiseries ET des plinthes
+      const netWallSurface = arrondir2Decimales(parseFloat(newRoom.wallSurfaceRaw) - menuiserieSurface - parseFloat(plinthSurface)).toString();
       
       setNewRoom(prev => ({
         ...prev,
@@ -209,6 +211,7 @@ const RenovationEstimator: React.FC = () => {
         const itemNumber = typeCount + i + 1;
         const autoName = `${newMenuiserie.type} ${itemNumber}`;
         
+        // S'assurer que largeur et hauteur sont bien en mètres
         menuiserieItems.push({
           id: Date.now().toString() + i,
           type: newMenuiserie.type,
@@ -216,7 +219,9 @@ const RenovationEstimator: React.FC = () => {
           largeur: newMenuiserie.largeur,
           hauteur: newMenuiserie.hauteur,
           quantity: 1,
-          surface: arrondir2Decimales(newMenuiserie.largeur * newMenuiserie.hauteur)
+          surface: arrondir2Decimales(newMenuiserie.largeur * newMenuiserie.hauteur),
+          surfaceImpactee: newMenuiserie.surfaceImpactee,
+          impactePlinthe: newMenuiserie.impactePlinthe
         });
       }
       
