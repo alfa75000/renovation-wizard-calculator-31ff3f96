@@ -1,21 +1,68 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent } from "@/components/ui/card";
 import { useTravauxTypes } from '@/contexts/TravauxTypesContext';
-import { Piece } from '@/types';
+import { Piece, Travail } from '@/types';
 import { unites } from './UniteSelect';
+import UniteSelect from './UniteSelect';
+import TypeTravauxSelect from './TypeTravauxSelect';
+import SousTypeSelect from './SousTypeSelect';
+import TvaSelect from './TvaSelect';
+import { Separator } from '@/components/ui/separator';
+import { formaterPrix } from '@/lib/utils';
 
 interface TravailFormProps {
   piece: Piece | null;
-  onAddTravail: (travail: any) => void;
+  onAddTravail: (travail: Omit<Travail, 'id'>) => void;
+  travailAModifier: Travail | null;
 }
 
-const TravailForm: React.FC<TravailFormProps> = ({ piece }) => {
+const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail, travailAModifier }) => {
   const { state } = useTravauxTypes();
+  
+  const [typeTravaux, setTypeTravaux] = useState<string | null>(travailAModifier?.typeTravaux || null);
+  const [sousType, setSousType] = useState<string | null>(travailAModifier?.sousType || null);
+  const [tauxTVAPrincipal, setTauxTVAPrincipal] = useState<number>(10);
+  const [autreTauxTVAPrincipal, setAutreTauxTVAPrincipal] = useState<number>(0);
+  const [tauxTVA, setTauxTVA] = useState<number>(10);
+  const [autreTauxTVA, setAutreTauxTVA] = useState<number>(0);
+  const [descriptif, setDescriptif] = useState<string>(travailAModifier?.personnalisation || '');
+  const [quantite, setQuantite] = useState<number>(travailAModifier?.quantite || 0);
+  const [unite, setUnite] = useState<string>(travailAModifier?.unite || 'M²');
+  const [prixFournitures, setPrixFournitures] = useState<number>(travailAModifier?.prixFournitures || 0);
+  const [prixMainOeuvre, setPrixMainOeuvre] = useState<number>(travailAModifier?.prixMainOeuvre || 0);
+  
+  // Mettre à jour le tauxTVA lorsque le tauxTVAPrincipal change (seulement si pas encore modifié)
+  useEffect(() => {
+    setTauxTVA(tauxTVAPrincipal);
+    setAutreTauxTVA(autreTauxTVAPrincipal);
+  }, [tauxTVAPrincipal, autreTauxTVAPrincipal]);
+
+  // Mettre à jour les champs lorsque travailAModifier change
+  useEffect(() => {
+    if (travailAModifier) {
+      setTypeTravaux(travailAModifier.typeTravaux);
+      setSousType(travailAModifier.sousType);
+      setTauxTVA(travailAModifier.tauxTVA);
+      setDescriptif(travailAModifier.personnalisation || '');
+      setQuantite(travailAModifier.quantite);
+      setUnite(travailAModifier.unite);
+      setPrixFournitures(travailAModifier.prixFournitures);
+      setPrixMainOeuvre(travailAModifier.prixMainOeuvre);
+    }
+  }, [travailAModifier]);
+
+  // Calculer le prix unitaire total
+  const prixUnitaireTotal = prixFournitures + prixMainOeuvre;
+  
+  // Trouver les labels pour les types et sous-types
+  const typeTravauxLabel = state.types.find(t => t.id === typeTravaux)?.label || '';
+  const sousTypeObj = state.types.flatMap(t => t.sousTypes).find(st => st.id === sousType);
+  const sousTypeLabel = sousTypeObj?.label || '';
   
   if (!piece) {
     return (
@@ -28,130 +75,152 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece }) => {
   return (
     <div className="space-y-6">
       <div className="space-y-4">
-        <h3 className="text-lg font-medium">
-          {piece?.name || piece?.type}
-        </h3>
+        <div className="flex justify-between items-start">
+          <h3 className="text-lg font-medium">
+            Ajouter ou modifier un travail
+          </h3>
+          
+          {/* Taux de TVA Principal en haut à droite */}
+          <div className="w-1/3">
+            <TvaSelect
+              value={tauxTVAPrincipal}
+              autreValue={autreTauxTVAPrincipal}
+              onValueChange={setTauxTVAPrincipal}
+              onAutreValueChange={setAutreTauxTVAPrincipal}
+              label="Taux de TVA Principal"
+            />
+          </div>
+        </div>
+        
+        <Separator className="my-4" />
+        
+        {/* Nom de la pièce */}
+        <div>
+          <Label className="block text-sm font-medium mb-1">Pièce</Label>
+          <div className="p-2 border rounded-md bg-gray-50">
+            {piece?.name || piece?.type}
+          </div>
+        </div>
         
         {/* Type de travaux */}
         <div>
-          <Label className="block text-sm font-medium mb-1">Type de travaux</Label>
-          <Select disabled>
-            <SelectTrigger>
-              <SelectValue placeholder="Sélectionnez un type de travaux" />
-            </SelectTrigger>
-            <SelectContent>
-              {state.types.map(type => (
-                <SelectItem key={type.id} value={type.id}>
-                  {type.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <TypeTravauxSelect 
+            value={typeTravaux} 
+            onChange={setTypeTravaux} 
+          />
         </div>
 
         {/* Sous-type */}
         <div>
-          <Label className="block text-sm font-medium mb-1">Prestations</Label>
-          <Select disabled>
-            <SelectTrigger>
-              <SelectValue placeholder="Sélectionnez une prestation" />
-            </SelectTrigger>
-            <SelectContent>
-              {state.types[0]?.sousTypes.map(sousType => (
-                <SelectItem key={sousType.id} value={sousType.id}>
-                  {sousType.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* TVA */}
-        <div>
-          <Label className="block text-sm font-medium mb-1">Taux de TVA Principal</Label>
-          <Select disabled>
-            <SelectTrigger>
-              <SelectValue placeholder="Sélectionnez un taux de TVA" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="10">10 %</SelectItem>
-              <SelectItem value="5.5">5,5 %</SelectItem>
-              <SelectItem value="20">20 %</SelectItem>
-              <SelectItem value="0">0 %</SelectItem>
-              <SelectItem value="autre">Autre</SelectItem>
-            </SelectContent>
-          </Select>
+          <SousTypeSelect 
+            typeTravauxId={typeTravaux} 
+            value={sousType} 
+            onChange={setSousType} 
+          />
         </div>
 
         {/* Descriptif */}
         <div>
           <Label className="block text-sm font-medium mb-1">Descriptif</Label>
           <Textarea
+            value={descriptif}
+            onChange={(e) => setDescriptif(e.target.value)}
             placeholder="Description détaillée des travaux à réaliser"
             className="min-h-[80px] resize-y"
             disabled
           />
         </div>
 
-        {/* Quantité */}
-        <div>
-          <Label className="block text-sm font-medium mb-1">Quantité à traiter</Label>
-          <div className="grid grid-cols-3 gap-2">
-            <div className="col-span-2">
+        {/* Quantité et TVA */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <Label className="block text-sm font-medium">Quantité à traiter</Label>
+            <div className="grid grid-cols-2 gap-2">
               <Input
                 type="number"
                 step="0.01"
+                value={quantite}
+                onChange={(e) => setQuantite(parseFloat(e.target.value) || 0)}
+                disabled
+              />
+              <UniteSelect 
+                value={unite}
+                onChange={setUnite}
                 disabled
               />
             </div>
-            <Select disabled>
-              <SelectTrigger>
-                <SelectValue placeholder="Unité" />
-              </SelectTrigger>
-              <SelectContent>
-                {unites.map(unite => (
-                  <SelectItem key={unite} value={unite}>
-                    {unite}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
-          <p className="text-xs text-gray-500 mt-1">
-            Quantité par défaut: 0.00 M²
-          </p>
+          
+          {/* Taux de TVA spécifique */}
+          <div className="space-y-2">
+            <TvaSelect
+              value={tauxTVA}
+              autreValue={autreTauxTVA}
+              onValueChange={setTauxTVA}
+              onAutreValueChange={setAutreTauxTVA}
+              label="Taux de TVA"
+            />
+          </div>
         </div>
 
-        {/* Prix fournitures */}
-        <div>
-          <Label className="block text-sm font-medium mb-1">Prix fournitures (M²)</Label>
-          <Input
-            type="number"
-            step="0.01"
-            disabled
-          />
-        </div>
+        {/* Prix */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Prix fournitures */}
+          <div>
+            <Label className="block text-sm font-medium mb-1">Prix fournitures ({unite})</Label>
+            <Input
+              type="number"
+              step="0.01"
+              value={prixFournitures}
+              onChange={(e) => setPrixFournitures(parseFloat(e.target.value) || 0)}
+              disabled
+            />
+          </div>
 
-        {/* Prix main d'œuvre */}
-        <div>
-          <Label className="block text-sm font-medium mb-1">Prix main d'œuvre (M²)</Label>
-          <Input
-            type="number"
-            step="0.01"
-            disabled
-          />
-        </div>
+          {/* Prix main d'œuvre */}
+          <div>
+            <Label className="block text-sm font-medium mb-1">Prix main d'œuvre ({unite})</Label>
+            <Input
+              type="number"
+              step="0.01"
+              value={prixMainOeuvre}
+              onChange={(e) => setPrixMainOeuvre(parseFloat(e.target.value) || 0)}
+              disabled
+            />
+          </div>
 
-        {/* Prix unitaire total */}
-        <div>
-          <p className="text-sm font-medium">
-            Prix unitaire total: 0,00 €/M²
-          </p>
+          {/* Prix unitaire total */}
+          <div className="flex items-end">
+            <p className="text-sm font-medium p-2 border rounded-md bg-gray-50 w-full">
+              Prix unitaire total: {formaterPrix(prixUnitaireTotal)}/{unite}
+            </p>
+          </div>
         </div>
 
         {/* Bouton d'ajout */}
-        <Button className="w-full mt-2" disabled>
-          Ajouter ce travail
+        <Button 
+          className="w-full mt-4" 
+          disabled
+          onClick={() => {
+            if (!typeTravaux || !sousType || !piece?.id) return;
+            
+            onAddTravail({
+              pieceId: piece.id,
+              typeTravaux,
+              typeTravauxLabel,
+              sousType,
+              sousTypeLabel,
+              quantite,
+              unite,
+              tauxTVA,
+              prixUnitaire: prixUnitaireTotal,
+              prixFournitures,
+              prixMainOeuvre,
+              personnalisation: descriptif
+            });
+          }}
+        >
+          {travailAModifier ? 'Modifier ce travail' : 'Ajouter ce travail'}
         </Button>
       </div>
     </div>

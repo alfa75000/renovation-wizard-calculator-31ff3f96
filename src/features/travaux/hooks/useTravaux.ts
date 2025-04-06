@@ -88,6 +88,7 @@ export const useTravaux = () => {
 
   return {
     travailAModifier: getTravailAModifier(),
+    travailAModifierId: travailAModifierState,
     addTravail,
     updateTravail,
     deleteTravail,

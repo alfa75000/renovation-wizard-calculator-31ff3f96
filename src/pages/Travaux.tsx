@@ -25,7 +25,7 @@ const Travaux = () => {
   const { rooms } = state;
   
   const [selectedPieceId, setSelectedPieceId] = useState<string | null>(null);
-  const { travailAModifier, getTravauxForPiece } = useTravaux();
+  const { travailAModifier, getTravauxForPiece, addTravail, setTravailAModifier } = useTravaux();
   
   const selectedPiece = selectedPieceId 
     ? rooms.find(room => room.id === selectedPieceId) 
@@ -108,13 +108,13 @@ const Travaux = () => {
             <CardContent>
               {selectedPieceId ? (
                 <div className="space-y-8">
-                  {/* Formulaire et liste sur la même page */}
+                  {/* Formulaire et liste */}
                   <div className="space-y-6">
                     <div className="border-b pb-6">
-                      <h3 className="text-lg font-semibold mb-4">Ajouter ou modifier un travail</h3>
                       <TravailForm 
                         piece={selectedPiece} 
-                        onAddTravail={() => {}} // Temporairement désactivé
+                        onAddTravail={addTravail}
+                        travailAModifier={travailAModifier}
                       />
                     </div>
                     
@@ -128,7 +128,7 @@ const Travaux = () => {
                       </h3>
                       <TravauxList 
                         pieceId={selectedPieceId} 
-                        onStartEdit={() => {}} // Temporairement désactivé
+                        onStartEdit={setTravailAModifier}
                       />
                     </div>
                   </div>
