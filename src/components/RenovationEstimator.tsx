@@ -19,42 +19,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useProject } from "@/contexts/ProjectContext";
-
-interface Room {
-  id: string;
-  name: string;
-  customName: string;
-  type: string;
-  length: string;
-  width: string;
-  height: string;
-  surface: string;
-  plinthHeight: string;
-  wallSurfaceRaw: string;
-  menuiseries: Menuiserie[];
-  totalPlinthLength: string;
-  totalPlinthSurface: string;
-  totalMenuiserieSurface: string;
-  netWallSurface: string;
-}
-
-interface Menuiserie {
-  id: string;
-  type: string;
-  name: string;
-  largeur: string;
-  hauteur: string;
-  quantity: number;
-  surface: string;
-}
-
-interface PropertyType {
-  type: string;
-  floors: string;
-  totalArea: string;
-  rooms: string;
-  ceilingHeight: string;
-}
+import { Room, Menuiserie } from "@/types";
 
 const RenovationEstimator: React.FC = () => {
   const { state, dispatch } = useProject();
@@ -80,8 +45,8 @@ const RenovationEstimator: React.FC = () => {
   const [newMenuiserie, setNewMenuiserie] = useState<Omit<Menuiserie, "id" | "surface">>({
     type: "Porte",
     name: "",
-    largeur: "0.83",
-    hauteur: "2.04",
+    largeur: 0.83,
+    hauteur: 2.04,
     quantity: 1
   });
 
@@ -95,13 +60,13 @@ const RenovationEstimator: React.FC = () => {
   const getStandardDimensions = (type: string) => {
     switch (type) {
       case "Porte":
-        return { largeur: "0.83", hauteur: "2.04" };
+        return { largeur: 0.83, hauteur: 2.04 };
       case "Fenêtre":
-        return { largeur: "1.20", hauteur: "1.00" };
+        return { largeur: 1.20, hauteur: 1.00 };
       case "Porte-fenêtre":
-        return { largeur: "1.50", hauteur: "2.04" };
+        return { largeur: 1.50, hauteur: 2.04 };
       default:
-        return { largeur: "0.83", hauteur: "2.04" };
+        return { largeur: 0.83, hauteur: 2.04 };
     }
   };
 
@@ -128,6 +93,11 @@ const RenovationEstimator: React.FC = () => {
         [name]: value,
         largeur: standardDimensions.largeur,
         hauteur: standardDimensions.hauteur
+      }));
+    } else if (name === "largeur" || name === "hauteur" || name === "quantity") {
+      setNewMenuiserie((prev) => ({ 
+        ...prev, 
+        [name]: parseFloat(value) || 0 
       }));
     } else {
       setNewMenuiserie((prev) => ({ ...prev, [name]: value }));
@@ -162,7 +132,7 @@ const RenovationEstimator: React.FC = () => {
       
       newRoom.menuiseries.forEach(item => {
         if (item.type === "Porte" || item.type === "Porte-fenêtre") {
-          doorWidths += parseFloat(item.largeur) * item.quantity;
+          doorWidths += item.largeur * item.quantity;
         }
       });
       
@@ -172,7 +142,7 @@ const RenovationEstimator: React.FC = () => {
       
       let menuiserieSurface = 0;
       newRoom.menuiseries.forEach(item => {
-        menuiserieSurface += parseFloat(item.surface) * item.quantity;
+        menuiserieSurface += item.surface * item.quantity;
       });
       
       const netWallSurface = arrondir2Decimales(parseFloat(newRoom.wallSurfaceRaw) - menuiserieSurface).toString();
@@ -193,7 +163,7 @@ const RenovationEstimator: React.FC = () => {
         item.id === editingMenuiserie ? {
           ...newMenuiserie,
           id: editingMenuiserie,
-          surface: arrondir2Decimales(parseFloat(newMenuiserie.largeur) * parseFloat(newMenuiserie.hauteur)).toString()
+          surface: arrondir2Decimales(newMenuiserie.largeur * newMenuiserie.hauteur)
         } : item
       );
       
@@ -222,7 +192,7 @@ const RenovationEstimator: React.FC = () => {
           largeur: newMenuiserie.largeur,
           hauteur: newMenuiserie.hauteur,
           quantity: 1,
-          surface: arrondir2Decimales(parseFloat(newMenuiserie.largeur) * parseFloat(newMenuiserie.hauteur)).toString()
+          surface: arrondir2Decimales(newMenuiserie.largeur * newMenuiserie.hauteur)
         });
       }
       
@@ -385,8 +355,8 @@ const RenovationEstimator: React.FC = () => {
     setNewMenuiserie({
       type: "Porte",
       name: "",
-      largeur: "0.83",
-      hauteur: "2.04",
+      largeur: 0.83,
+      hauteur: 2.04,
       quantity: 1
     });
     
@@ -395,27 +365,6 @@ const RenovationEstimator: React.FC = () => {
     
     toast.success("Projet réinitialisé avec succès");
   };
-
-  useEffect(() => {
-    localStorage.setItem('rooms', JSON.stringify(rooms));
-  }, [rooms]);
-
-  useEffect(() => {
-    localStorage.setItem('property', JSON.stringify(property));
-  }, [property]);
-
-  useEffect(() => {
-    const savedRooms = localStorage.getItem('rooms');
-    const savedProperty = localStorage.getItem('property');
-    
-    if (savedRooms) {
-      setRooms(JSON.parse(savedRooms));
-    }
-    
-    if (savedProperty) {
-      setProperty(JSON.parse(savedProperty));
-    }
-  }, []);
 
   return (
     <div className="max-w-6xl mx-auto p-4">

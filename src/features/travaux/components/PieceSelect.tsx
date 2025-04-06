@@ -1,10 +1,10 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Piece } from '@/types';
+import { Room } from '@/types';
 
 interface PieceSelectProps {
-  pieces: Piece[];
+  pieces: Room[];
   selectedPieceId: string | null;
   onSelect: (pieceId: string) => void;
 }
@@ -24,7 +24,7 @@ const PieceSelect: React.FC<PieceSelectProps> = ({
             className="justify-start"
             onClick={() => onSelect(piece.id)}
           >
-            {piece.nom || piece.name} ({piece.surface?.toFixed(2) || "0.00"} m²)
+            {piece.name} ({piece.surface || "0.00"} m²)
           </Button>
         ))
       ) : (

@@ -12,11 +12,10 @@ export interface PropertyType {
 export interface Menuiserie {
   id: string;
   type: string;
-  name?: string;
-  nom?: string;
+  name: string;
   largeur: number;
   hauteur: number;
-  quantity?: number;
+  quantity: number;
   surface: number;
 }
 
@@ -40,15 +39,24 @@ export interface Room {
 
 export interface Piece {
   id: string;
-  nom?: string;
   name?: string;
   type?: string;
   customName?: string;
-  surface?: number;
-  surfaceMurs?: number;
-  plinthes?: number;
-  surfacePlinthes?: number;
-  surfaceMenuiseries?: number;
-  surfaceNetMurs?: number;
-  menuiseries?: Menuiserie[];
+  surface?: string;
+}
+
+export interface Travail {
+  id: string;
+  pieceId: string;
+  typeTravaux: string;
+  typeTravauxLabel: string;
+  sousType: string;
+  sousTypeLabel: string;
+  quantite: number;
+  unite: string;
+  tauxTVA: number;
+  prixUnitaire: number;
+  prixFournitures: number;
+  prixMainOeuvre: number;
+  personnalisation?: string;
 }
