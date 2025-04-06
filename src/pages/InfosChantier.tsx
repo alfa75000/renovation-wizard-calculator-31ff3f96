@@ -1,253 +1,308 @@
 
-import { useState, useEffect } from "react";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { useToast } from "@/hooks/use-toast";
-import { useClients } from "@/contexts/ClientsContext";
-import { useProjetChantier } from "@/contexts/ProjetChantierContext";
-import ClientForm from "@/features/admin/components/ClientForm";
-import { Layout } from "@/components/Layout";
-
-const formSchema = z.object({
-  nomProjet: z.string().min(2, {
-    message: "Le nom du projet doit comporter au moins 2 caractères.",
-  }),
-  descriptionProjet: z.string().optional(),
-  adresseChantier: z.string().min(2, {
-    message: "L'adresse du chantier doit comporter au moins 2 caractères.",
-  }),
-  occupant: z.string().optional(),
-  infoComplementaire: z.string().optional(),
-  clientId: z.string().optional(),
-});
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useClients, Client } from '@/contexts/ClientsContext';
+import { useProjetChantier } from '@/contexts/ProjetChantierContext';
+import { useProject } from '@/contexts/ProjectContext';
+import { Layout } from '@/components/Layout';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Calendar, PlusCircle } from 'lucide-react';
+import { toast } from 'sonner';
 
 const InfosChantier = () => {
-  const { toast } = useToast();
-  const { state: clientsState, dispatch: clientsDispatch } = useClients();
-  const { state, dispatch, sauvegarderProjet, chargerProjet } = useProjetChantier();
-  const [open, setOpen] = useState(false);
-
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      nomProjet: state.projetActif?.nomProjet || "",
-      descriptionProjet: state.projetActif?.descriptionProjet || "",
-      adresseChantier: state.projetActif?.adresseChantier || "",
-      occupant: state.projetActif?.occupant || "",
-      infoComplementaire: state.projetActif?.infoComplementaire || "",
-      clientId: state.projetActif?.clientId || "",
-    },
-  });
-
+  const navigate = useNavigate();
+  const { state: clientsState } = useClients();
+  const { state: projetState, sauvegarderProjet, chargerProjet, genererNomFichier, nouveauProjet } = useProjetChantier();
+  const { state: projectState } = useProject();
+  
+  const [clientId, setClientId] = useState<string>('');
+  const [nomProjet, setNomProjet] = useState<string>('');
+  const [descriptionProjet, setDescriptionProjet] = useState<string>('');
+  const [adresseChantier, setAdresseChantier] = useState<string>('');
+  const [occupant, setOccupant] = useState<string>('');
+  const [infoComplementaire, setInfoComplementaire] = useState<string>('');
+  const [dateDevis, setDateDevis] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
+  const [nomFichier, setNomFichier] = useState<string>('');
+  
+  const clientSelectionne = clientsState.clients.find(c => c.id === clientId);
+  
+  // Mise à jour du formulaire si un projet actif est chargé
   useEffect(() => {
-    if (state.projetActif) {
-      form.reset({
-        nomProjet: state.projetActif.nomProjet || "",
-        descriptionProjet: state.projetActif.descriptionProjet || "",
-        adresseChantier: state.projetActif.adresseChantier || "",
-        occupant: state.projetActif.occupant || "",
-        infoComplementaire: state.projetActif.infoComplementaire || "",
-        clientId: state.projetActif.clientId || "",
-      });
-    } else {
-      form.reset({
-        nomProjet: "",
-        descriptionProjet: "",
-        adresseChantier: "",
-        occupant: "",
-        infoComplementaire: "",
-        clientId: "",
-      });
+    if (projetState.projetActif) {
+      setClientId(projetState.projetActif.clientId);
+      setNomProjet(projetState.projetActif.nomProjet);
+      setDescriptionProjet(projetState.projetActif.descriptionProjet);
+      setAdresseChantier(projetState.projetActif.adresseChantier);
+      setOccupant(projetState.projetActif.occupant);
+      setInfoComplementaire(projetState.projetActif.infoComplementaire);
     }
-  }, [state.projetActif, form]);
-
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  }, [projetState.projetActif]);
+  
+  // Mise à jour du nom de fichier proposé
+  useEffect(() => {
+    if (clientId && nomProjet) {
+      const client = clientsState.clients.find(c => c.id === clientId);
+      if (client) {
+        const nom = client.nom || '';
+        const projetPartiel = { nomProjet, adresseChantier };
+        setNomFichier(genererNomFichier(projetPartiel, nom));
+      }
+    }
+  }, [clientId, nomProjet, adresseChantier, clientsState.clients, genererNomFichier]);
+  
+  const handleSave = () => {
+    if (!clientId) {
+      toast.error('Veuillez sélectionner un client');
+      return;
+    }
+    
+    if (!nomProjet) {
+      toast.error('Veuillez saisir un intitulé de projet');
+      return;
+    }
+    
+    // Sauvegarder le projet
     sauvegarderProjet({
-      nomProjet: values.nomProjet,
-      descriptionProjet: values.descriptionProjet || "",
-      adresseChantier: values.adresseChantier,
-      occupant: values.occupant || "",
-      infoComplementaire: values.infoComplementaire || "",
-      clientId: values.clientId || ""
+      clientId,
+      nomProjet,
+      descriptionProjet,
+      adresseChantier,
+      occupant,
+      infoComplementaire,
     });
     
-    toast({
-      title: "Projet mis à jour.",
-      description: "Les informations du projet ont été enregistrées avec succès.",
-    });
-  }
-
-  const handleClientSubmit = (clientData: any) => {
-    clientsDispatch({ type: 'ADD_CLIENT', payload: clientData });
-    setOpen(false); // Ferme le modal après la soumission
-    toast({
-      title: "Client ajouté.",
-      description: "Le client a été enregistré avec succès.",
-    });
+    toast.success('Projet sauvegardé avec succès');
   };
-
-  // Make sure we have clients before trying to render the list
-  const clients = clientsState?.clients || [];
-
+  
+  const handleChargerProjet = (projetId: string) => {
+    chargerProjet(projetId);
+    toast.info('Projet chargé');
+  };
+  
+  const handleNouveauProjet = () => {
+    nouveauProjet();
+    // Réinitialiser le formulaire
+    setClientId('');
+    setNomProjet('');
+    setDescriptionProjet('');
+    setAdresseChantier('');
+    setOccupant('');
+    setInfoComplementaire('');
+    setDateDevis(format(new Date(), 'yyyy-MM-dd'));
+    setNomFichier('');
+    toast.info('Nouveau projet initialisé');
+  };
+  
   return (
     <Layout>
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="container max-w-4xl mx-auto md:px-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Informations du projet</CardTitle>
-              <CardDescription>
-                Entrez les détails concernant le chantier et le client.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="nomProjet"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nom du projet</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Nom clair du projet" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="descriptionProjet"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Description du projet</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Description des travaux à réaliser"
-                            className="resize-none"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="adresseChantier"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Adresse du chantier</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Adresse complète du chantier" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="occupant"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Occupant</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Nom de l'occupant" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="infoComplementaire"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Information complémentaire</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Informations utiles pour le projet"
-                            className="resize-none"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="clientId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Client</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Sélectionner un client" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {clients.map((client) => (
-                              <SelectItem key={client.id} value={client.id}>
-                                {client.prenom} {client.nom}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button type="submit">Mettre à jour</Button>
-                </form>
-              </Form>
-            </CardContent>
-          </Card>
-
-          <Card className="mt-6">
-            <CardHeader>
-              <CardTitle>Liste des clients</CardTitle>
-              <CardDescription>
-                Sélectionnez un client existant ou créez-en un nouveau.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4">
-                <div className="grid grid-cols-[1fr_110px] gap-4">
-                  <Button variant="outline" onClick={() => setOpen(true)}>
-                    Ajouter un client
-                  </Button>
-                </div>
-                <ScrollArea className="h-[200px] w-full rounded-md border">
-                  <div className="p-4">
-                    {clients.length > 0 ? (
-                      <ul className="list-none pl-0">
-                        {clients.map((client) => (
-                          <li key={client.id} className="py-2">
-                            {client.prenom} {client.nom}
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">Aucun client enregistré.</p>
-                    )}
-                  </div>
-                </ScrollArea>
+      <div className="container mx-auto py-8">
+        <h1 className="text-2xl font-bold mb-6">Infos Chantier / Client</h1>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="md:col-span-2 bg-white p-6 rounded-lg shadow-md">
+            <h2 className="text-xl font-semibold mb-4 border-b pb-2">Informations du projet</h2>
+            
+            <div className="space-y-6">
+              <div>
+                <Label htmlFor="client">Client</Label>
+                <Select 
+                  value={clientId} 
+                  onValueChange={(value) => setClientId(value)}
+                >
+                  <SelectTrigger id="client" className="w-full">
+                    <SelectValue placeholder="Sélectionner un client" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clientsState.clients.map((client) => (
+                      <SelectItem key={client.id} value={client.id}>
+                        {client.nom} {client.prenom}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            </CardContent>
-          </Card>
+              
+              {clientSelectionne && (
+                <div className="bg-gray-50 p-4 rounded-md">
+                  <h3 className="font-medium text-gray-700 mb-2">Détails du client</h3>
+                  <p><span className="font-semibold">Adresse:</span> {clientSelectionne.adresse}</p>
+                  <p>
+                    <span className="font-semibold">Contact:</span> {clientSelectionne.tel1}
+                    {clientSelectionne.tel2 && ` / ${clientSelectionne.tel2}`}
+                    {clientSelectionne.email && ` / ${clientSelectionne.email}`}
+                  </p>
+                  <p><span className="font-semibold">Type:</span> {clientSelectionne.typeClient}</p>
+                  {clientSelectionne.autreInfo && (
+                    <p><span className="font-semibold">Info:</span> {clientSelectionne.autreInfo}</p>
+                  )}
+                  {clientSelectionne.infosComplementaires && (
+                    <p><span className="font-semibold">Détails:</span> {clientSelectionne.infosComplementaires}</p>
+                  )}
+                </div>
+              )}
+              
+              <div>
+                <Label htmlFor="nomProjet">Intitulé du projet</Label>
+                <Input 
+                  id="nomProjet" 
+                  value={nomProjet} 
+                  onChange={(e) => setNomProjet(e.target.value)}
+                  placeholder="Ex: Rénovation salle de bain"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="dateDevis">Date du devis</Label>
+                <div className="relative">
+                  <Input 
+                    id="dateDevis" 
+                    type="date" 
+                    value={dateDevis} 
+                    onChange={(e) => setDateDevis(e.target.value)}
+                  />
+                  <Calendar className="absolute right-3 top-3 h-4 w-4 text-gray-400" />
+                </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="adresseChantier">Adresse du chantier</Label>
+                <Input 
+                  id="adresseChantier" 
+                  value={adresseChantier} 
+                  onChange={(e) => setAdresseChantier(e.target.value)}
+                  placeholder="Ex: 15 rue de la Paix, 75001 Paris" 
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="occupant">Occupant</Label>
+                <Input 
+                  id="occupant" 
+                  value={occupant} 
+                  onChange={(e) => setOccupant(e.target.value)}
+                  placeholder="Nom de l'occupant si différent du client"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="descriptionProjet">Description du projet</Label>
+                <Textarea 
+                  id="descriptionProjet" 
+                  value={descriptionProjet} 
+                  onChange={(e) => setDescriptionProjet(e.target.value)}
+                  placeholder="Description détaillée des travaux"
+                  rows={4}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="infoComplementaire">Informations complémentaires</Label>
+                <Textarea 
+                  id="infoComplementaire" 
+                  value={infoComplementaire} 
+                  onChange={(e) => setInfoComplementaire(e.target.value)}
+                  placeholder="Autres informations importantes"
+                  rows={3}
+                />
+              </div>
+              
+              {nomFichier && (
+                <div>
+                  <Label htmlFor="nomFichier">Nom du fichier proposé</Label>
+                  <Input 
+                    id="nomFichier" 
+                    value={nomFichier} 
+                    readOnly
+                    className="bg-gray-50"
+                  />
+                </div>
+              )}
+              
+              <div className="pt-4 flex flex-wrap gap-4">
+                <Button onClick={handleSave}>
+                  Sauvegarder le projet
+                </Button>
+                <Button variant="outline" onClick={() => navigate('/travaux')}>
+                  Aller aux travaux
+                </Button>
+                <Button 
+                  variant="secondary" 
+                  onClick={handleNouveauProjet}
+                  className="flex items-center gap-2"
+                >
+                  <PlusCircle className="h-4 w-4" />
+                  Nouveau projet
+                </Button>
+              </div>
+            </div>
+          </div>
+          
+          <div className="md:col-span-1">
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <h2 className="text-xl font-semibold mb-4 border-b pb-2">Projets enregistrés</h2>
+              
+              {projetState.projets.length > 0 ? (
+                <div className="space-y-4">
+                  {projetState.projets.map((projet) => {
+                    const client = clientsState.clients.find(c => c.id === projet.clientId);
+                    return (
+                      <div 
+                        key={projet.id} 
+                        className={`p-3 border rounded-md cursor-pointer hover:bg-gray-50 transition-colors ${projetState.projetActif?.id === projet.id ? 'border-primary bg-primary/5' : 'border-gray-200'}`}
+                        onClick={() => handleChargerProjet(projet.id)}
+                      >
+                        <h3 className="font-medium">{projet.nomProjet}</h3>
+                        <p className="text-sm text-gray-500">
+                          Client: {client?.nom} {client?.prenom}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {format(new Date(projet.dateModification), 'dd/MM/yyyy', { locale: fr })}
+                        </p>
+                        {projet.projectData && (
+                          <div className="mt-1 text-xs text-green-600">
+                            <span className="inline-block px-2 py-1 bg-green-50 rounded-full">
+                              {projet.projectData.rooms.length} pièces | 
+                              {projet.projectData.travaux.length} travaux
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-gray-500 italic">Aucun projet enregistré</p>
+              )}
+            </div>
+            
+            <div className="mt-6 bg-white p-6 rounded-lg shadow-md">
+              <h2 className="text-xl font-semibold mb-4 border-b pb-2">Résumé du projet</h2>
+              
+              {projectState.rooms.length > 0 ? (
+                <div>
+                  <p><span className="font-semibold">Pièces:</span> {projectState.rooms.length}</p>
+                  <p><span className="font-semibold">Type de propriété:</span> {projectState.property.type}</p>
+                  <p><span className="font-semibold">Surface totale:</span> {projectState.property.totalArea} m²</p>
+                  <p><span className="font-semibold">Nombre de travaux:</span> {projectState.travaux.length}</p>
+                </div>
+              ) : (
+                <Alert className="bg-amber-50 border-amber-200">
+                  <AlertTitle>Aucune pièce définie</AlertTitle>
+                  <AlertDescription>
+                    Commencez par définir les pièces de votre projet dans la page d'accueil.
+                  </AlertDescription>
+                </Alert>
+              )}
+            </div>
+          </div>
         </div>
-        <ClientForm isOpen={open} onClose={() => setOpen(false)} onSubmit={handleClientSubmit} clientToEdit={null} />
       </div>
     </Layout>
   );
