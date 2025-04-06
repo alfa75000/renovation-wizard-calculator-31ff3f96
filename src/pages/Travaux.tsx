@@ -18,12 +18,17 @@ const Travaux: React.FC = () => {
   const [editingTravail, setEditingTravail] = useState<Travail | null>(null);
   const [filteredTravaux, setFilteredTravaux] = useState<Travail[]>([]);
   const [filter, setFilter] = useState<string>('all');
+  const [selectedPiece, setSelectedPiece] = useState<Piece | null>(null);
 
   useEffect(() => {
     if (filter === 'all') {
       setFilteredTravaux(state.travaux);
     } else {
       setFilteredTravaux(state.travaux.filter(travail => travail.pieceId === filter));
+      
+      // Mettre à jour la pièce sélectionnée
+      const piece = roomsAsPieces.find(p => p.id === filter);
+      setSelectedPiece(piece || null);
     }
   }, [state.travaux, filter]);
 
@@ -35,6 +40,11 @@ const Travaux: React.FC = () => {
   const handleEditTravail = (travail: Travail) => {
     setEditingTravail(travail);
     setIsFormOpen(true);
+    
+    // Mettre à jour le filtre et la pièce sélectionnée
+    setFilter(travail.pieceId);
+    const piece = roomsAsPieces.find(p => p.id === travail.pieceId);
+    setSelectedPiece(piece || null);
   };
 
   const handleCloseForm = () => {
@@ -52,15 +62,21 @@ const Travaux: React.FC = () => {
     }
   };
 
-  const handleSaveTravail = (travail: Travail) => {
+  const handleSaveTravail = (travailData: Omit<Travail, 'id'>) => {
     if (editingTravail) {
-      dispatch({ type: 'UPDATE_TRAVAIL', payload: { ...travail } });
+      dispatch({ 
+        type: 'UPDATE_TRAVAIL', 
+        payload: { ...travailData, id: editingTravail.id } 
+      });
       toast({
         title: 'Travail mis à jour',
         description: 'Le travail a été mis à jour avec succès.',
       });
     } else {
-      dispatch({ type: 'ADD_TRAVAIL', payload: { ...travail, id: uuidv4() } });
+      dispatch({ 
+        type: 'ADD_TRAVAIL', 
+        payload: { ...travailData, id: uuidv4() } 
+      });
       toast({
         title: 'Travail ajouté',
         description: 'Le nouveau travail a été ajouté avec succès.',
@@ -129,21 +145,21 @@ const Travaux: React.FC = () => {
           </CardHeader>
           <CardContent>
             <TravailForm
-              onSave={handleSaveTravail}
-              onCancel={handleCloseForm}
-              initialValues={editingTravail}
-              rooms={roomsAsPieces}
+              piece={selectedPiece}
+              onAddTravail={handleSaveTravail}
+              travailAModifier={editingTravail}
             />
           </CardContent>
         </Card>
       ) : (
         <TravauxList
-          travaux={filteredTravaux}
-          onEdit={handleEditTravail}
-          onDelete={handleDeleteTravail}
-          rooms={state.rooms}
-          filterRoom={filter}
-          onFilterChange={setFilter}
+          pieceId={filter}
+          onStartEdit={(id) => {
+            const travail = state.travaux.find(t => t.id === id);
+            if (travail) {
+              handleEditTravail(travail);
+            }
+          }}
         />
       )}
 

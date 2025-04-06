@@ -9,7 +9,7 @@ import { Travail } from '@/types';
 
 interface TravauxListProps {
   pieceId: string;
-  onStartEdit: (id: string) => void; // Signature corrigée
+  onStartEdit: (id: string) => void;
 }
 
 const TravauxList: React.FC<TravauxListProps> = ({ pieceId, onStartEdit }) => {
@@ -29,7 +29,7 @@ const TravauxList: React.FC<TravauxListProps> = ({ pieceId, onStartEdit }) => {
   
   const handleEdit = (travail: Travail) => {
     console.log("Édition du travail:", travail);
-    onStartEdit(travail.id); // Appel avec l'ID
+    onStartEdit(travail.id);
   };
   
   if (travaux.length === 0) {
