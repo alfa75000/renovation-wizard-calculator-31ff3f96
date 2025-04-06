@@ -16,11 +16,13 @@ export const useTravaux = () => {
 
   // Définir un travail à modifier
   const setTravailAModifier = useCallback((id: string | null) => {
+    console.log("Setting travail à modifier ID:", id);
     setTravailAModifierState(id);
   }, []);
   
   // Réinitialiser le travail à modifier
   const resetTravailAModifier = useCallback(() => {
+    console.log("Resetting travail à modifier");
     setTravailAModifierState(null);
   }, []);
 

@@ -33,10 +33,12 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
   
   const [isEditing, setIsEditing] = useState<boolean>(false);
 
+  // Effet pour charger les données du travail à modifier
   useEffect(() => {
     if (travailAModifier && piece) {
+      console.log("Chargement du travail pour édition:", travailAModifier);
       if (travailAModifier.pieceId === piece.id) {
-        console.log("Chargement du travail pour édition:", travailAModifier);
+        // Mettre à jour tous les champs du formulaire avec les données du travail
         setTypeTravauxSelectionne(travailAModifier.typeTravaux);
         setSousTypeSelectionne(travailAModifier.sousType);
         setDescriptif(travailAModifier.personnalisation || "");
@@ -48,10 +50,12 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
         setIsEditing(true);
       }
     } else {
+      // Réinitialiser le formulaire si on n'est pas en mode édition
       setIsEditing(false);
     }
   }, [travailAModifier, piece]);
 
+  // Effet pour réinitialiser le formulaire quand on change de pièce et qu'on n'est pas en mode édition
   useEffect(() => {
     if (!isEditing) {
       setTypeTravauxSelectionne(null);
@@ -64,8 +68,10 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
     }
   }, [piece, isEditing]);
 
+  // Effet pour mettre à jour les valeurs par défaut quand on change de type ou de sous-type
   useEffect(() => {
     if (!isEditing && typeTravauxSelectionne && sousTypeSelectionne) {
+      // Récupérer les valeurs par défaut pour le sous-type sélectionné
       const typeFromContext = state.types.find(type => type.id === typeTravauxSelectionne);
       const sousTypeFromContext = typeFromContext?.sousTypes.find(st => st.id === sousTypeSelectionne);
       
@@ -88,6 +94,7 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
     }
   }, [typeTravauxSelectionne, sousTypeSelectionne, state.types, isEditing]);
 
+  // Fonction pour obtenir la quantité par défaut en fonction du type de travaux et de la pièce
   const getQuantiteParDefaut = () => {
     if (!piece || !typeTravauxSelectionne) return 0;
 
@@ -105,6 +112,7 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
     }
   };
 
+  // Fonction pour obtenir l'unité par défaut en fonction du type et du sous-type
   const getUniteParDefaut = () => {
     if (!typeTravauxSelectionne || !sousTypeSelectionne) return "M²";
 
@@ -118,6 +126,7 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
     return "M²";
   };
 
+  // Fonction pour annuler l'édition
   const annulerEdition = () => {
     console.log("Annulation de l'édition");
     setIsEditing(false);
@@ -133,6 +142,7 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
     setTauxTVAAutre(0);
   };
 
+  // Fonction pour ajouter ou mettre à jour un travail
   const handleAddTravail = () => {
     if (!piece || !typeTravauxSelectionne || !sousTypeSelectionne) {
       return;
@@ -193,6 +203,7 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
     );
   }
 
+  // Rendu du formulaire
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">

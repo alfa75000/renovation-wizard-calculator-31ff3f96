@@ -38,6 +38,7 @@ const Travaux = () => {
   // Effet pour basculer vers l'onglet d'ajout lors de l'édition
   useEffect(() => {
     if (travailAModifier) {
+      console.log("Travail à modifier détecté, basculement vers l'onglet d'ajout", travailAModifier);
       setActiveTab("ajouter");
     }
   }, [travailAModifier]);
@@ -59,6 +60,7 @@ const Travaux = () => {
   
   // Fonction pour basculer vers l'onglet d'ajout lors de l'édition
   const handleStartEdit = () => {
+    console.log("Démarrage de l'édition, basculement vers l'onglet d'ajout");
     setActiveTab("ajouter");
   };
 
