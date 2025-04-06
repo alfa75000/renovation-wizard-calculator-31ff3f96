@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -30,7 +31,7 @@ const formSchema = z.object({
 
 const InfosChantier = () => {
   const { toast } = useToast();
-  const { clients, addClient } = useClients();
+  const { state: clientsState, dispatch: clientsDispatch } = useClients();
   const { state, dispatch, sauvegarderProjet, chargerProjet } = useProjetChantier();
   const [open, setOpen] = useState(false);
 
@@ -69,7 +70,15 @@ const InfosChantier = () => {
   }, [state.projetActif, form]);
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    sauvegarderProjet(values);
+    sauvegarderProjet({
+      nomProjet: values.nomProjet,
+      descriptionProjet: values.descriptionProjet || "",
+      adresseChantier: values.adresseChantier,
+      occupant: values.occupant || "",
+      infoComplementaire: values.infoComplementaire || "",
+      clientId: values.clientId || ""
+    });
+    
     toast({
       title: "Projet mis à jour.",
       description: "Les informations du projet ont été enregistrées avec succès.",
@@ -77,13 +86,16 @@ const InfosChantier = () => {
   }
 
   const handleClientSubmit = (clientData: any) => {
-    addClient(clientData);
+    clientsDispatch({ type: 'ADD_CLIENT', payload: clientData });
     setOpen(false); // Ferme le modal après la soumission
     toast({
       title: "Client ajouté.",
       description: "Le client a été enregistré avec succès.",
     });
   };
+
+  // Make sure we have clients before trying to render the list
+  const clients = clientsState?.clients || [];
 
   return (
     <Layout>
@@ -202,7 +214,7 @@ const InfosChantier = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="mt-6">
             <CardHeader>
               <CardTitle>Liste des clients</CardTitle>
               <CardDescription>
@@ -235,7 +247,7 @@ const InfosChantier = () => {
             </CardContent>
           </Card>
         </div>
-        <ClientForm open={open} setOpen={setOpen} onSubmit={handleClientSubmit} />
+        <ClientForm isOpen={open} onClose={() => setOpen(false)} onSubmit={handleClientSubmit} />
       </div>
     </Layout>
   );
