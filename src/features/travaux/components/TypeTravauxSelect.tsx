@@ -4,7 +4,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useTravauxTypes } from '@/contexts/TravauxTypesContext';
 
 // Import dynamique des icônes
-import { Paintbrush, Hammer, Wrench, SquarePen } from 'lucide-react';
+import { 
+  Paintbrush, 
+  Hammer, 
+  Wrench, 
+  SquarePen, 
+  Home, 
+  Droplet, 
+  Power, 
+  LucideRoof, 
+  Pipette, 
+  Cpu, 
+  CircuitBoard,
+  Flame,
+  Cable,
+  Wall
+} from 'lucide-react';
 
 interface TypeTravauxSelectProps {
   value: string | null;
@@ -20,6 +35,16 @@ const TypeTravauxSelect: React.FC<TypeTravauxSelectProps> = ({ value, onChange }
     "Hammer": <Hammer className="h-4 w-4" />,
     "Wrench": <Wrench className="h-4 w-4" />,
     "SquarePen": <SquarePen className="h-4 w-4" />,
+    "Power": <Power className="h-4 w-4" />,
+    "LucideRoof": <LucideRoof className="h-4 w-4" />,
+    "Droplet": <Droplet className="h-4 w-4" />,
+    "Home": <Home className="h-4 w-4" />,
+    "Pipette": <Pipette className="h-4 w-4" />,
+    "Cpu": <Cpu className="h-4 w-4" />,
+    "CircuitBoard": <CircuitBoard className="h-4 w-4" />,
+    "Flame": <Flame className="h-4 w-4" />,
+    "Cable": <Cable className="h-4 w-4" />,
+    "Wall": <Wall className="h-4 w-4" />
   };
 
   return (

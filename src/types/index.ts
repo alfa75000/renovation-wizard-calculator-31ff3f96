@@ -1,4 +1,3 @@
-
 // Types communs utilisés dans toute l'application
 
 export interface PropertyType {

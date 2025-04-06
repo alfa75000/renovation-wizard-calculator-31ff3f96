@@ -11,18 +11,40 @@ import {
   ArrowLeft,
   Home,
   ArrowRight,
-  Settings
+  Settings,
+  PlusCircle
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import PieceSelect from "@/features/travaux/components/PieceSelect";
 import { useProject } from "@/contexts/ProjectContext";
+import TravailForm from "@/features/travaux/components/TravailForm";
+import { useTravaux } from "@/features/travaux/hooks/useTravaux";
+import { Travail } from "@/types";
+import TravauxList from "@/features/travaux/components/TravauxList";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
 
 const Travaux = () => {
   const { state } = useProject();
   const { rooms } = state;
+  const { toast } = useToast();
   
   const [selectedPieceId, setSelectedPieceId] = React.useState<string | null>(null);
+  const { addTravail, getTravauxForPiece } = useTravaux();
   
+  const selectedPiece = selectedPieceId 
+    ? rooms.find(room => room.id === selectedPieceId) 
+    : null;
+  
+  const handleAddTravail = (travail: Omit<Travail, "id">) => {
+    addTravail(travail);
+    toast({
+      title: "Travail ajouté",
+      description: `Le travail ${travail.typeTravauxLabel} - ${travail.sousTypeLabel} a été ajouté avec succès.`,
+      variant: "default",
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 pb-12">
       <div className="max-w-6xl mx-auto p-4">
@@ -99,10 +121,28 @@ const Travaux = () => {
             </CardHeader>
             <CardContent>
               {selectedPieceId ? (
-                <div className="text-center py-4">
-                  <p>Interface de configuration des travaux pour la pièce sélectionnée.</p>
-                  <p className="text-sm mt-1 text-gray-500">La fonctionnalité complète sera implémentée ultérieurement.</p>
-                </div>
+                <Tabs defaultValue="ajouter" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="ajouter">Ajouter des travaux</TabsTrigger>
+                    <TabsTrigger value="liste">
+                      Liste des travaux
+                      <span className="ml-2 bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">
+                        {getTravauxForPiece(selectedPieceId).length}
+                      </span>
+                    </TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="ajouter" className="mt-4">
+                    <TravailForm 
+                      piece={selectedPiece} 
+                      onAddTravail={handleAddTravail}
+                    />
+                  </TabsContent>
+                  
+                  <TabsContent value="liste" className="mt-4">
+                    <TravauxList pieceId={selectedPieceId} />
+                  </TabsContent>
+                </Tabs>
               ) : (
                 <div className="text-center py-8">
                   <p className="text-gray-500">Veuillez sélectionner une pièce pour configurer les travaux.</p>

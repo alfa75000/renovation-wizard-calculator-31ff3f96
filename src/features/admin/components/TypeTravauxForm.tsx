@@ -6,7 +6,22 @@ import { Label } from "@/components/ui/label";
 import { TypeTravauxItem } from "@/contexts/TravauxTypesContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect } from "react";
-import { Paintbrush, Hammer, Wrench, SquarePen } from "lucide-react";
+import { 
+  Paintbrush, 
+  Hammer, 
+  Wrench, 
+  SquarePen, 
+  Home, 
+  Droplet, 
+  Power, 
+  LucideRoof, 
+  Pipette, 
+  Cpu, 
+  CircuitBoard,
+  Flame,
+  Cable,
+  Wall
+} from "lucide-react";
 
 interface TypeTravauxFormProps {
   isOpen: boolean;
@@ -29,7 +44,17 @@ const iconeOptions = [
   { id: "Paintbrush", label: "Peinture", icon: <Paintbrush className="h-4 w-4" /> },
   { id: "Hammer", label: "Marteau", icon: <Hammer className="h-4 w-4" /> },
   { id: "Wrench", label: "Clé", icon: <Wrench className="h-4 w-4" /> },
-  { id: "SquarePen", label: "Crayon", icon: <SquarePen className="h-4 w-4" /> }
+  { id: "SquarePen", label: "Crayon", icon: <SquarePen className="h-4 w-4" /> },
+  { id: "Power", label: "Prise électrique", icon: <Power className="h-4 w-4" /> },
+  { id: "LucideRoof", label: "Toiture", icon: <LucideRoof className="h-4 w-4" /> },
+  { id: "Droplet", label: "Robinet", icon: <Droplet className="h-4 w-4" /> },
+  { id: "Home", label: "Maison", icon: <Home className="h-4 w-4" /> },
+  { id: "Pipette", label: "Pipette", icon: <Pipette className="h-4 w-4" /> },
+  { id: "Cpu", label: "CPU", icon: <Cpu className="h-4 w-4" /> },
+  { id: "CircuitBoard", label: "Circuit", icon: <CircuitBoard className="h-4 w-4" /> },
+  { id: "Flame", label: "Chauffage", icon: <Flame className="h-4 w-4" /> },
+  { id: "Cable", label: "Câblage", icon: <Cable className="h-4 w-4" /> },
+  { id: "Wall", label: "Mur", icon: <Wall className="h-4 w-4" /> }
 ];
 
 const TypeTravauxForm: React.FC<TypeTravauxFormProps> = ({

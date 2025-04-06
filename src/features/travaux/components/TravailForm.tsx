@@ -37,8 +37,8 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
     if (travailAModifier && piece) {
       if (travailAModifier.pieceId === piece.id) {
         console.log("Chargement du travail pour édition:", travailAModifier);
-        setTypeTravauxSelectionne(travailAModifier.typeTravauxId);
-        setSousTypeSelectionne(travailAModifier.sousTypeId);
+        setTypeTravauxSelectionne(travailAModifier.typeTravaux);
+        setSousTypeSelectionne(travailAModifier.sousType);
         setDescriptif(travailAModifier.personnalisation || "");
         setQuantiteModifiee(travailAModifier.quantite);
         setUniteSelectionnee(travailAModifier.unite);
@@ -93,13 +93,13 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
 
     switch (typeTravauxSelectionne) {
       case "murs":
-        return piece.surfaceNetMurs || 0;
+        return parseFloat(piece.surfaceNetteMurs || '0');
       case "plafond":
-        return piece.surface || 0;
+        return parseFloat(piece.surface || '0');
       case "sol":
-        return piece.surface || 0;
+        return parseFloat(piece.surface || '0');
       case "menuiseries":
-        return piece.surfaceMenuiseries || 0;
+        return parseFloat(piece.surfaceMenuiseries || '0');
       default:
         return 1;
     }
@@ -169,10 +169,9 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
     
     onAddTravail({
       pieceId: piece.id,
-      pieceName: piece.nom || piece.type || "Pièce sans nom",
-      typeTravauxId: typeTravauxSelectionne,
+      typeTravaux: typeTravauxSelectionne,
       typeTravauxLabel,
-      sousTypeId: sousTypeSelectionne,
+      sousType: sousTypeSelectionne,
       sousTypeLabel: sousTypeFromContext.label,
       personnalisation: descriptif,
       quantite: Number(quantite.toFixed(2)),
@@ -198,7 +197,7 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail }) => {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium">
-          {piece?.nom || piece?.name}
+          {piece?.name || piece?.type}
         </h3>
         {isEditing && (
           <Button onClick={annulerEdition} variant="outline" size="sm" className="flex items-center">
