@@ -40,9 +40,9 @@ const Index = () => {
             </Link>
           </Button>
           
-          {/* Ce bouton sera activé dans la prochaine étape */}
-          <Button asChild variant="outline" className="flex items-center gap-2" disabled>
-            <Link to="#">
+          {/* Le bouton est maintenant activé */}
+          <Button asChild variant="outline" className="flex items-center gap-2">
+            <Link to="/infos-chantier">
               Infos Chantier / Client
             </Link>
           </Button>
