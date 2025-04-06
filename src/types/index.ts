@@ -38,23 +38,6 @@ export interface Room {
   netWallSurface: string;
 }
 
-export interface Travail {
-  id: string;
-  pieceId: string;
-  pieceName: string;
-  typeTravauxId: string;
-  typeTravauxLabel: string;
-  sousTypeId: string;
-  sousTypeLabel: string;
-  personnalisation: string;
-  quantite: number;
-  unite: string;
-  prixFournitures: number;
-  prixMainOeuvre: number;
-  prixUnitaire: number;
-  tauxTVA: number;
-}
-
 export interface Piece {
   id: string;
   nom?: string;

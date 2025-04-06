@@ -1,14 +1,11 @@
 
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
-import { Room, PropertyType, Travail } from '@/types';
-import { useLocalStorageSync } from '@/hooks/useLocalStorageSync';
-import { toast } from '@/hooks/use-toast';
+import { Room, PropertyType } from '@/types';
 
 // Interface pour définir l'état global du projet
 interface ProjectState {
   rooms: Room[];
   property: PropertyType;
-  travaux: Travail[];
 }
 
 // Actions possibles pour le reducer
@@ -19,10 +16,6 @@ type ProjectAction =
   | { type: 'DELETE_ROOM'; payload: string }
   | { type: 'SET_PROPERTY'; payload: PropertyType }
   | { type: 'UPDATE_PROPERTY'; payload: Partial<PropertyType> }
-  | { type: 'SET_TRAVAUX'; payload: Travail[] }
-  | { type: 'ADD_TRAVAIL'; payload: Travail }
-  | { type: 'UPDATE_TRAVAIL'; payload: { id: string; travail: Travail } }
-  | { type: 'DELETE_TRAVAIL'; payload: string }
   | { type: 'RESET_PROJECT' };
 
 // État initial du projet
@@ -35,7 +28,6 @@ const initialState: ProjectState = {
     rooms: "",
     ceilingHeight: "",
   },
-  travaux: [],
 };
 
 // Fonction reducer pour gérer les modifications d'état
@@ -53,34 +45,15 @@ const projectReducer = (state: ProjectState, action: ProjectAction): ProjectStat
         )
       };
     case 'DELETE_ROOM':
-      return { 
-        ...state, 
-        rooms: state.rooms.filter(room => room.id !== action.payload),
-        // Supprimer également les travaux associés à cette pièce
-        travaux: state.travaux.filter(travail => travail.pieceId !== action.payload)
-      };
+      return { ...state, rooms: state.rooms.filter(room => room.id !== action.payload) };
     case 'SET_PROPERTY':
       return { ...state, property: action.payload };
     case 'UPDATE_PROPERTY':
       return { ...state, property: { ...state.property, ...action.payload } };
-    case 'SET_TRAVAUX':
-      return { ...state, travaux: action.payload };
-    case 'ADD_TRAVAIL':
-      return { ...state, travaux: [...state.travaux, action.payload] };
-    case 'UPDATE_TRAVAIL':
-      return {
-        ...state,
-        travaux: state.travaux.map(travail => 
-          travail.id === action.payload.id ? action.payload.travail : travail
-        )
-      };
-    case 'DELETE_TRAVAIL':
-      return { ...state, travaux: state.travaux.filter(travail => travail.id !== action.payload) };
     case 'RESET_PROJECT':
       // Réinitialiser complètement l'état et effacer localStorage
       localStorage.removeItem('rooms');
       localStorage.removeItem('property');
-      localStorage.removeItem('travaux');
       return initialState;
     default:
       return state;
@@ -109,69 +82,44 @@ export const useProject = () => {
 export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(projectReducer, initialState);
 
-  // Utiliser le hook de synchronisation avec localStorage pour chaque partie de l'état
-  const { loadFromLocalStorage: loadRooms, saveToLocalStorage: saveRooms } = useLocalStorageSync('rooms', state.rooms);
-  const { loadFromLocalStorage: loadProperty, saveToLocalStorage: saveProperty } = useLocalStorageSync('property', state.property);
-  const { loadFromLocalStorage: loadTravaux, saveToLocalStorage: saveTravaux } = useLocalStorageSync('travaux', state.travaux);
-
-  // Chargement initial des données depuis localStorage
+  // Charger les données depuis localStorage au démarrage
   useEffect(() => {
-    const loadInitialData = () => {
+    const loadSavedData = () => {
       try {
-        // Chargement des pièces
-        const savedRooms = loadRooms();
-        if (savedRooms && Array.isArray(savedRooms)) {
-          console.log("Chargement initial des pièces:", savedRooms);
-          if (savedRooms.length > 0) {
-            dispatch({ type: 'SET_ROOMS', payload: savedRooms });
-            console.log("Pièces chargées avec succès:", savedRooms.length);
+        const savedRooms = localStorage.getItem('rooms');
+        if (savedRooms) {
+          const parsedRooms = JSON.parse(savedRooms);
+          if (Array.isArray(parsedRooms) && parsedRooms.length > 0) {
+            console.log("Chargement des pièces depuis localStorage:", parsedRooms);
+            dispatch({ type: 'SET_ROOMS', payload: parsedRooms });
           } else {
             console.log("Aucune pièce trouvée dans localStorage");
           }
-        } else {
-          console.log("Pas de pièces valides dans localStorage");
         }
-        
-        // Chargement des propriétés
-        const savedProperty = loadProperty();
+
+        const savedProperty = localStorage.getItem('property');
         if (savedProperty) {
-          dispatch({ type: 'SET_PROPERTY', payload: savedProperty });
-        }
-        
-        // Chargement des travaux
-        const savedTravaux = loadTravaux();
-        if (savedTravaux && Array.isArray(savedTravaux)) {
-          dispatch({ type: 'SET_TRAVAUX', payload: savedTravaux });
+          dispatch({ type: 'SET_PROPERTY', payload: JSON.parse(savedProperty) });
         }
       } catch (error) {
-        console.error("Erreur lors du chargement initial des données:", error);
-        toast({
-          title: "Erreur de chargement",
-          description: "Un problème est survenu lors du chargement de vos données. Veuillez rafraîchir la page.",
-          variant: "destructive"
-        });
+        console.error("Erreur lors du chargement des données:", error);
       }
     };
 
-    // Ajouter un petit délai pour s'assurer que le localStorage est disponible
-    setTimeout(loadInitialData, 300);
+    loadSavedData();
   }, []);
 
-  // Force la sauvegarde quand les données changent
+  // Sauvegarder les données dans localStorage quand elles changent
   useEffect(() => {
     if (state.rooms.length > 0) {
-      console.log("Sauvegarde des pièces:", state.rooms);
-      saveRooms(state.rooms);
+      console.log("Sauvegarde des pièces dans localStorage:", state.rooms);
+      localStorage.setItem('rooms', JSON.stringify(state.rooms));
     }
   }, [state.rooms]);
 
   useEffect(() => {
-    saveProperty(state.property);
+    localStorage.setItem('property', JSON.stringify(state.property));
   }, [state.property]);
-
-  useEffect(() => {
-    saveTravaux(state.travaux);
-  }, [state.travaux]);
 
   return (
     <ProjectContext.Provider value={{ state, dispatch }}>

@@ -6,10 +6,8 @@ export const useLocalStorageSync = <T,>(key: string, data: T) => {
   // Synchroniser les données avec localStorage quand elles changent
   useEffect(() => {
     try {
-      // Vérifier si les données sont définies avant de les stocker
       if (data !== undefined && data !== null) {
-        const dataString = JSON.stringify(data);
-        localStorage.setItem(key, dataString);
+        localStorage.setItem(key, JSON.stringify(data));
         console.log(`Données ${key} synchronisées avec localStorage:`, data);
       }
     } catch (error) {
@@ -22,9 +20,7 @@ export const useLocalStorageSync = <T,>(key: string, data: T) => {
     try {
       const savedData = localStorage.getItem(key);
       if (savedData) {
-        const parsedData = JSON.parse(savedData) as T;
-        console.log(`Données ${key} chargées depuis localStorage:`, parsedData);
-        return parsedData;
+        return JSON.parse(savedData) as T;
       }
     } catch (error) {
       console.error(`Erreur lors du chargement des données ${key}:`, error);
@@ -35,10 +31,8 @@ export const useLocalStorageSync = <T,>(key: string, data: T) => {
   // Forcer une sauvegarde manuelle
   const saveToLocalStorage = (valueToSave: T = data): void => {
     try {
-      if (valueToSave !== undefined && valueToSave !== null) {
-        localStorage.setItem(key, JSON.stringify(valueToSave));
-        console.log(`Données ${key} sauvegardées manuellement:`, valueToSave);
-      }
+      localStorage.setItem(key, JSON.stringify(valueToSave));
+      console.log(`Données ${key} sauvegardées manuellement:`, valueToSave);
     } catch (error) {
       console.error(`Erreur lors de la sauvegarde manuelle des données ${key}:`, error);
     }

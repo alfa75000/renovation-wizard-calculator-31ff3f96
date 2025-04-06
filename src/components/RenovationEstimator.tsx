@@ -18,6 +18,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useProject } from "@/contexts/ProjectContext";
 
 interface Room {
   id: string;
@@ -56,13 +57,8 @@ interface PropertyType {
 }
 
 const RenovationEstimator: React.FC = () => {
-  const [property, setProperty] = useState<PropertyType>({
-    type: "Appartement",
-    floors: "1",
-    totalArea: "",
-    rooms: "",
-    ceilingHeight: "2.50",
-  });
+  const { state, dispatch } = useProject();
+  const { rooms, property } = state;
 
   const [newRoom, setNewRoom] = useState<Omit<Room, "id">>({
     name: "",
@@ -90,7 +86,6 @@ const RenovationEstimator: React.FC = () => {
   });
 
   const [editingMenuiserie, setEditingMenuiserie] = useState<string | null>(null);
-  const [rooms, setRooms] = useState<Room[]>([]);
   const [editingRoom, setEditingRoom] = useState<string | null>(null);
 
   const propertyTypes = ["Appartement", "Maison", "Studio", "Loft", "Autre"];
@@ -112,7 +107,10 @@ const RenovationEstimator: React.FC = () => {
 
   const handlePropertyChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setProperty((prev) => ({ ...prev, [name]: value }));
+    dispatch({ 
+      type: 'UPDATE_PROPERTY', 
+      payload: { [name]: value } 
+    });
   };
 
   const handleRoomChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -290,22 +288,28 @@ const RenovationEstimator: React.FC = () => {
     }
 
     if (editingRoom) {
-      setRooms((prev) =>
-        prev.map((room) =>
-          room.id === editingRoom
-            ? { ...newRoom, id: editingRoom }
-            : room
-        )
-      );
+      dispatch({
+        type: 'UPDATE_ROOM',
+        payload: {
+          id: editingRoom,
+          room: { ...newRoom, id: editingRoom }
+        }
+      });
       setEditingRoom(null);
       toast.success("Pièce mise à jour avec succès");
     } else {
       const roomName = generateRoomName(newRoom.type, newRoom.customName);
+      const newRoomWithId = { 
+        ...newRoom, 
+        id: Date.now().toString(), 
+        name: roomName 
+      };
       
-      setRooms((prev) => [
-        ...prev,
-        { ...newRoom, id: Date.now().toString(), name: roomName },
-      ]);
+      dispatch({
+        type: 'ADD_ROOM',
+        payload: newRoomWithId
+      });
+      
       toast.success(`${roomName} ajouté avec succès`);
     }
     
@@ -344,7 +348,11 @@ const RenovationEstimator: React.FC = () => {
     const roomToDelete = rooms.find(room => room.id === id);
     const roomName = roomToDelete ? (roomToDelete.name || roomToDelete.type) : "la pièce";
     
-    setRooms((prev) => prev.filter((room) => room.id !== id));
+    dispatch({
+      type: 'DELETE_ROOM',
+      payload: id
+    });
+    
     toast.success(`${roomName} supprimé avec succès`);
   };
 
@@ -355,13 +363,7 @@ const RenovationEstimator: React.FC = () => {
   };
 
   const resetProject = () => {
-    setProperty({
-      type: "Appartement",
-      floors: "1",
-      totalArea: "",
-      rooms: "",
-      ceilingHeight: "",
-    });
+    dispatch({ type: 'RESET_PROJECT' });
     
     setNewRoom({
       name: "",
@@ -388,13 +390,8 @@ const RenovationEstimator: React.FC = () => {
       quantity: 1
     });
     
-    setRooms([]);
     setEditingRoom(null);
     setEditingMenuiserie(null);
-    
-    localStorage.removeItem('rooms');
-    localStorage.removeItem('property');
-    localStorage.removeItem('travaux');
     
     toast.success("Projet réinitialisé avec succès");
   };

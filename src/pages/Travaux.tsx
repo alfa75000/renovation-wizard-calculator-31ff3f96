@@ -14,10 +14,11 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import PieceSelect from "@/features/travaux/components/PieceSelect";
+import { useProject } from "@/contexts/ProjectContext";
 
 const Travaux = () => {
-  // Tableau vide pour les pièces
-  const pieces = [];
+  const { state } = useProject();
+  const { rooms } = state;
   
   const [selectedPieceId, setSelectedPieceId] = React.useState<string | null>(null);
   
@@ -77,7 +78,7 @@ const Travaux = () => {
             </CardHeader>
             <CardContent>
               <PieceSelect 
-                pieces={pieces}
+                pieces={rooms}
                 selectedPieceId={selectedPieceId}
                 onSelect={setSelectedPieceId}
               />
