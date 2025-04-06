@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { 
   Card, 
@@ -29,13 +28,13 @@ const Travaux = () => {
   const { travailAModifier, getTravauxForPiece, addTravail, setTravailAModifier } = useTravaux();
   
   // Préparer les pièces avec les propriétés nécessaires pour le calcul automatique
-  const preparedRooms = rooms.map(room => {
+  const preparedRooms: Piece[] = rooms.map(room => {
     // Calculons la surface des plinthes si nécessaire (hauteur plinthes * périmètre)
     const plinthSurface = room.totalPlinthSurface ? parseFloat(room.totalPlinthSurface) : 0;
     
     // Surface nette des murs après déduction des plinthes
     const netWallSurfaceWithoutPlinths = room.netWallSurface 
-      ? parseFloat(room.netWallSurface) - plinthSurface 
+      ? parseFloat(room.netWallSurface) 
       : 0;
     
     return {
@@ -47,7 +46,7 @@ const Travaux = () => {
       // Conversion et normalisation des surfaces pour le calcul automatique
       surfaceNetteSol: room.surface,
       surfaceNettePlafond: room.surface,
-      surfaceNetteMurs: String(netWallSurfaceWithoutPlinths), // Surface nette des murs moins les plinthes
+      surfaceNetteMurs: room.netWallSurface, // Surface nette des murs (déjà calculée avec déduction des plinthes)
       lineaireNet: room.totalPlinthLength,
       surfaceMenuiseries: room.totalMenuiserieSurface,
       // Propriétés supplémentaires pour compatibilité

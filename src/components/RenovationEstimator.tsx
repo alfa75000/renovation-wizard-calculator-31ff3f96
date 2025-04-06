@@ -19,11 +19,13 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useProject } from "@/contexts/ProjectContext";
-import { Room, Menuiserie } from "@/types";
+import { useMenuiseriesTypes } from "@/contexts/MenuiseriesTypesContext";
+import { Room, Menuiserie, TypeMenuiserie } from "@/types";
 
 const RenovationEstimator: React.FC = () => {
   const { state, dispatch } = useProject();
-  const { rooms, property } = state;
+  const { property, rooms } = state;
+  const { state: menuiseriesState } = useMenuiseriesTypes();
 
   const [newRoom, setNewRoom] = useState<Omit<Room, "id">>({
     name: "",
@@ -101,6 +103,21 @@ const RenovationEstimator: React.FC = () => {
       }));
     } else {
       setNewMenuiserie((prev) => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const handleMenuiserieTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const typeId = e.target.value;
+    const selectedType = menuiseriesState.typesMenuiseries.find(type => type.id === typeId);
+    
+    if (selectedType) {
+      setNewMenuiserie((prev) => ({ 
+        ...prev, 
+        type: selectedType.nom,
+        largeur: selectedType.largeur,
+        hauteur: selectedType.hauteur,
+        impactePlinthe: selectedType.impactePlinthe
+      }));
     }
   };
 
@@ -642,12 +659,14 @@ const RenovationEstimator: React.FC = () => {
                   <select
                     id="menuiserieType"
                     name="type"
-                    value={newMenuiserie.type}
-                    onChange={handleMenuiserieChange}
+                    onChange={handleMenuiserieTypeChange}
                     className="w-full p-2 border rounded mt-1"
                   >
-                    {menuiserieTypes.map((type) => (
-                      <option key={type} value={type}>{type}</option>
+                    <option value="">Sélectionner un type</option>
+                    {menuiseriesState.typesMenuiseries.map((type) => (
+                      <option key={type.id} value={type.id}>
+                        {type.nom}
+                      </option>
                     ))}
                   </select>
                 </div>

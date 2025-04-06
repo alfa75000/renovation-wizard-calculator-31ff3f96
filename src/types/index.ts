@@ -78,6 +78,13 @@ export interface Piece {
   totalPlinthLength?: string;
   totalPlinthSurface?: string;
   totalMenuiserieSurface?: string;
+  // Autres propriétés qui peuvent être nécessaires pour éviter les erreurs de type
+  length?: string;
+  width?: string;
+  height?: string;
+  plinthHeight?: string;
+  wallSurfaceRaw?: string;
+  menuiseries?: Menuiserie[];
 }
 
 export interface Travail {
