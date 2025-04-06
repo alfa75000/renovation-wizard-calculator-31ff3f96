@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useProject } from "@/contexts/ProjectContext";
 import TravauxList from "@/features/travaux/components/TravauxList";
@@ -58,13 +59,16 @@ const Travaux = () => {
           </div>
 
           <TravauxList
-            travaux={state.travaux}
-            onUpdateTravail={handleUpdateTravail}
-            onDeleteTravail={handleDeleteTravail}
+            pieceId={state.rooms[0]?.id || ""}
+            onStartEdit={(id) => console.log("Edit travail", id)}
           />
 
           {isFormOpen ? (
-            <TravailForm onCreate={handleCreateTravail} onCancel={() => setIsFormOpen(false)} />
+            <TravailForm 
+              piece={state.rooms[0] || null}
+              onAddTravail={handleCreateTravail}
+              travailAModifier={null}
+            />
           ) : (
             <Button onClick={handleAjouterTravail}>
               <PlusIcon className="mr-2 h-4 w-4" />

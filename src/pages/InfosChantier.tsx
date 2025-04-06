@@ -247,7 +247,7 @@ const InfosChantier = () => {
             </CardContent>
           </Card>
         </div>
-        <ClientForm isOpen={open} onClose={() => setOpen(false)} onSubmit={handleClientSubmit} />
+        <ClientForm isOpen={open} onClose={() => setOpen(false)} onSubmit={handleClientSubmit} clientToEdit={null} />
       </div>
     </Layout>
   );

@@ -1,3 +1,4 @@
+
 export interface Room {
   id: string;
   name: string;
@@ -17,6 +18,7 @@ export interface Menuiserie {
   largeur: string;
   hauteur: string;
   surface: string;
+  name?: string;  // Ajouté pour compatibilité avec le code existant
 }
 
 export interface AutreSurface {
@@ -37,12 +39,22 @@ export interface PropertyType {
 
 export interface Travail {
   id: string;
+  pieceId?: string;
   type: string;
   designation: string;
   unite: string;
-  quantite: string;
+  quantite: string | number;
   prixUnitaire: string;
   prixTotal: string;
+  typeTravaux?: string;
+  typeTravauxLabel?: string;
+  sousType?: string;
+  sousTypeLabel?: string;
+  prixFournitures?: number;
+  prixMainOeuvre?: number;
+  personnalisation?: string;
+  tauxTVA?: number;
+  menuiserieId?: string;
 }
 
 // Types pour les clients
@@ -96,4 +108,15 @@ export interface ProjetChantier {
     property: PropertyType;
     travaux: Travail[];
   };
+}
+
+// Type pour une pièce (compatible avec les composants existants)
+export interface Piece extends Room {
+  id: string;
+  name: string;
+  surfaceNetteSol?: string;
+  netWallSurface?: string;
+  surfaceNetteMurs?: string;
+  lineaireNet?: string;
+  menuiseries: Menuiserie[];
 }
