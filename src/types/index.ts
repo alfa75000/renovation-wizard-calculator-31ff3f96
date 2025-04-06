@@ -61,7 +61,7 @@ export interface Room {
   volume?: string;
 }
 
-export interface Piece {
+export interface Piece extends Partial<Room> {
   id: string;
   name?: string;
   type?: string;
@@ -73,18 +73,6 @@ export interface Piece {
   surfaceNetteMurs?: string;
   lineaireNet?: string;
   surfaceMenuiseries?: string;
-  // Propriétés supplémentaires pour la compatibilité
-  netWallSurface?: string;
-  totalPlinthLength?: string;
-  totalPlinthSurface?: string;
-  totalMenuiserieSurface?: string;
-  // Autres propriétés qui peuvent être nécessaires pour éviter les erreurs de type
-  length?: string;
-  width?: string;
-  height?: string;
-  plinthHeight?: string;
-  wallSurfaceRaw?: string;
-  menuiseries?: Menuiserie[];
 }
 
 export interface Travail {

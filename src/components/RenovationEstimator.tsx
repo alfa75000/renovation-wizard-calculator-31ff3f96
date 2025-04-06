@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -48,8 +47,8 @@ const RenovationEstimator: React.FC = () => {
   const [newMenuiserie, setNewMenuiserie] = useState<Omit<Menuiserie, "id" | "surface">>({
     type: "Porte",
     name: "",
-    largeur: 0.83,
-    hauteur: 2.04,
+    largeur: 83,
+    hauteur: 204,
     quantity: 1
   });
 
@@ -63,13 +62,13 @@ const RenovationEstimator: React.FC = () => {
   const getStandardDimensions = (type: string) => {
     switch (type) {
       case "Porte":
-        return { largeur: 0.83, hauteur: 2.04 };
+        return { largeur: 83, hauteur: 204 };
       case "Fenêtre":
-        return { largeur: 1.20, hauteur: 1.00 };
+        return { largeur: 120, hauteur: 100 };
       case "Porte-fenêtre":
-        return { largeur: 1.50, hauteur: 2.04 };
+        return { largeur: 150, hauteur: 204 };
       default:
-        return { largeur: 0.83, hauteur: 2.04 };
+        return { largeur: 83, hauteur: 204 };
     }
   };
 
@@ -150,7 +149,7 @@ const RenovationEstimator: React.FC = () => {
       
       newRoom.menuiseries.forEach(item => {
         if (item.type === "Porte" || item.type === "Porte-fenêtre") {
-          doorWidths += item.largeur * item.quantity;
+          doorWidths += (item.largeur / 100) * item.quantity;
         }
       });
       
@@ -163,7 +162,6 @@ const RenovationEstimator: React.FC = () => {
         menuiserieSurface += item.surface * item.quantity;
       });
       
-      // Calculer la surface nette des murs en déduisant la surface des menuiseries ET des plinthes
       const netWallSurface = arrondir2Decimales(parseFloat(newRoom.wallSurfaceRaw) - menuiserieSurface - parseFloat(plinthSurface)).toString();
       
       setNewRoom(prev => ({
@@ -189,7 +187,7 @@ const RenovationEstimator: React.FC = () => {
         item.id === editingMenuiserie ? {
           ...newMenuiserie,
           id: editingMenuiserie,
-          surface: arrondir2Decimales(newMenuiserie.largeur * newMenuiserie.hauteur)
+          surface: arrondir2Decimales((newMenuiserie.largeur / 100) * (newMenuiserie.hauteur / 100))
         } : item
       );
       
@@ -211,7 +209,6 @@ const RenovationEstimator: React.FC = () => {
         const itemNumber = typeCount + i + 1;
         const autoName = `${newMenuiserie.type} ${itemNumber}`;
         
-        // S'assurer que largeur et hauteur sont bien en mètres
         menuiserieItems.push({
           id: Date.now().toString() + i,
           type: newMenuiserie.type,
@@ -219,7 +216,7 @@ const RenovationEstimator: React.FC = () => {
           largeur: newMenuiserie.largeur,
           hauteur: newMenuiserie.hauteur,
           quantity: 1,
-          surface: arrondir2Decimales(newMenuiserie.largeur * newMenuiserie.hauteur),
+          surface: arrondir2Decimales((newMenuiserie.largeur / 100) * (newMenuiserie.hauteur / 100)),
           surfaceImpactee: newMenuiserie.surfaceImpactee,
           impactePlinthe: newMenuiserie.impactePlinthe
         });
@@ -689,13 +686,13 @@ const RenovationEstimator: React.FC = () => {
                 </div>
                 
                 <div>
-                  <Label htmlFor="menuiserieLargeur">Largeur (m)</Label>
+                  <Label htmlFor="menuiserieLargeur">Largeur (cm)</Label>
                   <Input
                     id="menuiserieLargeur"
                     name="largeur"
                     type="number"
                     min="0"
-                    step="0.01"
+                    step="1"
                     value={newMenuiserie.largeur}
                     onChange={handleMenuiserieChange}
                     className="mt-1"
@@ -703,13 +700,13 @@ const RenovationEstimator: React.FC = () => {
                 </div>
                 
                 <div>
-                  <Label htmlFor="menuiserieHauteur">Hauteur (m)</Label>
+                  <Label htmlFor="menuiserieHauteur">Hauteur (cm)</Label>
                   <Input
                     id="menuiserieHauteur"
                     name="hauteur"
                     type="number"
                     min="0"
-                    step="0.01"
+                    step="1"
                     value={newMenuiserie.hauteur}
                     onChange={handleMenuiserieChange}
                     className="mt-1"
@@ -758,7 +755,7 @@ const RenovationEstimator: React.FC = () => {
                           <tr key={item.id} className="border-t hover:bg-gray-50">
                             <td className="border px-2 py-1 text-sm">{item.type}</td>
                             <td className="border px-2 py-1 text-sm">{item.name}</td>
-                            <td className="border px-2 py-1 text-sm">{item.largeur}m × {item.hauteur}m</td>
+                            <td className="border px-2 py-1 text-sm">{item.largeur}cm × {item.hauteur}cm</td>
                             <td className="border px-2 py-1 text-sm">{item.surface} m²</td>
                             <td className="border px-2 py-1">
                               <div className="flex space-x-1">
