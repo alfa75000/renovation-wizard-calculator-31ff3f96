@@ -16,12 +16,8 @@ import { Link } from "react-router-dom";
 import PieceSelect from "@/features/travaux/components/PieceSelect";
 
 const Travaux = () => {
-  // Données simplifiées pour l'exemple
-  const pieces = [
-    { id: "1", name: "Salon", surface: 20 },
-    { id: "2", name: "Chambre", surface: 15 },
-    { id: "3", name: "Cuisine", surface: 12 }
-  ];
+  // Tableau vide pour les pièces
+  const pieces = [];
   
   const [selectedPieceId, setSelectedPieceId] = React.useState<string | null>(null);
   
