@@ -20,6 +20,7 @@ type ProjectAction =
   | { type: 'ADD_TRAVAIL'; payload: Travail }
   | { type: 'UPDATE_TRAVAIL'; payload: Travail }
   | { type: 'DELETE_TRAVAIL'; payload: string }
+  | { type: 'SET_TRAVAUX'; payload: Travail[] }
   | { type: 'RESET_PROJECT' };
 
 // État initial du projet avec les nouvelles valeurs par défaut
@@ -55,6 +56,8 @@ const projectReducer = (state: ProjectState, action: ProjectAction): ProjectStat
       return { ...state, property: action.payload };
     case 'UPDATE_PROPERTY':
       return { ...state, property: { ...state.property, ...action.payload } };
+    case 'SET_TRAVAUX':
+      return { ...state, travaux: action.payload };
     case 'ADD_TRAVAIL':
       return { ...state, travaux: [...state.travaux, action.payload] };
     case 'UPDATE_TRAVAIL':
@@ -118,6 +121,15 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
         if (savedProperty) {
           dispatch({ type: 'SET_PROPERTY', payload: JSON.parse(savedProperty) });
         }
+        
+        const savedTravaux = localStorage.getItem('travaux');
+        if (savedTravaux) {
+          const parsedTravaux = JSON.parse(savedTravaux);
+          if (Array.isArray(parsedTravaux)) {
+            console.log("Chargement des travaux depuis localStorage:", parsedTravaux.length);
+            dispatch({ type: 'SET_TRAVAUX', payload: parsedTravaux });
+          }
+        }
       } catch (error) {
         console.error("Erreur lors du chargement des données:", error);
       }
@@ -137,6 +149,13 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   useEffect(() => {
     localStorage.setItem('property', JSON.stringify(state.property));
   }, [state.property]);
+  
+  useEffect(() => {
+    if (state.travaux.length > 0) {
+      console.log("Sauvegarde des travaux dans localStorage:", state.travaux.length);
+      localStorage.setItem('travaux', JSON.stringify(state.travaux));
+    }
+  }, [state.travaux]);
 
   return (
     <ProjectContext.Provider value={{ state, dispatch }}>

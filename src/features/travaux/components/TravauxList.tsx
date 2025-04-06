@@ -9,11 +9,11 @@ import { Travail } from '@/types';
 
 interface TravauxListProps {
   pieceId: string;
-  onStartEdit: () => void; // Nouvelle prop pour changer d'onglet
+  onStartEdit: (id: string) => void; // Signature corrigée
 }
 
 const TravauxList: React.FC<TravauxListProps> = ({ pieceId, onStartEdit }) => {
-  const { getTravauxForPiece, deleteTravail, setTravailAModifier } = useTravaux();
+  const { getTravauxForPiece, deleteTravail } = useTravaux();
   const { toast } = useToast();
   
   const travaux = getTravauxForPiece(pieceId);
@@ -29,8 +29,7 @@ const TravauxList: React.FC<TravauxListProps> = ({ pieceId, onStartEdit }) => {
   
   const handleEdit = (travail: Travail) => {
     console.log("Édition du travail:", travail);
-    setTravailAModifier(travail.id);
-    onStartEdit(); // Déclencher le changement d'onglet
+    onStartEdit(travail.id); // Appel avec l'ID
   };
   
   if (travaux.length === 0) {

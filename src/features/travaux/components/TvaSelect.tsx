@@ -17,17 +17,19 @@ interface TvaSelectProps {
   autreValue: number;
   onValueChange: (value: number) => void;
   onAutreValueChange: (value: number) => void;
+  label?: string; // Rendre le label optionnel
 }
 
 const TvaSelect: React.FC<TvaSelectProps> = ({ 
   value, 
   autreValue, 
   onValueChange, 
-  onAutreValueChange 
+  onAutreValueChange,
+  label = "Taux de TVA" // Valeur par défaut
 }) => {
   return (
     <div>
-      <label className="block text-sm font-medium mb-1">Taux de TVA Principal</label>
+      <label className="block text-sm font-medium mb-1">{label}</label>
       <div className="flex gap-2">
         <Select 
           value={value === 0 && autreValue > 0 ? "autre" : value.toString()} 

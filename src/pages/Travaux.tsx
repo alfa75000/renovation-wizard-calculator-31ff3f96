@@ -31,6 +31,11 @@ const Travaux = () => {
     ? rooms.find(room => room.id === selectedPieceId) 
     : null;
 
+  // Fonction pour démarrer l'édition
+  const handleStartEdit = (id: string) => {
+    setTravailAModifier(id);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 pb-12">
       <div className="max-w-6xl mx-auto p-4">
@@ -128,7 +133,7 @@ const Travaux = () => {
                       </h3>
                       <TravauxList 
                         pieceId={selectedPieceId} 
-                        onStartEdit={setTravailAModifier}
+                        onStartEdit={handleStartEdit}
                       />
                     </div>
                   </div>

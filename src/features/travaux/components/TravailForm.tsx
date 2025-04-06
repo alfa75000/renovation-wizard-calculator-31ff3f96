@@ -4,7 +4,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
 import { useTravauxTypes } from '@/contexts/TravauxTypesContext';
 import { Piece, Travail } from '@/types';
 import { unites } from './UniteSelect';
@@ -127,7 +126,6 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail, travailA
             onChange={(e) => setDescriptif(e.target.value)}
             placeholder="Description détaillée des travaux à réaliser"
             className="min-h-[80px] resize-y"
-            disabled
           />
         </div>
 
@@ -141,12 +139,10 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail, travailA
                 step="0.01"
                 value={quantite}
                 onChange={(e) => setQuantite(parseFloat(e.target.value) || 0)}
-                disabled
               />
               <UniteSelect 
                 value={unite}
                 onChange={setUnite}
-                disabled
               />
             </div>
           </div>
@@ -158,7 +154,6 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail, travailA
               autreValue={autreTauxTVA}
               onValueChange={setTauxTVA}
               onAutreValueChange={setAutreTauxTVA}
-              label="Taux de TVA"
             />
           </div>
         </div>
@@ -173,7 +168,6 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail, travailA
               step="0.01"
               value={prixFournitures}
               onChange={(e) => setPrixFournitures(parseFloat(e.target.value) || 0)}
-              disabled
             />
           </div>
 
@@ -185,7 +179,6 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail, travailA
               step="0.01"
               value={prixMainOeuvre}
               onChange={(e) => setPrixMainOeuvre(parseFloat(e.target.value) || 0)}
-              disabled
             />
           </div>
 
@@ -199,8 +192,7 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail, travailA
 
         {/* Bouton d'ajout */}
         <Button 
-          className="w-full mt-4" 
-          disabled
+          className="w-full mt-4"
           onClick={() => {
             if (!typeTravaux || !sousType || !piece?.id) return;
             

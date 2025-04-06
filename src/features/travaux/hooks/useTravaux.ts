@@ -1,5 +1,5 @@
 
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { useProject } from '@/contexts/ProjectContext';
 import { v4 as uuidv4 } from 'uuid';
 import { Travail } from '@/types';
@@ -8,6 +8,35 @@ import { Travail } from '@/types';
 export const useTravaux = () => {
   const { state, dispatch } = useProject();
   const [travailAModifierState, setTravailAModifierState] = useState<string | null>(null);
+  
+  // Charger les travaux depuis localStorage au démarrage
+  useEffect(() => {
+    const savedTravaux = localStorage.getItem('travaux');
+    if (savedTravaux && state.travaux.length === 0) {
+      try {
+        const parsedTravaux = JSON.parse(savedTravaux);
+        if (Array.isArray(parsedTravaux)) {
+          parsedTravaux.forEach(travail => {
+            dispatch({
+              type: 'ADD_TRAVAIL',
+              payload: travail
+            });
+          });
+          console.log("Travaux chargés depuis localStorage:", parsedTravaux.length);
+        }
+      } catch (error) {
+        console.error("Erreur lors du chargement des travaux:", error);
+      }
+    }
+  }, [dispatch, state.travaux.length]);
+
+  // Sauvegarder les travaux dans localStorage quand ils changent
+  useEffect(() => {
+    if (state.travaux.length > 0) {
+      localStorage.setItem('travaux', JSON.stringify(state.travaux));
+      console.log("Travaux sauvegardés dans localStorage:", state.travaux.length);
+    }
+  }, [state.travaux]);
   
   // Récupérer un travail par son ID
   const getTravailById = useCallback((id: string): Travail | undefined => {
@@ -59,7 +88,10 @@ export const useTravaux = () => {
       type: 'ADD_TRAVAIL',
       payload: travail
     });
-  }, [dispatch, travailAModifierState, getTravailById, updateTravail]);
+    
+    // Réinitialiser les champs après ajout
+    resetTravailAModifier();
+  }, [dispatch, travailAModifierState, getTravailById, updateTravail, resetTravailAModifier]);
 
   // Supprimer un travail
   const deleteTravail = useCallback((id: string) => {
