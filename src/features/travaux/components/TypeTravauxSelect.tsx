@@ -28,6 +28,8 @@ interface TypeTravauxSelectProps {
 const TypeTravauxSelect: React.FC<TypeTravauxSelectProps> = ({ value, onChange }) => {
   const { state } = useTravauxTypes();
   
+  console.log("Types disponibles:", state.types.map(t => t.label)); // Log pour débogage
+  
   // Map pour les icônes
   const iconMap: Record<string, React.ReactNode> = {
     "Paintbrush": <Paintbrush className="h-4 w-4" />,

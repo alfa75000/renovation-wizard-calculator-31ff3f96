@@ -30,9 +30,6 @@ const Travaux = () => {
   
   // Préparer les pièces avec les propriétés nécessaires pour le calcul automatique
   const preparedRooms: Piece[] = rooms.map((room: Room) => {
-    // Calculons la surface des plinthes si nécessaire (hauteur plinthes * périmètre)
-    const plinthSurface = room.totalPlinthSurface ? parseFloat(room.totalPlinthSurface) : 0;
-    
     return {
       id: room.id,
       name: room.name,

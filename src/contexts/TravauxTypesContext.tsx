@@ -283,6 +283,13 @@ export const TravauxTypesProvider: React.FC<{ children: ReactNode }> = ({
 }) => {
   const [state, dispatch] = useReducer(travauxTypesReducer, initialState);
 
+  // Pour forcer un reset au début
+  useEffect(() => {
+    // Réinitialiser les types au montage
+    console.log("Réinitialisation forcée des types de travaux");
+    dispatch({ type: 'RESET_TYPES' });
+  }, []);
+  
   // Chargement initial des données depuis localStorage
   useEffect(() => {
     const loadData = () => {

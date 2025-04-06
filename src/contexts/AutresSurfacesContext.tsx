@@ -101,6 +101,12 @@ export const useAutresSurfaces = () => {
 export const AutresSurfacesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(autresSurfacesReducer, initialState);
 
+  // Forcer la réinitialisation au montage
+  useEffect(() => {
+    console.log("Réinitialisation forcée des types d'autres surfaces");
+    localStorage.removeItem('typesAutresSurfaces');
+  }, []);
+
   // Charger les données depuis localStorage au démarrage
   useEffect(() => {
     const loadSavedData = () => {
@@ -113,10 +119,19 @@ export const AutresSurfacesProvider: React.FC<{ children: React.ReactNode }> = (
             dispatch({ type: 'SET_TYPES', payload: parsedTypes });
           } else {
             console.log("Aucun type d'autre surface trouvé dans localStorage");
+            // Utiliser les types par défaut
+            localStorage.setItem('typesAutresSurfaces', JSON.stringify(initialState.typesAutresSurfaces));
+            dispatch({ type: 'SET_TYPES', payload: initialState.typesAutresSurfaces });
           }
+        } else {
+          console.log("Aucun type d'autre surface trouvé dans localStorage, initialisation avec les valeurs par défaut");
+          localStorage.setItem('typesAutresSurfaces', JSON.stringify(initialState.typesAutresSurfaces));
+          dispatch({ type: 'SET_TYPES', payload: initialState.typesAutresSurfaces });
         }
       } catch (error) {
         console.error("Erreur lors du chargement des données:", error);
+        localStorage.setItem('typesAutresSurfaces', JSON.stringify(initialState.typesAutresSurfaces));
+        dispatch({ type: 'SET_TYPES', payload: initialState.typesAutresSurfaces });
       }
     };
 
