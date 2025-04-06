@@ -15,6 +15,7 @@ import Recapitulatif from "./pages/Recapitulatif";
 import AdminTravaux from "./pages/AdminTravaux";
 import Parametres from "./pages/Parametres";
 import ClientChantier from "./pages/ClientChantier";
+import PiecesPage from "./pages/PiecesPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,6 +34,7 @@ function App() {
                   <BrowserRouter>
                     <Routes>
                       <Route path="/" element={<Index />} />
+                      <Route path="/pieces" element={<PiecesPage />} />
                       <Route path="/travaux" element={<Travaux />} />
                       <Route path="/recapitulatif" element={<Recapitulatif />} />
                       <Route path="/admin/travaux" element={<AdminTravaux />} />

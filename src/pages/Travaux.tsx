@@ -23,7 +23,7 @@ const Travaux: React.FC = () => {
     if (filter === 'all') {
       setFilteredTravaux(state.travaux);
     } else {
-      setFilteredTravaux(state.travaux.filter(travail => travail.roomId === filter));
+      setFilteredTravaux(state.travaux.filter(travail => travail.pieceId === filter));
     }
   }, [state.travaux, filter]);
 
@@ -76,22 +76,33 @@ const Travaux: React.FC = () => {
       id: room.id,
       name: room.name,
       type: room.type,
+      customName: room.customName || "",
       surface: room.surface,
-      wallSurface: room.wallSurface,
-      ceilingSurface: room.ceilingSurface,
-      plinthSurface: room.plinthSurface,
-      doors: room.doors,
-      windows: room.windows,
-      plafond: room.plafond,
-      plinthHeight: room.plinthHeight,
+      menuiseries: room.menuiseries || [],
       wallSurfaceRaw: room.wallSurfaceRaw,
       autresSurfaces: room.autresSurfaces || [],
       totalPlinthSurface: room.totalPlinthSurface,
-      // Ajout des propriétés manquantes pour répondre à l'interface Room
-      volume: room.volume || 0,
+      plinthHeight: room.plinthHeight,
       length: room.length,
       width: room.width,
-      height: room.height
+      height: room.height,
+      volume: room.volume || "0",
+      
+      // Propriétés supplémentaires pour correspondre à l'interface Piece
+      surfaceNetteSol: room.surfaceNetteSol,
+      surfaceNettePlafond: room.surfaceNettePlafond,
+      surfaceNetteMurs: room.netWallSurface,
+      lineaireNet: room.lineaireNet || "0",
+      surfaceMenuiseries: room.totalMenuiserieSurface,
+      netWallSurface: room.netWallSurface,
+      totalPlinthLength: room.totalPlinthLength,
+      totalMenuiserieSurface: room.totalMenuiserieSurface,
+      menuiseriesMursSurface: room.menuiseriesMursSurface,
+      menuiseriesPlafondSurface: room.menuiseriesPlafondSurface,
+      menuiseriesSolSurface: room.menuiseriesSolSurface,
+      autresSurfacesMurs: room.autresSurfacesMurs,
+      autresSurfacesPlafond: room.autresSurfacesPlafond,
+      autresSurfacesSol: room.autresSurfacesSol
     };
   });
 

@@ -8,7 +8,8 @@ import {
   List, 
   Settings, 
   SquarePen,
-  FileText
+  FileText,
+  Home
 } from 'lucide-react';
 
 const Index: React.FC = () => {
@@ -20,6 +21,27 @@ const Index: React.FC = () => {
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <Card className="shadow-md">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Home className="h-5 w-5" />
+              Saisir les Pièces
+            </CardTitle>
+            <CardDescription>Définissez les pièces de votre projet</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p>Créez et configurez les pièces de votre projet avec leurs dimensions et caractéristiques.</p>
+          </CardContent>
+          <CardFooter>
+            <Link to="/pieces" className="w-full">
+              <Button className="w-full">
+                <Home className="mr-2 h-4 w-4" />
+                Gérer les Pièces
+              </Button>
+            </Link>
+          </CardFooter>
+        </Card>
+
         <Card className="shadow-md">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -61,7 +83,9 @@ const Index: React.FC = () => {
             </Link>
           </CardFooter>
         </Card>
+      </div>
 
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="shadow-md">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -82,9 +106,7 @@ const Index: React.FC = () => {
             </Link>
           </CardFooter>
         </Card>
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="shadow-md">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
