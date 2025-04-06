@@ -64,24 +64,38 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail, travailA
         .find(st => st.id === sousType);
       
       if (selectedSousType) {
-        setPrixFournitures(selectedSousType.prixFournitures || 0);
-        setPrixMainOeuvre(selectedSousType.prixMainOeuvre || 0);
+        // S'assurer que nous avons toujours les deux composantes de prix
+        const prixFourn = selectedSousType.prixFournitures !== undefined ? 
+          selectedSousType.prixFournitures : selectedSousType.prixUnitaire / 2;
+        const prixMO = selectedSousType.prixMainOeuvre !== undefined ? 
+          selectedSousType.prixMainOeuvre : selectedSousType.prixUnitaire / 2;
+        
+        setPrixFournitures(prixFourn);
+        setPrixMainOeuvre(prixMO);
         setUnite(selectedSousType.unite || 'M²');
         
-        // Calculer automatiquement la quantité en fonction de la surface de référence
-        if (piece && selectedSousType.surfaceReference) {
-          const referenceValue = getValueFromReference(piece, selectedSousType.surfaceReference);
-          if (referenceValue && !isNaN(parseFloat(referenceValue))) {
-            setQuantite(parseFloat(referenceValue));
+        // Si nous ne sommes pas en train de modifier un travail existant ou si c'est un nouveau sous-type
+        if (!travailAModifier || travailAModifier.sousType !== sousType) {
+          // Calculer automatiquement la quantité en fonction de la surface de référence
+          if (piece && selectedSousType.surfaceReference) {
+            const referenceValue = getValueFromReference(piece, selectedSousType.surfaceReference);
+            if (referenceValue && !isNaN(parseFloat(referenceValue))) {
+              setQuantite(parseFloat(referenceValue));
+            } else {
+              setQuantite(1); // Valeur par défaut si aucune référence n'est trouvée
+            }
           } else {
-            setQuantite(1); // Valeur par défaut si aucune référence n'est trouvée
+            setQuantite(1); // Valeur par défaut si pas de surface de référence
           }
-        } else {
-          setQuantite(1); // Valeur par défaut si pas de surface de référence
+          
+          // Si le sousType a une description par défaut, on l'utilise
+          if (selectedSousType.description) {
+            setDescriptif(selectedSousType.description);
+          }
         }
       }
     }
-  }, [sousType, state.types, piece]);
+  }, [sousType, state.types, piece, travailAModifier]);
 
   // Fonction pour obtenir la valeur à partir de la référence
   const getValueFromReference = (piece: Piece, reference: string): string | undefined => {

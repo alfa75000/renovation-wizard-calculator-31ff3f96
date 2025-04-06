@@ -169,8 +169,15 @@ const Recapitulatif = () => {
                           
                           return (
                             <tr key={travail.id} className="border-b">
-                              <td className="px-3 py-2">{travail.typeTravauxLabel}: {travail.sousTypeLabel}</td>
-                              <td className="px-3 py-2 text-gray-600">{travail.personnalisation || '-'}</td>
+                              <td className="px-3 py-2">
+                                <div>{travail.typeTravauxLabel}: {travail.sousTypeLabel}</div>
+                                {travail.personnalisation && (
+                                  <div className="text-xs text-gray-600 mt-1 italic">
+                                    {travail.personnalisation}
+                                  </div>
+                                )}
+                              </td>
+                              <td className="px-3 py-2 text-gray-600">{travail.personnalisation ? '✓' : '-'}</td>
                               <td className="px-3 py-2 text-right">{travail.quantite} {travail.unite}</td>
                               <td className="px-3 py-2 text-right">{formaterPrix(travail.prixUnitaire)}</td>
                               <td className="px-3 py-2 text-right">{travail.tauxTVA}%</td>
