@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { 
   Card, 
   CardContent,
@@ -12,57 +12,24 @@ import {
   Home,
   ArrowRight,
   Settings,
-  PlusCircle
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import PieceSelect from "@/features/travaux/components/PieceSelect";
 import { useProject } from "@/contexts/ProjectContext";
 import TravailForm from "@/features/travaux/components/TravailForm";
 import { useTravaux } from "@/features/travaux/hooks/useTravaux";
-import { Travail } from "@/types";
 import TravauxList from "@/features/travaux/components/TravauxList";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/hooks/use-toast";
 
 const Travaux = () => {
   const { state } = useProject();
   const { rooms } = state;
-  const { toast } = useToast();
   
   const [selectedPieceId, setSelectedPieceId] = useState<string | null>(null);
-  const { addTravail, getTravauxForPiece, travailAModifier } = useTravaux();
-  
-  // État pour suivre l'onglet actif
-  const [activeTab, setActiveTab] = useState("ajouter");
-  
-  // Effet pour basculer vers l'onglet d'ajout lors de l'édition
-  useEffect(() => {
-    if (travailAModifier) {
-      console.log("Travail à modifier détecté, basculement vers l'onglet d'ajout", travailAModifier);
-      setActiveTab("ajouter");
-    }
-  }, [travailAModifier]);
+  const { travailAModifier, getTravauxForPiece } = useTravaux();
   
   const selectedPiece = selectedPieceId 
     ? rooms.find(room => room.id === selectedPieceId) 
     : null;
-  
-  const handleAddTravail = (travail: Omit<Travail, "id">) => {
-    addTravail(travail);
-    toast({
-      title: "Travail ajouté",
-      description: `Le travail ${travail.typeTravauxLabel} - ${travail.sousTypeLabel} a été ajouté avec succès.`,
-      variant: "default",
-    });
-    // Basculer vers l'onglet liste après avoir ajouté un travail
-    setActiveTab("liste");
-  };
-  
-  // Fonction pour basculer vers l'onglet d'ajout lors de l'édition
-  const handleStartEdit = () => {
-    console.log("Démarrage de l'édition, basculement vers l'onglet d'ajout");
-    setActiveTab("ajouter");
-  };
 
   return (
     <div className="min-h-screen bg-gray-50 pb-12">
@@ -140,33 +107,32 @@ const Travaux = () => {
             </CardHeader>
             <CardContent>
               {selectedPieceId ? (
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="ajouter">
-                      {travailAModifier ? "Modifier un travail" : "Ajouter des travaux"}
-                    </TabsTrigger>
-                    <TabsTrigger value="liste">
-                      Liste des travaux
-                      <span className="ml-2 bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">
-                        {getTravauxForPiece(selectedPieceId).length}
-                      </span>
-                    </TabsTrigger>
-                  </TabsList>
-                  
-                  <TabsContent value="ajouter" className="mt-4">
-                    <TravailForm 
-                      piece={selectedPiece} 
-                      onAddTravail={handleAddTravail}
-                    />
-                  </TabsContent>
-                  
-                  <TabsContent value="liste" className="mt-4">
-                    <TravauxList 
-                      pieceId={selectedPieceId} 
-                      onStartEdit={handleStartEdit}
-                    />
-                  </TabsContent>
-                </Tabs>
+                <div className="space-y-8">
+                  {/* Formulaire et liste sur la même page */}
+                  <div className="space-y-6">
+                    <div className="border-b pb-6">
+                      <h3 className="text-lg font-semibold mb-4">Ajouter ou modifier un travail</h3>
+                      <TravailForm 
+                        piece={selectedPiece} 
+                        onAddTravail={() => {}} // Temporairement désactivé
+                      />
+                    </div>
+                    
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4">Liste des travaux
+                        {getTravauxForPiece(selectedPieceId).length > 0 && (
+                          <span className="ml-2 bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">
+                            {getTravauxForPiece(selectedPieceId).length}
+                          </span>
+                        )}
+                      </h3>
+                      <TravauxList 
+                        pieceId={selectedPieceId} 
+                        onStartEdit={() => {}} // Temporairement désactivé
+                      />
+                    </div>
+                  </div>
+                </div>
               ) : (
                 <div className="text-center py-8">
                   <p className="text-gray-500">Veuillez sélectionner une pièce pour configurer les travaux.</p>

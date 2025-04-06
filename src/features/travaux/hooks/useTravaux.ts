@@ -4,7 +4,7 @@ import { useProject } from '@/contexts/ProjectContext';
 import { v4 as uuidv4 } from 'uuid';
 import { Travail } from '@/types';
 
-// Nous créons un état local pour gérer l'édition des travaux
+// Hook pour gérer les travaux
 export const useTravaux = () => {
   const { state, dispatch } = useProject();
   const [travailAModifierState, setTravailAModifierState] = useState<string | null>(null);
