@@ -1,48 +1,16 @@
 
-import { useCallback, useContext, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useProject } from '@/contexts/ProjectContext';
 import { v4 as uuidv4 } from 'uuid';
 import { Travail } from '@/types';
 
-// Nous définissons un type pour représenter l'état des travaux dans le context
-interface TravauxState {
-  travaux: Travail[];
-  travailAModifier: string | null;
-}
-
-// Les types d'actions ajoutés au contexte ProjectContext
-interface AddTravailAction {
-  type: 'ADD_TRAVAIL';
-  payload: Travail;
-}
-
-interface UpdateTravailAction {
-  type: 'UPDATE_TRAVAIL';
-  payload: Travail;
-}
-
-interface DeleteTravailAction {
-  type: 'DELETE_TRAVAIL';
-  payload: string;
-}
-
-// On augmente ProjectContext avec ces nouvelles actions
-declare module '@/contexts/ProjectContext' {
-  interface ProjectState {
-    travaux: Travail[];
-  }
-  
-  type ProjectAction = ProjectAction | AddTravailAction | UpdateTravailAction | DeleteTravailAction;
-}
-
 // Nous créons un état local pour gérer l'édition des travaux
 export const useTravaux = () => {
   const { state, dispatch } = useProject();
-  const [travailAModifier, setTravailAModifierState] = useState<string | null>(null);
+  const [travailAModifierState, setTravailAModifierState] = useState<string | null>(null);
   
   // Récupérer un travail par son ID
   const getTravailById = useCallback((id: string): Travail | undefined => {
-    if (!state.travaux) return undefined;
     return state.travaux.find(t => t.id === id);
   }, [state.travaux]);
 
@@ -68,8 +36,8 @@ export const useTravaux = () => {
   // Ajouter un nouveau travail
   const addTravail = useCallback((travailData: Omit<Travail, 'id'>) => {
     // Si on est en train de modifier, on met à jour plutôt que d'ajouter
-    if (travailAModifier) {
-      const existingTravail = getTravailById(travailAModifier);
+    if (travailAModifierState) {
+      const existingTravail = getTravailById(travailAModifierState);
       if (existingTravail) {
         updateTravail({
           ...existingTravail,
@@ -89,7 +57,7 @@ export const useTravaux = () => {
       type: 'ADD_TRAVAIL',
       payload: travail
     });
-  }, [dispatch, travailAModifier, getTravailById, updateTravail]);
+  }, [dispatch, travailAModifierState, getTravailById, updateTravail]);
 
   // Supprimer un travail
   const deleteTravail = useCallback((id: string) => {
@@ -99,23 +67,22 @@ export const useTravaux = () => {
     });
     
     // Si on supprime le travail en cours d'édition
-    if (travailAModifier === id) {
+    if (travailAModifierState === id) {
       setTravailAModifierState(null);
     }
-  }, [dispatch, travailAModifier]);
+  }, [dispatch, travailAModifierState]);
 
   // Obtenir tous les travaux pour une pièce
   const getTravauxForPiece = useCallback((pieceId: string): Travail[] => {
-    if (!state.travaux) return [];
     return state.travaux.filter(t => t.pieceId === pieceId);
   }, [state.travaux]);
 
   // Obtenir les détails du travail en cours d'édition
   const getTravailAModifier = useCallback((): Travail | null => {
-    if (!travailAModifier) return null;
-    const travail = getTravailById(travailAModifier);
+    if (!travailAModifierState) return null;
+    const travail = getTravailById(travailAModifierState);
     return travail || null;
-  }, [travailAModifier, getTravailById]);
+  }, [travailAModifierState, getTravailById]);
 
   return {
     travailAModifier: getTravailAModifier(),

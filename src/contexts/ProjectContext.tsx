@@ -1,11 +1,12 @@
 
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
-import { Room, PropertyType } from '@/types';
+import { Room, PropertyType, Travail } from '@/types';
 
 // Interface pour définir l'état global du projet
 interface ProjectState {
   rooms: Room[];
   property: PropertyType;
+  travaux: Travail[];
 }
 
 // Actions possibles pour le reducer
@@ -16,6 +17,9 @@ type ProjectAction =
   | { type: 'DELETE_ROOM'; payload: string }
   | { type: 'SET_PROPERTY'; payload: PropertyType }
   | { type: 'UPDATE_PROPERTY'; payload: Partial<PropertyType> }
+  | { type: 'ADD_TRAVAIL'; payload: Travail }
+  | { type: 'UPDATE_TRAVAIL'; payload: Travail }
+  | { type: 'DELETE_TRAVAIL'; payload: string }
   | { type: 'RESET_PROJECT' };
 
 // État initial du projet avec les nouvelles valeurs par défaut
@@ -28,6 +32,7 @@ const initialState: ProjectState = {
     rooms: "3",
     ceilingHeight: "2.50",
   },
+  travaux: []
 };
 
 // Fonction reducer pour gérer les modifications d'état
@@ -50,10 +55,22 @@ const projectReducer = (state: ProjectState, action: ProjectAction): ProjectStat
       return { ...state, property: action.payload };
     case 'UPDATE_PROPERTY':
       return { ...state, property: { ...state.property, ...action.payload } };
+    case 'ADD_TRAVAIL':
+      return { ...state, travaux: [...state.travaux, action.payload] };
+    case 'UPDATE_TRAVAIL':
+      return {
+        ...state,
+        travaux: state.travaux.map(travail =>
+          travail.id === action.payload.id ? action.payload : travail
+        )
+      };
+    case 'DELETE_TRAVAIL':
+      return { ...state, travaux: state.travaux.filter(travail => travail.id !== action.payload) };
     case 'RESET_PROJECT':
       // Réinitialiser complètement l'état et effacer localStorage
       localStorage.removeItem('rooms');
       localStorage.removeItem('property');
+      localStorage.removeItem('travaux');
       return initialState;
     default:
       return state;

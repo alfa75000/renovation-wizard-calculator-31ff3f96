@@ -12,13 +12,13 @@ import {
   Home, 
   Droplet, 
   Power, 
-  LucideRoof, 
+  Roofing, 
   Pipette, 
   Cpu, 
   CircuitBoard,
   Flame,
   Cable,
-  Wall
+  Building
 } from 'lucide-react';
 
 interface TypeTravauxSelectProps {
@@ -36,7 +36,7 @@ const TypeTravauxSelect: React.FC<TypeTravauxSelectProps> = ({ value, onChange }
     "Wrench": <Wrench className="h-4 w-4" />,
     "SquarePen": <SquarePen className="h-4 w-4" />,
     "Power": <Power className="h-4 w-4" />,
-    "LucideRoof": <LucideRoof className="h-4 w-4" />,
+    "Roofing": <Roofing className="h-4 w-4" />,
     "Droplet": <Droplet className="h-4 w-4" />,
     "Home": <Home className="h-4 w-4" />,
     "Pipette": <Pipette className="h-4 w-4" />,
@@ -44,7 +44,7 @@ const TypeTravauxSelect: React.FC<TypeTravauxSelectProps> = ({ value, onChange }
     "CircuitBoard": <CircuitBoard className="h-4 w-4" />,
     "Flame": <Flame className="h-4 w-4" />,
     "Cable": <Cable className="h-4 w-4" />,
-    "Wall": <Wall className="h-4 w-4" />
+    "Building": <Building className="h-4 w-4" />
   };
 
   return (

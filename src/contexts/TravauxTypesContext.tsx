@@ -1,8 +1,7 @@
-
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
 
 // Types pour les catégories et sous-catégories de travaux
-interface SousTypeTravauxItem {
+export interface SousTypeTravauxItem {
   id: string;
   label: string;
   prixUnitaire: number;
@@ -13,7 +12,7 @@ interface SousTypeTravauxItem {
   surfaceReference?: string;
 }
 
-interface TypeTravauxItem {
+export interface TypeTravauxItem {
   id: string;
   label: string;
   icon: string;

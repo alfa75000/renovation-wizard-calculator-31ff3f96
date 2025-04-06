@@ -14,13 +14,13 @@ import {
   Home, 
   Droplet, 
   Power, 
-  LucideRoof, 
+  Roofing, 
   Pipette, 
   Cpu, 
   CircuitBoard,
   Flame,
   Cable,
-  Wall
+  Building
 } from "lucide-react";
 
 interface TypeTravauxFormProps {
@@ -46,7 +46,7 @@ const iconeOptions = [
   { id: "Wrench", label: "Clé", icon: <Wrench className="h-4 w-4" /> },
   { id: "SquarePen", label: "Crayon", icon: <SquarePen className="h-4 w-4" /> },
   { id: "Power", label: "Prise électrique", icon: <Power className="h-4 w-4" /> },
-  { id: "LucideRoof", label: "Toiture", icon: <LucideRoof className="h-4 w-4" /> },
+  { id: "Roofing", label: "Toiture", icon: <Roofing className="h-4 w-4" /> },
   { id: "Droplet", label: "Robinet", icon: <Droplet className="h-4 w-4" /> },
   { id: "Home", label: "Maison", icon: <Home className="h-4 w-4" /> },
   { id: "Pipette", label: "Pipette", icon: <Pipette className="h-4 w-4" /> },
@@ -54,7 +54,7 @@ const iconeOptions = [
   { id: "CircuitBoard", label: "Circuit", icon: <CircuitBoard className="h-4 w-4" /> },
   { id: "Flame", label: "Chauffage", icon: <Flame className="h-4 w-4" /> },
   { id: "Cable", label: "Câblage", icon: <Cable className="h-4 w-4" /> },
-  { id: "Wall", label: "Mur", icon: <Wall className="h-4 w-4" /> }
+  { id: "Building", label: "Bâtiment", icon: <Building className="h-4 w-4" /> }
 ];
 
 const TypeTravauxForm: React.FC<TypeTravauxFormProps> = ({
