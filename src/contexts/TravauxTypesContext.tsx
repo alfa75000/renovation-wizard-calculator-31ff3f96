@@ -305,9 +305,6 @@ export const TravauxTypesProvider: React.FC<{ children: ReactNode }> = ({
   );
 };
 
-// Exporter les types pour réutilisation
-export type { TypeTravauxItem, SousTypeTravauxItem };
-
 // Exporter la liste des types de surfaces de référence
 export const surfacesReference = [
   { id: "SurfaceNetteSol", label: "Surface Nette du Sol" },

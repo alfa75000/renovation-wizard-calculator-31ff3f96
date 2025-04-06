@@ -3,7 +3,7 @@ import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTravauxTypes } from '@/contexts/TravauxTypesContext';
 
-// Import dynamique des icônes
+// Import des icônes disponibles
 import { 
   Paintbrush, 
   Hammer, 
@@ -12,7 +12,6 @@ import {
   Home, 
   Droplet, 
   Power, 
-  Roofing, 
   Pipette, 
   Cpu, 
   CircuitBoard,
@@ -36,7 +35,6 @@ const TypeTravauxSelect: React.FC<TypeTravauxSelectProps> = ({ value, onChange }
     "Wrench": <Wrench className="h-4 w-4" />,
     "SquarePen": <SquarePen className="h-4 w-4" />,
     "Power": <Power className="h-4 w-4" />,
-    "Roofing": <Roofing className="h-4 w-4" />,
     "Droplet": <Droplet className="h-4 w-4" />,
     "Home": <Home className="h-4 w-4" />,
     "Pipette": <Pipette className="h-4 w-4" />,

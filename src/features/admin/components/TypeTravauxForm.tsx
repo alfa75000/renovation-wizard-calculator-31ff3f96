@@ -1,4 +1,3 @@
-
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +13,6 @@ import {
   Home, 
   Droplet, 
   Power, 
-  Roofing, 
   Pipette, 
   Cpu, 
   CircuitBoard,
@@ -46,7 +44,6 @@ const iconeOptions = [
   { id: "Wrench", label: "Clé", icon: <Wrench className="h-4 w-4" /> },
   { id: "SquarePen", label: "Crayon", icon: <SquarePen className="h-4 w-4" /> },
   { id: "Power", label: "Prise électrique", icon: <Power className="h-4 w-4" /> },
-  { id: "Roofing", label: "Toiture", icon: <Roofing className="h-4 w-4" /> },
   { id: "Droplet", label: "Robinet", icon: <Droplet className="h-4 w-4" /> },
   { id: "Home", label: "Maison", icon: <Home className="h-4 w-4" /> },
   { id: "Pipette", label: "Pipette", icon: <Pipette className="h-4 w-4" /> },
