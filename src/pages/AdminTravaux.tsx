@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { 
   Card, 
@@ -29,6 +28,7 @@ import {
 import { Link } from "react-router-dom";
 import { formaterPrix } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { Layout } from "@/components/Layout";
 
 const AdminTravaux = () => {
   const { state, dispatch } = useTravauxTypes();
@@ -45,7 +45,6 @@ const AdminTravaux = () => {
     ? state.types.find(type => type.id === selectedTypeId) 
     : null;
 
-  // Gestion des types de travaux
   const handleAddType = () => {
     setTypeToEdit(null);
     setTypeFormOpen(true);
@@ -91,7 +90,6 @@ const AdminTravaux = () => {
         variant: "default",
       });
       
-      // Sélectionner automatiquement le nouveau type
       setSelectedTypeId(data.id);
     }
     setTypeFormOpen(false);
@@ -102,7 +100,6 @@ const AdminTravaux = () => {
     setTypeToEdit(null);
   };
 
-  // Gestion des sous-types
   const handleAddSousType = () => {
     setSousTypeToEdit(null);
     setSousTypeFormOpen(true);
@@ -186,223 +183,223 @@ const AdminTravaux = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-12">
-      <div className="max-w-6xl mx-auto p-4">
-        <div className="flex flex-col items-center justify-center mb-8 bg-blue-600 text-white p-6 rounded-lg">
-          <h1 className="text-3xl md:text-4xl font-bold">
-            Administration des types de travaux
-          </h1>
-          <p className="mt-2 text-lg">Gérez les différentes catégories de travaux et leurs caractéristiques</p>
-        </div>
+    <Layout>
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        <div className="flex flex-col space-y-8">
+          <div className="flex flex-col space-y-2">
+            <h1 className="text-3xl font-bold">Administration des travaux</h1>
+            <p className="text-gray-500">Gérez les types de travaux et leurs caractéristiques</p>
+          </div>
 
-        <div className="mb-4 flex justify-between">
-          <Button variant="outline" asChild className="flex items-center gap-2">
-            <Link to="/parametres">
-              <ArrowLeft className="h-4 w-4" />
-              Retour aux paramètres
-            </Link>
-          </Button>
+          <div className="mb-4 flex justify-between">
+            <Button variant="outline" asChild className="flex items-center gap-2">
+              <Link to="/parametres">
+                <ArrowLeft className="h-4 w-4" />
+                Retour aux paramètres
+              </Link>
+            </Button>
 
-          <Button variant="destructive" onClick={handleResetTypes} className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            Réinitialiser par défaut
-          </Button>
-        </div>
+            <Button variant="destructive" onClick={handleResetTypes} className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              Réinitialiser par défaut
+            </Button>
+          </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="shadow-md lg:col-span-1">
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle>Types de travaux</CardTitle>
-                <Button onClick={handleAddType} size="sm" className="flex items-center gap-1">
-                  <Plus className="h-4 w-4" />
-                  Ajouter
-                </Button>
-              </div>
-              <CardDescription>
-                Catégories principales de travaux
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {state.types.map(type => (
-                  <div 
-                    key={type.id}
-                    className={`p-3 rounded-md cursor-pointer flex justify-between items-center ${
-                      selectedTypeId === type.id ? 'bg-blue-100 border border-blue-300' : 'bg-gray-100 hover:bg-gray-200'
-                    }`}
-                    onClick={() => setSelectedTypeId(type.id)}
-                  >
-                    <div className="flex items-center">
-                      <span className="font-medium">{type.label}</span>
-                      <span className="ml-2 text-xs text-gray-500">
-                        ({type.sousTypes.length} sous-types)
-                      </span>
-                    </div>
-                    <div className="flex space-x-2">
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEditType(type);
-                        }}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Êtes-vous sûr?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Cette action ne peut pas être annulée. Cela supprimera définitivement le type de travaux
-                              "{type.label}" et tous ses sous-types associés.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Annuler</AlertDialogCancel>
-                            <AlertDialogAction 
-                              onClick={() => handleDeleteType(type.id)}
-                              className="bg-red-500 hover:bg-red-600"
-                            >
-                              Supprimer
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </div>
-                ))}
-
-                {state.types.length === 0 && (
-                  <Alert>
-                    <AlertDescription>
-                      Aucun type de travaux n'est défini. Cliquez sur "Ajouter" pour en créer un.
-                    </AlertDescription>
-                  </Alert>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-md lg:col-span-2">
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle>
-                  {selectedType ? `Sous-types de "${selectedType.label}"` : "Détails des sous-types"}
-                </CardTitle>
-                {selectedType && (
-                  <Button 
-                    onClick={handleAddSousType} 
-                    size="sm" 
-                    className="flex items-center gap-1"
-                  >
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <Card className="shadow-md lg:col-span-1">
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <CardTitle>Types de travaux</CardTitle>
+                  <Button onClick={handleAddType} size="sm" className="flex items-center gap-1">
                     <Plus className="h-4 w-4" />
-                    Ajouter un sous-type
+                    Ajouter
                   </Button>
-                )}
-              </div>
-              <CardDescription>
-                {selectedType 
-                  ? "Différentes options pour ce type de travaux" 
-                  : "Sélectionnez un type de travaux pour voir ses sous-types"}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {selectedType ? (
-                <div className="space-y-4">
-                  {selectedType.sousTypes.length === 0 ? (
+                </div>
+                <CardDescription>
+                  Catégories principales de travaux
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {state.types.map(type => (
+                    <div 
+                      key={type.id}
+                      className={`p-3 rounded-md cursor-pointer flex justify-between items-center ${
+                        selectedTypeId === type.id ? 'bg-blue-100 border border-blue-300' : 'bg-gray-100 hover:bg-gray-200'
+                      }`}
+                      onClick={() => setSelectedTypeId(type.id)}
+                    >
+                      <div className="flex items-center">
+                        <span className="font-medium">{type.label}</span>
+                        <span className="ml-2 text-xs text-gray-500">
+                          ({type.sousTypes.length} sous-types)
+                        </span>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditType(type);
+                          }}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Êtes-vous sûr?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Cette action ne peut pas être annulée. Cela supprimera définitivement le type de travaux
+                                "{type.label}" et tous ses sous-types associés.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Annuler</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => handleDeleteType(type.id)}
+                                className="bg-red-500 hover:bg-red-600"
+                              >
+                                Supprimer
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </div>
+                  ))}
+
+                  {state.types.length === 0 && (
                     <Alert>
                       <AlertDescription>
-                        Aucun sous-type n'est défini pour "{selectedType.label}". 
-                        Cliquez sur "Ajouter un sous-type" pour en créer un.
+                        Aucun type de travaux n'est défini. Cliquez sur "Ajouter" pour en créer un.
                       </AlertDescription>
                     </Alert>
-                  ) : (
-                    <div className="overflow-x-auto">
-                      <table className="w-full border-collapse">
-                        <thead>
-                          <tr className="border-b">
-                            <th className="text-left p-2">Nom</th>
-                            <th className="text-left p-2">Prix Unitaire</th>
-                            <th className="text-left p-2">Unité</th>
-                            <th className="text-left p-2">Surface</th>
-                            <th className="text-right p-2">Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {selectedType.sousTypes.map(sousType => (
-                            <tr key={sousType.id} className="border-b hover:bg-gray-50">
-                              <td className="p-2">{sousType.label}</td>
-                              <td className="p-2">{formaterPrix(sousType.prixUnitaire)}</td>
-                              <td className="p-2">{sousType.unite}</td>
-                              <td className="p-2">
-                                {sousType.surfaceReference ? 
-                                  getSurfaceReferenceLabel(sousType.surfaceReference) : 
-                                  "N/A"}
-                              </td>
-                              <td className="p-2 text-right">
-                                <div className="flex justify-end space-x-2">
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm"
-                                    onClick={() => handleEditSousType(sousType)}
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                  <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                      <Button 
-                                        variant="ghost" 
-                                        size="sm"
-                                      >
-                                        <Trash2 className="h-4 w-4 text-red-500" />
-                                      </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                      <AlertDialogHeader>
-                                        <AlertDialogTitle>Êtes-vous sûr?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                          Cette action ne peut pas être annulée. Cela supprimera définitivement le sous-type
-                                          "{sousType.label}".
-                                        </AlertDialogDescription>
-                                      </AlertDialogHeader>
-                                      <AlertDialogFooter>
-                                        <AlertDialogCancel>Annuler</AlertDialogCancel>
-                                        <AlertDialogAction 
-                                          onClick={() => handleDeleteSousType(sousType.id)}
-                                          className="bg-red-500 hover:bg-red-600"
-                                        >
-                                          Supprimer
-                                        </AlertDialogAction>
-                                      </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                  </AlertDialog>
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
                   )}
                 </div>
-              ) : (
-                <div className="flex justify-center items-center h-32 text-gray-500">
-                  Veuillez sélectionner un type de travaux dans la liste à gauche
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-md lg:col-span-2">
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <CardTitle>
+                    {selectedType ? `Sous-types de "${selectedType.label}"` : "Détails des sous-types"}
+                  </CardTitle>
+                  {selectedType && (
+                    <Button 
+                      onClick={handleAddSousType} 
+                      size="sm" 
+                      className="flex items-center gap-1"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Ajouter un sous-type
+                    </Button>
+                  )}
                 </div>
-              )}
-            </CardContent>
-          </Card>
+                <CardDescription>
+                  {selectedType 
+                    ? "Différentes options pour ce type de travaux" 
+                    : "Sélectionnez un type de travaux pour voir ses sous-types"}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {selectedType ? (
+                  <div className="space-y-4">
+                    {selectedType.sousTypes.length === 0 ? (
+                      <Alert>
+                        <AlertDescription>
+                          Aucun sous-type n'est défini pour "{selectedType.label}". 
+                          Cliquez sur "Ajouter un sous-type" pour en créer un.
+                        </AlertDescription>
+                      </Alert>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="w-full border-collapse">
+                          <thead>
+                            <tr className="border-b">
+                              <th className="text-left p-2">Nom</th>
+                              <th className="text-left p-2">Prix Unitaire</th>
+                              <th className="text-left p-2">Unité</th>
+                              <th className="text-left p-2">Surface</th>
+                              <th className="text-right p-2">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {selectedType.sousTypes.map(sousType => (
+                              <tr key={sousType.id} className="border-b hover:bg-gray-50">
+                                <td className="p-2">{sousType.label}</td>
+                                <td className="p-2">{formaterPrix(sousType.prixUnitaire)}</td>
+                                <td className="p-2">{sousType.unite}</td>
+                                <td className="p-2">
+                                  {sousType.surfaceReference ? 
+                                    getSurfaceReferenceLabel(sousType.surfaceReference) : 
+                                    "N/A"}
+                                </td>
+                                <td className="p-2 text-right">
+                                  <div className="flex justify-end space-x-2">
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm"
+                                      onClick={() => handleEditSousType(sousType)}
+                                    >
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                    <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <Button 
+                                          variant="ghost" 
+                                          size="sm"
+                                        >
+                                          <Trash2 className="h-4 w-4 text-red-500" />
+                                        </Button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle>Êtes-vous sûr?</AlertDialogTitle>
+                                          <AlertDialogDescription>
+                                            Cette action ne peut pas être annulée. Cela supprimera définitivement le sous-type
+                                            "{sousType.label}".
+                                          </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                          <AlertDialogAction 
+                                            onClick={() => handleDeleteSousType(sousType.id)}
+                                            className="bg-red-500 hover:bg-red-600"
+                                          >
+                                            Supprimer
+                                          </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex justify-center items-center h-32 text-gray-500">
+                    Veuillez sélectionner un type de travaux dans la liste à gauche
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
 
@@ -421,7 +418,7 @@ const AdminTravaux = () => {
           onSubmit={handleSousTypeFormSubmit}
         />
       )}
-    </div>
+    </Layout>
   );
 };
 
