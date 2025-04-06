@@ -27,7 +27,7 @@ export interface Menuiserie {
   hauteur: number;
   quantity: number;
   surface: number;
-  surfaceImpactee?: string; // Surface impactée par la menuiserie
+  surfaceImpactee?: string; // Surface impactée par la menuiserie (mur, plafond, sol)
   impactePlinthe?: boolean;
 }
 
@@ -58,6 +58,9 @@ export interface Room {
   surfaceBruteMurs?: string; // Équivalent à wallSurfaceRaw
   surfaceBruteMenuiseries?: string; // Équivalent à totalMenuiserieSurface
   surfaceMenuiseries?: string; // Équivalent à totalMenuiserieSurface
+  menuiseriesMursSurface?: string; // Surface des menuiseries sur les murs
+  menuiseriesPlafondSurface?: string; // Surface des menuiseries au plafond
+  menuiseriesSolSurface?: string; // Surface des menuiseries au sol
   volume?: string;
 }
 
@@ -73,6 +76,10 @@ export interface Piece extends Partial<Room> {
   surfaceNetteMurs?: string;
   lineaireNet?: string;
   surfaceMenuiseries?: string;
+  wallSurfaceRaw?: string;
+  menuiseriesMursSurface?: string;
+  menuiseriesPlafondSurface?: string;
+  menuiseriesSolSurface?: string;
 }
 
 export interface Travail {

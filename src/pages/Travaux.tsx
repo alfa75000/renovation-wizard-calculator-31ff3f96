@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { 
   Card, 
@@ -32,20 +33,15 @@ const Travaux = () => {
     // Calculons la surface des plinthes si nécessaire (hauteur plinthes * périmètre)
     const plinthSurface = room.totalPlinthSurface ? parseFloat(room.totalPlinthSurface) : 0;
     
-    // Surface nette des murs après déduction des plinthes
-    const netWallSurfaceWithoutPlinths = room.netWallSurface 
-      ? parseFloat(room.netWallSurface) 
-      : 0;
-    
     return {
       id: room.id,
-      name: room.name || room.customName || room.type,
+      name: room.name,
       type: room.type,
       customName: room.customName,
       surface: room.surface,
       // Conversion et normalisation des surfaces pour le calcul automatique
-      surfaceNetteSol: room.surface,
-      surfaceNettePlafond: room.surface,
+      surfaceNetteSol: room.surfaceNetteSol || room.surface,
+      surfaceNettePlafond: room.surfaceNettePlafond || room.surface,
       surfaceNetteMurs: room.netWallSurface, // Surface nette des murs (déjà calculée avec déduction des plinthes)
       lineaireNet: room.totalPlinthLength,
       surfaceMenuiseries: room.totalMenuiserieSurface,
@@ -54,6 +50,10 @@ const Travaux = () => {
       totalPlinthLength: room.totalPlinthLength,
       totalPlinthSurface: room.totalPlinthSurface,
       totalMenuiserieSurface: room.totalMenuiserieSurface,
+      // Propriétés par type de menuiseries
+      menuiseriesMursSurface: room.menuiseriesMursSurface,
+      menuiseriesPlafondSurface: room.menuiseriesPlafondSurface,
+      menuiseriesSolSurface: room.menuiseriesSolSurface,
       // Autres propriétés nécessaires
       length: room.length,
       width: room.width,
@@ -61,7 +61,7 @@ const Travaux = () => {
       plinthHeight: room.plinthHeight,
       wallSurfaceRaw: room.wallSurfaceRaw,
       menuiseries: room.menuiseries
-    } as Piece;
+    };
   });
   
   const selectedPiece = selectedPieceId 

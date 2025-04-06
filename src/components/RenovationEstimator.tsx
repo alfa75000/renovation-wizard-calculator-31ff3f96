@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -41,7 +42,14 @@ const RenovationEstimator: React.FC = () => {
     totalPlinthLength: "",
     totalPlinthSurface: "",
     totalMenuiserieSurface: "",
-    netWallSurface: ""
+    netWallSurface: "",
+    menuiseriesMursSurface: "0",
+    menuiseriesPlafondSurface: "0",
+    menuiseriesSolSurface: "0",
+    surfaceNetteSol: "",
+    surfaceBruteSol: "",
+    surfaceNettePlafond: "",
+    surfaceBrutePlafond: ""
   });
 
   const [newMenuiserie, setNewMenuiserie] = useState<Omit<Menuiserie, "id" | "surface">>({
@@ -49,7 +57,8 @@ const RenovationEstimator: React.FC = () => {
     name: "",
     largeur: 83,
     hauteur: 204,
-    quantity: 1
+    quantity: 1,
+    surfaceImpactee: "mur"
   });
 
   const [editingMenuiserie, setEditingMenuiserie] = useState<string | null>(null);
@@ -57,7 +66,17 @@ const RenovationEstimator: React.FC = () => {
 
   const propertyTypes = ["Appartement", "Maison", "Studio", "Loft", "Autre"];
   const roomTypes = ["Salon", "Chambre", "Cuisine", "Salle de bain", "Toilettes", "Bureau", "Entrée", "Couloir", "Autre"];
-  const menuiserieTypes = ["Porte", "Fenêtre", "Porte-fenêtre", "Autre"];
+
+  // Détermine la surface impactée par défaut selon le type de menuiserie
+  const getDefaultSurfaceImpactee = (type: string): string => {
+    if (type.toLowerCase().includes("toit") || type.toLowerCase().includes("velux") || type.toLowerCase().includes("vélux")) {
+      return "plafond";
+    } else if (type.toLowerCase().includes("trappe") || type.toLowerCase().includes("sol")) {
+      return "sol";
+    } else {
+      return "mur";
+    }
+  };
 
   const getStandardDimensions = (type: string) => {
     switch (type) {
@@ -90,11 +109,13 @@ const RenovationEstimator: React.FC = () => {
     
     if (name === "type") {
       const standardDimensions = getStandardDimensions(value);
+      const surfaceImpactee = getDefaultSurfaceImpactee(value);
       setNewMenuiserie((prev) => ({ 
         ...prev, 
         [name]: value,
         largeur: standardDimensions.largeur,
-        hauteur: standardDimensions.hauteur
+        hauteur: standardDimensions.hauteur,
+        surfaceImpactee
       }));
     } else if (name === "largeur" || name === "hauteur" || name === "quantity") {
       setNewMenuiserie((prev) => ({ 
@@ -111,14 +132,24 @@ const RenovationEstimator: React.FC = () => {
     const selectedType = menuiseriesState.typesMenuiseries.find(type => type.id === typeId);
     
     if (selectedType) {
+      const surfaceImpactee = getDefaultSurfaceImpactee(selectedType.nom);
       setNewMenuiserie((prev) => ({ 
         ...prev, 
         type: selectedType.nom,
         largeur: selectedType.largeur,
         hauteur: selectedType.hauteur,
-        impactePlinthe: selectedType.impactePlinthe
+        impactePlinthe: selectedType.impactePlinthe,
+        surfaceImpactee
       }));
     }
+  };
+
+  const handleSurfaceImpacteeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    setNewMenuiserie(prev => ({
+      ...prev,
+      surfaceImpactee: value
+    }));
   };
 
   const generateRoomName = (type: string, customName: string = ""): string => {
@@ -130,7 +161,14 @@ const RenovationEstimator: React.FC = () => {
   useEffect(() => {
     if (newRoom.length && newRoom.width) {
       const calculatedSurface = arrondir2Decimales(parseFloat(newRoom.length) * parseFloat(newRoom.width)).toString();
-      setNewRoom((prev) => ({ ...prev, surface: calculatedSurface }));
+      setNewRoom((prev) => ({ 
+        ...prev, 
+        surface: calculatedSurface,
+        surfaceBruteSol: calculatedSurface,
+        surfaceNetteSol: calculatedSurface,
+        surfaceBrutePlafond: calculatedSurface,
+        surfaceNettePlafond: calculatedSurface
+      }));
     }
   }, [newRoom.length, newRoom.width]);
 
@@ -138,41 +176,84 @@ const RenovationEstimator: React.FC = () => {
     if (newRoom.length && newRoom.width && newRoom.height) {
       const perimeter = 2 * (parseFloat(newRoom.length) + parseFloat(newRoom.width));
       const wallSurface = arrondir2Decimales(perimeter * parseFloat(newRoom.height)).toString();
-      setNewRoom((prev) => ({ ...prev, wallSurfaceRaw: wallSurface }));
+      setNewRoom((prev) => ({ 
+        ...prev, 
+        wallSurfaceRaw: wallSurface,
+        surfaceBruteMurs: wallSurface,
+        lineaireBrut: perimeter.toString()
+      }));
     }
   }, [newRoom.length, newRoom.width, newRoom.height]);
 
   useEffect(() => {
     if (newRoom.length && newRoom.width && newRoom.menuiseries.length > 0) {
       const perimeter = 2 * (parseFloat(newRoom.length) + parseFloat(newRoom.width));
-      let doorWidths = 0;
       
-      newRoom.menuiseries.forEach(item => {
-        if (item.type === "Porte" || item.type === "Porte-fenêtre") {
+      // Isoler les menuiseries par surface impactée
+      let menuiseriesMurs = newRoom.menuiseries.filter(m => 
+        !m.surfaceImpactee || m.surfaceImpactee === "mur"
+      );
+      
+      let menuiseriesPlafond = newRoom.menuiseries.filter(m => 
+        m.surfaceImpactee === "plafond"
+      );
+      
+      let menuiseriesSol = newRoom.menuiseries.filter(m => 
+        m.surfaceImpactee === "sol"
+      );
+      
+      // Calculer linéaire de plinthes (tenant compte des portes)
+      let doorWidths = 0;
+      menuiseriesMurs.forEach(item => {
+        if ((item.type === "Porte" || item.type === "Porte-fenêtre" || item.impactePlinthe) && item.largeur) {
           doorWidths += (item.largeur / 100) * item.quantity;
         }
       });
       
       const plinthLength = arrondir2Decimales(perimeter - doorWidths).toString();
-      
       const plinthSurface = arrondir2Decimales(parseFloat(plinthLength) * parseFloat(newRoom.plinthHeight)).toString();
       
-      let menuiserieSurface = 0;
-      newRoom.menuiseries.forEach(item => {
-        menuiserieSurface += item.surface * item.quantity;
+      // Calcul des surfaces des menuiseries par type
+      let mursSurface = 0;
+      let plafondSurface = 0;
+      let solSurface = 0;
+      
+      menuiseriesMurs.forEach(item => {
+        mursSurface += item.surface * item.quantity;
       });
       
-      const netWallSurface = arrondir2Decimales(parseFloat(newRoom.wallSurfaceRaw) - menuiserieSurface - parseFloat(plinthSurface)).toString();
+      menuiseriesPlafond.forEach(item => {
+        plafondSurface += item.surface * item.quantity;
+      });
+      
+      menuiseriesSol.forEach(item => {
+        solSurface += item.surface * item.quantity;
+      });
+      
+      // Calcul des surfaces nettes
+      const netWallSurface = arrondir2Decimales(parseFloat(newRoom.wallSurfaceRaw) - mursSurface - parseFloat(plinthSurface)).toString();
+      const netCeilingSurface = arrondir2Decimales(parseFloat(newRoom.surface) - plafondSurface).toString();
+      const netFloorSurface = arrondir2Decimales(parseFloat(newRoom.surface) - solSurface).toString();
+      
+      // Total des surfaces de menuiseries
+      const totalMenuiserieSurface = arrondir2Decimales(mursSurface + plafondSurface + solSurface).toString();
       
       setNewRoom(prev => ({
         ...prev,
         totalPlinthLength: plinthLength,
         totalPlinthSurface: plinthSurface,
-        totalMenuiserieSurface: arrondir2Decimales(menuiserieSurface).toString(),
-        netWallSurface: netWallSurface
+        totalMenuiserieSurface: totalMenuiserieSurface,
+        menuiseriesMursSurface: arrondir2Decimales(mursSurface).toString(),
+        menuiseriesPlafondSurface: arrondir2Decimales(plafondSurface).toString(),
+        menuiseriesSolSurface: arrondir2Decimales(solSurface).toString(),
+        netWallSurface: netWallSurface,
+        surfaceNetteMurs: netWallSurface,
+        surfaceNettePlafond: netCeilingSurface,
+        surfaceNetteSol: netFloorSurface,
+        lineaireNet: plinthLength
       }));
     }
-  }, [newRoom.menuiseries, newRoom.length, newRoom.width, newRoom.height, newRoom.plinthHeight, newRoom.wallSurfaceRaw]);
+  }, [newRoom.menuiseries, newRoom.length, newRoom.width, newRoom.height, newRoom.plinthHeight, newRoom.wallSurfaceRaw, newRoom.surface]);
 
   useEffect(() => {
     setNewRoom(prev => ({
@@ -183,11 +264,14 @@ const RenovationEstimator: React.FC = () => {
 
   const handleAddMenuiserie = () => {
     if (editingMenuiserie) {
+      const surfaceM2 = arrondir2Decimales((newMenuiserie.largeur / 100) * (newMenuiserie.hauteur / 100));
+      
       const updatedMenuiseries = newRoom.menuiseries.map(item => 
         item.id === editingMenuiserie ? {
           ...newMenuiserie,
           id: editingMenuiserie,
-          surface: arrondir2Decimales((newMenuiserie.largeur / 100) * (newMenuiserie.hauteur / 100))
+          surface: surfaceM2,
+          surfaceImpactee: newMenuiserie.surfaceImpactee || getDefaultSurfaceImpactee(newMenuiserie.type)
         } : item
       );
       
@@ -204,6 +288,7 @@ const RenovationEstimator: React.FC = () => {
         .reduce((sum, item) => sum + item.quantity, 0);
       
       const menuiserieItems: Menuiserie[] = [];
+      const surfaceM2 = arrondir2Decimales((newMenuiserie.largeur / 100) * (newMenuiserie.hauteur / 100));
       
       for (let i = 0; i < newMenuiserie.quantity; i++) {
         const itemNumber = typeCount + i + 1;
@@ -216,8 +301,8 @@ const RenovationEstimator: React.FC = () => {
           largeur: newMenuiserie.largeur,
           hauteur: newMenuiserie.hauteur,
           quantity: 1,
-          surface: arrondir2Decimales((newMenuiserie.largeur / 100) * (newMenuiserie.hauteur / 100)),
-          surfaceImpactee: newMenuiserie.surfaceImpactee,
+          surface: surfaceM2,
+          surfaceImpactee: newMenuiserie.surfaceImpactee || getDefaultSurfaceImpactee(newMenuiserie.type),
           impactePlinthe: newMenuiserie.impactePlinthe
         });
       }
@@ -235,7 +320,8 @@ const RenovationEstimator: React.FC = () => {
       name: "",
       largeur: getStandardDimensions(newMenuiserie.type).largeur,
       hauteur: getStandardDimensions(newMenuiserie.type).hauteur,
-      quantity: 1
+      quantity: 1,
+      surfaceImpactee: getDefaultSurfaceImpactee(newMenuiserie.type)
     });
   };
 
@@ -248,7 +334,9 @@ const RenovationEstimator: React.FC = () => {
         name: menuiserieToEdit.name,
         largeur: menuiserieToEdit.largeur,
         hauteur: menuiserieToEdit.hauteur,
-        quantity: menuiserieToEdit.quantity
+        quantity: menuiserieToEdit.quantity,
+        surfaceImpactee: menuiserieToEdit.surfaceImpactee || getDefaultSurfaceImpactee(menuiserieToEdit.type),
+        impactePlinthe: menuiserieToEdit.impactePlinthe
       });
       
       setEditingMenuiserie(menuiserieId);
@@ -265,7 +353,8 @@ const RenovationEstimator: React.FC = () => {
         name: "",
         largeur: getStandardDimensions(newMenuiserie.type).largeur,
         hauteur: getStandardDimensions(newMenuiserie.type).hauteur,
-        quantity: 1
+        quantity: 1,
+        surfaceImpactee: getDefaultSurfaceImpactee(newMenuiserie.type)
       });
     }
     
@@ -323,7 +412,10 @@ const RenovationEstimator: React.FC = () => {
       totalPlinthLength: "",
       totalPlinthSurface: "",
       totalMenuiserieSurface: "",
-      netWallSurface: ""
+      netWallSurface: "",
+      menuiseriesMursSurface: "0",
+      menuiseriesPlafondSurface: "0",
+      menuiseriesSolSurface: "0"
     });
     
     setEditingMenuiserie(null);
@@ -375,15 +467,19 @@ const RenovationEstimator: React.FC = () => {
       totalPlinthLength: "",
       totalPlinthSurface: "",
       totalMenuiserieSurface: "",
-      netWallSurface: ""
+      netWallSurface: "",
+      menuiseriesMursSurface: "0",
+      menuiseriesPlafondSurface: "0",
+      menuiseriesSolSurface: "0"
     });
     
     setNewMenuiserie({
       type: "Porte",
       name: "",
-      largeur: 0.83,
-      hauteur: 2.04,
-      quantity: 1
+      largeur: 83,
+      hauteur: 204,
+      quantity: 1,
+      surfaceImpactee: "mur"
     });
     
     setEditingRoom(null);
@@ -655,7 +751,7 @@ const RenovationEstimator: React.FC = () => {
             <div className="mt-6 mb-4">
               <h4 className="text-md font-medium mb-3">Menuiseries</h4>
               
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4 border p-3 rounded bg-white">
+              <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-4 border p-3 rounded bg-white">
                 <div>
                   <Label htmlFor="menuiserieType">Type</Label>
                   <select
@@ -714,6 +810,21 @@ const RenovationEstimator: React.FC = () => {
                 </div>
                 
                 <div>
+                  <Label htmlFor="surfaceImpactee">Surface impactée</Label>
+                  <select
+                    id="surfaceImpactee"
+                    name="surfaceImpactee"
+                    value={newMenuiserie.surfaceImpactee || "mur"}
+                    onChange={handleSurfaceImpacteeChange}
+                    className="w-full p-2 border rounded mt-1"
+                  >
+                    <option value="mur">Mur</option>
+                    <option value="plafond">Plafond</option>
+                    <option value="sol">Sol</option>
+                  </select>
+                </div>
+                
+                <div>
                   <Label htmlFor="menuiserieQuantity">Quantité</Label>
                   <div className="flex items-end gap-2">
                     <Input
@@ -747,6 +858,7 @@ const RenovationEstimator: React.FC = () => {
                           <th className="border px-2 py-1 text-left text-xs">Nom</th>
                           <th className="border px-2 py-1 text-left text-xs">Dimensions</th>
                           <th className="border px-2 py-1 text-left text-xs">Surface</th>
+                          <th className="border px-2 py-1 text-left text-xs">Surface impactée</th>
                           <th className="border px-2 py-1 text-left text-xs">Actions</th>
                         </tr>
                       </thead>
@@ -757,6 +869,7 @@ const RenovationEstimator: React.FC = () => {
                             <td className="border px-2 py-1 text-sm">{item.name}</td>
                             <td className="border px-2 py-1 text-sm">{item.largeur}cm × {item.hauteur}cm</td>
                             <td className="border px-2 py-1 text-sm">{item.surface} m²</td>
+                            <td className="border px-2 py-1 text-sm capitalize">{item.surfaceImpactee || "mur"}</td>
                             <td className="border px-2 py-1">
                               <div className="flex space-x-1">
                                 <Button 
@@ -788,7 +901,7 @@ const RenovationEstimator: React.FC = () => {
               )}
               
               {newRoom.menuiseries.length > 0 && (
-                <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-4">
                   <div className="bg-white p-3 border rounded">
                     <h5 className="text-sm font-medium mb-1">Longueur Totale des plinthes</h5>
                     <p className="text-lg font-semibold">{newRoom.totalPlinthLength || "0.00"} m</p>
@@ -800,6 +913,18 @@ const RenovationEstimator: React.FC = () => {
                   <div className="bg-white p-3 border rounded">
                     <h5 className="text-sm font-medium mb-1">Surface nette des murs</h5>
                     <p className="text-lg font-semibold">{newRoom.netWallSurface || "0.00"} m²</p>
+                  </div>
+                  <div className="bg-white p-3 border rounded">
+                    <h5 className="text-sm font-medium mb-1">Surface nette du plafond</h5>
+                    <p className="text-lg font-semibold">{newRoom.surfaceNettePlafond || "0.00"} m²</p>
+                  </div>
+                  <div className="bg-white p-3 border rounded">
+                    <h5 className="text-sm font-medium mb-1">Surface des menuiseries murs</h5>
+                    <p className="text-lg font-semibold">{newRoom.menuiseriesMursSurface || "0.00"} m²</p>
+                  </div>
+                  <div className="bg-white p-3 border rounded">
+                    <h5 className="text-sm font-medium mb-1">Surface des menuiseries plafond</h5>
+                    <p className="text-lg font-semibold">{newRoom.menuiseriesPlafondSurface || "0.00"} m²</p>
                   </div>
                 </div>
               )}
@@ -829,25 +954,63 @@ const RenovationEstimator: React.FC = () => {
                 <table className="min-w-full bg-white border">
                   <thead>
                     <tr className="bg-gray-100 text-gray-600 text-left">
-                      <th className="py-2 px-4 border">Nom</th>
-                      <th className="py-2 px-4 border">Dimensions</th>
-                      <th className="py-2 px-4 border">Surface</th>
-                      <th className="py-2 px-4 border">Menuiseries</th>
-                      <th className="py-2 px-4 border">Actions</th>
+                      <th className="py-2 px-2 border">Nom</th>
+                      <th className="py-2 px-2 border">Dimensions</th>
+                      <th className="py-2 px-2 border">Surfaces (m²)</th>
+                      <th className="py-2 px-2 border">Menuiseries</th>
+                      <th className="py-2 px-2 border">Linéaires (m)</th>
+                      <th className="py-2 px-2 border">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {rooms.map((room) => (
                       <tr key={room.id} className="border-t hover:bg-gray-50">
-                        <td className="py-2 px-4 border">{room.name || `${room.type}${room.customName ? ` ${room.customName}` : ''}`}</td>
-                        <td className="py-2 px-4 border">
-                          {room.length}m × {room.width}m × {room.height}m
+                        <td className="py-2 px-2 border font-medium">{room.name || `${room.type}${room.customName ? ` ${room.customName}` : ''}`}</td>
+                        <td className="py-2 px-2 border">
+                          <div className="text-xs">
+                            <p>{room.length}m × {room.width}m × {room.height}m</p>
+                            <p>Plinthes: {room.plinthHeight}m</p>
+                          </div>
                         </td>
-                        <td className="py-2 px-4 border">{room.surface} m²</td>
-                        <td className="py-2 px-4 border">
-                          {room.menuiseries.length} menuiserie(s)
+                        <td className="py-2 px-2 border">
+                          <div className="text-xs space-y-1">
+                            <div className="grid grid-cols-2 gap-x-2">
+                              <p className="font-medium">Brutes:</p>
+                              <p></p>
+                              <p>Sol: {room.surface} m²</p>
+                              <p>Plafond: {room.surface} m²</p>
+                              <p>Murs: {room.wallSurfaceRaw} m²</p>
+                              <p>Plinthes: {room.totalPlinthSurface || "0"} m²</p>
+                            </div>
+                            <div className="grid grid-cols-2 gap-x-2">
+                              <p className="font-medium">Menuiseries:</p>
+                              <p></p>
+                              <p>Murs: {room.menuiseriesMursSurface || "0"} m²</p>
+                              <p>Plafond: {room.menuiseriesPlafondSurface || "0"} m²</p>
+                              <p>Sol: {room.menuiseriesSolSurface || "0"} m²</p>
+                            </div>
+                            <div className="grid grid-cols-2 gap-x-2">
+                              <p className="font-medium">Nettes:</p>
+                              <p></p>
+                              <p>Sol: {room.surfaceNetteSol || room.surface} m²</p>
+                              <p>Plafond: {room.surfaceNettePlafond || room.surface} m²</p>
+                              <p>Murs: {room.netWallSurface} m²</p>
+                            </div>
+                          </div>
                         </td>
-                        <td className="py-2 px-4 border">
+                        <td className="py-2 px-2 border">
+                          <div className="text-xs">
+                            <p>{room.menuiseries.length} menuiserie(s)</p>
+                            <p className="mt-1">Surface totale: {room.totalMenuiserieSurface || "0"} m²</p>
+                          </div>
+                        </td>
+                        <td className="py-2 px-2 border">
+                          <div className="text-xs">
+                            <p>Brut: {room.lineaireBrut || (parseFloat(room.length) * 2 + parseFloat(room.width) * 2).toFixed(2)} m</p>
+                            <p>Plinthes: {room.totalPlinthLength || "0"} m</p>
+                          </div>
+                        </td>
+                        <td className="py-2 px-2 border">
                           <div className="flex space-x-2">
                             <Button
                               variant="outline"
@@ -877,7 +1040,7 @@ const RenovationEstimator: React.FC = () => {
                       <td className="py-2 px-4 border font-medium" colSpan={2}>
                         Surface totale:
                       </td>
-                      <td className="py-2 px-4 border font-medium" colSpan={3}>
+                      <td className="py-2 px-4 border font-medium" colSpan={4}>
                         {calculateTotalArea()} m²
                       </td>
                     </tr>
