@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { 
   Card, 
   CardContent,
@@ -29,8 +29,18 @@ const Travaux = () => {
   const { rooms } = state;
   const { toast } = useToast();
   
-  const [selectedPieceId, setSelectedPieceId] = React.useState<string | null>(null);
-  const { addTravail, getTravauxForPiece } = useTravaux();
+  const [selectedPieceId, setSelectedPieceId] = useState<string | null>(null);
+  const { addTravail, getTravauxForPiece, travailAModifier } = useTravaux();
+  
+  // État pour suivre l'onglet actif
+  const [activeTab, setActiveTab] = useState("ajouter");
+  
+  // Effet pour basculer vers l'onglet d'ajout lors de l'édition
+  useEffect(() => {
+    if (travailAModifier) {
+      setActiveTab("ajouter");
+    }
+  }, [travailAModifier]);
   
   const selectedPiece = selectedPieceId 
     ? rooms.find(room => room.id === selectedPieceId) 
@@ -43,6 +53,13 @@ const Travaux = () => {
       description: `Le travail ${travail.typeTravauxLabel} - ${travail.sousTypeLabel} a été ajouté avec succès.`,
       variant: "default",
     });
+    // Basculer vers l'onglet liste après avoir ajouté un travail
+    setActiveTab("liste");
+  };
+  
+  // Fonction pour basculer vers l'onglet d'ajout lors de l'édition
+  const handleStartEdit = () => {
+    setActiveTab("ajouter");
   };
 
   return (
@@ -121,9 +138,11 @@ const Travaux = () => {
             </CardHeader>
             <CardContent>
               {selectedPieceId ? (
-                <Tabs defaultValue="ajouter" className="w-full">
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                   <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="ajouter">Ajouter des travaux</TabsTrigger>
+                    <TabsTrigger value="ajouter">
+                      {travailAModifier ? "Modifier un travail" : "Ajouter des travaux"}
+                    </TabsTrigger>
                     <TabsTrigger value="liste">
                       Liste des travaux
                       <span className="ml-2 bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">
@@ -140,7 +159,10 @@ const Travaux = () => {
                   </TabsContent>
                   
                   <TabsContent value="liste" className="mt-4">
-                    <TravauxList pieceId={selectedPieceId} />
+                    <TravauxList 
+                      pieceId={selectedPieceId} 
+                      onStartEdit={handleStartEdit}
+                    />
                   </TabsContent>
                 </Tabs>
               ) : (

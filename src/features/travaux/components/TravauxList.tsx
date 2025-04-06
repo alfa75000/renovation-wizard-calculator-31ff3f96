@@ -5,12 +5,14 @@ import TravailCard from './TravailCard';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Travail } from '@/types';
 
 interface TravauxListProps {
   pieceId: string;
+  onStartEdit: () => void; // Nouvelle prop pour changer d'onglet
 }
 
-const TravauxList: React.FC<TravauxListProps> = ({ pieceId }) => {
+const TravauxList: React.FC<TravauxListProps> = ({ pieceId, onStartEdit }) => {
   const { getTravauxForPiece, deleteTravail, setTravailAModifier } = useTravaux();
   const { toast } = useToast();
   
@@ -25,9 +27,10 @@ const TravauxList: React.FC<TravauxListProps> = ({ pieceId }) => {
     });
   };
   
-  const handleEdit = (id: string) => {
-    setTravailAModifier(id);
-    // L'utilisateur sera redirigé vers l'onglet d'ajout via le contexte
+  const handleEdit = (travail: Travail) => {
+    console.log("Édition du travail:", travail);
+    setTravailAModifier(travail.id);
+    onStartEdit(); // Déclencher le changement d'onglet
   };
   
   if (travaux.length === 0) {
@@ -49,7 +52,7 @@ const TravauxList: React.FC<TravauxListProps> = ({ pieceId }) => {
           key={travail.id}
           travail={travail}
           onDelete={() => handleDelete(travail.id)}
-          onEdit={() => handleEdit(travail.id)}
+          onEdit={() => handleEdit(travail)}
         />
       ))}
       
