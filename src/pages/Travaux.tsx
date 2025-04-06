@@ -1,193 +1,292 @@
 
 import React, { useState, useEffect } from "react";
-import { 
-  Card, 
-  CardContent,
-  CardHeader,
-  CardTitle 
-} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { 
+import {
+  ChevronRight,
+  PlusCircle,
   ArrowLeft,
-  Home,
   ArrowRight,
-  Settings,
+  Paintbrush,
+  Home,
+  DoorOpen,
 } from "lucide-react";
+import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import PieceSelect from "@/features/travaux/components/PieceSelect";
-import { useProject } from "@/contexts/ProjectContext";
-import TravailForm from "@/features/travaux/components/TravailForm";
-import { useTravaux } from "@/features/travaux/hooks/useTravaux";
 import TravauxList from "@/features/travaux/components/TravauxList";
-import { Piece, Room } from "@/types";
+import PieceSelect from "@/features/travaux/components/PieceSelect";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useProject } from "@/contexts/ProjectContext";
+import { useEffect as useEffectMock, useState as useStateMock } from "react";
+import { useTravaux } from "@/features/travaux/hooks/useTravaux";
+import { TypeTravauxItem, SousTypeTravauxItem, surfacesReference, useTravauxTypes } from "@/contexts/TravauxTypesContext";
+import { Floor, Room, RoomWithFloor, Work } from "@/types";
+import { toast } from "@/components/ui/use-toast";
+import TravailForm from "@/features/travaux/components/TravailForm";
+
+// Types de travaux avec détails
+export interface DetailedSousType extends SousTypeTravauxItem {
+  price: number; // Prix calculé selon quantité
+  quantity: number; // Quantité en m², mètres linéaires, unités, etc.
+  typeTravauxLabel: string; // Nom du type de travaux parent
+  totalSurface: number; // Surface totale à conserver
+}
+
+export interface DetailedTravailItem {
+  id: string;
+  typeTravauxId: string;
+  sousTypeId: string;
+  roomId: string;
+  floorId: string;
+  sousType: DetailedSousType;
+  price: number;
+  tva: number;
+  quantity: number;
+  unite: string;
+}
 
 const Travaux = () => {
-  const { state } = useProject();
-  const { rooms } = state;
+  // Context et hooks
+  const { state: projectState } = useProject();
+  const { floors, rooms } = projectState;
   
-  const [selectedPieceId, setSelectedPieceId] = useState<string | null>(null);
-  const { travailAModifier, getTravauxForPiece, addTravail, setTravailAModifier } = useTravaux();
+  const { state: travauxTypesState } = useTravauxTypes();
+  const { types } = travauxTypesState;
   
-  // Préparer les pièces avec les propriétés nécessaires pour le calcul automatique
-  const preparedRooms: Piece[] = rooms.map((room: Room) => {
-    return {
-      id: room.id,
-      name: room.name,
-      type: room.type,
-      customName: room.customName,
-      menuiseries: room.menuiseries || [],
-      surface: room.surface,
-      // Conversion et normalisation des surfaces pour le calcul automatique
-      surfaceNetteSol: room.surfaceNetteSol || room.surface,
-      surfaceNettePlafond: room.surfaceNettePlafond || room.surface,
-      surfaceNetteMurs: room.netWallSurface, // Surface nette des murs (déjà calculée avec déduction des plinthes)
-      lineaireNet: room.totalPlinthLength,
-      surfaceMenuiseries: room.totalMenuiserieSurface,
-      // Propriétés supplémentaires pour compatibilité
-      netWallSurface: room.netWallSurface,
-      totalPlinthLength: room.totalPlinthLength,
-      totalMenuiserieSurface: room.totalMenuiserieSurface,
-      // Propriétés par type de menuiseries
-      menuiseriesMursSurface: room.menuiseriesMursSurface,
-      menuiseriesPlafondSurface: room.menuiseriesPlafondSurface,
-      menuiseriesSolSurface: room.menuiseriesSolSurface,
-      // Nouvelles propriétés pour les autres surfaces
-      autresSurfacesMurs: room.autresSurfacesMurs,
-      autresSurfacesPlafond: room.autresSurfacesPlafond,
-      autresSurfacesSol: room.autresSurfacesSol,
-      // Autres propriétés nécessaires
-      length: room.length,
-      width: room.width,
-      height: room.height,
-      plinthHeight: room.plinthHeight,
-      wallSurfaceRaw: room.wallSurfaceRaw,
-      autresSurfaces: room.autresSurfaces || [],
-      totalPlinthSurface: room.totalPlinthSurface,
-      // Pour éviter l'erreur TS2322
-      volume: room.volume
-    };
-  });
+  const { travaux, addTravail, deleteTravail } = useTravaux();
+
+  // États
+  const [selectedFloor, setSelectedFloor] = useState<string | null>(null);
+  const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [selectedMur, setSelectedMur] = useState<string | null>(null);
+
+  // Filtrer les pièces par étage sélectionné
+  const roomsInSelectedFloor = selectedFloor 
+    ? rooms.filter(room => room.floorId === selectedFloor)
+    : [];
+
+  // Travaux pour la pièce sélectionnée
+  const travauxForSelectedRoom = selectedRoom 
+    ? travaux.filter(work => work.roomId === selectedRoom)
+    : [];
+
+  // Quand les étages ou pièces changent, mettre à jour la sélection
+  useEffect(() => {
+    // Si aucun étage sélectionné et qu'il y a des étages, sélectionner le premier
+    if (!selectedFloor && floors.length > 0) {
+      setSelectedFloor(floors[0].id);
+    }
+    
+    // Si l'étage actuel n'existe plus, sélectionner le premier
+    if (selectedFloor && !floors.find(floor => floor.id === selectedFloor)) {
+      setSelectedFloor(floors.length > 0 ? floors[0].id : null);
+    }
+    
+    // Si aucune pièce sélectionnée et qu'il y a des pièces dans l'étage sélectionné
+    if (selectedFloor && !selectedRoom && roomsInSelectedFloor.length > 0) {
+      setSelectedRoom(roomsInSelectedFloor[0].id);
+    }
+    
+    // Si la pièce actuelle n'existe plus dans l'étage sélectionné
+    if (selectedRoom && !roomsInSelectedFloor.find(room => room.id === selectedRoom)) {
+      setSelectedRoom(roomsInSelectedFloor.length > 0 ? roomsInSelectedFloor[0].id : null);
+    }
+  }, [floors, rooms, selectedFloor, roomsInSelectedFloor]);
+
+  // Informations sur la pièce sélectionnée
+  const selectedRoomInfo = selectedRoom 
+    ? rooms.find(room => room.id === selectedRoom)
+    : null;
   
-  const selectedPiece = selectedPieceId 
-    ? preparedRooms.find(room => room.id === selectedPieceId) 
+  // Informations sur l'étage sélectionné
+  const selectedFloorInfo = selectedFloor 
+    ? floors.find(floor => floor.id === selectedFloor)
     : null;
 
-  // Fonction pour démarrer l'édition
-  const handleStartEdit = (id: string) => {
-    setTravailAModifier(id);
+  // Pièces avec étage
+  const roomsWithFloors: RoomWithFloor[] = rooms.map(room => {
+    const floor = floors.find(floor => floor.id === room.floorId);
+    return {
+      ...room,
+      floorName: floor ? floor.name : "Étage inconnu",
+    };
+  });
+
+  // Ouvrir le tiroir pour ajouter un nouveau travail
+  const handleAddTravail = () => {
+    if (!selectedRoom) {
+      toast({
+        title: "Aucune pièce sélectionnée",
+        description: "Veuillez d'abord sélectionner une pièce pour ajouter des travaux.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsDrawerOpen(true);
+  };
+
+  // Soumettre un nouveau travail
+  const handleSubmitTravail = (travailData: Work) => {
+    if (!selectedRoom || !selectedFloor) return;
+    
+    addTravail({
+      ...travailData,
+      roomId: selectedRoom,
+      floorId: selectedFloor,
+    });
+    
+    setIsDrawerOpen(false);
+    
+    toast({
+      title: "Travail ajouté",
+      description: "Le travail a été ajouté avec succès.",
+    });
+  };
+
+  // Supprimer un travail
+  const handleDeleteTravail = (id: string) => {
+    deleteTravail(id);
+    toast({
+      title: "Travail supprimé",
+      description: "Le travail a été supprimé avec succès.",
+    });
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-12">
-      <div className="max-w-6xl mx-auto p-4">
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto p-4">
         <div className="flex flex-col items-center justify-center mb-8 bg-blue-600 text-white p-6 rounded-lg">
-          <h1 className="text-3xl md:text-4xl font-bold">
-            Travaux à prévoir
+          <h1 className="text-3xl md:text-4xl font-bold flex items-center gap-2">
+            <Paintbrush className="h-8 w-8" />
+            Définir les Travaux
           </h1>
-          <p className="mt-2 text-lg">Sélectionnez les travaux pour chaque pièce</p>
+          <p className="mt-2 text-lg text-center">
+            Sélectionnez une pièce et ajoutez les travaux à effectuer
+          </p>
         </div>
 
-        <div className="mb-8 flex justify-center space-x-4">
+        <div className="mb-8 flex flex-wrap justify-center gap-2">
           <Button asChild variant="outline" className="flex items-center gap-2">
             <Link to="/">
+              <Home className="h-4 w-4" />
               Page de saisie
             </Link>
           </Button>
-          
           <Button asChild variant="default" className="flex items-center gap-2">
             <Link to="/travaux">
-              Page d'ajout des travaux
+              <Paintbrush className="h-4 w-4" />
+              Définir les travaux
             </Link>
           </Button>
-          
           <Button asChild variant="outline" className="flex items-center gap-2">
             <Link to="/recapitulatif">
-              Page Récapitulatif
+              <ChevronRight className="h-4 w-4" />
+              Récapitulatif
             </Link>
           </Button>
-          
           <Button asChild variant="outline" className="flex items-center gap-2">
             <Link to="/parametres">
-              <Settings className="h-4 w-4 mr-1" />
-              Page Paramètres
-            </Link>
-          </Button>
-        </div>
-
-        <div className="mb-4 flex justify-between">
-          <Button variant="outline" asChild className="flex items-center gap-2">
-            <Link to="/">
-              <ArrowLeft className="h-4 w-4" />
-              Retour à l'estimateur
-            </Link>
-          </Button>
-
-          <Button asChild variant="default" className="flex items-center gap-2">
-            <Link to="/recapitulatif">
-              Voir le récapitulatif
-              <ArrowRight className="h-4 w-4" />
+              Paramètres
             </Link>
           </Button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="shadow-md lg:col-span-1">
+          {/* Sélection de pièce */}
+          <Card className="order-2 lg:order-1">
             <CardHeader>
-              <CardTitle className="flex items-center">
-                <Home className="h-5 w-5 mr-2" />
-                Pièces à rénover
-              </CardTitle>
+              <CardTitle>Pièces</CardTitle>
+              <CardDescription>
+                Sélectionnez une pièce pour ajouter ou voir les travaux
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <PieceSelect 
-                pieces={preparedRooms}
-                selectedPieceId={selectedPieceId}
-                onSelect={setSelectedPieceId}
+              <PieceSelect
+                rooms={roomsWithFloors as Room[]} 
+                floors={floors}
+                selectedFloor={selectedFloor}
+                selectedRoom={selectedRoom}
+                onFloorChange={setSelectedFloor}
+                onRoomChange={setSelectedRoom}
+                onMurChange={setSelectedMur}
               />
             </CardContent>
           </Card>
 
-          <Card className="shadow-md lg:col-span-2">
-            <CardHeader>
-              <CardTitle>Configuration des travaux</CardTitle>
+          {/* Liste des travaux */}
+          <Card className="lg:col-span-2 order-1 lg:order-2">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Paintbrush className="h-5 w-5" />
+                  {selectedRoomInfo 
+                    ? `Travaux pour ${selectedRoomInfo.name}`
+                    : "Travaux"
+                  }
+                </CardTitle>
+                <CardDescription>
+                  {selectedRoomInfo && selectedFloorInfo 
+                    ? `${selectedFloorInfo.name} - ${selectedRoomInfo.name} (${selectedRoomInfo.area} m²)`
+                    : "Veuillez sélectionner une pièce"
+                  }
+                </CardDescription>
+              </div>
+              
+              <Button 
+                onClick={handleAddTravail}
+                disabled={!selectedRoom}
+                className="ml-auto"
+              >
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Ajouter un travail
+              </Button>
             </CardHeader>
             <CardContent>
-              {selectedPieceId ? (
-                <div className="space-y-8">
-                  {/* Formulaire et liste */}
-                  <div className="space-y-6">
-                    <div className="border-b pb-6">
-                      <TravailForm 
-                        piece={selectedPiece} 
-                        onAddTravail={addTravail}
-                        travailAModifier={travailAModifier}
-                      />
-                    </div>
-                    
-                    <div>
-                      <h3 className="text-lg font-semibold mb-4">Liste des travaux
-                        {getTravauxForPiece(selectedPieceId).length > 0 && (
-                          <span className="ml-2 bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">
-                            {getTravauxForPiece(selectedPieceId).length}
-                          </span>
-                        )}
-                      </h3>
-                      <TravauxList 
-                        pieceId={selectedPieceId} 
-                        onStartEdit={handleStartEdit}
-                      />
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-gray-500">Veuillez sélectionner une pièce pour configurer les travaux.</p>
-                </div>
-              )}
+              <TravauxList 
+                works={travauxForSelectedRoom} 
+                onDelete={handleDeleteTravail}
+                selectedRoom={selectedRoomInfo}
+              />
             </CardContent>
           </Card>
         </div>
+
+        <div className="flex justify-between mt-8">
+          <Button asChild variant="outline" className="flex items-center gap-2">
+            <Link to="/">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Retour à la saisie
+            </Link>
+          </Button>
+          
+          <Button asChild className="flex items-center gap-2">
+            <Link to="/recapitulatif">
+              Récapitulatif
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </Link>
+          </Button>
+        </div>
       </div>
+
+      {/* Tiroir pour ajouter un nouveau travail */}
+      <Sheet open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
+        <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Ajouter un travail</SheetTitle>
+          </SheetHeader>
+          
+          <div className="py-4">
+            <TravailForm 
+              onSubmit={handleSubmitTravail} 
+              onCancel={() => setIsDrawerOpen(false)}
+              typesTravaux={types}
+              selectedRoom={selectedRoomInfo}
+              selectedMur={selectedMur}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };
