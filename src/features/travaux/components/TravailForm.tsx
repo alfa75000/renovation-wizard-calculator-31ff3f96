@@ -55,6 +55,56 @@ const TravailForm: React.FC<TravailFormProps> = ({ piece, onAddTravail, travailA
     }
   }, [travailAModifier]);
 
+  // Mettre à jour les prix et l'unité quand le sous-type change
+  useEffect(() => {
+    if (sousType) {
+      // Trouver le sous-type sélectionné
+      const selectedSousType = state.types
+        .flatMap(t => t.sousTypes)
+        .find(st => st.id === sousType);
+      
+      if (selectedSousType) {
+        setPrixFournitures(selectedSousType.prixFournitures || 0);
+        setPrixMainOeuvre(selectedSousType.prixMainOeuvre || 0);
+        setUnite(selectedSousType.unite || 'M²');
+        
+        // Calculer automatiquement la quantité en fonction de la surface de référence
+        if (piece && selectedSousType.surfaceReference) {
+          const referenceValue = getValueFromReference(piece, selectedSousType.surfaceReference);
+          if (referenceValue && !isNaN(parseFloat(referenceValue))) {
+            setQuantite(parseFloat(referenceValue));
+          } else {
+            setQuantite(1); // Valeur par défaut si aucune référence n'est trouvée
+          }
+        } else {
+          setQuantite(1); // Valeur par défaut si pas de surface de référence
+        }
+      }
+    }
+  }, [sousType, state.types, piece]);
+
+  // Fonction pour obtenir la valeur à partir de la référence
+  const getValueFromReference = (piece: Piece, reference: string): string | undefined => {
+    switch (reference) {
+      case 'SurfaceNetteSol':
+        return piece.surfaceNetteSol || piece.surface;
+      case 'SurfaceNettePlafond':
+        return piece.surfaceNettePlafond || piece.surface;
+      case 'SurfaceNetteMurs':
+        return piece.surfaceNetteMurs;
+      case 'LineaireNet':
+        return piece.lineaireNet;
+      case 'SurfaceMenuiseries':
+        return piece.surfaceMenuiseries;
+      case 'Unite':
+        return '1';
+      case 'Forfait':
+        return '1';
+      default:
+        return '1';
+    }
+  };
+
   // Calculer le prix unitaire total
   const prixUnitaireTotal = prixFournitures + prixMainOeuvre;
   
