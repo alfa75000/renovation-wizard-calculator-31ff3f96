@@ -35,6 +35,17 @@ export interface Room {
   totalPlinthSurface: string;
   totalMenuiserieSurface: string;
   netWallSurface: string;
+  // Nouvelles propriétés pour les surfaces de référence
+  surfaceNetteSol?: string;
+  surfaceBruteSol?: string;
+  surfaceNettePlafond?: string;
+  surfaceBrutePlafond?: string;
+  lineaireNet?: string;
+  lineaireBrut?: string;
+  surfaceNetteMurs?: string; // Équivalent à netWallSurface
+  surfaceBruteMurs?: string; // Équivalent à wallSurfaceRaw
+  surfaceBruteMenuiseries?: string; // Équivalent à totalMenuiserieSurface
+  volume?: string;
 }
 
 export interface Piece {
@@ -43,6 +54,12 @@ export interface Piece {
   type?: string;
   customName?: string;
   surface?: string;
+  // Surfaces pour le calcul automatique
+  surfaceNetteSol?: string;
+  surfaceNettePlafond?: string;
+  lineaireNet?: string;
+  surfaceNetteMurs?: string;
+  surfaceMenuiseries?: string;
 }
 
 export interface Travail {
@@ -59,4 +76,5 @@ export interface Travail {
   prixFournitures: number;
   prixMainOeuvre: number;
   personnalisation?: string;
+  surfaceReference?: string;
 }

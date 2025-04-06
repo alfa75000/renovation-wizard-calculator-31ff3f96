@@ -1,130 +1,123 @@
 
+import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { SousTypeTravauxItem } from "@/contexts/TravauxTypesContext";
-import { useState, useEffect } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+import { SousTypeTravauxItem, surfacesReference } from "@/contexts/TravauxTypesContext";
+import { v4 as uuidv4 } from 'uuid';
 
 interface SousTypeTravauxFormProps {
   isOpen: boolean;
   onClose: () => void;
   sousTypeToEdit: SousTypeTravauxItem | null;
-  typeId: string;
-  onSubmit: (data: Partial<SousTypeTravauxItem>) => void;
+  onSubmit: (data: SousTypeTravauxItem) => void;
 }
 
-// Génère un ID unique basé sur le label
-const generateId = (label: string) => {
-  return label
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-};
-
-// Options d'unités disponibles
-const uniteOptions = [
-  { id: "M²", label: "M² (mètre carré)" },
-  { id: "Ml", label: "Ml (mètre linéaire)" },
+const unites = [
+  { id: "M²", label: "M²" },
+  { id: "Ml", label: "Mètre linéaire" },
   { id: "Unité", label: "Unité" },
   { id: "Ens.", label: "Ensemble" },
   { id: "Forfait", label: "Forfait" },
-  { id: "M3", label: "M³ (mètre cube)" }
+  { id: "M3", label: "M³" }
 ];
 
 const SousTypeTravauxForm: React.FC<SousTypeTravauxFormProps> = ({
   isOpen,
   onClose,
   sousTypeToEdit,
-  typeId,
   onSubmit
 }) => {
-  const [formData, setFormData] = useState<{
-    id: string;
-    label: string;
-    prixUnitaire: string;
-    prixFournitures: string;
-    prixMainOeuvre: string;
-    unite: string;
-    description: string;
-  }>({
-    id: sousTypeToEdit?.id || "",
-    label: sousTypeToEdit?.label || "",
-    prixUnitaire: sousTypeToEdit ? sousTypeToEdit.prixUnitaire.toString() : "0",
-    prixFournitures: sousTypeToEdit?.prixFournitures ? sousTypeToEdit.prixFournitures.toString() : "0",
-    prixMainOeuvre: sousTypeToEdit?.prixMainOeuvre ? sousTypeToEdit.prixMainOeuvre.toString() : "0",
-    unite: sousTypeToEdit?.unite || "M²",
-    description: sousTypeToEdit?.description || ""
+  const [formData, setFormData] = useState<SousTypeTravauxItem>({
+    id: "",
+    label: "",
+    prixUnitaire: 0,
+    prixFournitures: 0,
+    prixMainOeuvre: 0,
+    unite: "M²",
+    description: "",
+    surfaceReference: "SurfaceNetteMurs"
   });
 
-  // Calcul automatique du prix unitaire total
-  useEffect(() => {
-    const fournitures = parseFloat(formData.prixFournitures) || 0;
-    const mainOeuvre = parseFloat(formData.prixMainOeuvre) || 0;
-    setFormData(prev => ({
-      ...prev,
-      prixUnitaire: (fournitures + mainOeuvre).toString()
-    }));
-  }, [formData.prixFournitures, formData.prixMainOeuvre]);
-
-  // Mise à jour du formulaire lorsque sousTypeToEdit change
   useEffect(() => {
     if (sousTypeToEdit) {
-      // S'il n'y a pas de prix séparés, calculer approximativement
-      const prixTotal = sousTypeToEdit.prixUnitaire;
-      const prixFournitures = sousTypeToEdit.prixFournitures !== undefined 
-        ? sousTypeToEdit.prixFournitures 
-        : prixTotal * 0.4;
-      const prixMainOeuvre = sousTypeToEdit.prixMainOeuvre !== undefined 
-        ? sousTypeToEdit.prixMainOeuvre 
-        : prixTotal * 0.6;
-
       setFormData({
-        id: sousTypeToEdit.id,
-        label: sousTypeToEdit.label,
-        prixUnitaire: prixTotal.toString(),
-        prixFournitures: prixFournitures.toString(),
-        prixMainOeuvre: prixMainOeuvre.toString(),
-        unite: sousTypeToEdit.unite,
-        description: sousTypeToEdit.description || ""
+        ...sousTypeToEdit
       });
     } else {
+      // Valeurs par défaut pour un nouveau sous-type
       setFormData({
         id: "",
         label: "",
-        prixUnitaire: "0",
-        prixFournitures: "0",
-        prixMainOeuvre: "0",
+        prixUnitaire: 0,
+        prixFournitures: 0,
+        prixMainOeuvre: 0,
         unite: "M²",
-        description: ""
+        description: "",
+        surfaceReference: "SurfaceNetteMurs"
       });
     }
   }, [sousTypeToEdit]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const calculatedPrixUnitaire = 
+      (formData.prixFournitures || 0) + (formData.prixMainOeuvre || 0);
     
-    // Générer un ID si c'est un nouvel élément
-    const id = sousTypeToEdit ? sousTypeToEdit.id : generateId(formData.label);
+    const finalData: SousTypeTravauxItem = {
+      ...formData,
+      id: formData.id || uuidv4(),
+      prixUnitaire: calculatedPrixUnitaire
+    };
     
-    onSubmit({
-      id,
-      label: formData.label,
-      prixUnitaire: parseFloat(formData.prixUnitaire),
-      prixFournitures: parseFloat(formData.prixFournitures),
-      prixMainOeuvre: parseFloat(formData.prixMainOeuvre),
-      unite: formData.unite,
-      description: formData.description
+    onSubmit(finalData);
+  };
+
+  const handlePrixChange = (key: 'prixFournitures' | 'prixMainOeuvre', value: string) => {
+    const numValue = parseFloat(value) || 0;
+    const newFormData = {
+      ...formData,
+      [key]: numValue
+    };
+    
+    // Recalculer le prix unitaire
+    const prixFournitures = key === 'prixFournitures' ? numValue : (formData.prixFournitures || 0);
+    const prixMainOeuvre = key === 'prixMainOeuvre' ? numValue : (formData.prixMainOeuvre || 0);
+    
+    setFormData({
+      ...newFormData,
+      prixUnitaire: prixFournitures + prixMainOeuvre
+    });
+  };
+
+  const handleUniteChange = (unite: string) => {
+    // Déterminer la surface de référence en fonction de l'unité
+    let surfaceReference = formData.surfaceReference;
+    
+    if (unite === "M²") {
+      surfaceReference = "SurfaceNetteMurs"; // Valeur par défaut pour M²
+    } else if (unite === "Ml") {
+      surfaceReference = "LineaireNet";
+    } else if (unite === "Unité" || unite === "Ens.") {
+      surfaceReference = "Unite";
+    } else if (unite === "Forfait") {
+      surfaceReference = "Forfait";
+    } else if (unite === "M3") {
+      surfaceReference = "Volume";
+    }
+    
+    setFormData({
+      ...formData,
+      unite,
+      surfaceReference
     });
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>
             {sousTypeToEdit ? "Modifier la prestation" : "Ajouter une prestation"}
@@ -147,7 +140,7 @@ const SousTypeTravauxForm: React.FC<SousTypeTravauxFormProps> = ({
             
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="prixFournitures" className="text-right">
-                Prix fournitures
+                Prix fournitures (€)
               </Label>
               <Input
                 id="prixFournitures"
@@ -155,7 +148,7 @@ const SousTypeTravauxForm: React.FC<SousTypeTravauxFormProps> = ({
                 min="0"
                 step="0.01"
                 value={formData.prixFournitures}
-                onChange={(e) => setFormData({ ...formData, prixFournitures: e.target.value })}
+                onChange={(e) => handlePrixChange('prixFournitures', e.target.value)}
                 className="col-span-3"
                 required
               />
@@ -163,7 +156,7 @@ const SousTypeTravauxForm: React.FC<SousTypeTravauxFormProps> = ({
             
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="prixMainOeuvre" className="text-right">
-                Prix main d'œuvre
+                Prix main d'œuvre (€)
               </Label>
               <Input
                 id="prixMainOeuvre"
@@ -171,18 +164,18 @@ const SousTypeTravauxForm: React.FC<SousTypeTravauxFormProps> = ({
                 min="0"
                 step="0.01"
                 value={formData.prixMainOeuvre}
-                onChange={(e) => setFormData({ ...formData, prixMainOeuvre: e.target.value })}
+                onChange={(e) => handlePrixChange('prixMainOeuvre', e.target.value)}
                 className="col-span-3"
                 required
               />
             </div>
             
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="prixUnitaire" className="text-right">
-                Prix unitaire total
+              <Label className="text-right">
+                Prix unitaire (€)
               </Label>
-              <div className="col-span-3 py-2 px-3 bg-gray-100 rounded border border-gray-200">
-                {parseFloat(formData.prixUnitaire).toFixed(2)} €
+              <div className="col-span-3 bg-gray-100 p-2 rounded">
+                {formData.prixUnitaire.toFixed(2)} €
               </div>
             </div>
             
@@ -192,31 +185,51 @@ const SousTypeTravauxForm: React.FC<SousTypeTravauxFormProps> = ({
               </Label>
               <Select
                 value={formData.unite}
-                onValueChange={(value) => setFormData({ ...formData, unite: value })}
+                onValueChange={handleUniteChange}
               >
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Sélectionner une unité" />
                 </SelectTrigger>
                 <SelectContent>
-                  {uniteOptions.map((option) => (
-                    <SelectItem key={option.id} value={option.id}>
-                      {option.label}
+                  {unites.map((unite) => (
+                    <SelectItem key={unite.id} value={unite.id}>
+                      {unite.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             
-            <div className="grid grid-cols-4 items-start gap-4">
-              <Label htmlFor="description" className="text-right pt-2">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="surfaceReference" className="text-right">
+                Surface de référence
+              </Label>
+              <Select
+                value={formData.surfaceReference}
+                onValueChange={(value) => setFormData({ ...formData, surfaceReference: value })}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Sélectionner une surface" />
+                </SelectTrigger>
+                <SelectContent>
+                  {surfacesReference.map((surface) => (
+                    <SelectItem key={surface.id} value={surface.id}>
+                      {surface.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="description" className="text-right">
                 Description
               </Label>
-              <Textarea
+              <Input
                 id="description"
-                value={formData.description}
+                value={formData.description || ""}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="col-span-3 min-h-[80px]"
-                placeholder="Description détaillée de la prestation"
+                className="col-span-3"
               />
             </div>
           </div>

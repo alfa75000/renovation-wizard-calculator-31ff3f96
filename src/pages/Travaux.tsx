@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/button";
 import { 
   ArrowLeft,
   Home,
-  ArrowRight
+  ArrowRight,
+  Settings
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import PieceSelect from "@/features/travaux/components/PieceSelect";
@@ -48,6 +49,13 @@ const Travaux = () => {
           <Button asChild variant="outline" className="flex items-center gap-2">
             <Link to="/recapitulatif">
               Page Récapitulatif
+            </Link>
+          </Button>
+          
+          <Button asChild variant="outline" className="flex items-center gap-2">
+            <Link to="/parametres">
+              <Settings className="h-4 w-4 mr-1" />
+              Page Paramètres
             </Link>
           </Button>
         </div>
