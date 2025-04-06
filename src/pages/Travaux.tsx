@@ -29,7 +29,7 @@ const Travaux = () => {
   const { travailAModifier, getTravauxForPiece, addTravail, setTravailAModifier } = useTravaux();
   
   // Préparer les pièces avec les propriétés nécessaires pour le calcul automatique
-  const preparedRooms: Piece[] = rooms.map(room => {
+  const preparedRooms: Piece[] = rooms.map((room: Room) => {
     // Calculons la surface des plinthes si nécessaire (hauteur plinthes * périmètre)
     const plinthSurface = room.totalPlinthSurface ? parseFloat(room.totalPlinthSurface) : 0;
     
@@ -38,6 +38,7 @@ const Travaux = () => {
       name: room.name,
       type: room.type,
       customName: room.customName,
+      menuiseries: room.menuiseries || [],
       surface: room.surface,
       // Conversion et normalisation des surfaces pour le calcul automatique
       surfaceNetteSol: room.surfaceNetteSol || room.surface,
@@ -48,7 +49,6 @@ const Travaux = () => {
       // Propriétés supplémentaires pour compatibilité
       netWallSurface: room.netWallSurface,
       totalPlinthLength: room.totalPlinthLength,
-      totalPlinthSurface: room.totalPlinthSurface,
       totalMenuiserieSurface: room.totalMenuiserieSurface,
       // Propriétés par type de menuiseries
       menuiseriesMursSurface: room.menuiseriesMursSurface,

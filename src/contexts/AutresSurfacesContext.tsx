@@ -44,6 +44,13 @@ const initialState: AutresSurfacesState = {
       description: 'Poutre visible au plafond',
       surfaceImpacteeParDefaut: 'plafond',
       estDeduction: false
+    },
+    {
+      id: '5',
+      nom: 'Autre Surface',
+      description: 'Surface personnalisée',
+      surfaceImpacteeParDefaut: 'mur',
+      estDeduction: false
     }
   ]
 };

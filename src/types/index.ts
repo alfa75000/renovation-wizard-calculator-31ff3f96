@@ -92,14 +92,18 @@ export interface Piece {
   id: string;
   name: string;
   type: string;
-  customName: string; // Changed from optional to required
+  customName: string;
   surface?: string;
+  menuiseries: Menuiserie[]; // Added this property
   // Surfaces pour le calcul automatique
   surfaceNetteSol?: string;
   surfaceNettePlafond?: string;
   surfaceNetteMurs?: string;
   lineaireNet?: string;
   surfaceMenuiseries?: string;
+  netWallSurface?: string; // Added this property
+  totalPlinthLength?: string; // Added this property
+  totalMenuiserieSurface?: string; // Added this property
   wallSurfaceRaw?: string;
   menuiseriesMursSurface?: string;
   menuiseriesPlafondSurface?: string;
@@ -107,6 +111,11 @@ export interface Piece {
   autresSurfacesMurs?: string;
   autresSurfacesPlafond?: string;
   autresSurfacesSol?: string;
+  // Added length, width, height properties
+  length?: string;
+  width?: string;
+  height?: string;
+  plinthHeight?: string;
 }
 
 export interface Travail {
