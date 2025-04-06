@@ -17,7 +17,8 @@ import {
   Hammer,
   Wrench,
   SquarePen,
-  Link as LinkIcon
+  Link as LinkIcon,
+  DoorOpen
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { 
@@ -32,14 +33,26 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/components/ui/use-toast";
 import { TypeTravauxItem, SousTypeTravauxItem, surfacesReference, useTravauxTypes } from "@/contexts/TravauxTypesContext";
+import { useMenuiseriesTypes, surfacesReference as surfacesMenuiseries } from "@/contexts/MenuiseriesTypesContext";
 import TypeTravauxForm from "@/features/admin/components/TypeTravauxForm";
 import SousTypeTravauxForm from "@/features/admin/components/SousTypeTravauxForm";
+import TypeMenuiserieForm from "@/features/admin/components/TypeMenuiserieForm";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TypeMenuiserie } from "@/types";
 
 const Parametres = () => {
-  const { state, dispatch } = useTravauxTypes();
-  const { types } = state;
+  // Contexte des travaux et des menuiseries
+  const { state: stateTravauxTypes, dispatch: dispatchTravauxTypes } = useTravauxTypes();
+  const { types } = stateTravauxTypes;
+  
+  const { state: stateMenuiseriesTypes, dispatch: dispatchMenuiseriesTypes } = useMenuiseriesTypes();
+  const { typesMenuiseries } = stateMenuiseriesTypes;
 
+  // Onglet actif
+  const [activeTab, setActiveTab] = useState("travaux");
+
+  // États pour les travaux
   const [selectedTypeId, setSelectedTypeId] = useState<string | null>(null);
   const [typeFormOpen, setTypeFormOpen] = useState(false);
   const [sousTypeFormOpen, setSousTypeFormOpen] = useState(false);
@@ -50,8 +63,15 @@ const Parametres = () => {
   const [typeToDelete, setTypeToDelete] = useState<string | null>(null);
   const [sousTypeToDelete, setSousTypeToDelete] = useState<string | null>(null);
 
+  // États pour les menuiseries
+  const [typeMenuiserieFormOpen, setTypeMenuiserieFormOpen] = useState(false);
+  const [editingTypeMenuiserie, setEditingTypeMenuiserie] = useState<TypeMenuiserie | null>(null);
+  const [confirmDeleteMenuiserieOpen, setConfirmDeleteMenuiserieOpen] = useState(false);
+  const [typeMenuiserieToDelete, setTypeMenuiserieToDelete] = useState<string | null>(null);
+
   const selectedType = types.find(type => type.id === selectedTypeId);
 
+  // Gestion des types de travaux
   const getIconComponent = (iconName: string) => {
     switch (iconName) {
       case "Paintbrush":
@@ -84,7 +104,7 @@ const Parametres = () => {
 
   const confirmTypeDelete = () => {
     if (typeToDelete) {
-      dispatch({ type: 'DELETE_TYPE', payload: typeToDelete });
+      dispatchTravauxTypes({ type: 'DELETE_TYPE', payload: typeToDelete });
       setConfirmDeleteOpen(false);
       setTypeToDelete(null);
       if (selectedTypeId === typeToDelete) {
@@ -100,7 +120,7 @@ const Parametres = () => {
   const handleSubmitType = (typeData: TypeTravauxItem) => {
     if (editingType) {
       // Mise à jour d'un type existant
-      dispatch({
+      dispatchTravauxTypes({
         type: 'UPDATE_TYPE',
         payload: { id: editingType.id, type: typeData }
       });
@@ -110,7 +130,7 @@ const Parametres = () => {
       });
     } else {
       // Ajout d'un nouveau type
-      dispatch({ type: 'ADD_TYPE', payload: typeData });
+      dispatchTravauxTypes({ type: 'ADD_TYPE', payload: typeData });
       toast({
         title: "Type de travaux ajouté",
         description: "Le nouveau type de travaux a été ajouté avec succès.",
@@ -139,7 +159,7 @@ const Parametres = () => {
 
   const confirmSousTypeDelete = () => {
     if (selectedTypeId && sousTypeToDelete) {
-      dispatch({
+      dispatchTravauxTypes({
         type: 'DELETE_SOUS_TYPE',
         payload: { typeId: selectedTypeId, id: sousTypeToDelete }
       });
@@ -156,7 +176,7 @@ const Parametres = () => {
     if (selectedTypeId) {
       if (editingSousType) {
         // Mise à jour d'un sous-type existant
-        dispatch({
+        dispatchTravauxTypes({
           type: 'UPDATE_SOUS_TYPE',
           payload: {
             typeId: selectedTypeId,
@@ -170,7 +190,7 @@ const Parametres = () => {
         });
       } else {
         // Ajout d'un nouveau sous-type
-        dispatch({
+        dispatchTravauxTypes({
           type: 'ADD_SOUS_TYPE',
           payload: { typeId: selectedTypeId, sousType: sousTypeData }
         });
@@ -192,10 +212,77 @@ const Parametres = () => {
 
   const resetToDefaults = () => {
     if (confirm("Êtes-vous sûr de vouloir réinitialiser tous les types de travaux aux valeurs par défaut ?")) {
-      dispatch({ type: 'RESET_TYPES' });
+      dispatchTravauxTypes({ type: 'RESET_TYPES' });
       toast({
         title: "Réinitialisation effectuée",
         description: "Tous les types de travaux ont été réinitialisés aux valeurs par défaut.",
+      });
+    }
+  };
+
+  // Gestion des types de menuiseries
+  const handleAddTypeMenuiserie = () => {
+    setEditingTypeMenuiserie(null);
+    setTypeMenuiserieFormOpen(true);
+  };
+
+  const handleEditTypeMenuiserie = (type: TypeMenuiserie) => {
+    setEditingTypeMenuiserie(type);
+    setTypeMenuiserieFormOpen(true);
+  };
+
+  const handleDeleteTypeMenuiserie = (id: string) => {
+    setTypeMenuiserieToDelete(id);
+    setConfirmDeleteMenuiserieOpen(true);
+  };
+
+  const confirmTypeMenuiserieDelete = () => {
+    if (typeMenuiserieToDelete) {
+      dispatchMenuiseriesTypes({ type: 'DELETE_TYPE', payload: typeMenuiserieToDelete });
+      setConfirmDeleteMenuiserieOpen(false);
+      setTypeMenuiserieToDelete(null);
+      toast({
+        title: "Type de menuiserie supprimé",
+        description: "Le type de menuiserie a été supprimé avec succès.",
+      });
+    }
+  };
+
+  const handleSubmitTypeMenuiserie = (typeData: TypeMenuiserie) => {
+    if (editingTypeMenuiserie) {
+      // Mise à jour d'un type existant
+      dispatchMenuiseriesTypes({
+        type: 'UPDATE_TYPE',
+        payload: { id: editingTypeMenuiserie.id, type: typeData }
+      });
+      toast({
+        title: "Type de menuiserie mis à jour",
+        description: "Le type de menuiserie a été mis à jour avec succès.",
+      });
+    } else {
+      // Ajout d'un nouveau type
+      dispatchMenuiseriesTypes({ type: 'ADD_TYPE', payload: typeData });
+      toast({
+        title: "Type de menuiserie ajouté",
+        description: "Le nouveau type de menuiserie a été ajouté avec succès.",
+      });
+    }
+    setTypeMenuiserieFormOpen(false);
+    setEditingTypeMenuiserie(null);
+  };
+
+  const getSurfaceMenuiserieLabel = (id?: string) => {
+    if (!id) return "Non spécifié";
+    const surface = surfacesMenuiseries.find(surface => surface.id === id);
+    return surface ? surface.label : id;
+  };
+
+  const resetMenuiseriesToDefaults = () => {
+    if (confirm("Êtes-vous sûr de vouloir réinitialiser tous les types de menuiseries aux valeurs par défaut ?")) {
+      dispatchMenuiseriesTypes({ type: 'RESET_TYPES' });
+      toast({
+        title: "Réinitialisation effectuée",
+        description: "Tous les types de menuiseries ont été réinitialisés aux valeurs par défaut.",
       });
     }
   };
@@ -209,7 +296,7 @@ const Parametres = () => {
             Paramètres
           </h1>
           <p className="mt-2 text-lg text-center">
-            Gérez les types de travaux, leurs prestations et les surfaces de référence
+            Gérez les types de travaux, de menuiseries et leurs paramètres
           </p>
         </div>
 
@@ -239,168 +326,267 @@ const Parametres = () => {
           </Button>
         </div>
 
-        <div className="flex justify-end mb-4">
-          <Button 
-            variant="reset" 
-            onClick={resetToDefaults}
-            className="flex items-center gap-2"
-          >
-            Réinitialiser aux valeurs par défaut
-          </Button>
-        </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mb-6">
+          <TabsList className="w-full">
+            <TabsTrigger value="travaux" className="flex-1">Types de Travaux</TabsTrigger>
+            <TabsTrigger value="menuiseries" className="flex-1">Types de Menuiseries</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="travaux" className="mt-6">
+            <div className="flex justify-end mb-4">
+              <Button 
+                variant="reset" 
+                onClick={resetToDefaults}
+                className="flex items-center gap-2"
+              >
+                Réinitialiser aux valeurs par défaut
+              </Button>
+            </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="shadow-md lg:col-span-1">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>Types de travaux</span>
-                <Button variant="outline" size="sm" onClick={handleAddType}>
-                  <Plus className="h-4 w-4 mr-1" />
-                  Ajouter
-                </Button>
-              </CardTitle>
-              <CardDescription>
-                Sélectionnez un type pour voir et gérer ses prestations
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {types.map((type) => (
-                  <div 
-                    key={type.id}
-                    className={`flex items-center justify-between p-2 rounded-md cursor-pointer ${selectedTypeId === type.id ? 'bg-blue-100' : 'hover:bg-gray-100'}`}
-                    onClick={() => setSelectedTypeId(type.id)}
-                  >
-                    <div className="flex items-center gap-2">
-                      {getIconComponent(type.icon)}
-                      <span>{type.label}</span>
-                      <Badge variant="outline" className="ml-2">
-                        {type.sousTypes.length}
-                      </Badge>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <Card className="shadow-md lg:col-span-1">
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span>Types de travaux</span>
+                    <Button variant="outline" size="sm" onClick={handleAddType}>
+                      <Plus className="h-4 w-4 mr-1" />
+                      Ajouter
+                    </Button>
+                  </CardTitle>
+                  <CardDescription>
+                    Sélectionnez un type pour voir et gérer ses prestations
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {types.map((type) => (
+                      <div 
+                        key={type.id}
+                        className={`flex items-center justify-between p-2 rounded-md cursor-pointer ${selectedTypeId === type.id ? 'bg-blue-100' : 'hover:bg-gray-100'}`}
+                        onClick={() => setSelectedTypeId(type.id)}
+                      >
+                        <div className="flex items-center gap-2">
+                          {getIconComponent(type.icon)}
+                          <span>{type.label}</span>
+                          <Badge variant="outline" className="ml-2">
+                            {type.sousTypes.length}
+                          </Badge>
+                        </div>
+                        <div className="flex gap-1">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditType(type);
+                            }}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteType(type.id);
+                            }}
+                          >
+                            <Trash className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {types.length === 0 && (
+                      <Alert>
+                        <AlertDescription>
+                          Aucun type de travaux défini. Utilisez le bouton "Ajouter" pour créer un nouveau type.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="shadow-md lg:col-span-2">
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span>
+                      {selectedType 
+                        ? `Prestations pour "${selectedType.label}"` 
+                        : "Prestations"
+                      }
+                    </span>
+                    {selectedTypeId && (
+                      <Button variant="outline" size="sm" onClick={handleAddSousType}>
+                        <Plus className="h-4 w-4 mr-1" />
+                        Ajouter une prestation
+                      </Button>
+                    )}
+                  </CardTitle>
+                  <CardDescription>
+                    {selectedType 
+                      ? `Gérez les prestations disponibles pour le type "${selectedType.label}"`
+                      : "Sélectionnez un type de travaux pour voir ses prestations"
+                    }
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {selectedType ? (
+                    <div className="space-y-4">
+                      {selectedType.sousTypes.length > 0 ? (
+                        <div className="rounded-md border">
+                          <div className="grid grid-cols-12 bg-gray-100 p-3 rounded-t-md font-medium text-sm">
+                            <div className="col-span-3">Nom</div>
+                            <div className="col-span-2">Prix unitaire</div>
+                            <div className="col-span-2">Fournitures</div>
+                            <div className="col-span-2">Main d'œuvre</div>
+                            <div className="col-span-1">Unité</div>
+                            <div className="col-span-2 text-right">Actions</div>
+                          </div>
+                          <div className="divide-y">
+                            {selectedType.sousTypes.map((sousType) => (
+                              <div key={sousType.id} className="grid grid-cols-12 p-3 items-center hover:bg-gray-50">
+                                <div className="col-span-3 font-medium">
+                                  <div className="truncate">{sousType.label}</div>
+                                  <div className="text-xs text-gray-500 flex items-center gap-1 mt-1">
+                                    <LinkIcon className="h-3 w-3" />
+                                    {getSurfaceReferenceLabel(sousType.surfaceReference)}
+                                  </div>
+                                </div>
+                                <div className="col-span-2">{sousType.prixUnitaire} €</div>
+                                <div className="col-span-2">{sousType.prixFournitures} €</div>
+                                <div className="col-span-2">{sousType.prixMainOeuvre} €</div>
+                                <div className="col-span-1">{sousType.unite}</div>
+                                <div className="col-span-2 flex justify-end gap-1">
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={() => handleEditSousType(sousType)}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={() => handleDeleteSousType(sousType.id)}
+                                  >
+                                    <Trash className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <Alert>
+                          <AlertDescription>
+                            Aucune prestation définie pour ce type de travaux. Utilisez le bouton "Ajouter une prestation" pour en créer une.
+                          </AlertDescription>
+                        </Alert>
+                      )}
                     </div>
-                    <div className="flex gap-1">
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEditType(type);
-                        }}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteType(type.id);
-                        }}
-                      >
-                        <Trash className="h-4 w-4" />
-                      </Button>
+                  ) : (
+                    <div className="text-center p-8 text-gray-500">
+                      <Settings className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                      <p>Veuillez sélectionner un type de travaux dans la liste à gauche pour voir ses prestations</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="menuiseries" className="mt-6">
+            <div className="flex justify-end mb-4">
+              <Button 
+                variant="reset" 
+                onClick={resetMenuiseriesToDefaults}
+                className="flex items-center gap-2"
+              >
+                Réinitialiser aux valeurs par défaut
+              </Button>
+            </div>
+            
+            <Card className="shadow-md">
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span className="flex items-center gap-2">
+                    <DoorOpen className="h-5 w-5" />
+                    Types de Menuiseries
+                  </span>
+                  <Button variant="outline" size="sm" onClick={handleAddTypeMenuiserie}>
+                    <Plus className="h-4 w-4 mr-1" />
+                    Ajouter un type
+                  </Button>
+                </CardTitle>
+                <CardDescription>
+                  Gérez les types de menuiseries disponibles pour votre projet
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {typesMenuiseries.length > 0 ? (
+                  <div className="rounded-md border">
+                    <div className="grid grid-cols-12 bg-gray-100 p-3 rounded-t-md font-medium text-sm">
+                      <div className="col-span-3">Nom</div>
+                      <div className="col-span-2">Dimensions</div>
+                      <div className="col-span-3">Surface impactée</div>
+                      <div className="col-span-2">Impact plinthes</div>
+                      <div className="col-span-2 text-right">Actions</div>
+                    </div>
+                    <div className="divide-y">
+                      {typesMenuiseries.map((type) => (
+                        <div key={type.id} className="grid grid-cols-12 p-3 items-center hover:bg-gray-50">
+                          <div className="col-span-3 font-medium">
+                            <div className="truncate">{type.nom}</div>
+                            {type.description && (
+                              <div className="text-xs text-gray-500 mt-1 truncate">
+                                {type.description}
+                              </div>
+                            )}
+                          </div>
+                          <div className="col-span-2">
+                            {type.largeur} × {type.hauteur} cm
+                          </div>
+                          <div className="col-span-3">
+                            {getSurfaceMenuiserieLabel(type.surfaceReference)}
+                          </div>
+                          <div className="col-span-2">
+                            <Badge variant={type.impactePlinthe ? "default" : "outline"}>
+                              {type.impactePlinthe ? "Oui" : "Non"}
+                            </Badge>
+                          </div>
+                          <div className="col-span-2 flex justify-end gap-1">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleEditTypeMenuiserie(type)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleDeleteTypeMenuiserie(type.id)}
+                            >
+                              <Trash className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                ))}
-                
-                {types.length === 0 && (
+                ) : (
                   <Alert>
                     <AlertDescription>
-                      Aucun type de travaux défini. Utilisez le bouton "Ajouter" pour créer un nouveau type.
+                      Aucun type de menuiserie défini. Utilisez le bouton "Ajouter un type" pour en créer un.
                     </AlertDescription>
                   </Alert>
                 )}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-md lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>
-                  {selectedType 
-                    ? `Prestations pour "${selectedType.label}"` 
-                    : "Prestations"
-                  }
-                </span>
-                {selectedTypeId && (
-                  <Button variant="outline" size="sm" onClick={handleAddSousType}>
-                    <Plus className="h-4 w-4 mr-1" />
-                    Ajouter une prestation
-                  </Button>
-                )}
-              </CardTitle>
-              <CardDescription>
-                {selectedType 
-                  ? `Gérez les prestations disponibles pour le type "${selectedType.label}"`
-                  : "Sélectionnez un type de travaux pour voir ses prestations"
-                }
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {selectedType ? (
-                <div className="space-y-4">
-                  {selectedType.sousTypes.length > 0 ? (
-                    <div className="rounded-md border">
-                      <div className="grid grid-cols-12 bg-gray-100 p-3 rounded-t-md font-medium text-sm">
-                        <div className="col-span-3">Nom</div>
-                        <div className="col-span-2">Prix unitaire</div>
-                        <div className="col-span-2">Fournitures</div>
-                        <div className="col-span-2">Main d'œuvre</div>
-                        <div className="col-span-1">Unité</div>
-                        <div className="col-span-2 text-right">Actions</div>
-                      </div>
-                      <div className="divide-y">
-                        {selectedType.sousTypes.map((sousType) => (
-                          <div key={sousType.id} className="grid grid-cols-12 p-3 items-center hover:bg-gray-50">
-                            <div className="col-span-3 font-medium">
-                              <div className="truncate">{sousType.label}</div>
-                              <div className="text-xs text-gray-500 flex items-center gap-1 mt-1">
-                                <LinkIcon className="h-3 w-3" />
-                                {getSurfaceReferenceLabel(sousType.surfaceReference)}
-                              </div>
-                            </div>
-                            <div className="col-span-2">{sousType.prixUnitaire} €</div>
-                            <div className="col-span-2">{sousType.prixFournitures} €</div>
-                            <div className="col-span-2">{sousType.prixMainOeuvre} €</div>
-                            <div className="col-span-1">{sousType.unite}</div>
-                            <div className="col-span-2 flex justify-end gap-1">
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                onClick={() => handleEditSousType(sousType)}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                onClick={() => handleDeleteSousType(sousType.id)}
-                              >
-                                <Trash className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <Alert>
-                      <AlertDescription>
-                        Aucune prestation définie pour ce type de travaux. Utilisez le bouton "Ajouter une prestation" pour en créer une.
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                </div>
-              ) : (
-                <div className="text-center p-8 text-gray-500">
-                  <Settings className="h-12 w-12 mx-auto mb-4 opacity-30" />
-                  <p>Veuillez sélectionner un type de travaux dans la liste à gauche pour voir ses prestations</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Formulaire d'ajout/modification de type de travaux */}
@@ -419,7 +605,15 @@ const Parametres = () => {
         onSubmit={handleSubmitSousType}
       />
 
-      {/* Dialog de confirmation de suppression de type */}
+      {/* Formulaire d'ajout/modification de type de menuiserie */}
+      <TypeMenuiserieForm
+        isOpen={typeMenuiserieFormOpen}
+        onClose={() => setTypeMenuiserieFormOpen(false)}
+        typeToEdit={editingTypeMenuiserie}
+        onSubmit={handleSubmitTypeMenuiserie}
+      />
+
+      {/* Dialog de confirmation de suppression de type de travaux */}
       <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
         <DialogContent>
           <DialogHeader>
@@ -453,6 +647,26 @@ const Parametres = () => {
               Annuler
             </Button>
             <Button variant="destructive" onClick={confirmSousTypeDelete}>
+              Supprimer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de confirmation de suppression de type de menuiserie */}
+      <Dialog open={confirmDeleteMenuiserieOpen} onOpenChange={setConfirmDeleteMenuiserieOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmer la suppression</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir supprimer ce type de menuiserie ? Cette action ne peut pas être annulée.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDeleteMenuiserieOpen(false)}>
+              Annuler
+            </Button>
+            <Button variant="destructive" onClick={confirmTypeMenuiserieDelete}>
               Supprimer
             </Button>
           </DialogFooter>

@@ -9,6 +9,16 @@ export interface PropertyType {
   ceilingHeight: string;
 }
 
+export interface TypeMenuiserie {
+  id: string;
+  nom: string;
+  hauteur: number;
+  largeur: number;
+  surfaceReference: string;
+  impactePlinthe: boolean;
+  description?: string;
+}
+
 export interface Menuiserie {
   id: string;
   type: string;
@@ -17,6 +27,8 @@ export interface Menuiserie {
   hauteur: number;
   quantity: number;
   surface: number;
+  surfaceImpactee?: string; // Surface impactée par la menuiserie
+  impactePlinthe?: boolean;
 }
 
 export interface Room {
@@ -64,6 +76,7 @@ export interface Piece {
   // Propriétés supplémentaires pour la compatibilité
   netWallSurface?: string;
   totalPlinthLength?: string;
+  totalPlinthSurface?: string;
   totalMenuiserieSurface?: string;
 }
 

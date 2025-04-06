@@ -19,7 +19,7 @@ import { useProject } from "@/contexts/ProjectContext";
 import TravailForm from "@/features/travaux/components/TravailForm";
 import { useTravaux } from "@/features/travaux/hooks/useTravaux";
 import TravauxList from "@/features/travaux/components/TravauxList";
-import { Piece } from "@/types";
+import { Piece, Room } from "@/types";
 
 const Travaux = () => {
   const { state } = useProject();
@@ -29,7 +29,15 @@ const Travaux = () => {
   const { travailAModifier, getTravauxForPiece, addTravail, setTravailAModifier } = useTravaux();
   
   // Préparer les pièces avec les propriétés nécessaires pour le calcul automatique
-  const preparedRooms: Piece[] = rooms.map(room => {
+  const preparedRooms = rooms.map(room => {
+    // Calculons la surface des plinthes si nécessaire (hauteur plinthes * périmètre)
+    const plinthSurface = room.totalPlinthSurface ? parseFloat(room.totalPlinthSurface) : 0;
+    
+    // Surface nette des murs après déduction des plinthes
+    const netWallSurfaceWithoutPlinths = room.netWallSurface 
+      ? parseFloat(room.netWallSurface) - plinthSurface 
+      : 0;
+    
     return {
       id: room.id,
       name: room.name || room.customName || room.type,
@@ -39,14 +47,15 @@ const Travaux = () => {
       // Conversion et normalisation des surfaces pour le calcul automatique
       surfaceNetteSol: room.surface,
       surfaceNettePlafond: room.surface,
-      surfaceNetteMurs: room.netWallSurface,
+      surfaceNetteMurs: String(netWallSurfaceWithoutPlinths), // Surface nette des murs moins les plinthes
       lineaireNet: room.totalPlinthLength,
       surfaceMenuiseries: room.totalMenuiserieSurface,
       // Propriétés supplémentaires pour compatibilité
       netWallSurface: room.netWallSurface,
       totalPlinthLength: room.totalPlinthLength,
+      totalPlinthSurface: room.totalPlinthSurface,
       totalMenuiserieSurface: room.totalMenuiserieSurface
-    };
+    } as Piece;
   });
   
   const selectedPiece = selectedPieceId 
