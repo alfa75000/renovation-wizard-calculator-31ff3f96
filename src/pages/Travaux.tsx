@@ -8,110 +8,88 @@ import {
   ArrowRight,
   Paintbrush,
   Home,
-  DoorOpen,
 } from "lucide-react";
-import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import TravauxList from "@/features/travaux/components/TravauxList";
-import PieceSelect from "@/features/travaux/components/PieceSelect";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useProject } from "@/contexts/ProjectContext";
-import { useEffect as useEffectMock, useState as useStateMock } from "react";
 import { useTravaux } from "@/features/travaux/hooks/useTravaux";
-import { TypeTravauxItem, SousTypeTravauxItem, surfacesReference, useTravauxTypes } from "@/contexts/TravauxTypesContext";
-import { Floor, Room, RoomWithFloor, Work } from "@/types";
+import { useTravauxTypes } from "@/contexts/TravauxTypesContext";
+import { Room, Travail } from "@/types";
 import { toast } from "@/components/ui/use-toast";
 import TravailForm from "@/features/travaux/components/TravailForm";
 
-// Types de travaux avec détails
-export interface DetailedSousType extends SousTypeTravauxItem {
-  price: number; // Prix calculé selon quantité
-  quantity: number; // Quantité en m², mètres linéaires, unités, etc.
-  typeTravauxLabel: string; // Nom du type de travaux parent
-  totalSurface: number; // Surface totale à conserver
+// Interfaces temporaires pour assurer la compatibilité
+interface PieceSelectProps {
+  pieces: Room[];
+  selectedPieceId: string | null;
+  onSelect: (pieceId: string) => void;
 }
 
-export interface DetailedTravailItem {
-  id: string;
-  typeTravauxId: string;
-  sousTypeId: string;
-  roomId: string;
-  floorId: string;
-  sousType: DetailedSousType;
-  price: number;
-  tva: number;
-  quantity: number;
-  unite: string;
-}
+// Composant adapté pour la sélection des pièces
+const PieceSelect: React.FC<PieceSelectProps> = ({ 
+  pieces, 
+  selectedPieceId, 
+  onSelect 
+}) => {
+  return (
+    <div className="flex flex-col space-y-2">
+      {pieces.length > 0 ? (
+        pieces.map(piece => (
+          <Button
+            key={piece.id}
+            variant={selectedPieceId === piece.id ? "default" : "outline"}
+            className="justify-start"
+            onClick={() => onSelect(piece.id)}
+          >
+            {piece.name} ({piece.surface || "0.00"} m²)
+          </Button>
+        ))
+      ) : (
+        <div className="text-center py-4 text-gray-500">
+          <p>Aucune pièce disponible.</p>
+          <p className="text-sm mt-1">Ajoutez des pièces depuis l'estimateur principal.</p>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const Travaux = () => {
   // Context et hooks
   const { state: projectState } = useProject();
-  const { floors, rooms } = projectState;
+  const { rooms } = projectState;
   
   const { state: travauxTypesState } = useTravauxTypes();
   const { types } = travauxTypesState;
   
-  const { travaux, addTravail, deleteTravail } = useTravaux();
+  const { getTravauxForPiece, addTravail, deleteTravail } = useTravaux();
 
   // États
-  const [selectedFloor, setSelectedFloor] = useState<string | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [selectedMur, setSelectedMur] = useState<string | null>(null);
 
-  // Filtrer les pièces par étage sélectionné
-  const roomsInSelectedFloor = selectedFloor 
-    ? rooms.filter(room => room.floorId === selectedFloor)
-    : [];
-
-  // Travaux pour la pièce sélectionnée
-  const travauxForSelectedRoom = selectedRoom 
-    ? travaux.filter(work => work.roomId === selectedRoom)
-    : [];
-
-  // Quand les étages ou pièces changent, mettre à jour la sélection
+  // Sélectionner la première pièce au chargement s'il y en a
   useEffect(() => {
-    // Si aucun étage sélectionné et qu'il y a des étages, sélectionner le premier
-    if (!selectedFloor && floors.length > 0) {
-      setSelectedFloor(floors[0].id);
+    if (!selectedRoom && rooms.length > 0) {
+      setSelectedRoom(rooms[0].id);
     }
     
-    // Si l'étage actuel n'existe plus, sélectionner le premier
-    if (selectedFloor && !floors.find(floor => floor.id === selectedFloor)) {
-      setSelectedFloor(floors.length > 0 ? floors[0].id : null);
+    // Si la pièce actuelle n'existe plus
+    if (selectedRoom && !rooms.find(room => room.id === selectedRoom)) {
+      setSelectedRoom(rooms.length > 0 ? rooms[0].id : null);
     }
-    
-    // Si aucune pièce sélectionnée et qu'il y a des pièces dans l'étage sélectionné
-    if (selectedFloor && !selectedRoom && roomsInSelectedFloor.length > 0) {
-      setSelectedRoom(roomsInSelectedFloor[0].id);
-    }
-    
-    // Si la pièce actuelle n'existe plus dans l'étage sélectionné
-    if (selectedRoom && !roomsInSelectedFloor.find(room => room.id === selectedRoom)) {
-      setSelectedRoom(roomsInSelectedFloor.length > 0 ? roomsInSelectedFloor[0].id : null);
-    }
-  }, [floors, rooms, selectedFloor, roomsInSelectedFloor]);
+  }, [rooms, selectedRoom]);
 
   // Informations sur la pièce sélectionnée
   const selectedRoomInfo = selectedRoom 
     ? rooms.find(room => room.id === selectedRoom)
     : null;
-  
-  // Informations sur l'étage sélectionné
-  const selectedFloorInfo = selectedFloor 
-    ? floors.find(floor => floor.id === selectedFloor)
-    : null;
 
-  // Pièces avec étage
-  const roomsWithFloors: RoomWithFloor[] = rooms.map(room => {
-    const floor = floors.find(floor => floor.id === room.floorId);
-    return {
-      ...room,
-      floorName: floor ? floor.name : "Étage inconnu",
-    };
-  });
+  // Travaux pour la pièce sélectionnée
+  const travauxForSelectedRoom = selectedRoom 
+    ? getTravauxForPiece(selectedRoom)
+    : [];
 
   // Ouvrir le tiroir pour ajouter un nouveau travail
   const handleAddTravail = () => {
@@ -127,13 +105,12 @@ const Travaux = () => {
   };
 
   // Soumettre un nouveau travail
-  const handleSubmitTravail = (travailData: Work) => {
-    if (!selectedRoom || !selectedFloor) return;
+  const handleSubmitTravail = (travailData: Omit<Travail, 'id'>) => {
+    if (!selectedRoom) return;
     
     addTravail({
       ...travailData,
-      roomId: selectedRoom,
-      floorId: selectedFloor,
+      pieceId: selectedRoom,
     });
     
     setIsDrawerOpen(false);
@@ -141,15 +118,6 @@ const Travaux = () => {
     toast({
       title: "Travail ajouté",
       description: "Le travail a été ajouté avec succès.",
-    });
-  };
-
-  // Supprimer un travail
-  const handleDeleteTravail = (id: string) => {
-    deleteTravail(id);
-    toast({
-      title: "Travail supprimé",
-      description: "Le travail a été supprimé avec succès.",
     });
   };
 
@@ -203,13 +171,9 @@ const Travaux = () => {
             </CardHeader>
             <CardContent>
               <PieceSelect
-                rooms={roomsWithFloors as Room[]} 
-                floors={floors}
-                selectedFloor={selectedFloor}
-                selectedRoom={selectedRoom}
-                onFloorChange={setSelectedFloor}
-                onRoomChange={setSelectedRoom}
-                onMurChange={setSelectedMur}
+                pieces={rooms} 
+                selectedPieceId={selectedRoom}
+                onSelect={setSelectedRoom}
               />
             </CardContent>
           </Card>
@@ -226,8 +190,8 @@ const Travaux = () => {
                   }
                 </CardTitle>
                 <CardDescription>
-                  {selectedRoomInfo && selectedFloorInfo 
-                    ? `${selectedFloorInfo.name} - ${selectedRoomInfo.name} (${selectedRoomInfo.area} m²)`
+                  {selectedRoomInfo 
+                    ? `${selectedRoomInfo.name} (${selectedRoomInfo.surface || "0"} m²)`
                     : "Veuillez sélectionner une pièce"
                   }
                 </CardDescription>
@@ -243,11 +207,41 @@ const Travaux = () => {
               </Button>
             </CardHeader>
             <CardContent>
-              <TravauxList 
-                works={travauxForSelectedRoom} 
-                onDelete={handleDeleteTravail}
-                selectedRoom={selectedRoomInfo}
-              />
+              {travauxForSelectedRoom.length > 0 ? (
+                <div className="space-y-4">
+                  {travauxForSelectedRoom.map(travail => (
+                    <div key={travail.id} className="border p-4 rounded-md">
+                      <div className="flex justify-between">
+                        <h3 className="font-medium">{travail.typeTravauxLabel}: {travail.sousTypeLabel}</h3>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => deleteTravail(travail.id)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          Supprimer
+                        </Button>
+                      </div>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {travail.quantite} {travail.unite} à {(travail.prixFournitures + travail.prixMainOeuvre).toFixed(2)}€/{travail.unite}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-6">
+                  <p className="text-gray-500 mb-4">Aucun travail n'a été ajouté pour cette pièce.</p>
+                  <Button 
+                    variant="outline" 
+                    className="flex items-center gap-2"
+                    onClick={handleAddTravail}
+                    disabled={!selectedRoom}
+                  >
+                    <PlusCircle className="h-4 w-4" />
+                    Ajouter des travaux
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -278,11 +272,9 @@ const Travaux = () => {
           
           <div className="py-4">
             <TravailForm 
-              onSubmit={handleSubmitTravail} 
-              onCancel={() => setIsDrawerOpen(false)}
-              typesTravaux={types}
-              selectedRoom={selectedRoomInfo}
-              selectedMur={selectedMur}
+              piece={selectedRoomInfo}
+              onAddTravail={handleSubmitTravail}
+              travailAModifier={null}
             />
           </div>
         </SheetContent>

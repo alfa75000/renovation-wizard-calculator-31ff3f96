@@ -1,4 +1,3 @@
-
 // Types communs utilisés dans toute l'application
 
 export interface PropertyType {
@@ -149,4 +148,26 @@ export interface ProjetChantier {
   infoComplementaire: string;
   dateCreation: string;
   dateModification: string;
+}
+
+// Ajout des types manquants pour Travaux.tsx
+export interface Floor {
+  id: string;
+  name: string;
+}
+
+export interface RoomWithFloor extends Room {
+  floorName: string;
+}
+
+export interface Work {
+  id?: string;
+  roomId: string;
+  floorId: string;
+  typeTravauxId: string;
+  sousTypeId: string;
+  price: number;
+  tva: number;
+  quantity: number;
+  unite: string;
 }
