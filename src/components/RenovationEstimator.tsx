@@ -31,7 +31,7 @@ const RenovationEstimator: React.FC = () => {
     type: "Salon",
     length: "",
     width: "",
-    height: "2.50",
+    height: property.ceilingHeight || "2.50",
     surface: "",
     plinthHeight: "0.1",
     wallSurfaceRaw: "",
@@ -156,6 +156,13 @@ const RenovationEstimator: React.FC = () => {
       }));
     }
   }, [newRoom.menuiseries, newRoom.length, newRoom.width, newRoom.height, newRoom.plinthHeight, newRoom.wallSurfaceRaw]);
+
+  useEffect(() => {
+    setNewRoom(prev => ({
+      ...prev,
+      height: property.ceilingHeight || "2.50"
+    }));
+  }, [property.ceilingHeight]);
 
   const handleAddMenuiserie = () => {
     if (editingMenuiserie) {

@@ -18,15 +18,15 @@ type ProjectAction =
   | { type: 'UPDATE_PROPERTY'; payload: Partial<PropertyType> }
   | { type: 'RESET_PROJECT' };
 
-// État initial du projet
+// État initial du projet avec les nouvelles valeurs par défaut
 const initialState: ProjectState = {
   rooms: [],
   property: {
     type: "Appartement",
     floors: "1",
-    totalArea: "",
+    totalArea: "52",
     rooms: "",
-    ceilingHeight: "",
+    ceilingHeight: "2.50",
   },
 };
 
