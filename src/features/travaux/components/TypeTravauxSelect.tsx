@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTravauxTypes } from '@/contexts/TravauxTypesContext';
 
@@ -26,9 +26,22 @@ interface TypeTravauxSelectProps {
 }
 
 const TypeTravauxSelect: React.FC<TypeTravauxSelectProps> = ({ value, onChange }) => {
-  const { state } = useTravauxTypes();
+  const { state, dispatch } = useTravauxTypes();
   
-  console.log("Types disponibles:", state.types.map(t => t.label)); // Log pour débogage
+  // Vérification du contenu de state.types au chargement
+  useEffect(() => {
+    console.log("Types de travaux disponibles:", state.types.map(t => ({ id: t.id, label: t.label })));
+    
+    // Vérifier si "Menuiseries existantes" est présent
+    const hasMenuiseriesExistantes = state.types.some(type => type.id === "menuiseries-existantes");
+    console.log("'Menuiseries existantes' est présent:", hasMenuiseriesExistantes);
+    
+    // Si pas présent, forcer une réinitialisation
+    if (!hasMenuiseriesExistantes && state.types.length > 0) {
+      console.log("Réinitialisation des types de travaux car 'Menuiseries existantes' est manquant");
+      dispatch({ type: 'RESET_TYPES' });
+    }
+  }, [state.types, dispatch]);
   
   // Map pour les icônes
   const iconMap: Record<string, React.ReactNode> = {

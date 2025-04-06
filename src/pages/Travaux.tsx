@@ -60,7 +60,9 @@ const Travaux = () => {
       width: room.width,
       height: room.height,
       plinthHeight: room.plinthHeight,
-      wallSurfaceRaw: room.wallSurfaceRaw
+      wallSurfaceRaw: room.wallSurfaceRaw,
+      autresSurfaces: room.autresSurfaces || [],
+      totalPlinthSurface: room.totalPlinthSurface
     };
   });
   
