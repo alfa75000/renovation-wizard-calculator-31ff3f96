@@ -73,7 +73,6 @@ const RenovationEstimator: React.FC = () => {
   const propertyTypes = ["Appartement", "Maison", "Studio", "Loft", "Autre"];
   const roomTypes = ["Salon", "Chambre", "Cuisine", "Salle de bain", "Toilettes", "Bureau", "Entrée", "Couloir", "Autre"];
 
-  // Détermine la surface impactée par défaut selon le type de menuiserie
   const getDefaultSurfaceImpactee = (type: string): string => {
     if (type.toLowerCase().includes("toit") || type.toLowerCase().includes("velux") || type.toLowerCase().includes("vélux")) {
       return "plafond";
@@ -195,7 +194,6 @@ const RenovationEstimator: React.FC = () => {
     if (newRoom.length && newRoom.width && (newRoom.menuiseries.length > 0 || newRoom.autresSurfaces.length > 0)) {
       const perimeter = 2 * (parseFloat(newRoom.length) + parseFloat(newRoom.width));
       
-      // Isoler les menuiseries par surface impactée
       const menuiseriesMurs = newRoom.menuiseries.filter(m => 
         !m.surfaceImpactee || m.surfaceImpactee === "mur"
       );
@@ -208,7 +206,6 @@ const RenovationEstimator: React.FC = () => {
         m.surfaceImpactee === "sol"
       );
       
-      // Isoler les autres surfaces par surface impactée et type d'opération (ajout/déduction)
       const autresSurfacesMursAjout = newRoom.autresSurfaces.filter(s => 
         s.surfaceImpactee === "mur" && !s.estDeduction
       );
@@ -233,7 +230,6 @@ const RenovationEstimator: React.FC = () => {
         s.surfaceImpactee === "sol" && s.estDeduction
       );
       
-      // Calculer linéaire de plinthes (tenant compte des portes)
       let doorWidths = 0;
       menuiseriesMurs.forEach(item => {
         if ((item.type === "Porte" || item.type === "Porte-fenêtre" || item.impactePlinthe) && item.largeur) {
@@ -244,7 +240,6 @@ const RenovationEstimator: React.FC = () => {
       const plinthLength = arrondir2Decimales(perimeter - doorWidths).toString();
       const plinthSurface = arrondir2Decimales(parseFloat(plinthLength) * parseFloat(newRoom.plinthHeight)).toString();
       
-      // Calcul des surfaces des menuiseries par type
       let mursSurface = 0;
       let plafondSurface = 0;
       let solSurface = 0;
@@ -261,7 +256,6 @@ const RenovationEstimator: React.FC = () => {
         solSurface += item.surface * item.quantity;
       });
       
-      // Calcul des autres surfaces par type
       let autresMursSurfaceAjout = 0;
       let autresMursSurfaceDeduction = 0;
       let autresPlafondSurfaceAjout = 0;
@@ -293,7 +287,6 @@ const RenovationEstimator: React.FC = () => {
         autresSolSurfaceDeduction += item.surface * item.quantity;
       });
       
-      // Calcul des surfaces nettes
       const netWallSurface = arrondir2Decimales(
         parseFloat(newRoom.wallSurfaceRaw) 
         - mursSurface 
@@ -316,10 +309,8 @@ const RenovationEstimator: React.FC = () => {
         - autresSolSurfaceDeduction
       ).toString();
       
-      // Total des surfaces de menuiseries
       const totalMenuiserieSurface = arrondir2Decimales(mursSurface + plafondSurface + solSurface).toString();
       
-      // Total des autres surfaces
       const totalAutresSurfacesMurs = arrondir2Decimales(autresMursSurfaceAjout + autresMursSurfaceDeduction).toString();
       const totalAutresSurfacesPlafond = arrondir2Decimales(autresPlafondSurfaceAjout + autresPlafondSurfaceDeduction).toString();
       const totalAutresSurfacesSol = arrondir2Decimales(autresSolSurfaceAjout + autresSolSurfaceDeduction).toString();
@@ -613,7 +604,6 @@ const RenovationEstimator: React.FC = () => {
   const handleEditRoom = (id: string) => {
     const roomToEdit = rooms.find((room) => room.id === id);
     if (roomToEdit) {
-      // Assurer que autresSurfaces existe
       const roomWithAutresSurfaces = {
         ...roomToEdit,
         autresSurfaces: roomToEdit.autresSurfaces || []
@@ -724,7 +714,6 @@ const RenovationEstimator: React.FC = () => {
       </div>
 
       <Card className="mb-8 shadow-md">
-        
         <CardContent className="p-6">
           <div className="flex items-center mb-4">
             <Home className="h-5 w-5 mr-2" />
@@ -817,7 +806,6 @@ const RenovationEstimator: React.FC = () => {
               {editingRoom ? "Modifier la pièce" : "Ajouter une pièce"}
             </h3>
             
-            
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               <div>
                 <Label htmlFor="type">Type</Label>
@@ -854,3 +842,496 @@ const RenovationEstimator: React.FC = () => {
                   id="name"
                   name="name"
                   value={editingRoom ? newRoom.name : generateRoomName(newRoom.type, newRoom.customName)}
+                  readOnly
+                  className="mt-1 bg-gray-100"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+              <div>
+                <Label htmlFor="length">Longueur (m)</Label>
+                <Input
+                  id="length"
+                  name="length"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={newRoom.length}
+                  onChange={handleRoomChange}
+                  className="mt-1"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="width">Largeur (m)</Label>
+                <Input
+                  id="width"
+                  name="width"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={newRoom.width}
+                  onChange={handleRoomChange}
+                  className="mt-1"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="height">Hauteur (m)</Label>
+                <Input
+                  id="height"
+                  name="height"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={newRoom.height}
+                  onChange={handleRoomChange}
+                  className="mt-1"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="plinthHeight">Hauteur des plinthes (m)</Label>
+                <Input
+                  id="plinthHeight"
+                  name="plinthHeight"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={newRoom.plinthHeight}
+                  onChange={handleRoomChange}
+                  className="mt-1"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div>
+                <Label htmlFor="surface">Surface au sol (m²)</Label>
+                <Input
+                  id="surface"
+                  name="surface"
+                  type="number"
+                  value={newRoom.surface}
+                  readOnly
+                  className="mt-1 bg-gray-100"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="wallSurfaceRaw">Surface murale brute (m²)</Label>
+                <Input
+                  id="wallSurfaceRaw"
+                  name="wallSurfaceRaw"
+                  type="number"
+                  value={newRoom.wallSurfaceRaw}
+                  readOnly
+                  className="mt-1 bg-gray-100"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="totalPlinthLength">Linéaire de plinthes (m)</Label>
+                <Input
+                  id="totalPlinthLength"
+                  name="totalPlinthLength"
+                  type="number"
+                  value={newRoom.totalPlinthLength}
+                  readOnly
+                  className="mt-1 bg-gray-100"
+                />
+              </div>
+            </div>
+
+            <Separator className="my-6" />
+
+            <div className="mb-6">
+              <h3 className="text-lg font-medium mb-3">Menuiseries</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-4">
+                <div className="md:col-span-2">
+                  <Label htmlFor="menuiserieType">Type de menuiserie</Label>
+                  <select
+                    id="menuiserieType"
+                    name="type"
+                    value={newMenuiserie.type}
+                    onChange={handleMenuiserieChange}
+                    className="w-full p-2 border rounded mt-1"
+                  >
+                    <option value="Porte">Porte</option>
+                    <option value="Fenêtre">Fenêtre</option>
+                    <option value="Porte-fenêtre">Porte-fenêtre</option>
+                    <option value="Fenêtre de toit">Fenêtre de toit</option>
+                    <option value="Baie vitrée">Baie vitrée</option>
+                    <option value="Puits de lumière">Puits de lumière</option>
+                    <option value="Trappe d'accès">Trappe d'accès</option>
+                    <option value="Autre">Autre</option>
+                  </select>
+                </div>
+                
+                <div className="md:col-span-2">
+                  <Label htmlFor="menuiserieTypeFromDB">Ou sélectionner un type prédéfini</Label>
+                  <select
+                    id="menuiserieTypeFromDB"
+                    name="menuiserieTypeFromDB"
+                    defaultValue=""
+                    onChange={handleMenuiserieTypeChange}
+                    className="w-full p-2 border rounded mt-1"
+                  >
+                    <option value="">-- Sélectionner --</option>
+                    {menuiseriesState.typesMenuiseries.map((type) => (
+                      <option key={type.id} value={type.id}>
+                        {type.nom} ({type.largeur}×{type.hauteur} cm)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div className="md:col-span-2">
+                  <Label htmlFor="menuiserieImpact">Surface impactée</Label>
+                  <select
+                    id="menuiserieImpact"
+                    name="surfaceImpactee"
+                    value={newMenuiserie.surfaceImpactee || 'mur'}
+                    onChange={handleSurfaceImpacteeChange}
+                    className="w-full p-2 border rounded mt-1"
+                  >
+                    <option value="mur">Mur</option>
+                    <option value="plafond">Plafond</option>
+                    <option value="sol">Sol</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
+                <div>
+                  <Label htmlFor="menuiserieName">Nom (optionnel)</Label>
+                  <Input
+                    id="menuiserieName"
+                    name="name"
+                    value={newMenuiserie.name}
+                    onChange={handleMenuiserieChange}
+                    placeholder="Ex: Porte d'entrée"
+                    className="mt-1"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="menuiserieLargeur">Largeur (cm)</Label>
+                  <Input
+                    id="menuiserieLargeur"
+                    name="largeur"
+                    type="number"
+                    min="0"
+                    value={newMenuiserie.largeur}
+                    onChange={handleMenuiserieChange}
+                    className="mt-1"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="menuiserieHauteur">Hauteur (cm)</Label>
+                  <Input
+                    id="menuiserieHauteur"
+                    name="hauteur"
+                    type="number"
+                    min="0"
+                    value={newMenuiserie.hauteur}
+                    onChange={handleMenuiserieChange}
+                    className="mt-1"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="menuiserieQuantity">Quantité</Label>
+                  <Input
+                    id="menuiserieQuantity"
+                    name="quantity"
+                    type="number"
+                    min="1"
+                    value={newMenuiserie.quantity}
+                    onChange={handleMenuiserieChange}
+                    className="mt-1"
+                  />
+                </div>
+                
+                <div className="flex items-end">
+                  <Button 
+                    onClick={handleAddMenuiserie} 
+                    className="w-full"
+                  >
+                    {editingMenuiserie ? (
+                      <>
+                        <Check className="h-4 w-4 mr-2" />
+                        Mettre à jour
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Ajouter
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+              
+              {newRoom.menuiseries.length > 0 && (
+                <div className="mt-4 border rounded-md overflow-hidden">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dimensions</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Surface</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Qté</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Impact</th>
+                        <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {newRoom.menuiseries.map((item) => (
+                        <tr key={item.id} className="hover:bg-gray-50">
+                          <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">{item.name}</td>
+                          <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{item.largeur} × {item.hauteur} cm</td>
+                          <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{item.surface} m²</td>
+                          <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{item.quantity}</td>
+                          <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                            {item.surfaceImpactee === 'mur' ? 'Mur' : 
+                             item.surfaceImpactee === 'plafond' ? 'Plafond' : 'Sol'}
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap text-right text-sm font-medium">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditMenuiserie(item.id)}
+                              className="mr-1 h-8 w-8 p-0"
+                            >
+                              <Edit className="h-4 w-4" />
+                              <span className="sr-only">Modifier</span>
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRemoveMenuiserie(item.id)}
+                              className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              <span className="sr-only">Supprimer</span>
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            <Separator className="my-6" />
+
+            <div className="mb-6">
+              <h3 className="text-lg font-medium mb-3">Autres Surfaces</h3>
+              
+              <AutreSurfaceForm
+                onSubmit={handleAddAutreSurface}
+                currentAutreSurface={getCurrentAutreSurface()}
+                onCancel={handleCancelEditAutreSurface}
+                typesAutresSurfaces={useAutresSurfaces().state.typesAutresSurfaces}
+              />
+              
+              {newRoom.autresSurfaces.length > 0 && (
+                <div className="mt-4 border rounded-md overflow-hidden">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dimensions</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Surface</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Qté</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Impact</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Opération</th>
+                        <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {newRoom.autresSurfaces.map((item) => (
+                        <tr key={item.id} className="hover:bg-gray-50">
+                          <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">{item.name}</td>
+                          <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{item.largeur} × {item.hauteur} m</td>
+                          <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{item.surface} m²</td>
+                          <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{item.quantity}</td>
+                          <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                            {item.surfaceImpactee === 'mur' ? 'Mur' : 
+                             item.surfaceImpactee === 'plafond' ? 'Plafond' : 'Sol'}
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                            {item.estDeduction ? 'Déduction' : 'Ajout'}
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap text-right text-sm font-medium">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditAutreSurface(item.id)}
+                              className="mr-1 h-8 w-8 p-0"
+                            >
+                              <Edit className="h-4 w-4" />
+                              <span className="sr-only">Modifier</span>
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRemoveAutreSurface(item.id)}
+                              className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              <span className="sr-only">Supprimer</span>
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end mt-6">
+              <Button 
+                onClick={handleAddRoom} 
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {editingRoom ? (
+                  <>
+                    <Check className="h-4 w-4 mr-2" />
+                    Mettre à jour la pièce
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Ajouter la pièce
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+          
+          {rooms.length > 0 && (
+            <div className="border rounded-md overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom</th>
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dimensions</th>
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Surface brute</th>
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Menuiseries</th>
+                    <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {rooms.map((room) => (
+                    <tr key={room.id} className="hover:bg-gray-50">
+                      <td className="px-3 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">{room.name}</div>
+                        <div className="text-sm text-gray-500">{room.type}</div>
+                      </td>
+                      <td className="px-3 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{room.length} × {room.width} × {room.height} m</div>
+                      </td>
+                      <td className="px-3 py-4">
+                        <div className="text-sm text-gray-900">Sol: {room.surface} m²</div>
+                        <div className="text-sm text-gray-900">Murs: {room.wallSurfaceRaw} m²</div>
+                        <div className="text-sm text-gray-900">Plafond: {room.surface} m²</div>
+                        <div className="text-sm text-gray-500 mt-2">Linéaire: {room.lineaireBrut || (2 * (parseFloat(room.length) + parseFloat(room.width))).toFixed(2)} m</div>
+                        <div className="text-sm text-gray-500">Plinthes: {room.totalPlinthLength} m ({room.totalPlinthSurface} m²)</div>
+                        <div className="text-sm text-gray-500">Menuiseries Murs: {room.menuiseriesMursSurface} m²</div>
+                        <div className="text-sm text-gray-500">Menuiseries Plafond: {room.menuiseriesPlafondSurface} m²</div>
+                        <div className="text-sm text-gray-500">Menuiseries Sol: {room.menuiseriesSolSurface} m²</div>
+                        <div className="text-sm text-gray-500">Autres Murs: {room.autresSurfacesMurs} m²</div>
+                        <div className="text-sm text-gray-500">Autres Plafond: {room.autresSurfacesPlafond} m²</div>
+                        <div className="text-sm text-gray-500">Autres Sol: {room.autresSurfacesSol} m²</div>
+                        <div className="text-sm font-semibold text-gray-900 mt-2">Surface Nette Sol: {room.surfaceNetteSol} m²</div>
+                        <div className="text-sm font-semibold text-gray-900">Surface Nette Murs: {room.netWallSurface} m²</div>
+                        <div className="text-sm font-semibold text-gray-900">Surface Nette Plafond: {room.surfaceNettePlafond} m²</div>
+                      </td>
+                      <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {room.menuiseries.length} menuiseries
+                        <div className="text-xs mt-1">
+                          {room.menuiseries.map((m, i) => (
+                            <div key={i}>
+                              {m.name}: {m.largeur}×{m.hauteur} cm ({m.surface} m²)
+                            </div>
+                          ))}
+                        </div>
+                        <div className="mt-2">
+                          {room.autresSurfaces.length} autres surfaces
+                        </div>
+                        <div className="text-xs mt-1">
+                          {room.autresSurfaces.map((s, i) => (
+                            <div key={i}>
+                              {s.name}: {s.largeur}×{s.hauteur} m ({s.surface} m²)
+                            </div>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="px-3 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEditRoom(room.id)}
+                          className="mr-1"
+                        >
+                          <Edit className="h-4 w-4 mr-1" />
+                          Modifier
+                        </Button>
+                        
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-red-500 hover:text-red-700"
+                            >
+                              <Trash2 className="h-4 w-4 mr-1" />
+                              Supprimer
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Êtes-vous sûr de vouloir supprimer cette pièce ?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Cette action supprimera définitivement la pièce "{room.name}" et toutes les données associées.
+                                Cette action est irréversible.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Annuler</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDeleteRoom(room.id)} className="bg-red-500 hover:bg-red-600">
+                                Supprimer
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          
+          {rooms.length > 0 && (
+            <div className="mt-4 p-4 bg-blue-50 rounded-md flex justify-between items-center">
+              <div>
+                <span className="font-medium">Surface totale des pièces : </span>
+                <span className="text-xl font-bold">{calculateTotalArea()} m²</span>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default RenovationEstimator;
