@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { 
   Card, 
@@ -18,7 +17,9 @@ import {
   Wrench,
   SquarePen,
   Link as LinkIcon,
-  DoorOpen
+  DoorOpen,
+  Users,
+  User
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { 
@@ -37,17 +38,22 @@ import { useMenuiseriesTypes, surfacesReference as surfacesMenuiseries } from "@
 import TypeTravauxForm from "@/features/admin/components/TypeTravauxForm";
 import SousTypeTravauxForm from "@/features/admin/components/SousTypeTravauxForm";
 import TypeMenuiserieForm from "@/features/admin/components/TypeMenuiserieForm";
+import ClientForm from "@/features/admin/components/ClientForm";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TypeMenuiserie } from "@/types";
+import { Client, useClients, typesClients } from "@/contexts/ClientsContext";
 
 const Parametres = () => {
-  // Contexte des travaux et des menuiseries
+  // Contexte des travaux, des menuiseries et des clients
   const { state: stateTravauxTypes, dispatch: dispatchTravauxTypes } = useTravauxTypes();
   const { types } = stateTravauxTypes;
   
   const { state: stateMenuiseriesTypes, dispatch: dispatchMenuiseriesTypes } = useMenuiseriesTypes();
   const { typesMenuiseries } = stateMenuiseriesTypes;
+  
+  const { state: stateClients, dispatch: dispatchClients } = useClients();
+  const { clients } = stateClients;
 
   // Onglet actif
   const [activeTab, setActiveTab] = useState("travaux");
@@ -68,6 +74,12 @@ const Parametres = () => {
   const [editingTypeMenuiserie, setEditingTypeMenuiserie] = useState<TypeMenuiserie | null>(null);
   const [confirmDeleteMenuiserieOpen, setConfirmDeleteMenuiserieOpen] = useState(false);
   const [typeMenuiserieToDelete, setTypeMenuiserieToDelete] = useState<string | null>(null);
+  
+  // États pour les clients
+  const [clientFormOpen, setClientFormOpen] = useState(false);
+  const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const [confirmDeleteClientOpen, setConfirmDeleteClientOpen] = useState(false);
+  const [clientToDelete, setClientToDelete] = useState<string | null>(null);
 
   const selectedType = types.find(type => type.id === selectedTypeId);
 
@@ -286,6 +298,72 @@ const Parametres = () => {
       });
     }
   };
+  
+  // Gestion des clients
+  const handleAddClient = () => {
+    setEditingClient(null);
+    setClientFormOpen(true);
+  };
+  
+  const handleEditClient = (client: Client) => {
+    setEditingClient(client);
+    setClientFormOpen(true);
+  };
+  
+  const handleDeleteClient = (id: string) => {
+    setClientToDelete(id);
+    setConfirmDeleteClientOpen(true);
+  };
+  
+  const confirmClientDelete = () => {
+    if (clientToDelete) {
+      dispatchClients({ type: 'DELETE_CLIENT', payload: clientToDelete });
+      setConfirmDeleteClientOpen(false);
+      setClientToDelete(null);
+      toast({
+        title: "Client supprimé",
+        description: "Le client a été supprimé avec succès.",
+      });
+    }
+  };
+  
+  const handleSubmitClient = (clientData: Client) => {
+    if (editingClient) {
+      // Mise à jour d'un client existant
+      dispatchClients({
+        type: 'UPDATE_CLIENT',
+        payload: { id: editingClient.id, client: clientData }
+      });
+      toast({
+        title: "Client mis à jour",
+        description: "Le client a été mis à jour avec succès.",
+      });
+    } else {
+      // Ajout d'un nouveau client
+      dispatchClients({ type: 'ADD_CLIENT', payload: clientData });
+      toast({
+        title: "Client ajouté",
+        description: "Le nouveau client a été ajouté avec succès.",
+      });
+    }
+    setClientFormOpen(false);
+    setEditingClient(null);
+  };
+  
+  const resetClientsToDefaults = () => {
+    if (confirm("Êtes-vous sûr de vouloir réinitialiser tous les clients aux valeurs par défaut ?")) {
+      dispatchClients({ type: 'RESET_CLIENTS' });
+      toast({
+        title: "Réinitialisation effectuée",
+        description: "Tous les clients ont été réinitialisés aux valeurs par défaut.",
+      });
+    }
+  };
+  
+  const getTypeClientLabel = (id: string) => {
+    const type = typesClients.find(type => type.id === id);
+    return type ? type.label : id;
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 pb-12">
@@ -296,7 +374,7 @@ const Parametres = () => {
             Paramètres
           </h1>
           <p className="mt-2 text-lg text-center">
-            Gérez les types de travaux, de menuiseries et leurs paramètres
+            Gérez les types de travaux, de menuiseries, les clients et leurs paramètres
           </p>
         </div>
 
@@ -330,6 +408,7 @@ const Parametres = () => {
           <TabsList className="w-full">
             <TabsTrigger value="travaux" className="flex-1">Types de Travaux</TabsTrigger>
             <TabsTrigger value="menuiseries" className="flex-1">Types de Menuiseries</TabsTrigger>
+            <TabsTrigger value="clients" className="flex-1">Fiches Clients</TabsTrigger>
           </TabsList>
           
           <TabsContent value="travaux" className="mt-6">
@@ -586,6 +665,115 @@ const Parametres = () => {
               </CardContent>
             </Card>
           </TabsContent>
+          
+          <TabsContent value="clients" className="mt-6">
+            <div className="flex justify-end mb-4">
+              <Button 
+                variant="reset" 
+                onClick={resetClientsToDefaults}
+                className="flex items-center gap-2"
+              >
+                Réinitialiser aux valeurs par défaut
+              </Button>
+            </div>
+            
+            <Card className="shadow-md">
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span className="flex items-center gap-2">
+                    <Users className="h-5 w-5" />
+                    Fiches Clients
+                  </span>
+                  <Button variant="outline" size="sm" onClick={handleAddClient}>
+                    <Plus className="h-4 w-4 mr-1" />
+                    Ajouter un client
+                  </Button>
+                </CardTitle>
+                <CardDescription>
+                  Gérez les fiches clients pour vos projets de rénovation
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {clients.length > 0 ? (
+                  <div className="rounded-md border">
+                    <div className="grid grid-cols-12 bg-gray-100 p-3 rounded-t-md font-medium text-sm">
+                      <div className="col-span-3">Nom / Prénom</div>
+                      <div className="col-span-3">Contact</div>
+                      <div className="col-span-3">Type</div>
+                      <div className="col-span-1">Infos</div>
+                      <div className="col-span-2 text-right">Actions</div>
+                    </div>
+                    <div className="divide-y">
+                      {clients.map((client) => (
+                        <div key={client.id} className="grid grid-cols-12 p-3 items-center hover:bg-gray-50">
+                          <div className="col-span-3 font-medium">
+                            <div className="truncate flex items-center gap-2">
+                              <User className="h-4 w-4 text-gray-500" />
+                              {client.prenom ? `${client.nom} ${client.prenom}` : client.nom}
+                            </div>
+                            <div className="text-xs text-gray-500 mt-1 truncate">
+                              {client.adresse}
+                            </div>
+                          </div>
+                          <div className="col-span-3">
+                            <div className="text-sm">{client.tel1}</div>
+                            {client.tel2 && (
+                              <div className="text-xs text-gray-500">{client.tel2}</div>
+                            )}
+                            <div className="text-xs text-blue-600 mt-1">{client.email}</div>
+                          </div>
+                          <div className="col-span-3">
+                            <Badge variant="outline">
+                              {getTypeClientLabel(client.typeClient)}
+                            </Badge>
+                            {client.autreInfo && (
+                              <div className="text-xs text-gray-500 mt-1">
+                                {client.autreInfo}
+                              </div>
+                            )}
+                          </div>
+                          <div className="col-span-1">
+                            {client.infosComplementaires && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 p-0"
+                                title={client.infosComplementaires}
+                              >
+                                <Settings className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                          <div className="col-span-2 flex justify-end gap-1">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleEditClient(client)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleDeleteClient(client.id)}
+                            >
+                              <Trash className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <Alert>
+                    <AlertDescription>
+                      Aucun client défini. Utilisez le bouton "Ajouter un client" pour en créer un.
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </div>
 
@@ -611,6 +799,14 @@ const Parametres = () => {
         onClose={() => setTypeMenuiserieFormOpen(false)}
         typeToEdit={editingTypeMenuiserie}
         onSubmit={handleSubmitTypeMenuiserie}
+      />
+      
+      {/* Formulaire d'ajout/modification de client */}
+      <ClientForm
+        isOpen={clientFormOpen}
+        onClose={() => setClientFormOpen(false)}
+        clientToEdit={editingClient}
+        onSubmit={handleSubmitClient}
       />
 
       {/* Dialog de confirmation de suppression de type de travaux */}
@@ -667,6 +863,26 @@ const Parametres = () => {
               Annuler
             </Button>
             <Button variant="destructive" onClick={confirmTypeMenuiserieDelete}>
+              Supprimer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Dialog de confirmation de suppression de client */}
+      <Dialog open={confirmDeleteClientOpen} onOpenChange={setConfirmDeleteClientOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmer la suppression</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir supprimer ce client ? Cette action ne peut pas être annulée.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDeleteClientOpen(false)}>
+              Annuler
+            </Button>
+            <Button variant="destructive" onClick={confirmClientDelete}>
               Supprimer
             </Button>
           </DialogFooter>

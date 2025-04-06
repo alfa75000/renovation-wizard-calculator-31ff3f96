@@ -15,7 +15,7 @@ const Index = () => {
           <p className="mt-2 text-lg">Assistant de rénovation simplifié</p>
         </div>
         
-        <div className="mb-8 flex justify-center space-x-4">
+        <div className="mb-8 flex flex-wrap justify-center gap-2">
           <Button asChild variant="default" className="flex items-center gap-2">
             <Link to="/">
               Page de saisie
@@ -31,6 +31,19 @@ const Index = () => {
           <Button asChild variant="outline" className="flex items-center gap-2">
             <Link to="/recapitulatif">
               Page Récapitulatif
+            </Link>
+          </Button>
+          
+          <Button asChild variant="outline" className="flex items-center gap-2">
+            <Link to="/parametres">
+              Page Paramètres
+            </Link>
+          </Button>
+          
+          {/* Ce bouton sera activé dans la prochaine étape */}
+          <Button asChild variant="outline" className="flex items-center gap-2" disabled>
+            <Link to="#">
+              Infos Chantier / Client
             </Link>
           </Button>
         </div>

@@ -137,3 +137,16 @@ export interface Travail {
   surfaceReference?: string;
   menuiserieId?: string; // Ajout de l'ID de la menuiserie (optionnel)
 }
+
+// Nouvelle interface pour les informations de chantier/projet
+export interface ProjetChantier {
+  id: string;
+  clientId: string; // ID du client sélectionné
+  nomProjet: string;
+  descriptionProjet: string;
+  adresseChantier: string;
+  occupant: string;
+  infoComplementaire: string;
+  dateCreation: string;
+  dateModification: string;
+}
