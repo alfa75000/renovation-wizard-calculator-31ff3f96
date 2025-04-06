@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,7 @@ const RenovationEstimator: React.FC = () => {
   const { state, dispatch } = useProject();
   const { property, rooms } = state;
   const { state: menuiseriesState } = useMenuiseriesTypes();
+  const { state: autresSurfacesState } = useAutresSurfaces();
 
   const [newRoom, setNewRoom] = useState<Omit<Room, "id">>({
     name: "",
@@ -58,10 +60,10 @@ const RenovationEstimator: React.FC = () => {
   });
 
   const [newMenuiserie, setNewMenuiserie] = useState<Omit<Menuiserie, "id" | "surface">>({
-    type: "Porte",
+    type: "",
     name: "",
-    largeur: 83,
-    hauteur: 204,
+    largeur: 0,
+    hauteur: 0,
     quantity: 1,
     surfaceImpactee: "mur"
   });
@@ -83,19 +85,6 @@ const RenovationEstimator: React.FC = () => {
     }
   };
 
-  const getStandardDimensions = (type: string) => {
-    switch (type) {
-      case "Porte":
-        return { largeur: 83, hauteur: 204 };
-      case "Fenêtre":
-        return { largeur: 120, hauteur: 100 };
-      case "Porte-fenêtre":
-        return { largeur: 150, hauteur: 204 };
-      default:
-        return { largeur: 83, hauteur: 204 };
-    }
-  };
-
   const handlePropertyChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     dispatch({ 
@@ -107,29 +96,6 @@ const RenovationEstimator: React.FC = () => {
   const handleRoomChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setNewRoom((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleMenuiserieChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    
-    if (name === "type") {
-      const standardDimensions = getStandardDimensions(value);
-      const surfaceImpactee = getDefaultSurfaceImpactee(value);
-      setNewMenuiserie((prev) => ({ 
-        ...prev, 
-        [name]: value,
-        largeur: standardDimensions.largeur,
-        hauteur: standardDimensions.hauteur,
-        surfaceImpactee
-      }));
-    } else if (name === "largeur" || name === "hauteur" || name === "quantity") {
-      setNewMenuiserie((prev) => ({ 
-        ...prev, 
-        [name]: parseFloat(value) || 0 
-      }));
-    } else {
-      setNewMenuiserie((prev) => ({ ...prev, [name]: value }));
-    }
   };
 
   const handleMenuiserieTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -155,6 +121,19 @@ const RenovationEstimator: React.FC = () => {
       ...prev,
       surfaceImpactee: value
     }));
+  };
+
+  const handleMenuiserieChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    
+    if (name === "largeur" || name === "hauteur" || name === "quantity") {
+      setNewMenuiserie((prev) => ({ 
+        ...prev, 
+        [name]: parseFloat(value) || 0 
+      }));
+    } else {
+      setNewMenuiserie((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   const generateRoomName = (type: string, customName: string = ""): string => {
@@ -311,9 +290,9 @@ const RenovationEstimator: React.FC = () => {
       
       const totalMenuiserieSurface = arrondir2Decimales(mursSurface + plafondSurface + solSurface).toString();
       
-      const totalAutresSurfacesMurs = arrondir2Decimales(autresMursSurfaceAjout + autresMursSurfaceDeduction).toString();
-      const totalAutresSurfacesPlafond = arrondir2Decimales(autresPlafondSurfaceAjout + autresPlafondSurfaceDeduction).toString();
-      const totalAutresSurfacesSol = arrondir2Decimales(autresSolSurfaceAjout + autresSolSurfaceDeduction).toString();
+      const totalAutresSurfacesMurs = arrondir2Decimales(autresMursSurfaceAjout - autresMursSurfaceDeduction).toString();
+      const totalAutresSurfacesPlafond = arrondir2Decimales(autresPlafondSurfaceAjout - autresPlafondSurfaceDeduction).toString();
+      const totalAutresSurfacesSol = arrondir2Decimales(autresSolSurfaceAjout - autresSolSurfaceDeduction).toString();
       
       setNewRoom(prev => ({
         ...prev,
@@ -343,6 +322,11 @@ const RenovationEstimator: React.FC = () => {
   }, [property.ceilingHeight]);
 
   const handleAddMenuiserie = () => {
+    if (!newMenuiserie.type) {
+      toast.error("Veuillez sélectionner un type de menuiserie");
+      return;
+    }
+    
     if (editingMenuiserie) {
       const surfaceM2 = arrondir2Decimales((newMenuiserie.largeur / 100) * (newMenuiserie.hauteur / 100));
       
@@ -395,13 +379,14 @@ const RenovationEstimator: React.FC = () => {
       toast.success(`${newMenuiserie.quantity} ${newMenuiserie.type}${newMenuiserie.quantity > 1 ? 's' : ''} ajouté${newMenuiserie.quantity > 1 ? 's' : ''}`);
     }
     
+    // Réinitialiser le formulaire de menuiserie
     setNewMenuiserie({
-      type: newMenuiserie.type,
+      type: "",
       name: "",
-      largeur: getStandardDimensions(newMenuiserie.type).largeur,
-      hauteur: getStandardDimensions(newMenuiserie.type).hauteur,
+      largeur: 0,
+      hauteur: 0,
       quantity: 1,
-      surfaceImpactee: getDefaultSurfaceImpactee(newMenuiserie.type)
+      surfaceImpactee: "mur"
     });
   };
 
@@ -511,12 +496,12 @@ const RenovationEstimator: React.FC = () => {
       setEditingMenuiserie(null);
       
       setNewMenuiserie({
-        type: newMenuiserie.type,
+        type: "",
         name: "",
-        largeur: getStandardDimensions(newMenuiserie.type).largeur,
-        hauteur: getStandardDimensions(newMenuiserie.type).hauteur,
+        largeur: 0,
+        hauteur: 0,
         quantity: 1,
-        surfaceImpactee: getDefaultSurfaceImpactee(newMenuiserie.type)
+        surfaceImpactee: "mur"
       });
     }
     
@@ -663,10 +648,10 @@ const RenovationEstimator: React.FC = () => {
     });
     
     setNewMenuiserie({
-      type: "Porte",
+      type: "",
       name: "",
-      largeur: 83,
-      hauteur: 204,
+      largeur: 0,
+      hauteur: 0,
       quantity: 1,
       surfaceImpactee: "mur"
     });
@@ -949,37 +934,17 @@ const RenovationEstimator: React.FC = () => {
             <div className="mb-6">
               <h3 className="text-lg font-medium mb-3">Menuiseries</h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                 <div className="md:col-span-2">
                   <Label htmlFor="menuiserieType">Type de menuiserie</Label>
                   <select
                     id="menuiserieType"
                     name="type"
-                    value={newMenuiserie.type}
-                    onChange={handleMenuiserieChange}
-                    className="w-full p-2 border rounded mt-1"
-                  >
-                    <option value="Porte">Porte</option>
-                    <option value="Fenêtre">Fenêtre</option>
-                    <option value="Porte-fenêtre">Porte-fenêtre</option>
-                    <option value="Fenêtre de toit">Fenêtre de toit</option>
-                    <option value="Baie vitrée">Baie vitrée</option>
-                    <option value="Puits de lumière">Puits de lumière</option>
-                    <option value="Trappe d'accès">Trappe d'accès</option>
-                    <option value="Autre">Autre</option>
-                  </select>
-                </div>
-                
-                <div className="md:col-span-2">
-                  <Label htmlFor="menuiserieTypeFromDB">Ou sélectionner un type prédéfini</Label>
-                  <select
-                    id="menuiserieTypeFromDB"
-                    name="menuiserieTypeFromDB"
-                    defaultValue=""
+                    value={newMenuiserie.type ? menuiseriesState.typesMenuiseries.find(t => t.nom === newMenuiserie.type)?.id || "" : ""}
                     onChange={handleMenuiserieTypeChange}
                     className="w-full p-2 border rounded mt-1"
                   >
-                    <option value="">-- Sélectionner --</option>
+                    <option value="">Sélectionner un type</option>
                     {menuiseriesState.typesMenuiseries.map((type) => (
                       <option key={type.id} value={type.id}>
                         {type.nom} ({type.largeur}×{type.hauteur} cm)
@@ -1060,6 +1025,7 @@ const RenovationEstimator: React.FC = () => {
                   <Button 
                     onClick={handleAddMenuiserie} 
                     className="w-full"
+                    disabled={!newMenuiserie.type}
                   >
                     {editingMenuiserie ? (
                       <>
@@ -1134,10 +1100,11 @@ const RenovationEstimator: React.FC = () => {
               <h3 className="text-lg font-medium mb-3">Autres Surfaces</h3>
               
               <AutreSurfaceForm
-                onSubmit={handleAddAutreSurface}
-                currentAutreSurface={getCurrentAutreSurface()}
-                onCancel={handleCancelEditAutreSurface}
-                typesAutresSurfaces={useAutresSurfaces().state.typesAutresSurfaces}
+                onAddAutreSurface={handleAddAutreSurface}
+                editingSurface={editingAutreSurface}
+                currentSurface={getCurrentAutreSurface()}
+                onCancelEdit={handleCancelEditAutreSurface}
+                typesAutresSurfaces={autresSurfacesState.typesAutresSurfaces}
               />
               
               {newRoom.autresSurfaces.length > 0 && (
@@ -1224,6 +1191,8 @@ const RenovationEstimator: React.FC = () => {
                     <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom</th>
                     <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dimensions</th>
                     <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Surface brute</th>
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Surface nette</th>
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Linéaire</th>
                     <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Menuiseries</th>
                     <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
@@ -1242,37 +1211,27 @@ const RenovationEstimator: React.FC = () => {
                         <div className="text-sm text-gray-900">Sol: {room.surface} m²</div>
                         <div className="text-sm text-gray-900">Murs: {room.wallSurfaceRaw} m²</div>
                         <div className="text-sm text-gray-900">Plafond: {room.surface} m²</div>
-                        <div className="text-sm text-gray-500 mt-2">Linéaire: {room.lineaireBrut || (2 * (parseFloat(room.length) + parseFloat(room.width))).toFixed(2)} m</div>
-                        <div className="text-sm text-gray-500">Plinthes: {room.totalPlinthLength} m ({room.totalPlinthSurface} m²)</div>
-                        <div className="text-sm text-gray-500">Menuiseries Murs: {room.menuiseriesMursSurface} m²</div>
-                        <div className="text-sm text-gray-500">Menuiseries Plafond: {room.menuiseriesPlafondSurface} m²</div>
-                        <div className="text-sm text-gray-500">Menuiseries Sol: {room.menuiseriesSolSurface} m²</div>
-                        <div className="text-sm text-gray-500">Autres Murs: {room.autresSurfacesMurs} m²</div>
-                        <div className="text-sm text-gray-500">Autres Plafond: {room.autresSurfacesPlafond} m²</div>
-                        <div className="text-sm text-gray-500">Autres Sol: {room.autresSurfacesSol} m²</div>
-                        <div className="text-sm font-semibold text-gray-900 mt-2">Surface Nette Sol: {room.surfaceNetteSol} m²</div>
-                        <div className="text-sm font-semibold text-gray-900">Surface Nette Murs: {room.netWallSurface} m²</div>
-                        <div className="text-sm font-semibold text-gray-900">Surface Nette Plafond: {room.surfaceNettePlafond} m²</div>
                       </td>
-                      <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {room.menuiseries.length} menuiseries
-                        <div className="text-xs mt-1">
-                          {room.menuiseries.map((m, i) => (
-                            <div key={i}>
-                              {m.name}: {m.largeur}×{m.hauteur} cm ({m.surface} m²)
-                            </div>
-                          ))}
-                        </div>
-                        <div className="mt-2">
-                          {room.autresSurfaces.length} autres surfaces
-                        </div>
-                        <div className="text-xs mt-1">
-                          {room.autresSurfaces.map((s, i) => (
-                            <div key={i}>
-                              {s.name}: {s.largeur}×{s.hauteur} m ({s.surface} m²)
-                            </div>
-                          ))}
-                        </div>
+                      <td className="px-3 py-4">
+                        <div className="text-sm font-semibold text-gray-900">Sol: {room.surfaceNetteSol} m²</div>
+                        <div className="text-sm font-semibold text-gray-900">Murs: {room.netWallSurface} m²</div>
+                        <div className="text-sm font-semibold text-gray-900">Plafond: {room.surfaceNettePlafond} m²</div>
+                      </td>
+                      <td className="px-3 py-4">
+                        <div className="text-sm text-gray-900">Brut: {room.lineaireBrut || (2 * (parseFloat(room.length) + parseFloat(room.width))).toFixed(2)} m</div>
+                        <div className="text-sm text-gray-900">Net: {room.lineaireNet} m</div>
+                        <div className="text-sm text-gray-500">Plinthes: {room.totalPlinthSurface} m²</div>
+                        <div className="text-sm text-gray-500">Hauteur: {room.plinthHeight} m</div>
+                      </td>
+                      <td className="px-3 py-4">
+                        <div className="text-sm text-gray-900">Murs: {room.menuiseriesMursSurface} m²</div>
+                        <div className="text-sm text-gray-900">Plafond: {room.menuiseriesPlafondSurface} m²</div>
+                        <div className="text-sm text-gray-900">Sol: {room.menuiseriesSolSurface} m²</div>
+                        <div className="text-sm text-gray-500 mt-2">{room.menuiseries.length} menuiseries</div>
+                        <div className="text-sm text-gray-500">{room.autresSurfaces ? room.autresSurfaces.length : 0} autres surfaces</div>
+                        <div className="text-sm text-gray-900 mt-2">Autres Murs: {room.autresSurfacesMurs} m²</div>
+                        <div className="text-sm text-gray-900">Autres Plafond: {room.autresSurfacesPlafond} m²</div>
+                        <div className="text-sm text-gray-900">Autres Sol: {room.autresSurfacesSol} m²</div>
                       </td>
                       <td className="px-3 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <Button

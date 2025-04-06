@@ -4,7 +4,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { useAutresSurfaces } from "@/contexts/AutresSurfacesContext";
 import { AutreSurface, TypeAutreSurface } from "@/types";
 import { arrondir2Decimales } from "@/lib/utils";
 
@@ -13,17 +12,16 @@ interface AutreSurfaceFormProps {
   editingSurface: string | null;
   currentSurface: Omit<AutreSurface, "id" | "surface"> | null;
   onCancelEdit: () => void;
+  typesAutresSurfaces: TypeAutreSurface[];
 }
 
 const AutreSurfaceForm: React.FC<AutreSurfaceFormProps> = ({ 
   onAddAutreSurface, 
   editingSurface, 
   currentSurface,
-  onCancelEdit
+  onCancelEdit,
+  typesAutresSurfaces
 }) => {
-  const { state } = useAutresSurfaces();
-  const { typesAutresSurfaces } = state;
-
   const [newAutreSurface, setNewAutreSurface] = useState<Omit<AutreSurface, "id" | "surface">>({
     type: "",
     name: "",
