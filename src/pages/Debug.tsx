@@ -11,6 +11,7 @@ import {
   TabsList, 
   TabsTrigger 
 } from '@/components/ui/tabs';
+import { Toaster } from 'sonner';
 
 /**
  * Page de débogage accessible uniquement via un bouton dans le layout (en mode dev)
@@ -24,6 +25,7 @@ const Debug: React.FC = () => {
   
   return (
     <Layout>
+      <Toaster position="top-right" />
       <div className="min-h-screen bg-gray-50 pb-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex justify-between items-center mb-8">

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLogger } from '@/hooks/useLogger';
 import { useClients } from '@/contexts/ClientsContext';
@@ -33,7 +32,7 @@ import {
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { toast } from '@/components/ui/sonner';
+import { toast } from 'sonner';
 
 interface StorageStatus {
   localStorage: {
