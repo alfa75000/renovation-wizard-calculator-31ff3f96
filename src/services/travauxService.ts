@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { WorkType, ServiceGroup, Service } from '@/types/supabase';
 import { toast } from 'sonner';
@@ -6,10 +5,28 @@ import { toast } from 'sonner';
 // Récupérer tous les types de travaux
 export const fetchWorkTypes = async (): Promise<WorkType[]> => {
   try {
+    // Vérifions d'abord quelles colonnes sont disponibles
+    const { data: columnsData, error: columnsError } = await supabase
+      .from('work_types')
+      .select('*')
+      .limit(1);
+    
+    console.log("Colonnes de work_types:", columnsData ? Object.keys(columnsData[0] || {}) : 'Aucune donnée');
+    
+    if (columnsError) {
+      console.error('Erreur lors de la vérification des colonnes de work_types:', columnsError);
+      toast.error('Erreur lors de la récupération des types de travaux');
+      return [];
+    }
+    
+    // Déterminer le nom de la colonne (name ou Name)
+    const nameColumn = columnsData && columnsData[0] && 'Name' in columnsData[0] ? 'Name' : 'name';
+    
+    // Utiliser le nom de colonne correct
     const { data, error } = await supabase
       .from('work_types')
       .select('*')
-      .order('name');
+      .order(nameColumn, { ascending: true });
     
     if (error) {
       console.error('Erreur lors de la récupération des types de travaux:', error);
@@ -17,7 +34,18 @@ export const fetchWorkTypes = async (): Promise<WorkType[]> => {
       return [];
     }
     
-    return data;
+    // Si la colonne est "Name", transformons-la en "name" pour la cohérence
+    const formattedData = data.map(item => {
+      if ('Name' in item) {
+        return {
+          ...item,
+          name: item.Name,
+        };
+      }
+      return item;
+    });
+    
+    return formattedData;
   } catch (error) {
     console.error('Exception lors de la récupération des types de travaux:', error);
     toast.error('Erreur lors de la récupération des types de travaux');
@@ -28,11 +56,31 @@ export const fetchWorkTypes = async (): Promise<WorkType[]> => {
 // Récupérer les groupes de services pour un type de travail
 export const fetchServiceGroups = async (workTypeId: string): Promise<ServiceGroup[]> => {
   try {
+    // Vérifions d'abord quelles colonnes sont disponibles
+    const { data: columnsData, error: columnsError } = await supabase
+      .from('service_groups')
+      .select('*')
+      .limit(1);
+    
+    console.log("Colonnes de service_groups:", columnsData ? Object.keys(columnsData[0] || {}) : 'Aucune donnée');
+    
+    if (columnsError) {
+      console.error('Erreur lors de la vérification des colonnes de service_groups:', columnsError);
+      toast.error('Erreur lors de la récupération des sous-catégories');
+      return [];
+    }
+    
+    // Déterminer les noms des colonnes
+    const nameColumn = columnsData && columnsData[0] && 'Name' in columnsData[0] ? 'Name' : 'name';
+    const workTypeIdColumn = columnsData && columnsData[0] && 'work_type_id' in columnsData[0] ? 'work_type_id' : 
+      columnsData && columnsData[0] && 'work_type_ID' in columnsData[0] ? 'work_type_ID' : 'work_type_id';
+    
+    // Utiliser les noms de colonnes corrects
     const { data, error } = await supabase
       .from('service_groups')
       .select('*')
-      .eq('work_type_id', workTypeId)
-      .order('name');
+      .eq(workTypeIdColumn, workTypeId)
+      .order(nameColumn, { ascending: true });
     
     if (error) {
       console.error('Erreur lors de la récupération des groupes de services:', error);
@@ -40,7 +88,22 @@ export const fetchServiceGroups = async (workTypeId: string): Promise<ServiceGro
       return [];
     }
     
-    return data;
+    // Formater les données pour assurer la cohérence
+    const formattedData = data.map(item => {
+      const formattedItem: any = { ...item };
+      
+      if ('Name' in item) {
+        formattedItem.name = item.Name;
+      }
+      
+      if ('work_type_ID' in item) {
+        formattedItem.work_type_id = item.work_type_ID;
+      }
+      
+      return formattedItem as ServiceGroup;
+    });
+    
+    return formattedData;
   } catch (error) {
     console.error('Exception lors de la récupération des groupes de services:', error);
     toast.error('Erreur lors de la récupération des sous-catégories');
@@ -51,11 +114,31 @@ export const fetchServiceGroups = async (workTypeId: string): Promise<ServiceGro
 // Récupérer les services pour un groupe
 export const fetchServices = async (groupId: string): Promise<Service[]> => {
   try {
+    // Vérifions d'abord quelles colonnes sont disponibles
+    const { data: columnsData, error: columnsError } = await supabase
+      .from('services')
+      .select('*')
+      .limit(1);
+    
+    console.log("Colonnes de services:", columnsData ? Object.keys(columnsData[0] || {}) : 'Aucune donnée');
+    
+    if (columnsError) {
+      console.error('Erreur lors de la vérification des colonnes de services:', columnsError);
+      toast.error('Erreur lors de la récupération des prestations');
+      return [];
+    }
+    
+    // Déterminer les noms des colonnes
+    const nameColumn = columnsData && columnsData[0] && 'Name' in columnsData[0] ? 'Name' : 'name';
+    const groupIdColumn = columnsData && columnsData[0] && 'group_id' in columnsData[0] ? 'group_id' : 
+      columnsData && columnsData[0] && 'group_ID' in columnsData[0] ? 'group_ID' : 'group_id';
+    
+    // Utiliser les noms de colonnes corrects
     const { data, error } = await supabase
       .from('services')
       .select('*')
-      .eq('group_id', groupId)
-      .order('name');
+      .eq(groupIdColumn, groupId)
+      .order(nameColumn, { ascending: true });
     
     if (error) {
       console.error('Erreur lors de la récupération des services:', error);
@@ -63,7 +146,34 @@ export const fetchServices = async (groupId: string): Promise<Service[]> => {
       return [];
     }
     
-    return data;
+    // Formater les données pour assurer la cohérence
+    const formattedData = data.map(item => {
+      const formattedItem: any = { ...item };
+      
+      if ('Name' in item) {
+        formattedItem.name = item.Name;
+      }
+      
+      if ('Description' in item) {
+        formattedItem.description = item.Description;
+      }
+      
+      if ('labor_price' in item === false && 'Labor_price' in item) {
+        formattedItem.labor_price = item.Labor_price;
+      }
+      
+      if ('supply_price' in item === false && 'Supply_price' in item) {
+        formattedItem.supply_price = item.Supply_price;
+      }
+      
+      if ('group_ID' in item) {
+        formattedItem.group_id = item.group_ID;
+      }
+      
+      return formattedItem as Service;
+    });
+    
+    return formattedData;
   } catch (error) {
     console.error('Exception lors de la récupération des services:', error);
     toast.error('Erreur lors de la récupération des prestations');

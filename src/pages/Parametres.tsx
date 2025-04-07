@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Layout } from "@/components/Layout";
 import { 
@@ -22,7 +21,8 @@ import {
   DoorOpen,
   Users,
   User,
-  Loader2
+  Loader2,
+  Database
 } from "lucide-react";
 import { 
   Dialog, 
@@ -43,8 +43,8 @@ import { Textarea } from "@/components/ui/textarea";
 
 import TypeMenuiserieForm from "@/features/admin/components/TypeMenuiserieForm";
 import ClientForm from "@/features/admin/components/ClientForm";
+import SupabaseStatus from "@/components/SupabaseStatus";
 
-// Importation des types Supabase
 import { WorkType, ServiceGroup, Service } from "@/types/supabase";
 import { 
   fetchWorkTypes, 
@@ -68,17 +68,13 @@ import { surfacesReference } from "@/contexts/TravauxTypesContext";
 import { surfacesMenuiseries } from "@/types";
 
 const Parametres = () => {
-  // Contexte des menuiseries et des clients
   const { state: stateMenuiseriesTypes, dispatch: dispatchMenuiseriesTypes } = useMenuiseriesTypes();
   const { typesMenuiseries } = stateMenuiseriesTypes;
   
   const { state: stateClients, dispatch: dispatchClients } = useClients();
   const { clients } = stateClients;
 
-  // Onglet actif
   const [activeTab, setActiveTab] = useState("travaux");
-
-  // États pour les travaux avec Supabase
   const [workTypes, setWorkTypes] = useState<WorkType[]>([]);
   const [serviceGroups, setServiceGroups] = useState<ServiceGroup[]>([]);
   const [services, setServices] = useState<Service[]>([]);
@@ -87,40 +83,28 @@ const Parametres = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [isLoadingGroups, setIsLoadingGroups] = useState<boolean>(false);
   const [isLoadingServices, setIsLoadingServices] = useState<boolean>(false);
-
-  // États pour le formulaire de type de travaux
   const [workTypeFormOpen, setWorkTypeFormOpen] = useState<boolean>(false);
   const [editingWorkType, setEditingWorkType] = useState<WorkType | null>(null);
-
-  // États pour le formulaire de groupe
   const [serviceGroupFormOpen, setServiceGroupFormOpen] = useState<boolean>(false);
   const [editingServiceGroup, setEditingServiceGroup] = useState<ServiceGroup | null>(null);
-
-  // États pour le formulaire de service
   const [serviceFormOpen, setServiceFormOpen] = useState<boolean>(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
-
-  // États pour les confirmations de suppression
   const [confirmDeleteWorkTypeOpen, setConfirmDeleteWorkTypeOpen] = useState<boolean>(false);
   const [workTypeToDelete, setWorkTypeToDelete] = useState<string | null>(null);
   const [confirmDeleteGroupOpen, setConfirmDeleteGroupOpen] = useState<boolean>(false);
   const [groupToDelete, setGroupToDelete] = useState<string | null>(null);
   const [confirmDeleteServiceOpen, setConfirmDeleteServiceOpen] = useState<boolean>(false);
   const [serviceToDelete, setServiceToDelete] = useState<string | null>(null);
-
-  // États pour les menuiseries
   const [typeMenuiserieFormOpen, setTypeMenuiserieFormOpen] = useState(false);
   const [editingTypeMenuiserie, setEditingTypeMenuiserie] = useState<TypeMenuiserie | null>(null);
   const [confirmDeleteMenuiserieOpen, setConfirmDeleteMenuiserieOpen] = useState(false);
   const [typeMenuiserieToDelete, setTypeMenuiserieToDelete] = useState<string | null>(null);
-  
-  // États pour les clients
   const [clientFormOpen, setClientFormOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [confirmDeleteClientOpen, setConfirmDeleteClientOpen] = useState(false);
   const [clientToDelete, setClientToDelete] = useState<string | null>(null);
+  const [showDiagnostic, setShowDiagnostic] = useState(true);
 
-  // Chargement initial des types de travaux
   useEffect(() => {
     const loadWorkTypes = async () => {
       setLoading(true);
@@ -138,7 +122,6 @@ const Parametres = () => {
     loadWorkTypes();
   }, []);
 
-  // Chargement des groupes quand un type de travail est sélectionné
   useEffect(() => {
     if (!selectedWorkTypeId) {
       setServiceGroups([]);
@@ -161,7 +144,6 @@ const Parametres = () => {
     loadServiceGroups();
   }, [selectedWorkTypeId]);
 
-  // Chargement des services quand un groupe est sélectionné
   useEffect(() => {
     if (!selectedGroupId) {
       setServices([]);
@@ -184,7 +166,6 @@ const Parametres = () => {
     loadServices();
   }, [selectedGroupId]);
 
-  // Gestion des icônes
   const getIconComponent = (iconName: string) => {
     switch (iconName) {
       case "Paintbrush":
@@ -200,7 +181,6 @@ const Parametres = () => {
     }
   };
 
-  // Gestion des types de travaux
   const handleAddWorkType = () => {
     setEditingWorkType(null);
     setWorkTypeFormOpen(true);
@@ -223,7 +203,6 @@ const Parametres = () => {
       setLoading(false);
       
       if (success) {
-        // Mettre à jour la liste des types de travaux
         setWorkTypes(prev => prev.filter(wt => wt.id !== workTypeToDelete));
         setConfirmDeleteWorkTypeOpen(false);
         setWorkTypeToDelete(null);
@@ -242,7 +221,6 @@ const Parametres = () => {
     
     try {
       if (editingWorkType) {
-        // Mise à jour
         const updatedWorkType = await updateWorkType(editingWorkType.id, name);
         
         if (updatedWorkType) {
@@ -252,7 +230,6 @@ const Parametres = () => {
           toast.success("Type de travaux mis à jour avec succès");
         }
       } else {
-        // Création
         const newWorkType = await createWorkType(name);
         
         if (newWorkType) {
@@ -270,7 +247,6 @@ const Parametres = () => {
     }
   };
 
-  // Gestion des groupes de services
   const handleAddServiceGroup = () => {
     if (selectedWorkTypeId) {
       setEditingServiceGroup(null);
@@ -295,7 +271,6 @@ const Parametres = () => {
       setIsLoadingGroups(false);
       
       if (success) {
-        // Mettre à jour la liste des groupes
         setServiceGroups(prev => prev.filter(g => g.id !== groupToDelete));
         setConfirmDeleteGroupOpen(false);
         setGroupToDelete(null);
@@ -316,7 +291,6 @@ const Parametres = () => {
     
     try {
       if (editingServiceGroup) {
-        // Mise à jour
         const updatedGroup = await updateServiceGroup(editingServiceGroup.id, name);
         
         if (updatedGroup) {
@@ -326,7 +300,6 @@ const Parametres = () => {
           toast.success("Groupe mis à jour avec succès");
         }
       } else {
-        // Création
         const newGroup = await createServiceGroup(name, selectedWorkTypeId);
         
         if (newGroup) {
@@ -344,7 +317,6 @@ const Parametres = () => {
     }
   };
 
-  // Gestion des services
   const handleAddService = () => {
     if (selectedGroupId) {
       setEditingService(null);
@@ -369,7 +341,6 @@ const Parametres = () => {
       setIsLoadingServices(false);
       
       if (success) {
-        // Mettre à jour la liste des services
         setServices(prev => prev.filter(s => s.id !== serviceToDelete));
         setConfirmDeleteServiceOpen(false);
         setServiceToDelete(null);
@@ -390,7 +361,6 @@ const Parametres = () => {
     
     try {
       if (editingService) {
-        // Mise à jour
         const updatedService = await updateService(editingService.id, serviceData);
         
         if (updatedService) {
@@ -400,7 +370,6 @@ const Parametres = () => {
           toast.success("Service mis à jour avec succès");
         }
       } else {
-        // Création
         const newService = await createService({
           ...serviceData,
           group_id: selectedGroupId
@@ -427,7 +396,6 @@ const Parametres = () => {
     return surface ? surface.label : id;
   };
 
-  // Gestion des types de menuiseries
   const handleAddTypeMenuiserie = () => {
     setEditingTypeMenuiserie(null);
     setTypeMenuiserieFormOpen(true);
@@ -480,7 +448,6 @@ const Parametres = () => {
     }
   };
   
-  // Gestion des clients
   const handleAddClient = () => {
     setEditingClient(null);
     setClientFormOpen(true);
@@ -537,6 +504,25 @@ const Parametres = () => {
       title="Paramètres"
       subtitle="Gérez les types de travaux, de menuiseries, les clients et leurs paramètres"
     >
+      {showDiagnostic && (
+        <div className="mb-6">
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="text-lg font-medium flex items-center">
+              <Database className="h-5 w-5 mr-2" />
+              Statut de la connexion à la base de données
+            </h3>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setShowDiagnostic(false)}
+            >
+              Masquer
+            </Button>
+          </div>
+          <SupabaseStatus />
+        </div>
+      )}
+
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mb-6">
         <TabsList className="w-full">
           <TabsTrigger value="travaux" className="flex-1">Types de Travaux</TabsTrigger>
@@ -995,7 +981,6 @@ const Parametres = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Formulaire de Type de Travaux */}
       <Dialog open={workTypeFormOpen} onOpenChange={setWorkTypeFormOpen}>
         <DialogContent>
           <DialogHeader>
@@ -1042,7 +1027,6 @@ const Parametres = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Formulaire de Groupe de Services */}
       <Dialog open={serviceGroupFormOpen} onOpenChange={setServiceGroupFormOpen}>
         <DialogContent>
           <DialogHeader>
@@ -1089,7 +1073,6 @@ const Parametres = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Formulaire de Service */}
       <Dialog open={serviceFormOpen} onOpenChange={setServiceFormOpen}>
         <DialogContent>
           <DialogHeader>
@@ -1197,7 +1180,6 @@ const Parametres = () => {
         onSubmit={handleSubmitClient}
       />
 
-      {/* Confirmations de suppression */}
       <Dialog open={confirmDeleteWorkTypeOpen} onOpenChange={setConfirmDeleteWorkTypeOpen}>
         <DialogContent>
           <DialogHeader>
