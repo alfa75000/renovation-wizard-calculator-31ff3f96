@@ -1,91 +1,220 @@
 
-import React, { useEffect } from 'react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import React, { useState } from 'react';
 import { useTravauxTypes } from '@/contexts/TravauxTypesContext';
-
-// Import des icônes disponibles
-import { 
-  Paintbrush, 
-  Hammer, 
-  Wrench, 
-  SquarePen, 
-  Home, 
-  Droplet, 
-  Power, 
-  Pipette, 
-  Cpu, 
-  CircuitBoard,
-  Flame,
-  Cable,
-  Building
-} from 'lucide-react';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
+import { v4 as uuidv4 } from 'uuid';
+import { TravauxType } from '@/types';
 
 interface TypeTravauxSelectProps {
-  value: string | null;
-  onChange: (value: string) => void;
+  value: string;
+  onChange: (id: string, label: string) => void;
+  placeholder?: string;
+  disabled?: boolean;
+  className?: string;
+  showAdminButtons?: boolean;
 }
 
-const TypeTravauxSelect: React.FC<TypeTravauxSelectProps> = ({ value, onChange }) => {
+const TypeTravauxSelect: React.FC<TypeTravauxSelectProps> = ({
+  value,
+  onChange,
+  placeholder = "Sélectionner un type de travaux",
+  disabled = false,
+  className = "",
+  showAdminButtons = false,
+}) => {
   const { state, dispatch } = useTravauxTypes();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingType, setEditingType] = useState<TravauxType | null>(null);
+  const [newTypeLabel, setNewTypeLabel] = useState('');
   
-  // Vérification du contenu de state.types au chargement
-  useEffect(() => {
-    console.log("Types de travaux disponibles:", state.types.map(t => ({ id: t.id, label: t.label })));
-    
-    // Vérifier si "Menuiseries existantes" est présent
-    const hasMenuiseriesExistantes = state.types.some(type => type.id === "menuiseries-existantes");
-    console.log("'Menuiseries existantes' est présent:", hasMenuiseriesExistantes);
-    
-    // Si pas présent, forcer une réinitialisation
-    if (!hasMenuiseriesExistantes && state.types.length > 0) {
-      console.log("Réinitialisation des types de travaux car 'Menuiseries existantes' est manquant");
-      dispatch({ type: 'RESET_TYPES' });
-      
-      // Force reload de la page pour appliquer le reset
-      setTimeout(() => {
-        window.location.reload();
-      }, 100);
+  // Réinitialiser les types (pour le développement)
+  const resetTypes = () => {
+    dispatch({ type: 'RESET_TYPES' });
+    toast.success("Types de travaux réinitialisés");
+  };
+  
+  // Gestionnaire de changement
+  const handleChange = (typeId: string) => {
+    const type = state.types.find(t => t.id === typeId);
+    if (type) {
+      onChange(type.id, type.label);
     }
-  }, [state.types, dispatch]);
+  };
   
-  // Map pour les icônes
-  const iconMap: Record<string, React.ReactNode> = {
-    "Paintbrush": <Paintbrush className="h-4 w-4" />,
-    "Hammer": <Hammer className="h-4 w-4" />,
-    "Wrench": <Wrench className="h-4 w-4" />,
-    "SquarePen": <SquarePen className="h-4 w-4" />,
-    "Power": <Power className="h-4 w-4" />,
-    "Droplet": <Droplet className="h-4 w-4" />,
-    "Home": <Home className="h-4 w-4" />,
-    "Pipette": <Pipette className="h-4 w-4" />,
-    "Cpu": <Cpu className="h-4 w-4" />,
-    "CircuitBoard": <CircuitBoard className="h-4 w-4" />,
-    "Flame": <Flame className="h-4 w-4" />,
-    "Cable": <Cable className="h-4 w-4" />,
-    "Building": <Building className="h-4 w-4" />
+  // Ajouter un nouveau type
+  const handleAddType = () => {
+    if (!newTypeLabel.trim()) {
+      toast.error("Veuillez saisir un nom pour le type de travaux");
+      return;
+    }
+    
+    if (editingType) {
+      // Mettre à jour un type existant
+      dispatch({
+        type: 'UPDATE_TYPE',
+        payload: {
+          id: editingType.id,
+          type: { ...editingType, label: newTypeLabel, nom: newTypeLabel }
+        }
+      });
+      toast.success(`Type "${newTypeLabel}" mis à jour`);
+    } else {
+      // Ajouter un nouveau type
+      const newType: TravauxType = {
+        id: uuidv4(),
+        nom: newTypeLabel,
+        label: newTypeLabel,
+        description: '',
+        sousTypes: []
+      };
+      
+      dispatch({ type: 'ADD_TYPE', payload: newType });
+      toast.success(`Type "${newTypeLabel}" ajouté`);
+    }
+    
+    setNewTypeLabel('');
+    setEditingType(null);
+    setIsDialogOpen(false);
+  };
+  
+  // Éditer un type
+  const startEditingType = (type: TravauxType) => {
+    setEditingType(type);
+    setNewTypeLabel(type.label);
+    setIsDialogOpen(true);
+  };
+  
+  // Supprimer un type
+  const deleteType = (typeId: string) => {
+    const typeName = state.types.find(t => t.id === typeId)?.label || "type";
+    dispatch({ type: 'DELETE_TYPE', payload: typeId });
+    toast.success(`Type "${typeName}" supprimé`);
+    
+    if (value === typeId) {
+      onChange('', '');
+    }
   };
 
   return (
-    <div>
-      <label className="block text-sm font-medium mb-1">Type de travaux</label>
-      <Select 
-        value={value || ""} 
-        onValueChange={onChange}
+    <div className="space-y-2">
+      <Select
+        value={value}
+        onValueChange={handleChange}
+        disabled={disabled || state.types.length === 0}
       >
-        <SelectTrigger>
-          <SelectValue placeholder="Sélectionnez un type de travaux" />
+        <SelectTrigger className={className}>
+          <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>
-          {state.types.map(type => (
-            <SelectItem key={type.id} value={type.id}>
-              <div className="flex items-center">
-                {iconMap[type.icon]}
-                <span className="ml-2">{type.label}</span>
-              </div>
-            </SelectItem>
-          ))}
+          <SelectGroup>
+            {state.types.map((type) => (
+              <SelectItem key={type.id} value={type.id}>
+                {type.icon && <type.icon className="mr-2 h-4 w-4" />}
+                {type.label}
+              </SelectItem>
+            ))}
+            {state.types.length === 0 && (
+              <SelectItem value="none" disabled>
+                Aucun type disponible
+              </SelectItem>
+            )}
+          </SelectGroup>
         </SelectContent>
       </Select>
+      
+      {showAdminButtons && (
+        <div className="flex space-x-2">
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-1"
+              >
+                <Plus className="h-4 w-4" />
+                Ajouter un type
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>
+                  {editingType ? "Modifier un type de travaux" : "Ajouter un type de travaux"}
+                </DialogTitle>
+                <DialogDescription>
+                  {editingType 
+                    ? "Modifiez les détails du type de travaux ci-dessous."
+                    : "Créez un nouveau type de travaux pour vos estimations."}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="typeName">Nom du type de travaux</Label>
+                  <Input
+                    id="typeName"
+                    value={newTypeLabel}
+                    onChange={(e) => setNewTypeLabel(e.target.value)}
+                    placeholder="Ex: Peinture, Électricité, etc."
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => {
+                  setIsDialogOpen(false);
+                  setEditingType(null);
+                  setNewTypeLabel('');
+                }}>
+                  Annuler
+                </Button>
+                <Button type="button" onClick={handleAddType}>
+                  {editingType ? "Mettre à jour" : "Ajouter"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          
+          {value && (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const type = state.types.find(t => t.id === value);
+                  if (type) startEditingType(type);
+                }}
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+              
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => deleteType(value)}
+              >
+                <Trash2 className="h-4 w-4 text-red-500" />
+              </Button>
+            </>
+          )}
+          
+          <Button
+            type="button"
+            variant="link"
+            size="sm"
+            onClick={resetTypes}
+            className="text-xs"
+          >
+            Réinitialiser
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,51 +1,66 @@
 
-import React from 'react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { formaterPrix } from "@/lib/utils";
+import React, { useMemo } from 'react';
 import { useTravauxTypes } from '@/contexts/TravauxTypesContext';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { SousTypeTravauxItem } from '@/types';
 
 interface SousTypeSelectProps {
-  typeTravauxId: string | null;
-  value: string | null;
-  onChange: (value: string) => void;
+  typeTravauxId: string;
+  value: string;
+  onChange: (id: string, label: string, sousType: SousTypeTravauxItem) => void;
+  placeholder?: string;
+  disabled?: boolean;
+  className?: string;
 }
 
-const SousTypeSelect: React.FC<SousTypeSelectProps> = ({ typeTravauxId, value, onChange }) => {
+const SousTypeSelect: React.FC<SousTypeSelectProps> = ({
+  typeTravauxId,
+  value,
+  onChange,
+  placeholder = "Sélectionner un sous-type",
+  disabled = false,
+  className = "",
+}) => {
   const { state } = useTravauxTypes();
   
-  if (!typeTravauxId) return null;
+  // Récupérer les sous-types pour le type de travaux sélectionné
+  const sousTypes = useMemo(() => {
+    const typeTravaux = state.types.find(type => type.id === typeTravauxId);
+    return typeTravaux ? typeTravaux.sousTypes : [];
+  }, [state.types, typeTravauxId]);
 
-  // Trouver le type de travaux sélectionné
-  const selectedType = state.types.find(type => type.id === typeTravauxId);
-  
-  // Si le type n'existe pas ou n'a pas de sous-types, afficher un message
-  if (!selectedType) {
-    return <div className="text-sm text-red-500">Type de travaux non trouvé</div>;
-  }
-  
-  if (!selectedType.sousTypes || selectedType.sousTypes.length === 0) {
-    return <div className="text-sm text-amber-600">Aucune prestation disponible pour ce type de travaux. Veuillez en ajouter dans l'administration des travaux.</div>;
-  }
+  // Gestionnaire de changement
+  const handleChange = (sousTypeId: string) => {
+    const sousType = sousTypes.find(st => st.id === sousTypeId);
+    if (sousType) {
+      onChange(sousType.id, sousType.label, sousType);
+    }
+  };
 
   return (
-    <div>
-      <label className="block text-sm font-medium mb-1">Prestations</label>
-      <Select 
-        value={value || ""} 
-        onValueChange={onChange}
-      >
-        <SelectTrigger>
-          <SelectValue placeholder="Sélectionnez une prestation" />
-        </SelectTrigger>
-        <SelectContent>
-          {selectedType.sousTypes.map(sousType => (
+    <Select
+      value={value}
+      onValueChange={handleChange}
+      disabled={disabled || sousTypes.length === 0}
+    >
+      <SelectTrigger className={className}>
+        <SelectValue placeholder={placeholder} />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectGroup>
+          {sousTypes.map((sousType) => (
             <SelectItem key={sousType.id} value={sousType.id}>
-              {sousType.label} ({formaterPrix(sousType.prixUnitaire)}/{sousType.unite})
+              {sousType.label} ({sousType.prixUnitaire}€/{sousType.unite})
             </SelectItem>
           ))}
-        </SelectContent>
-      </Select>
-    </div>
+          {sousTypes.length === 0 && (
+            <SelectItem value="none" disabled>
+              Aucun sous-type disponible
+            </SelectItem>
+          )}
+        </SelectGroup>
+      </SelectContent>
+    </Select>
   );
 };
 

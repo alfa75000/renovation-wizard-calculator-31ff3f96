@@ -1,13 +1,8 @@
 
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import { MenuiseriesTypesState, TypeMenuiserie } from '@/types';
-
-// Actions possibles
-type MenuiseriesTypesAction =
-  | { type: 'ADD_TYPE'; payload: TypeMenuiserie }
-  | { type: 'UPDATE_TYPE'; payload: { id: string; type: TypeMenuiserie } }
-  | { type: 'DELETE_TYPE'; payload: string }
-  | { type: 'LOAD_TYPES'; payload: TypeMenuiserie[] };
+import { MenuiseriesTypesState, TypeMenuiserie, MenuiseriesTypesAction, surfacesReference } from '@/types';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { v4 as uuidv4 } from 'uuid';
 
 // État initial
 const initialState: MenuiseriesTypesState = {
@@ -26,17 +21,22 @@ const MenuiseriesTypesContext = createContext<{
 // Reducer pour gérer les actions
 function menuiseriesTypesReducer(state: MenuiseriesTypesState, action: MenuiseriesTypesAction): MenuiseriesTypesState {
   switch (action.type) {
-    case 'ADD_TYPE':
+    case 'ADD_TYPE': {
+      const newType = {
+        ...action.payload,
+        id: action.payload.id || uuidv4(),
+      };
       return {
         ...state,
-        typesMenuiseries: [...state.typesMenuiseries, action.payload],
+        typesMenuiseries: [...state.typesMenuiseries, newType],
       };
+    }
     
     case 'UPDATE_TYPE': {
       const { id, type } = action.payload;
       return {
         ...state,
-        typesMenuiseries: state.typesMenuiseries.map((t) => (t.id === id ? type : t)),
+        typesMenuiseries: state.typesMenuiseries.map((t) => (t.id === id ? { ...t, ...type } : t)),
       };
     }
     
@@ -51,6 +51,9 @@ function menuiseriesTypesReducer(state: MenuiseriesTypesState, action: Menuiseri
         ...state,
         typesMenuiseries: action.payload,
       };
+      
+    case 'RESET_TYPES':
+      return initialState;
     
     default:
       return state;
@@ -59,69 +62,17 @@ function menuiseriesTypesReducer(state: MenuiseriesTypesState, action: Menuiseri
 
 // Provider component
 export const MenuiseriesTypesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Récupérer les données depuis localStorage au démarrage
-  const [state, dispatch] = useReducer(menuiseriesTypesReducer, initialState, () => {
-    try {
-      const savedState = localStorage.getItem('typesMenuiseries');
-      if (savedState) {
-        return { typesMenuiseries: JSON.parse(savedState) };
-      }
-
-      // Si aucune donnée n'est trouvée, initialiser avec des exemples
-      const defaultTypes: TypeMenuiserie[] = [
-        {
-          id: '1',
-          nom: 'Fenêtre standard',
-          description: 'Fenêtre standard double vitrage',
-          hauteur: 120,
-          largeur: 100,
-          surfaceReference: 1.2,
-          impactePlinthe: false,
-        },
-        {
-          id: '2',
-          nom: 'Porte intérieure',
-          description: 'Porte intérieure standard',
-          hauteur: 210,
-          largeur: 90,
-          surfaceReference: 1.9,
-          impactePlinthe: true,
-        },
-        {
-          id: '3',
-          nom: 'Porte-fenêtre',
-          description: 'Porte-fenêtre double vitrage',
-          hauteur: 220,
-          largeur: 140,
-          surfaceReference: 3.1,
-          impactePlinthe: true,
-        },
-        {
-          id: '4',
-          nom: 'Velux',
-          description: 'Fenêtre de toit',
-          hauteur: 78,
-          largeur: 98,
-          surfaceReference: 0.76,
-          impactePlinthe: false,
-        },
-      ];
-
-      return { typesMenuiseries: defaultTypes };
-    } catch (error) {
-      console.error('Erreur lors du chargement des types de menuiseries:', error);
-      return initialState;
-    }
+  const [savedTypes, setSavedTypes] = useLocalStorage<TypeMenuiserie[]>('menuiseriesTypes', []);
+  
+  // Initialiser le state avec les données sauvegardées
+  const [state, dispatch] = useReducer(menuiseriesTypesReducer, {
+    typesMenuiseries: savedTypes,
   });
 
-  // Sauvegarder les données dans localStorage à chaque changement
+  // Sauvegarder les changements dans localStorage
   useEffect(() => {
-    try {
-      localStorage.setItem('typesMenuiseries', JSON.stringify(state.typesMenuiseries));
-    } catch (error) {
-      console.error('Erreur lors de la sauvegarde des types de menuiseries:', error);
-    }
-  }, [state]);
+    setSavedTypes(state.typesMenuiseries);
+  }, [state.typesMenuiseries, setSavedTypes]);
 
   return (
     <MenuiseriesTypesContext.Provider value={{ state, dispatch }}>
@@ -138,3 +89,7 @@ export const useMenuiseriesTypes = () => {
   }
   return context;
 };
+
+// Exporter les types et références pour l'utilisation dans d'autres fichiers
+export { surfacesReference };
+export type { TypeMenuiserie };

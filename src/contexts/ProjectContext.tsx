@@ -1,15 +1,7 @@
 
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import { ProjectState, Property, Room } from '@/types';
-
-// Actions possibles
-type ProjectAction =
-  | { type: 'UPDATE_PROPERTY'; payload: Partial<Property> }
-  | { type: 'ADD_ROOM'; payload: Room }
-  | { type: 'UPDATE_ROOM'; payload: { id: string; room: Room } }
-  | { type: 'DELETE_ROOM'; payload: string }
-  | { type: 'RESET_PROJECT' }
-  | { type: 'LOAD_PROJECT'; payload: ProjectState };
+import { ProjectState, Property, Room, Travail, ProjectAction } from '@/types';
+import { v4 as uuidv4 } from 'uuid';
 
 // État initial
 const initialState: ProjectState = {
@@ -21,6 +13,7 @@ const initialState: ProjectState = {
     ceilingHeight: 2.5,
   },
   rooms: [],
+  travaux: [],
 };
 
 // Créer le contexte
@@ -62,6 +55,28 @@ function projectReducer(state: ProjectState, action: ProjectAction): ProjectStat
       return {
         ...state,
         rooms: state.rooms.filter((room) => room.id !== action.payload),
+        // Supprimer également les travaux associés à cette pièce
+        travaux: state.travaux.filter((travail) => travail.pieceId !== action.payload),
+      };
+    
+    case 'ADD_TRAVAIL':
+      return {
+        ...state,
+        travaux: [...state.travaux, action.payload],
+      };
+    
+    case 'UPDATE_TRAVAIL': {
+      const { id, travail } = action.payload;
+      return {
+        ...state,
+        travaux: state.travaux.map((t) => (t.id === id ? travail : t)),
+      };
+    }
+    
+    case 'DELETE_TRAVAIL':
+      return {
+        ...state,
+        travaux: state.travaux.filter((travail) => travail.id !== action.payload),
       };
     
     case 'RESET_PROJECT':
@@ -111,4 +126,42 @@ export const useProject = () => {
     throw new Error('useProject doit être utilisé à l\'intérieur d\'un ProjectProvider');
   }
   return context;
+};
+
+// Hook pour la gestion des travaux
+export const useTravaux = () => {
+  const { state, dispatch } = useProject();
+  
+  const getTravauxForPiece = (pieceId: string) => {
+    return state.travaux.filter(travail => travail.pieceId === pieceId);
+  };
+  
+  const addTravail = (travail: Omit<Travail, 'id'>) => {
+    dispatch({
+      type: 'ADD_TRAVAIL',
+      payload: { ...travail, id: uuidv4() }
+    });
+  };
+  
+  const updateTravail = (id: string, travail: Travail) => {
+    dispatch({
+      type: 'UPDATE_TRAVAIL',
+      payload: { id, travail }
+    });
+  };
+  
+  const deleteTravail = (id: string) => {
+    dispatch({
+      type: 'DELETE_TRAVAIL',
+      payload: id
+    });
+  };
+  
+  return {
+    travaux: state.travaux,
+    getTravauxForPiece,
+    addTravail,
+    updateTravail,
+    deleteTravail
+  };
 };

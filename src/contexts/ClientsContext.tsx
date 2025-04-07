@@ -1,13 +1,8 @@
 
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import { ClientsState, Client } from '@/types';
-
-// Actions possibles
-type ClientsAction =
-  | { type: 'ADD_CLIENT'; payload: Client }
-  | { type: 'UPDATE_CLIENT'; payload: { id: string; client: Client } }
-  | { type: 'DELETE_CLIENT'; payload: string }
-  | { type: 'LOAD_CLIENTS'; payload: Client[] };
+import { ClientsState, Client, ClientsAction, typesClients } from '@/types';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { v4 as uuidv4 } from 'uuid';
 
 // État initial
 const initialState: ClientsState = {
@@ -26,17 +21,22 @@ const ClientsContext = createContext<{
 // Reducer pour gérer les actions
 function clientsReducer(state: ClientsState, action: ClientsAction): ClientsState {
   switch (action.type) {
-    case 'ADD_CLIENT':
+    case 'ADD_CLIENT': {
+      const newClient = {
+        ...action.payload,
+        id: action.payload.id || uuidv4(),
+      };
       return {
         ...state,
-        clients: [...state.clients, action.payload],
+        clients: [...state.clients, newClient],
       };
+    }
     
     case 'UPDATE_CLIENT': {
       const { id, client } = action.payload;
       return {
         ...state,
-        clients: state.clients.map((c) => (c.id === id ? client : c)),
+        clients: state.clients.map((c) => (c.id === id ? { ...c, ...client } : c)),
       };
     }
     
@@ -51,6 +51,9 @@ function clientsReducer(state: ClientsState, action: ClientsAction): ClientsStat
         ...state,
         clients: action.payload,
       };
+      
+    case 'RESET_CLIENTS':
+      return initialState;
     
     default:
       return state;
@@ -59,43 +62,17 @@ function clientsReducer(state: ClientsState, action: ClientsAction): ClientsStat
 
 // Provider component
 export const ClientsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Récupérer les données depuis localStorage au démarrage
-  const [state, dispatch] = useReducer(clientsReducer, initialState, () => {
-    try {
-      const savedState = localStorage.getItem('clients');
-      if (savedState) {
-        return { clients: JSON.parse(savedState) };
-      }
-
-      // Si aucune donnée n'est trouvée, initialiser avec un exemple
-      const defaultClients: Client[] = [
-        {
-          id: '1',
-          nom: 'Durand',
-          prenom: 'Jean',
-          telephone: '0612345678',
-          email: 'jean.durand@example.com',
-          adresse: '15 rue des Lilas',
-          codePostal: '75001',
-          ville: 'Paris',
-        },
-      ];
-
-      return { clients: defaultClients };
-    } catch (error) {
-      console.error('Erreur lors du chargement des clients:', error);
-      return initialState;
-    }
+  const [savedClients, setSavedClients] = useLocalStorage<Client[]>('clients', []);
+  
+  // Initialiser le state avec les données sauvegardées
+  const [state, dispatch] = useReducer(clientsReducer, {
+    clients: savedClients,
   });
 
-  // Sauvegarder les données dans localStorage à chaque changement
+  // Sauvegarder les changements dans localStorage
   useEffect(() => {
-    try {
-      localStorage.setItem('clients', JSON.stringify(state.clients));
-    } catch (error) {
-      console.error('Erreur lors de la sauvegarde des clients:', error);
-    }
-  }, [state]);
+    setSavedClients(state.clients);
+  }, [state.clients, setSavedClients]);
 
   return (
     <ClientsContext.Provider value={{ state, dispatch }}>
@@ -112,3 +89,7 @@ export const useClients = () => {
   }
   return context;
 };
+
+// Exporter pour l'utilisation dans d'autres fichiers
+export { typesClients };
+export type { Client };
