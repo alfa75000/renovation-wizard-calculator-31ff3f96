@@ -1,6 +1,4 @@
-
-import React, { useEffect, useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
 import LogViewer from '@/components/debug/LogViewer';
 import { useLogger } from '@/hooks/useLogger';
 import { Button } from '@/components/ui/button';
@@ -11,82 +9,15 @@ import {
   TabsTrigger 
 } from '@/components/ui/tabs';
 
-// Clé pour stocker l'état d'authentification du mode debug dans sessionStorage
-const DEBUG_AUTH_KEY = 'debug_mode_authorized';
-
 /**
  * Page de débogage accessible uniquement via un bouton dans le layout (en mode dev)
- * ou un accès direct avec authentification
  */
 const Debug: React.FC = () => {
   const logger = useLogger('DebugPage');
-  const [isAuthorized, setIsAuthorized] = useState<boolean>(false);
-  const [password, setPassword] = useState<string>('');
-  const [error, setError] = useState<string>('');
   
-  // Vérifier si l'utilisateur a déjà été autorisé dans cette session
   useEffect(() => {
-    const debugAuthorized = sessionStorage.getItem(DEBUG_AUTH_KEY) === 'true';
-    setIsAuthorized(debugAuthorized);
-    
-    if (debugAuthorized) {
-      logger.info('Accès à la page de debug (déjà autorisé)', 'system');
-    }
+    logger.info('Accès à la page de debug', 'system');
   }, []);
-  
-  const handleAuthorize = () => {
-    // Mot de passe simple pour la démo (à remplacer par une vraie authentification)
-    const debugPassword = 'debug1234';
-    
-    if (password === debugPassword) {
-      setIsAuthorized(true);
-      sessionStorage.setItem(DEBUG_AUTH_KEY, 'true');
-      logger.info('Accès à la page de debug (mot de passe)', 'system');
-    } else {
-      setError('Mot de passe incorrect');
-      logger.warn('Tentative d\'accès à la page de debug avec un mot de passe incorrect', 'system');
-    }
-  };
-  
-  // Rediriger vers la page d'accueil si l'utilisateur n'est pas autorisé
-  if (!isAuthorized) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold">Mode Débogage</h1>
-            <p className="mt-2 text-gray-600">
-              Cette page est réservée aux développeurs. Veuillez saisir le mot de passe pour y accéder.
-            </p>
-          </div>
-          
-          <div className="mt-8 space-y-6">
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Mot de passe"
-              className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-              onKeyDown={(e) => e.key === 'Enter' && handleAuthorize()}
-            />
-            
-            {error && (
-              <p className="text-sm text-red-600">{error}</p>
-            )}
-            
-            <div>
-              <Button 
-                className="w-full" 
-                onClick={handleAuthorize}
-              >
-                Accéder
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
   
   return (
     <div className="min-h-screen bg-gray-50 pb-12">

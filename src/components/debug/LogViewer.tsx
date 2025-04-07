@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLogger } from '@/hooks/useLogger';
 import { LogEntry, LogLevel, LogCategory } from '@/services/logService';
@@ -72,12 +73,6 @@ const LogViewer: React.FC = () => {
     loadStats();
     
     logger.info('Composant LogViewer initialisé');
-    
-    // Log l'ouverture de la page de debug
-    logger.info('Page de debug ouverte', 'system', { 
-      userAgent: navigator.userAgent,
-      resolution: `${window.innerWidth}x${window.innerHeight}`
-    });
     
     return () => {
       logger.info('Composant LogViewer détruit');
@@ -250,7 +245,7 @@ const LogViewer: React.FC = () => {
                   <SelectValue placeholder="Niveau" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Tous les niveaux</SelectItem>
+                  <SelectItem value="all">Tous les niveaux</SelectItem>
                   <SelectItem value="debug">Debug</SelectItem>
                   <SelectItem value="info">Info</SelectItem>
                   <SelectItem value="warn">Warning</SelectItem>
@@ -268,7 +263,7 @@ const LogViewer: React.FC = () => {
                   <SelectValue placeholder="Catégorie" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Toutes les catégories</SelectItem>
+                  <SelectItem value="all">Toutes les catégories</SelectItem>
                   <SelectItem value="data">Data</SelectItem>
                   <SelectItem value="ui">UI</SelectItem>
                   <SelectItem value="network">Network</SelectItem>
@@ -288,7 +283,7 @@ const LogViewer: React.FC = () => {
                   <SelectValue placeholder="Session" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Toutes les sessions</SelectItem>
+                  <SelectItem value="all">Toutes les sessions</SelectItem>
                   {sessions.map((session) => (
                     <SelectItem key={session.id} value={session.id}>
                       {new Date(session.startTime).toLocaleString()} ({session.count})
