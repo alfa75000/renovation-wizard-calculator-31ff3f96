@@ -1,3 +1,4 @@
+
 export interface Room {
   id: string;
   name: string;
@@ -43,6 +44,15 @@ export interface Travail {
   quantite: string;
   prixUnitaire: string;
   prixTotal: string;
+  
+  // Propriétés utilisées dans le code mais non définies dans l'interface originale
+  pieceId: string;
+  typeTravauxLabel: string;
+  sousTypeLabel: string;
+  prixFournitures: string;
+  prixMainOeuvre: string;
+  tauxTVA: string;
+  personnalisation?: string;
 }
 
 // Types pour les clients

@@ -20,14 +20,15 @@ const Recapitulatif = () => {
   const { getTravauxForPiece } = useTravaux();
 
   // Calcul des totaux généraux
-  const totalFournitures = travaux.reduce((sum, t) => sum + t.prixFournitures * t.quantite, 0);
-  const totalMainOeuvre = travaux.reduce((sum, t) => sum + t.prixMainOeuvre * t.quantite, 0);
+  const totalFournitures = travaux.reduce((sum, t) => sum + parseFloat(t.prixFournitures) * parseFloat(t.quantite), 0);
+  const totalMainOeuvre = travaux.reduce((sum, t) => sum + parseFloat(t.prixMainOeuvre) * parseFloat(t.quantite), 0);
   const totalHT = totalFournitures + totalMainOeuvre;
-  const totalTTC = travaux.reduce((sum, t) => {
-    const prixHT = (t.prixFournitures + t.prixMainOeuvre) * t.quantite;
-    const prixTTC = prixHT * (1 + t.tauxTVA / 100);
-    return sum + prixTTC;
+  const totalTVA = travaux.reduce((sum, t) => {
+    const prixHT = (parseFloat(t.prixFournitures) + parseFloat(t.prixMainOeuvre)) * parseFloat(t.quantite);
+    const montantTVA = prixHT * (parseFloat(t.tauxTVA) / 100);
+    return sum + montantTVA;
   }, 0);
+  const totalTTC = totalHT + totalTVA;
 
   return (
     <div className="min-h-screen bg-gray-50 pb-12">
@@ -130,7 +131,7 @@ const Recapitulatif = () => {
               Récapitulatif des travaux
             </CardTitle>
             <CardDescription>
-              Estimation détaillée des travaux par pièce
+              Estimation détaillée des travaux par lot
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -138,24 +139,25 @@ const Recapitulatif = () => {
               const travauxPiece = getTravauxForPiece(room.id);
               if (travauxPiece.length === 0) return null;
               
-              const totalPieceFournitures = travauxPiece.reduce((sum, t) => sum + t.prixFournitures * t.quantite, 0);
-              const totalPieceMainOeuvre = travauxPiece.reduce((sum, t) => sum + t.prixMainOeuvre * t.quantite, 0);
-              const totalPieceTTC = travauxPiece.reduce((sum, t) => {
-                const prixHT = (t.prixFournitures + t.prixMainOeuvre) * t.quantite;
-                const prixTTC = prixHT * (1 + t.tauxTVA / 100);
-                return sum + prixTTC;
+              const totalPieceFournitures = travauxPiece.reduce((sum, t) => sum + parseFloat(t.prixFournitures) * parseFloat(t.quantite), 0);
+              const totalPieceMainOeuvre = travauxPiece.reduce((sum, t) => sum + parseFloat(t.prixMainOeuvre) * parseFloat(t.quantite), 0);
+              const totalPieceHT = totalPieceFournitures + totalPieceMainOeuvre;
+              const totalPieceTVA = travauxPiece.reduce((sum, t) => {
+                const prixHT = (parseFloat(t.prixFournitures) + parseFloat(t.prixMainOeuvre)) * parseFloat(t.quantite);
+                const montantTVA = prixHT * (parseFloat(t.tauxTVA) / 100);
+                return sum + montantTVA;
               }, 0);
+              const totalPieceTTC = totalPieceHT + totalPieceTVA;
               
               return (
                 <div key={room.id} className="mb-6 border-b pb-6 last:border-b-0 last:pb-0">
-                  <h3 className="text-lg font-medium mb-3">{room.name || room.type}</h3>
+                  <h3 className="text-lg font-medium mb-3">{room.name}</h3>
                   
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead className="bg-gray-50">
                         <tr>
-                          <th className="px-3 py-2 text-left">Travail</th>
-                          <th className="px-3 py-2 text-left">Détail</th>
+                          <th className="px-3 py-2 text-left w-3/5">Prestation(s)</th>
                           <th className="px-3 py-2 text-right">Quantité</th>
                           <th className="px-3 py-2 text-right">P.U. HT</th>
                           <th className="px-3 py-2 text-right">TVA</th>
@@ -164,8 +166,10 @@ const Recapitulatif = () => {
                       </thead>
                       <tbody>
                         {travauxPiece.map(travail => {
-                          const totalHT = travail.prixUnitaire * travail.quantite;
-                          const totalTTC = totalHT * (1 + travail.tauxTVA / 100);
+                          const prixUnitaireHT = parseFloat(travail.prixFournitures) + parseFloat(travail.prixMainOeuvre);
+                          const totalHT = prixUnitaireHT * parseFloat(travail.quantite);
+                          const montantTVA = totalHT * (parseFloat(travail.tauxTVA) / 100);
+                          const totalTTC = totalHT + montantTVA;
                           
                           return (
                             <tr key={travail.id} className="border-b">
@@ -176,10 +180,13 @@ const Recapitulatif = () => {
                                     {travail.personnalisation}
                                   </div>
                                 )}
+                                <div className="text-xs text-gray-600 mt-1">
+                                  MO: {formaterPrix(parseFloat(travail.prixMainOeuvre))}/u, Fourn: {formaterPrix(parseFloat(travail.prixFournitures))}/u 
+                                  (total: {formaterPrix(prixUnitaireHT)}/u)
+                                </div>
                               </td>
-                              <td className="px-3 py-2 text-gray-600">{travail.personnalisation ? '✓' : '-'}</td>
                               <td className="px-3 py-2 text-right">{travail.quantite} {travail.unite}</td>
-                              <td className="px-3 py-2 text-right">{formaterPrix(travail.prixUnitaire)}</td>
+                              <td className="px-3 py-2 text-right">{formaterPrix(prixUnitaireHT)}</td>
                               <td className="px-3 py-2 text-right">{travail.tauxTVA}%</td>
                               <td className="px-3 py-2 text-right font-medium">{formaterPrix(totalTTC)}</td>
                             </tr>
@@ -188,22 +195,17 @@ const Recapitulatif = () => {
                       </tbody>
                       <tfoot className="bg-gray-50">
                         <tr>
-                          <td colSpan={5} className="px-3 py-2 text-right font-medium">Total pour cette pièce:</td>
-                          <td className="px-3 py-2 text-right font-bold">{formaterPrix(totalPieceTTC)}</td>
+                          <td className="px-3 py-2 text-left italic text-sm">
+                            MO HT: {formaterPrix(totalPieceMainOeuvre)}, 
+                            Fourn. HT: {formaterPrix(totalPieceFournitures)}, 
+                            TVA: {formaterPrix(totalPieceTVA)}
+                            ({formaterPrix(totalPieceTTC)})
+                          </td>
+                          <td colSpan={3} className="px-3 py-2 text-right font-medium">Total HT pour {room.name}:</td>
+                          <td className="px-3 py-2 text-right font-bold">{formaterPrix(totalPieceHT)}</td>
                         </tr>
                       </tfoot>
                     </table>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4 mt-4">
-                    <div className="bg-gray-50 p-3 rounded-md">
-                      <p className="text-sm text-gray-500">Fournitures</p>
-                      <p className="font-medium">{formaterPrix(totalPieceFournitures)}</p>
-                    </div>
-                    <div className="bg-gray-50 p-3 rounded-md">
-                      <p className="text-sm text-gray-500">Main d'œuvre</p>
-                      <p className="font-medium">{formaterPrix(totalPieceMainOeuvre)}</p>
-                    </div>
                   </div>
                 </div>
               );
@@ -216,8 +218,8 @@ const Recapitulatif = () => {
               </div>
             ) : (
               <div className="bg-blue-50 p-4 rounded-md mt-6">
-                <h3 className="text-lg font-semibold mb-4">Récapitulatif global</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <h3 className="text-lg font-semibold mb-4">Total</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="bg-white p-3 rounded-md shadow-sm">
                     <p className="text-sm text-gray-500">Total fournitures HT</p>
                     <p className="font-bold text-lg">{formaterPrix(totalFournitures)}</p>
@@ -226,14 +228,20 @@ const Recapitulatif = () => {
                     <p className="text-sm text-gray-500">Total main d'œuvre HT</p>
                     <p className="font-bold text-lg">{formaterPrix(totalMainOeuvre)}</p>
                   </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                   <div className="bg-white p-3 rounded-md shadow-sm">
                     <p className="text-sm text-gray-500">Total HT</p>
                     <p className="font-bold text-lg">{formaterPrix(totalHT)}</p>
                   </div>
-                </div>
-                <div className="bg-blue-100 p-4 rounded-md mt-4 text-center">
-                  <p className="text-blue-800 font-medium">Total TTC</p>
-                  <p className="font-bold text-2xl">{formaterPrix(totalTTC)}</p>
+                  <div className="bg-white p-3 rounded-md shadow-sm">
+                    <p className="text-sm text-gray-500">Total TVA</p>
+                    <p className="font-bold text-lg">{formaterPrix(totalTVA)}</p>
+                  </div>
+                  <div className="bg-blue-100 p-3 rounded-md shadow-sm">
+                    <p className="text-blue-800 font-medium">Total TTC</p>
+                    <p className="font-bold text-lg">{formaterPrix(totalTTC)}</p>
+                  </div>
                 </div>
               </div>
             )}
