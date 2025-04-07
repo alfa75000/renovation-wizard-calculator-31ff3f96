@@ -1,6 +1,10 @@
 
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
 import { Room, PropertyType, Travail, AutreSurface } from '@/types';
+import { useRoomsStorage } from '@/hooks/useRoomsStorage';
+import { useTravauxStorage } from '@/hooks/useTravauxStorage';
+import { usePropertyStorage } from '@/hooks/usePropertyStorage';
+import { useLogger } from '@/hooks/useLogger';
 
 // Interface pour définir l'état global du projet
 interface ProjectState {
@@ -100,69 +104,188 @@ export const useProject = () => {
 
 // Provider du contexte
 export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const logger = useLogger('ProjectProvider');
   const [state, dispatch] = useReducer(projectReducer, initialState);
+  
+  // Hooks pour IndexedDB
+  const roomsStorage = useRoomsStorage();
+  const travauxStorage = useTravauxStorage();
+  const propertyStorage = usePropertyStorage();
 
-  // Charger les données depuis localStorage au démarrage
+  // Charger les données au démarrage
   useEffect(() => {
-    const loadSavedData = () => {
+    const loadSavedData = async () => {
       try {
-        const savedRooms = localStorage.getItem('rooms');
-        if (savedRooms) {
-          const parsedRooms = JSON.parse(savedRooms);
-          if (Array.isArray(parsedRooms) && parsedRooms.length > 0) {
-            console.log("Chargement des pièces depuis localStorage:", parsedRooms);
-            
-            // Assurer la rétrocompatibilité en ajoutant le tableau autresSurfaces si absent
-            const roomsWithAutresSurfaces = parsedRooms.map(room => ({
-              ...room,
-              autresSurfaces: room.autresSurfaces || []
-            }));
-            
-            dispatch({ type: 'SET_ROOMS', payload: roomsWithAutresSurfaces });
+        // D'abord essayer de charger depuis IndexedDB (si disponible)
+        if (roomsStorage.isDbAvailable && !roomsStorage.isLoading) {
+          const rooms = await roomsStorage.getAllRooms();
+          if (rooms.length > 0) {
+            logger.info(`Chargement de ${rooms.length} pièces depuis IndexedDB`, 'storage');
+            dispatch({ type: 'SET_ROOMS', payload: rooms });
           } else {
-            console.log("Aucune pièce trouvée dans localStorage");
+            // Fallback sur localStorage
+            try {
+              const savedRooms = localStorage.getItem('rooms');
+              if (savedRooms) {
+                const parsedRooms = JSON.parse(savedRooms);
+                if (Array.isArray(parsedRooms) && parsedRooms.length > 0) {
+                  logger.info("Chargement des pièces depuis localStorage:", 'storage', { count: parsedRooms.length });
+                  
+                  // Assurer la rétrocompatibilité pour autresSurfaces
+                  const roomsWithAutresSurfaces = parsedRooms.map(room => ({
+                    ...room,
+                    autresSurfaces: room.autresSurfaces || []
+                  }));
+                  
+                  dispatch({ type: 'SET_ROOMS', payload: roomsWithAutresSurfaces });
+                }
+              }
+            } catch (localError) {
+              logger.error("Erreur lors du chargement des pièces depuis localStorage", localError as Error, 'storage');
+            }
+          }
+        } else {
+          // Si IndexedDB n'est pas disponible, charger depuis localStorage directement
+          const savedRooms = localStorage.getItem('rooms');
+          if (savedRooms) {
+            const parsedRooms = JSON.parse(savedRooms);
+            if (Array.isArray(parsedRooms) && parsedRooms.length > 0) {
+              logger.info("Chargement des pièces depuis localStorage:", 'storage', { count: parsedRooms.length });
+              
+              // Assurer la rétrocompatibilité
+              const roomsWithAutresSurfaces = parsedRooms.map(room => ({
+                ...room,
+                autresSurfaces: room.autresSurfaces || []
+              }));
+              
+              dispatch({ type: 'SET_ROOMS', payload: roomsWithAutresSurfaces });
+            }
           }
         }
 
-        const savedProperty = localStorage.getItem('property');
-        if (savedProperty) {
-          dispatch({ type: 'SET_PROPERTY', payload: JSON.parse(savedProperty) });
+        // Chargement des propriétés
+        if (propertyStorage.isDbAvailable && !propertyStorage.isLoading) {
+          const property = await propertyStorage.getProperty();
+          if (property) {
+            logger.info("Chargement des propriétés depuis IndexedDB", 'storage');
+            dispatch({ type: 'SET_PROPERTY', payload: property });
+          } else {
+            // Fallback sur localStorage
+            try {
+              const savedProperty = localStorage.getItem('property');
+              if (savedProperty) {
+                dispatch({ type: 'SET_PROPERTY', payload: JSON.parse(savedProperty) });
+              }
+            } catch (localError) {
+              logger.error("Erreur lors du chargement des propriétés depuis localStorage", localError as Error, 'storage');
+            }
+          }
+        } else {
+          // Si IndexedDB n'est pas disponible
+          const savedProperty = localStorage.getItem('property');
+          if (savedProperty) {
+            dispatch({ type: 'SET_PROPERTY', payload: JSON.parse(savedProperty) });
+          }
         }
         
-        const savedTravaux = localStorage.getItem('travaux');
-        if (savedTravaux) {
-          const parsedTravaux = JSON.parse(savedTravaux);
-          if (Array.isArray(parsedTravaux)) {
-            console.log("Chargement des travaux depuis localStorage:", parsedTravaux.length);
-            dispatch({ type: 'SET_TRAVAUX', payload: parsedTravaux });
+        // Chargement des travaux
+        if (travauxStorage.isDbAvailable && !travauxStorage.isLoading) {
+          const travaux = await travauxStorage.getAllTravaux();
+          if (travaux.length > 0) {
+            logger.info(`Chargement de ${travaux.length} travaux depuis IndexedDB`, 'storage');
+            dispatch({ type: 'SET_TRAVAUX', payload: travaux });
+          } else {
+            // Fallback sur localStorage
+            try {
+              const savedTravaux = localStorage.getItem('travaux');
+              if (savedTravaux) {
+                const parsedTravaux = JSON.parse(savedTravaux);
+                if (Array.isArray(parsedTravaux)) {
+                  logger.info("Chargement des travaux depuis localStorage:", 'storage', { count: parsedTravaux.length });
+                  dispatch({ type: 'SET_TRAVAUX', payload: parsedTravaux });
+                }
+              }
+            } catch (localError) {
+              logger.error("Erreur lors du chargement des travaux depuis localStorage", localError as Error, 'storage');
+            }
+          }
+        } else {
+          // Si IndexedDB n'est pas disponible
+          const savedTravaux = localStorage.getItem('travaux');
+          if (savedTravaux) {
+            const parsedTravaux = JSON.parse(savedTravaux);
+            if (Array.isArray(parsedTravaux)) {
+              logger.info("Chargement des travaux depuis localStorage:", 'storage', { count: parsedTravaux.length });
+              dispatch({ type: 'SET_TRAVAUX', payload: parsedTravaux });
+            }
           }
         }
       } catch (error) {
-        console.error("Erreur lors du chargement des données:", error);
+        logger.error("Erreur lors du chargement des données:", error as Error, 'storage');
       }
     };
 
     loadSavedData();
-  }, []);
+  }, [roomsStorage.isDbAvailable, roomsStorage.isLoading, travauxStorage.isDbAvailable, travauxStorage.isLoading, propertyStorage.isDbAvailable, propertyStorage.isLoading, logger]);
 
-  // Sauvegarder les données dans localStorage quand elles changent
+  // Sauvegarde des données lorsqu'elles changent
+  // Sauvegarder les pièces dans localStorage et/ou IndexedDB
   useEffect(() => {
     if (state.rooms.length > 0) {
-      console.log("Sauvegarde des pièces dans localStorage:", state.rooms);
+      logger.info("Sauvegarde des pièces:", 'storage', { count: state.rooms.length });
+      
+      // Toujours sauvegarder dans localStorage (pour la compatibilité)
       localStorage.setItem('rooms', JSON.stringify(state.rooms));
+      
+      // Si IndexedDB est disponible, sauvegarder également
+      if (roomsStorage.isDbAvailable && !roomsStorage.isLoading) {
+        // Pour chaque pièce, sauvegarder ou mettre à jour
+        state.rooms.forEach(async room => {
+          try {
+            await roomsStorage.saveRoom(room);
+          } catch (error) {
+            logger.error(`Erreur lors de la sauvegarde de la pièce ${room.id} dans IndexedDB`, error as Error, 'storage');
+          }
+        });
+      }
     }
-  }, [state.rooms]);
+  }, [state.rooms, roomsStorage.isDbAvailable, roomsStorage.isLoading, roomsStorage.saveRoom, logger]);
 
+  // Sauvegarder les propriétés du bien
   useEffect(() => {
+    // Toujours sauvegarder dans localStorage (compatibilité)
     localStorage.setItem('property', JSON.stringify(state.property));
-  }, [state.property]);
+    
+    // Si IndexedDB est disponible
+    if (propertyStorage.isDbAvailable && !propertyStorage.isLoading) {
+      propertyStorage.saveProperty(state.property)
+        .catch(error => {
+          logger.error("Erreur lors de la sauvegarde des propriétés dans IndexedDB", error as Error, 'storage');
+        });
+    }
+  }, [state.property, propertyStorage.isDbAvailable, propertyStorage.isLoading, propertyStorage.saveProperty, logger]);
   
+  // Sauvegarder les travaux
   useEffect(() => {
     if (state.travaux.length > 0) {
-      console.log("Sauvegarde des travaux dans localStorage:", state.travaux.length);
+      logger.info("Sauvegarde des travaux:", 'storage', { count: state.travaux.length });
+      
+      // Toujours sauvegarder dans localStorage (compatibilité)
       localStorage.setItem('travaux', JSON.stringify(state.travaux));
+      
+      // Si IndexedDB est disponible
+      if (travauxStorage.isDbAvailable && !travauxStorage.isLoading) {
+        // Pour chaque travail, sauvegarder ou mettre à jour
+        state.travaux.forEach(async travail => {
+          try {
+            await travauxStorage.saveTravail(travail);
+          } catch (error) {
+            logger.error(`Erreur lors de la sauvegarde du travail ${travail.id} dans IndexedDB`, error as Error, 'storage');
+          }
+        });
+      }
     }
-  }, [state.travaux]);
+  }, [state.travaux, travauxStorage.isDbAvailable, travauxStorage.isLoading, travauxStorage.saveTravail, logger]);
 
   return (
     <ProjectContext.Provider value={{ state, dispatch }}>

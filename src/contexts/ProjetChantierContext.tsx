@@ -3,9 +3,11 @@ import React, { createContext, useContext, useReducer, ReactNode, useEffect } fr
 import { v4 as uuidv4 } from 'uuid';
 import { ProjetChantier } from '@/types';
 import { useLocalStorageSync } from '@/hooks/useLocalStorageSync';
+import { useProjetsStorage } from '@/hooks/useProjetsStorage';
 import { useProject } from './ProjectContext';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { useLogger } from '@/hooks/useLogger';
 
 // Interface pour l'état du contexte
 interface ProjetChantierState {
@@ -89,21 +91,80 @@ interface ProjetChantierProviderProps {
 }
 
 export const ProjetChantierProvider: React.FC<ProjetChantierProviderProps> = ({ children }) => {
+  const logger = useLogger('ProjetChantierProvider');
   const [state, dispatch] = useReducer(projetChantierReducer, initialState);
   const { loadFromLocalStorage, saveToLocalStorage } = useLocalStorageSync<ProjetChantierState>('projetsChantier', state);
   const { state: projectState, dispatch: projectDispatch } = useProject();
+  
+  // Utilisation du hook pour IndexedDB
+  const { 
+    isDbAvailable, 
+    getAllProjets, 
+    saveProjet: saveProjetsToIndexedDB,
+    deleteProjet,
+    isInitialized
+  } = useProjetsStorage();
 
-  // Charger les données depuis localStorage au démarrage
+  // Charger les données depuis IndexedDB ou localStorage au démarrage
   useEffect(() => {
-    const savedData = loadFromLocalStorage();
-    if (savedData) {
-      dispatch({ type: 'SET_PROJETS', payload: savedData.projets });
-      // Si un projet actif était sauvegardé, le restaurer
-      if (savedData.projetActif) {
-        dispatch({ type: 'SET_PROJET_ACTIF', payload: savedData.projetActif });
+    const loadData = async () => {
+      try {
+        // Si IndexedDB est disponible et initialisé, charger depuis IndexedDB
+        if (isDbAvailable && isInitialized) {
+          const projets = await getAllProjets();
+          if (projets.length > 0) {
+            logger.info(`Chargement de ${projets.length} projets depuis IndexedDB`, 'storage');
+            dispatch({ type: 'SET_PROJETS', payload: projets });
+          } else {
+            // Si IndexedDB est vide, essayer localStorage
+            const savedData = loadFromLocalStorage();
+            if (savedData && savedData.projets.length > 0) {
+              logger.info(`Chargement de ${savedData.projets.length} projets depuis localStorage`, 'storage');
+              dispatch({ type: 'SET_PROJETS', payload: savedData.projets });
+              
+              // Si un projet actif était sauvegardé, le restaurer
+              if (savedData.projetActif) {
+                dispatch({ type: 'SET_PROJET_ACTIF', payload: savedData.projetActif });
+              }
+            }
+          }
+        } else {
+          // Si IndexedDB n'est pas disponible, utiliser localStorage
+          const savedData = loadFromLocalStorage();
+          if (savedData) {
+            logger.info(`Chargement de ${savedData.projets.length} projets depuis localStorage`, 'storage');
+            dispatch({ type: 'SET_PROJETS', payload: savedData.projets });
+            
+            // Si un projet actif était sauvegardé, le restaurer
+            if (savedData.projetActif) {
+              dispatch({ type: 'SET_PROJET_ACTIF', payload: savedData.projetActif });
+            }
+          }
+        }
+      } catch (error) {
+        logger.error('Erreur lors du chargement des projets', error as Error, 'storage');
       }
+    };
+    
+    loadData();
+  }, [isDbAvailable, isInitialized, getAllProjets, loadFromLocalStorage, logger]);
+  
+  // Sauvegarder les données quand elles changent
+  useEffect(() => {
+    // Sauvegarder dans localStorage pour la compatibilité
+    saveToLocalStorage(state);
+    
+    // Si IndexedDB est disponible, sauvegarder chaque projet
+    if (isDbAvailable && isInitialized && state.projets.length > 0) {
+      state.projets.forEach(async projet => {
+        try {
+          await saveProjetsToIndexedDB(projet);
+        } catch (error) {
+          logger.error(`Erreur lors de la sauvegarde du projet ${projet.id} dans IndexedDB`, error as Error, 'storage');
+        }
+      });
     }
-  }, []);
+  }, [state, isDbAvailable, isInitialized, saveProjetsToIndexedDB, saveToLocalStorage, logger]);
 
   // Fonction pour générer un nom de fichier
   const genererNomFichier = (projet: Partial<ProjetChantier>, nomClient: string): string => {
@@ -137,6 +198,14 @@ export const ProjetChantierProvider: React.FC<ProjetChantierProviderProps> = ({ 
       };
       
       dispatch({ type: 'UPDATE_PROJET', payload: projetMisAJour });
+      
+      // Si IndexedDB est disponible, sauvegarder
+      if (isDbAvailable && isInitialized) {
+        saveProjetsToIndexedDB(projetMisAJour)
+          .catch(error => {
+            logger.error(`Erreur lors de la mise à jour du projet ${projetMisAJour.id} dans IndexedDB`, error as Error, 'storage');
+          });
+      }
     } else {
       // Création d'un nouveau projet
       const nouveauProjet: ProjetChantier = {
@@ -148,6 +217,14 @@ export const ProjetChantierProvider: React.FC<ProjetChantierProviderProps> = ({ 
       };
       
       dispatch({ type: 'ADD_PROJET', payload: nouveauProjet });
+      
+      // Si IndexedDB est disponible, sauvegarder
+      if (isDbAvailable && isInitialized) {
+        saveProjetsToIndexedDB(nouveauProjet)
+          .catch(error => {
+            logger.error(`Erreur lors de l'ajout du projet ${nouveauProjet.id} dans IndexedDB`, error as Error, 'storage');
+          });
+      }
     }
   };
 
@@ -164,6 +241,7 @@ export const ProjetChantierProvider: React.FC<ProjetChantierProviderProps> = ({ 
         // Mettre à jour les pièces
         if (projetACharger.projectData.rooms) {
           projectDispatch({ type: 'SET_ROOMS', payload: projetACharger.projectData.rooms });
+          logger.info(`${projetACharger.projectData.rooms.length} pièces chargées depuis le projet`, 'data');
         }
         
         // Mettre à jour les propriétés
@@ -174,6 +252,7 @@ export const ProjetChantierProvider: React.FC<ProjetChantierProviderProps> = ({ 
         // Mettre à jour les travaux
         if (projetACharger.projectData.travaux) {
           projectDispatch({ type: 'SET_TRAVAUX', payload: projetACharger.projectData.travaux });
+          logger.info(`${projetACharger.projectData.travaux.length} travaux chargés depuis le projet`, 'data');
         }
       }
     }
@@ -186,6 +265,8 @@ export const ProjetChantierProvider: React.FC<ProjetChantierProviderProps> = ({ 
     
     // Réinitialiser le projectState
     projectDispatch({ type: 'RESET_PROJECT' });
+    
+    logger.info('Nouveau projet initialisé', 'data');
   };
 
   return (
