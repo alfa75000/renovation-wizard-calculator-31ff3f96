@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { ProjectState, Property, Room, Travail, ProjectAction } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
@@ -27,8 +26,12 @@ const ProjectContext = createContext<{
 
 // Fonction utilitaire pour générer un nom de pièce séquentiel
 const generateRoomName = (rooms: Room[], type: string): string => {
+  console.log(`generateRoomName - Génération de nom pour type: ${type}`);
+  console.log(`generateRoomName - Liste des pièces actuelles:`, rooms);
+  
   // Filtrer les pièces du même type
   const sameTypeRooms = rooms.filter(room => room.type === type);
+  console.log(`generateRoomName - Pièces du même type (${type}):`, sameTypeRooms);
   
   // Trouver le numéro le plus élevé déjà utilisé
   let maxNumber = 0;
@@ -36,6 +39,8 @@ const generateRoomName = (rooms: Room[], type: string): string => {
   sameTypeRooms.forEach(room => {
     // Extraire le numéro à la fin du nom (ex: "Chambre 1" -> 1)
     const match = room.name.match(/\s(\d+)$/);
+    console.log(`generateRoomName - Analyse du nom "${room.name}", match:`, match);
+    
     if (match && match[1]) {
       const num = parseInt(match[1], 10);
       if (!isNaN(num) && num > maxNumber) {
@@ -44,8 +49,11 @@ const generateRoomName = (rooms: Room[], type: string): string => {
     }
   });
   
-  // Retourner le nom avec le numéro suivant
-  return `${type} ${maxNumber + 1}`;
+  console.log(`generateRoomName - Numéro maximal trouvé: ${maxNumber}`);
+  const newName = `${type} ${maxNumber + 1}`;
+  console.log(`generateRoomName - Nouveau nom généré: "${newName}"`);
+  
+  return newName;
 };
 
 // Reducer pour gérer les actions

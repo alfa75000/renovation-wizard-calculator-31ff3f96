@@ -39,13 +39,19 @@ const SousTypeSelect: React.FC<SousTypeSelectProps> = ({
         const data = await fetchServices(groupId);
         console.log(`SousTypeSelect - Services récupérés:`, data);
         
-        // Ajouter une valeur par défaut pour l'unité si nécessaire
-        const formattedServices = data.map(service => ({
-          ...service,
-          unit: service.unit || 'm²' // Valeur par défaut pour compatibilité
-        }));
-        
-        setServices(formattedServices);
+        if (data && data.length > 0) {
+          // Ajouter une valeur par défaut pour l'unité si nécessaire
+          const formattedServices = data.map(service => ({
+            ...service,
+            unit: service.unit || 'm²' // Valeur par défaut pour compatibilité
+          }));
+          
+          console.log(`SousTypeSelect - Services formatés:`, formattedServices);
+          setServices(formattedServices);
+        } else {
+          console.log(`SousTypeSelect - Aucun service trouvé pour le groupe ${groupId}`);
+          setServices([]);
+        }
       } catch (error) {
         console.error("Erreur lors du chargement des services:", error);
         toast.error("Impossible de charger les prestations");
@@ -59,21 +65,28 @@ const SousTypeSelect: React.FC<SousTypeSelectProps> = ({
   
   // Réinitialiser la valeur si le groupe change
   useEffect(() => {
+    // Ne réinitialiser que si le groupId change, mais pas lors du chargement initial
     if (groupId && value) {
-      // Ne réinitialiser que si le groupId change, mais pas lors du chargement initial
+      console.log(`SousTypeSelect - Réinitialisation de la valeur due au changement de groupe`);
       onChange("", "", {} as Service);
     }
   }, [groupId, onChange, value]);
 
   const handleChange = (serviceId: string) => {
+    console.log(`SousTypeSelect - handleChange appelé avec serviceId: ${serviceId}`);
     const service = services.find(s => s.id === serviceId);
     if (service) {
       console.log(`SousTypeSelect - Service sélectionné:`, service);
       onChange(service.id, service.name, service);
+    } else {
+      console.warn(`SousTypeSelect - Service avec ID ${serviceId} non trouvé dans la liste`);
     }
   };
 
-  // Rendre le composant visible même s'il n'y a pas de services
+  // Afficher la liste des services disponibles dans la console pour le débogage
+  console.log(`SousTypeSelect - Rendu avec ${services.length} services disponibles:`, services);
+  console.log(`SousTypeSelect - État actuel: groupId=${groupId}, value=${value}, loading=${loading}, disabled=${disabled}`);
+
   return (
     <Select
       value={value}
