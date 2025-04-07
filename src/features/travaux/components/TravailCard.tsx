@@ -2,7 +2,7 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash } from "lucide-react";
+import { Edit, Trash, MessageSquare } from "lucide-react";
 import { Travail } from "@/types";
 import { formaterPrix } from "@/lib/utils";
 
@@ -65,6 +65,13 @@ const TravailCard: React.FC<TravailCardProps> = ({
                   <span className="text-gray-500">Main d'œuvre:</span>{" "}
                   {formaterPrix(travail.prixMainOeuvre * travail.quantite)}
                 </div>
+              </div>
+            )}
+
+            {travail.commentaire && (
+              <div className="mt-2 text-sm bg-gray-50 p-2 rounded-md flex items-start gap-1.5">
+                <MessageSquare className="h-4 w-4 text-gray-500 mt-0.5 flex-shrink-0" />
+                <span className="text-gray-700">{travail.commentaire}</span>
               </div>
             )}
 

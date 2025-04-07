@@ -5,6 +5,7 @@ import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useProject } from './ProjectContext';
 import { v4 as uuidv4 } from 'uuid';
 import { format } from 'date-fns';
+import { toast } from '@/components/ui/use-toast';
 
 // État initial
 const initialState: ProjetChantierState = {
@@ -31,54 +32,96 @@ const ProjetChantierContext = createContext<{
 
 // Reducer pour gérer les actions
 function projetChantierReducer(state: ProjetChantierState, action: ProjetChantierAction): ProjetChantierState {
-  switch (action.type) {
-    case 'ADD_PROJET': {
-      const newProjet = {
-        ...action.payload,
-        id: action.payload.id || uuidv4(),
-      };
-      return {
-        ...state,
-        projets: [...state.projets, newProjet],
-      };
-    }
-    
-    case 'UPDATE_PROJET': {
-      const { id, projet } = action.payload;
-      return {
-        ...state,
-        projets: state.projets.map((p) => (p.id === id ? { ...p, ...projet } : p)),
-        projetActif: state.projetActif?.id === id ? { ...state.projetActif, ...projet } : state.projetActif,
-      };
-    }
-    
-    case 'DELETE_PROJET':
-      return {
-        ...state,
-        projets: state.projets.filter((projet) => projet.id !== action.payload),
-        projetActif: state.projetActif?.id === action.payload ? null : state.projetActif,
-      };
+  try {
+    switch (action.type) {
+      case 'ADD_PROJET': {
+        const newProjet = {
+          ...action.payload,
+          id: action.payload.id || uuidv4(),
+        };
+        return {
+          ...state,
+          projets: Array.isArray(state.projets) ? [...state.projets, newProjet] : [newProjet],
+        };
+      }
       
-    case 'SET_PROJET_ACTIF': {
-      const projetId = action.payload;
-      const projetActif = projetId ? state.projets.find(p => p.id === projetId) || null : null;
-      return {
-        ...state,
-        projetActif,
-      };
-    }
-    
-    case 'LOAD_PROJETS':
-      return {
-        ...state,
-        projets: action.payload,
-      };
+      case 'UPDATE_PROJET': {
+        const { id, projet } = action.payload;
+        // Vérifier que projets est un tableau
+        if (!Array.isArray(state.projets)) {
+          console.error('state.projets n\'est pas un tableau:', state.projets);
+          return {
+            ...state,
+            projets: []
+          };
+        }
+        return {
+          ...state,
+          projets: state.projets.map((p) => (p.id === id ? { ...p, ...projet } : p)),
+          projetActif: state.projetActif?.id === id ? { ...state.projetActif, ...projet } : state.projetActif,
+        };
+      }
       
-    case 'RESET_PROJETS':
-      return initialState;
-    
-    default:
-      return state;
+      case 'DELETE_PROJET': {
+        // Vérifier que projets est un tableau
+        if (!Array.isArray(state.projets)) {
+          console.error('state.projets n\'est pas un tableau:', state.projets);
+          return {
+            ...state,
+            projets: []
+          };
+        }
+        return {
+          ...state,
+          projets: state.projets.filter((projet) => projet.id !== action.payload),
+          projetActif: state.projetActif?.id === action.payload ? null : state.projetActif,
+        };
+      }
+        
+      case 'SET_PROJET_ACTIF': {
+        const projetId = action.payload;
+        // Vérifier que projets est un tableau
+        if (!Array.isArray(state.projets)) {
+          console.error('state.projets n\'est pas un tableau:', state.projets);
+          return {
+            ...state,
+            projets: [],
+            projetActif: null
+          };
+        }
+        const projetActif = projetId ? state.projets.find(p => p.id === projetId) || null : null;
+        return {
+          ...state,
+          projetActif,
+        };
+      }
+      
+      case 'LOAD_PROJETS':
+        // Vérifier que la charge utile est un tableau
+        if (!Array.isArray(action.payload)) {
+          console.error('LOAD_PROJETS: action.payload n\'est pas un tableau:', action.payload);
+          return {
+            ...state,
+            projets: []
+          };
+        }
+        return {
+          ...state,
+          projets: action.payload,
+        };
+        
+      case 'RESET_PROJETS':
+        return initialState;
+      
+      default:
+        return state;
+    }
+  } catch (error) {
+    console.error('Erreur dans projetChantierReducer:', error);
+    return {
+      ...state,
+      projets: Array.isArray(state.projets) ? state.projets : []
+    };
   }
 }
 
@@ -89,38 +132,47 @@ export const ProjetChantierProvider: React.FC<{ children: React.ReactNode }> = (
   
   // Initialiser le state avec les données sauvegardées
   const [state, dispatch] = useReducer(projetChantierReducer, {
-    projets: savedProjets,
+    projets: Array.isArray(savedProjets) ? savedProjets : [],
     projetActif: null,
   });
 
   // Sauvegarder les changements dans localStorage
   useEffect(() => {
-    setSavedProjets(state.projets);
+    if (Array.isArray(state.projets)) {
+      console.log("Sauvegarde des projets:", state.projets.length);
+      setSavedProjets(state.projets);
+    } else {
+      console.error("state.projets n'est pas un tableau lors de la sauvegarde:", state.projets);
+      setSavedProjets([]);
+    }
   }, [state.projets, setSavedProjets]);
 
   // Fonction pour sauvegarder ou mettre à jour un projet
   const sauvegarderProjet = (projetData: Partial<ProjetChantier>) => {
-    const dateModification = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
-    
-    if (state.projetActif) {
-      // Mise à jour du projet existant
-      dispatch({
-        type: 'UPDATE_PROJET',
-        payload: {
-          id: state.projetActif.id,
-          projet: {
-            ...state.projetActif,
-            ...projetData,
-            dateModification,
-            projectData: projectState,
+    try {
+      const dateModification = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
+      
+      if (state.projetActif) {
+        // Mise à jour du projet existant
+        dispatch({
+          type: 'UPDATE_PROJET',
+          payload: {
+            id: state.projetActif.id,
+            projet: {
+              ...state.projetActif,
+              ...projetData,
+              dateModification,
+              projectData: projectState,
+            },
           },
-        },
-      });
-    } else {
-      // Création d'un nouveau projet
-      dispatch({
-        type: 'ADD_PROJET',
-        payload: {
+        });
+        toast({
+          title: "Projet mis à jour",
+          description: "Le projet a été mis à jour avec succès",
+        });
+      } else {
+        // Création d'un nouveau projet
+        const newProjet = {
           id: uuidv4(),
           nom: projetData.nomProjet || 'Nouveau projet',
           adresse: projetData.adresse || '',
@@ -134,18 +186,43 @@ export const ProjetChantierProvider: React.FC<{ children: React.ReactNode }> = (
           montantTotal: 0,
           ...projetData,
           dateModification,
-          projectData: projectState,
-        },
+          projectData: JSON.parse(JSON.stringify(projectState)), // Clone profond pour éviter les références circulaires
+        };
+        
+        dispatch({
+          type: 'ADD_PROJET',
+          payload: newProjet,
+        });
+        toast({
+          title: "Projet créé",
+          description: "Le nouveau projet a été créé avec succès",
+        });
+      }
+    } catch (error) {
+      console.error("Erreur lors de la sauvegarde du projet:", error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la sauvegarde du projet",
+        variant: "destructive",
       });
     }
   };
 
   // Fonction pour charger un projet existant
   const chargerProjet = (projetId: string) => {
-    dispatch({
-      type: 'SET_PROJET_ACTIF',
-      payload: projetId,
-    });
+    try {
+      dispatch({
+        type: 'SET_PROJET_ACTIF',
+        payload: projetId,
+      });
+    } catch (error) {
+      console.error("Erreur lors du chargement du projet:", error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors du chargement du projet",
+        variant: "destructive",
+      });
+    }
   };
 
   // Fonction pour générer un nom de fichier
@@ -159,10 +236,19 @@ export const ProjetChantierProvider: React.FC<{ children: React.ReactNode }> = (
 
   // Fonction pour initialiser un nouveau projet
   const nouveauProjet = () => {
-    dispatch({
-      type: 'SET_PROJET_ACTIF',
-      payload: null,
-    });
+    try {
+      dispatch({
+        type: 'SET_PROJET_ACTIF',
+        payload: null,
+      });
+    } catch (error) {
+      console.error("Erreur lors de l'initialisation d'un nouveau projet:", error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de l'initialisation d'un nouveau projet",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
