@@ -27,6 +27,7 @@ const SousTypeSelect: React.FC<SousTypeSelectProps> = ({
   
   // Charger les services quand le groupe change
   useEffect(() => {
+    console.log("SousTypeSelect - groupId changé:", groupId);
     if (!groupId) {
       setServices([]);
       return;
@@ -35,7 +36,9 @@ const SousTypeSelect: React.FC<SousTypeSelectProps> = ({
     const loadServices = async () => {
       setLoading(true);
       try {
+        console.log("SousTypeSelect - Chargement des services pour le groupe:", groupId);
         const data = await fetchServices(groupId);
+        console.log("SousTypeSelect - Services récupérés:", data);
         
         if (data && data.length > 0) {
           // Ajouter une valeur par défaut pour l'unité si nécessaire
@@ -45,8 +48,10 @@ const SousTypeSelect: React.FC<SousTypeSelectProps> = ({
           }));
           
           setServices(formattedServices);
+          console.log("SousTypeSelect - Services formatés:", formattedServices);
         } else {
           setServices([]);
+          console.log("SousTypeSelect - Aucun service disponible");
         }
       } catch (error) {
         console.error("Erreur lors du chargement des services:", error);
@@ -61,24 +66,39 @@ const SousTypeSelect: React.FC<SousTypeSelectProps> = ({
   
   // Réinitialiser la valeur si le groupe change
   useEffect(() => {
-    // Ne réinitialiser que si le groupId change, mais pas lors du chargement initial
+    // S'assurer que nous ne réinitialisons pas lors du premier rendu ou quand value est déjà vide
     if (groupId && value) {
-      onChange("", "", {} as Service);
+      const serviceExists = services.some(s => s.id === value);
+      if (!serviceExists) {
+        console.log("SousTypeSelect - Réinitialisation car le service n'existe plus dans la nouvelle liste");
+        onChange("", "", {} as Service);
+      }
     }
-  }, [groupId, onChange, value]);
+  }, [groupId, services, onChange, value]);
 
   const handleChange = (serviceId: string) => {
+    console.log("SousTypeSelect - handleChange appelé avec:", serviceId);
     const service = services.find(s => s.id === serviceId);
     if (service) {
+      console.log("SousTypeSelect - Service sélectionné:", service.name);
       onChange(service.id, service.name, service);
     }
   };
+
+  // Debug: Affichons l'état du composant
+  console.log("SousTypeSelect - Rendu avec:", { 
+    groupId, 
+    value, 
+    servicesCount: services.length, 
+    loading, 
+    disabled 
+  });
 
   return (
     <Select
       value={value}
       onValueChange={handleChange}
-      disabled={disabled || loading}
+      disabled={disabled || loading || services.length === 0}
     >
       <SelectTrigger className={className}>
         <SelectValue placeholder={loading ? "Chargement..." : placeholder} />

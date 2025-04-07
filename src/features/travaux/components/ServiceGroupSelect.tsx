@@ -36,6 +36,7 @@ const ServiceGroupSelect: React.FC<ServiceGroupSelectProps> = ({
       setLoading(true);
       try {
         const data = await fetchServiceGroups(workTypeId);
+        console.log("ServiceGroupSelect - Groupes chargés:", data);
         setGroups(data);
       } catch (error) {
         console.error("Erreur lors du chargement des groupes:", error);
@@ -48,17 +49,22 @@ const ServiceGroupSelect: React.FC<ServiceGroupSelectProps> = ({
     loadGroups();
   }, [workTypeId]);
   
-  // Réinitialiser la valeur si le type de travail change
   useEffect(() => {
-    if (workTypeId) {
-      // Réinitialiser la sélection quand le type de travail change
-      onChange("", "");
+    // Réinitialiser la valeur si le type de travail change
+    if (workTypeId && value) {
+      const groupExists = groups.some(g => g.id === value);
+      if (!groupExists) {
+        console.log("ServiceGroupSelect - Réinitialisation car le groupe n'existe plus dans la nouvelle liste");
+        onChange("", "");
+      }
     }
-  }, [workTypeId, onChange]);
+  }, [workTypeId, groups, onChange, value]);
 
   const handleChange = (groupId: string) => {
+    console.log("ServiceGroupSelect - handleChange appelé avec:", groupId);
     const group = groups.find(g => g.id === groupId);
     if (group) {
+      console.log("ServiceGroupSelect - Groupe sélectionné:", group.name);
       onChange(group.id, group.name);
     }
   };
@@ -67,20 +73,21 @@ const ServiceGroupSelect: React.FC<ServiceGroupSelectProps> = ({
     <Select
       value={value}
       onValueChange={handleChange}
-      disabled={disabled || loading || groups.length === 0}
+      disabled={disabled || loading}
     >
       <SelectTrigger className={className}>
         <SelectValue placeholder={loading ? "Chargement..." : placeholder} />
       </SelectTrigger>
       <SelectContent>
-        {groups.map((group) => (
-          <SelectItem key={group.id} value={group.id}>
-            {group.name}
-          </SelectItem>
-        ))}
-        {groups.length === 0 && !loading && (
+        {groups.length > 0 ? (
+          groups.map((group) => (
+            <SelectItem key={group.id} value={group.id}>
+              {group.name}
+            </SelectItem>
+          ))
+        ) : (
           <SelectItem value="none" disabled>
-            Aucun groupe disponible
+            {loading ? "Chargement..." : "Aucun groupe disponible"}
           </SelectItem>
         )}
       </SelectContent>

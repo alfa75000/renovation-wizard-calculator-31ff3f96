@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,7 +42,10 @@ const TravailForm: React.FC<TravailFormProps> = ({
   const [tauxTVA, setTauxTVA] = useState<number>(travailAModifier?.tauxTVA || 10);
   const [commentaire, setCommentaire] = useState<string>(travailAModifier?.commentaire || "");
 
-  // Effet pour réinitialiser les champs lorsque le type de travaux change
+  useEffect(() => {
+    console.log("TravailForm - Le composant est en lecture seule et ne peut être modifié.");
+  }, []);
+
   useEffect(() => {
     setGroupId("");
     setGroupLabel("");
@@ -52,26 +54,21 @@ const TravailForm: React.FC<TravailFormProps> = ({
     setSelectedService(null);
   }, [typeTravauxId]);
 
-  // Effet pour réinitialiser les champs lorsque le groupe change
   useEffect(() => {
     setSousTypeId("");
     setSousTypeLabel("");
     setSelectedService(null);
   }, [groupId]);
 
-  // Effet pour remplir les données lorsqu'un service est sélectionné
   useEffect(() => {
     if (selectedService) {
       setPrixFournitures(selectedService.supply_price || 0);
       setPrixMainOeuvre(selectedService.labor_price || 0);
       setUnite(selectedService.unit || "m²");
       
-      // Calculer la quantité en fonction de la surface de référence si disponible
       if (piece) {
         let quantiteInitiale = 0;
         
-        // Pour l'instant, on utilise simplement la surface de la pièce
-        // Dans une version future, on pourrait utiliser des surfaces de référence spécifiques
         quantiteInitiale = piece.surface || 0;
         
         setQuantite(parseFloat(quantiteInitiale.toFixed(2)));

@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { ProjectState, Property, Room, Travail, ProjectAction } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
@@ -26,8 +27,12 @@ const ProjectContext = createContext<{
 
 // Fonction utilitaire pour générer un nom de pièce séquentiel
 const generateRoomName = (rooms: Room[], type: string): string => {
+  console.log("generateRoomName - Démarrage pour type:", type);
+  console.log("generateRoomName - Toutes les pièces:", rooms);
+  
   // Filtrer les pièces du même type
   const sameTypeRooms = rooms.filter(room => room.type === type);
+  console.log("generateRoomName - Pièces du même type:", sameTypeRooms);
   
   // Trouver le numéro le plus élevé déjà utilisé
   let maxNumber = 0;
@@ -35,6 +40,7 @@ const generateRoomName = (rooms: Room[], type: string): string => {
   sameTypeRooms.forEach(room => {
     // Extraire le numéro à la fin du nom (ex: "Chambre 1" -> 1)
     const match = room.name.match(/\s(\d+)$/);
+    console.log("generateRoomName - Analyse de la pièce:", room.name, "avec match:", match);
     
     if (match && match[1]) {
       const num = parseInt(match[1], 10);
@@ -44,8 +50,12 @@ const generateRoomName = (rooms: Room[], type: string): string => {
     }
   });
   
+  console.log("generateRoomName - Numéro maximal trouvé:", maxNumber);
+  
   // Retourner le nom avec le numéro suivant
-  return `${type} ${maxNumber + 1}`;
+  const newName = `${type} ${maxNumber + 1}`;
+  console.log("generateRoomName - Nouveau nom généré:", newName);
+  return newName;
 };
 
 // Reducer pour gérer les actions
@@ -61,15 +71,22 @@ function projectReducer(state: ProjectState, action: ProjectAction): ProjectStat
       };
     
     case 'ADD_ROOM': {
+      console.log("ADD_ROOM - Action reçue avec payload:", action.payload);
+      
       // Si le nom n'est pas spécifié, générer un nom séquentiel
-      const roomData = action.payload;
+      const roomData = {...action.payload};
       if (!roomData.name || roomData.name === '') {
+        console.log("ADD_ROOM - Nom non spécifié, génération automatique");
         roomData.name = generateRoomName(state.rooms, roomData.type);
+        console.log("ADD_ROOM - Nom généré:", roomData.name);
       }
+      
+      const newRoom = {...roomData, id: roomData.id || uuidv4()};
+      console.log("ADD_ROOM - Nouvelle pièce finale:", newRoom);
       
       return {
         ...state,
-        rooms: [...state.rooms, roomData],
+        rooms: [...state.rooms, newRoom],
       };
     }
     
