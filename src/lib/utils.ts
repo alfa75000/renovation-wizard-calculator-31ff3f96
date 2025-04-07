@@ -1,9 +1,9 @@
 
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
 // Fonction pour arrondir un nombre à 2 décimales
@@ -52,14 +52,28 @@ export function formatNumberToString(value: number | string): string {
 }
 
 // Calculer la surface
-export function calculerSurface(longueur: string | number, largeur: string | number): number {
-  const l = parseStringToNumber(longueur);
-  const w = parseStringToNumber(largeur);
-  return arrondir2Decimales(l * w);
+export function calculerSurface(longueur: number, largeur: number): number {
+  return arrondir2Decimales(longueur * largeur);
+}
+
+// Calculer la surface murale
+export function calculerSurfaceMurale(longueur: number, largeur: number, hauteur: number): number {
+  const perimetre = 2 * (longueur + largeur);
+  return arrondir2Decimales(perimetre * hauteur);
+}
+
+// Calculer le périmètre
+export function calculerPerimetre(longueur: number, largeur: number): number {
+  return arrondir2Decimales(2 * (longueur + largeur));
 }
 
 // Valider si une valeur est un nombre positif
 export function estNombrePositif(valeur: string | number): boolean {
   const nombre = typeof valeur === 'string' ? parseFloat(valeur) : valeur;
   return !isNaN(nombre) && nombre >= 0;
+}
+
+// Convertir une surface en m² à partir des dimensions en cm
+export function convertirDimensionsEnSurface(largeur: number, hauteur: number): number {
+  return arrondir2Decimales((largeur / 100) * (hauteur / 100));
 }

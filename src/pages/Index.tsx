@@ -6,8 +6,8 @@ import RenovationEstimator from "@/components/RenovationEstimator";
 const Index = () => {
   return (
     <Layout
-      title="Estimation de rénovation"
-      subtitle="Assistant de rénovation simplifié"
+      title="Wizard Rénovation"
+      subtitle="Estimez facilement vos projets de rénovation"
     >
       <RenovationEstimator />
     </Layout>

@@ -19,7 +19,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, title, subtitle }) => 
     <div className="min-h-screen bg-gray-50">
       {/* Header avec titre et sous-titre optionnels */}
       {(title || subtitle) && (
-        <div className="flex flex-col items-center justify-center mb-8 bg-blue-600 text-white p-6 rounded-lg max-w-6xl mx-auto mt-4">
+        <div className="flex flex-col items-center justify-center mb-4 bg-blue-600 text-white p-6 rounded-lg max-w-6xl mx-auto mt-4">
           {title && <h1 className="text-3xl md:text-4xl font-bold">{title}</h1>}
           {subtitle && <p className="mt-2 text-lg">{subtitle}</p>}
         </div>
@@ -62,7 +62,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, title, subtitle }) => 
       </div>
       
       {/* Contenu principal */}
-      <main className="max-w-6xl mx-auto px-4">
+      <main className="max-w-6xl mx-auto px-4 pb-8">
         {children}
       </main>
     </div>

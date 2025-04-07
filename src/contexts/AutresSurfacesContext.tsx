@@ -1,145 +1,132 @@
 
-import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
-import { v4 as uuidv4 } from 'uuid';
-import { useLocalStorageSync } from '@/hooks/useLocalStorageSync';
-import { TypeAutreSurface } from '@/types';
+import React, { createContext, useContext, useReducer, useEffect } from 'react';
+import { AutresSurfacesState, TypeAutreSurface } from '@/types';
 
-// Interface pour l'état des types d'autres surfaces
-interface AutresSurfacesState {
-  types: TypeAutreSurface[];
-}
-
-// Actions pour le reducer
+// Actions possibles
 type AutresSurfacesAction =
-  | { type: 'SET_TYPES'; payload: TypeAutreSurface[] }
   | { type: 'ADD_TYPE'; payload: TypeAutreSurface }
   | { type: 'UPDATE_TYPE'; payload: { id: string; type: TypeAutreSurface } }
   | { type: 'DELETE_TYPE'; payload: string }
-  | { type: 'RESET_TYPES' };
-
-// Données par défaut pour les types d'autres surfaces
-const defaultTypes: TypeAutreSurface[] = [
-  {
-    id: uuidv4(),
-    designation: 'cheminee',
-    nom: 'Cheminée',
-    description: 'Cheminée standard',
-    surfaceImpacteeParDefaut: 'mur',
-    estDeduction: true
-  },
-  {
-    id: uuidv4(),
-    designation: 'placard',
-    nom: 'Placard',
-    description: 'Placard intégré',
-    surfaceImpacteeParDefaut: 'mur',
-    estDeduction: true
-  },
-  {
-    id: uuidv4(),
-    designation: 'niche',
-    nom: 'Niche murale',
-    description: 'Niche aménagée dans le mur',
-    surfaceImpacteeParDefaut: 'mur',
-    estDeduction: false
-  },
-  {
-    id: uuidv4(),
-    designation: 'escalier',
-    nom: 'Escalier',
-    description: 'Escalier intérieur',
-    surfaceImpacteeParDefaut: 'sol',
-    estDeduction: true
-  },
-  {
-    id: uuidv4(),
-    designation: 'autre',
-    nom: 'Autre surface',
-    description: 'Surface personnalisée',
-    surfaceImpacteeParDefaut: 'mur',
-    estDeduction: false
-  }
-];
+  | { type: 'LOAD_TYPES'; payload: TypeAutreSurface[] };
 
 // État initial
 const initialState: AutresSurfacesState = {
-  types: []
+  typesAutresSurfaces: [],
 };
 
-// Reducer pour gérer les actions
-const autresSurfacesReducer = (state: AutresSurfacesState, action: AutresSurfacesAction): AutresSurfacesState => {
-  switch (action.type) {
-    case 'SET_TYPES':
-      return { ...state, types: action.payload };
-    case 'ADD_TYPE':
-      return { ...state, types: [...state.types, action.payload] };
-    case 'UPDATE_TYPE':
-      return {
-        ...state,
-        types: state.types.map(type => 
-          type.id === action.payload.id 
-            ? { ...action.payload.type, id: type.id } 
-            : type
-        )
-      };
-    case 'DELETE_TYPE':
-      return { ...state, types: state.types.filter(type => type.id !== action.payload) };
-    case 'RESET_TYPES':
-      return { types: defaultTypes };
-    default:
-      return state;
-  }
-};
-
-// Création du contexte
-interface AutresSurfacesContextType {
+// Créer le contexte
+const AutresSurfacesContext = createContext<{
   state: AutresSurfacesState;
   dispatch: React.Dispatch<AutresSurfacesAction>;
-}
-
-const AutresSurfacesContext = createContext<AutresSurfacesContextType>({
+}>({
   state: initialState,
   dispatch: () => null,
 });
 
-// Hook personnalisé pour utiliser le contexte
-export const useAutresSurfaces = () => {
-  const context = useContext(AutresSurfacesContext);
-  if (!context) {
-    throw new Error("useAutresSurfaces doit être utilisé à l'intérieur d'un AutresSurfacesProvider");
-  }
-  return context;
-};
-
-// Provider du contexte
-export const AutresSurfacesProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  // Utiliser le hook useLocalStorageSync pour la persistance
-  const [storedTypes, setStoredTypes, saveTypes, loadTypes] = useLocalStorageSync<TypeAutreSurface[]>(
-    'autresSurfacesTypes', 
-    defaultTypes,
-    { syncOnMount: true, autoSave: false }
-  );
-  
-  // Initialiser le reducer avec les données sauvegardées
-  const [state, dispatch] = useReducer(autresSurfacesReducer, { types: storedTypes });
-  
-  // Sauvegarder les types quand ils changent
-  useEffect(() => {
-    setStoredTypes(state.types);
-    saveTypes();
-  }, [state.types, setStoredTypes, saveTypes]);
-  
-  // Vérifier si les types sont vides et les initialiser si nécessaire
-  useEffect(() => {
-    if (state.types.length === 0) {
-      console.log("Initialisation des types d'autres surfaces avec les valeurs par défaut");
-      dispatch({ type: 'SET_TYPES', payload: defaultTypes });
+// Reducer pour gérer les actions
+function autresSurfacesReducer(state: AutresSurfacesState, action: AutresSurfacesAction): AutresSurfacesState {
+  switch (action.type) {
+    case 'ADD_TYPE':
+      return {
+        ...state,
+        typesAutresSurfaces: [...state.typesAutresSurfaces, action.payload],
+      };
+    
+    case 'UPDATE_TYPE': {
+      const { id, type } = action.payload;
+      return {
+        ...state,
+        typesAutresSurfaces: state.typesAutresSurfaces.map((t) => (t.id === id ? type : t)),
+      };
     }
-  }, [state.types.length]);
+    
+    case 'DELETE_TYPE':
+      return {
+        ...state,
+        typesAutresSurfaces: state.typesAutresSurfaces.filter((type) => type.id !== action.payload),
+      };
+    
+    case 'LOAD_TYPES':
+      return {
+        ...state,
+        typesAutresSurfaces: action.payload,
+      };
+    
+    default:
+      return state;
+  }
+}
+
+// Provider component
+export const AutresSurfacesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // Récupérer les données depuis localStorage au démarrage
+  const [state, dispatch] = useReducer(autresSurfacesReducer, initialState, () => {
+    try {
+      const savedState = localStorage.getItem('typesAutresSurfaces');
+      if (savedState) {
+        return { typesAutresSurfaces: JSON.parse(savedState) };
+      }
+
+      // Si aucune donnée n'est trouvée, initialiser avec des exemples
+      const defaultTypes: TypeAutreSurface[] = [
+        {
+          id: '1',
+          nom: 'Niche murale',
+          description: 'Niche décorative dans un mur',
+          surfaceImpacteeParDefaut: 'mur',
+          estDeduction: true,
+        },
+        {
+          id: '2',
+          nom: 'Cheminée',
+          description: 'Cheminée avec habillage',
+          surfaceImpacteeParDefaut: 'mur',
+          estDeduction: false,
+        },
+        {
+          id: '3',
+          nom: 'Trappe d\'accès',
+          description: 'Trappe d\'accès aux combles ou vide sanitaire',
+          surfaceImpacteeParDefaut: 'plafond',
+          estDeduction: true,
+        },
+        {
+          id: '4',
+          nom: 'Surface non traitée',
+          description: 'Surface à exclure du calcul',
+          surfaceImpacteeParDefaut: 'sol',
+          estDeduction: true,
+        },
+      ];
+
+      return { typesAutresSurfaces: defaultTypes };
+    } catch (error) {
+      console.error('Erreur lors du chargement des types de surfaces:', error);
+      return initialState;
+    }
+  });
+
+  // Sauvegarder les données dans localStorage à chaque changement
+  useEffect(() => {
+    try {
+      localStorage.setItem('typesAutresSurfaces', JSON.stringify(state.typesAutresSurfaces));
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde des types de surfaces:', error);
+    }
+  }, [state]);
 
   return (
     <AutresSurfacesContext.Provider value={{ state, dispatch }}>
       {children}
     </AutresSurfacesContext.Provider>
   );
+};
+
+// Hook personnalisé pour utiliser le contexte
+export const useAutresSurfaces = () => {
+  const context = useContext(AutresSurfacesContext);
+  if (!context) {
+    throw new Error('useAutresSurfaces doit être utilisé à l\'intérieur d\'un AutresSurfacesProvider');
+  }
+  return context;
 };

@@ -1,182 +1,192 @@
 
-import React, { useState, useEffect } from "react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { AutreSurface, TypeAutreSurface } from "@/types";
-import { arrondir2Decimales } from "@/lib/utils";
+import React, { useState, useEffect } from 'react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Check, Plus } from 'lucide-react';
+import { AutreSurface, TypeAutreSurface } from '@/types';
+import { arrondir2Decimales } from '@/lib/utils';
 
 interface AutreSurfaceFormProps {
-  onAddAutreSurface: (autreSurface: Omit<AutreSurface, "id" | "surface">) => void;
+  onAddAutreSurface: (autreSurface: Omit<AutreSurface, 'id' | 'surface'>) => void;
   editingSurface: string | null;
-  currentSurface: Omit<AutreSurface, "id" | "surface"> | null;
-  onCancelEdit: () => void;
+  currentSurface: Omit<AutreSurface, 'id' | 'surface'> | null;
+  onCancelEdit?: () => void;
   typesAutresSurfaces: TypeAutreSurface[];
 }
 
-const AutreSurfaceForm: React.FC<AutreSurfaceFormProps> = ({ 
-  onAddAutreSurface, 
-  editingSurface, 
+const AutreSurfaceForm: React.FC<AutreSurfaceFormProps> = ({
+  onAddAutreSurface,
+  editingSurface,
   currentSurface,
   onCancelEdit,
   typesAutresSurfaces
 }) => {
-  const [newAutreSurface, setNewAutreSurface] = useState<Omit<AutreSurface, "id" | "surface">>({
+  const [surface, setSurface] = useState<Omit<AutreSurface, 'id' | 'surface'>>({
     type: "",
     name: "",
-    largeur: 0.5,
-    hauteur: 0.5,
+    designation: "",
+    largeur: 1,
+    hauteur: 1,
     quantity: 1,
     surfaceImpactee: "mur",
     estDeduction: false
   });
+  
+  const [surfaceCalculee, setSurfaceCalculee] = useState(0);
 
+  // Charger la surface à éditer
   useEffect(() => {
-    if (currentSurface && editingSurface) {
-      setNewAutreSurface(currentSurface);
+    if (editingSurface && currentSurface) {
+      setSurface(currentSurface);
+      setSurfaceCalculee(currentSurface.largeur * currentSurface.hauteur);
+    } else {
+      resetForm();
     }
-  }, [currentSurface, editingSurface]);
+  }, [editingSurface, currentSurface]);
 
-  const handleSurfaceTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  // Calcul de la surface
+  useEffect(() => {
+    const surfaceM2 = arrondir2Decimales(surface.largeur * surface.hauteur);
+    setSurfaceCalculee(surfaceM2);
+  }, [surface.largeur, surface.hauteur]);
+
+  const handleTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const typeId = e.target.value;
-    const selectedType = typesAutresSurfaces.find(type => type.id === typeId);
+    if (!typeId) {
+      resetForm();
+      return;
+    }
     
+    const selectedType = typesAutresSurfaces.find(type => type.id === typeId);
     if (selectedType) {
-      setNewAutreSurface(prev => ({
+      setSurface(prev => ({
         ...prev,
         type: selectedType.nom,
-        surfaceImpactee: selectedType.surfaceImpacteeParDefaut || 'mur',
-        estDeduction: selectedType.estDeduction || false
+        designation: selectedType.nom,
+        name: selectedType.nom,
+        surfaceImpactee: selectedType.surfaceImpacteeParDefaut,
+        estDeduction: selectedType.estDeduction
       }));
     }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target as HTMLInputElement;
     
-    if (name === "largeur" || name === "hauteur" || name === "quantity") {
-      const numValue = parseFloat(value) || 0;
-      setNewAutreSurface(prev => ({
+    if (name === 'largeur' || name === 'hauteur' || name === 'quantity') {
+      setSurface(prev => ({
         ...prev,
-        [name]: numValue
+        [name]: type === 'number' ? parseFloat(value) || 0 : value
+      }));
+    } else if (name === 'estDeduction') {
+      setSurface(prev => ({
+        ...prev,
+        estDeduction: checked
+      }));
+    } else if (name === 'surfaceImpactee') {
+      setSurface(prev => ({
+        ...prev,
+        surfaceImpactee: value as 'mur' | 'plafond' | 'sol'
       }));
     } else {
-      setNewAutreSurface(prev => ({
+      setSurface(prev => ({
         ...prev,
         [name]: value
       }));
     }
   };
 
-  const handleSurfaceImpacteeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setNewAutreSurface(prev => ({
-      ...prev,
-      surfaceImpactee: e.target.value
-    }));
-  };
-
-  const handleEstDeductionChange = (value: string) => {
-    setNewAutreSurface(prev => ({
-      ...prev,
-      estDeduction: value === "deduire"
-    }));
-  };
-
-  const handleSubmit = () => {
-    if (!newAutreSurface.type) {
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!surface.type) {
       alert("Veuillez sélectionner un type de surface");
       return;
     }
     
-    onAddAutreSurface(newAutreSurface);
+    if (surface.largeur <= 0 || surface.hauteur <= 0) {
+      alert("Les dimensions doivent être supérieures à zéro");
+      return;
+    }
     
-    // Réinitialiser le formulaire
-    setNewAutreSurface({
+    onAddAutreSurface(surface);
+    resetForm();
+  };
+
+  const resetForm = () => {
+    setSurface({
       type: "",
       name: "",
-      largeur: 0.5,
-      hauteur: 0.5,
+      designation: "",
+      largeur: 1,
+      hauteur: 1,
       quantity: 1,
       surfaceImpactee: "mur",
       estDeduction: false
     });
+    setSurfaceCalculee(0);
   };
 
-  const calculerSurface = () => {
-    return arrondir2Decimales(newAutreSurface.largeur * newAutreSurface.hauteur);
+  const handleCancel = () => {
+    if (onCancelEdit) onCancelEdit();
+    resetForm();
   };
 
   return (
-    <div className="border p-3 rounded bg-white">
-      <h4 className="text-md font-medium mb-3">Ajouter une autre surface</h4>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <Label htmlFor="typeSurface">Type de surface</Label>
+        <select
+          id="typeSurface"
+          name="type"
+          value={typesAutresSurfaces.find(t => t.nom === surface.type)?.id || ""}
+          onChange={handleTypeChange}
+          className="w-full p-2 border rounded mt-1"
+        >
+          <option value="">Sélectionner un type</option>
+          {typesAutresSurfaces.map((type) => (
+            <option key={type.id} value={type.id}>
+              {type.nom} ({type.estDeduction ? 'Déduction' : 'Ajout'})
+            </option>
+          ))}
+        </select>
+      </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="autreType">Type</Label>
-          <select
-            id="autreType"
-            name="type"
-            value={typesAutresSurfaces.find(t => t.nom === newAutreSurface.type)?.id || ""}
-            onChange={handleSurfaceTypeChange}
-            className="w-full p-2 border rounded mt-1"
-          >
-            <option value="">Sélectionner un type</option>
-            {typesAutresSurfaces.map((type) => (
-              <option key={type.id} value={type.id}>
-                {type.nom}
-              </option>
-            ))}
-          </select>
-        </div>
-        
-        <div>
-          <Label htmlFor="autreName">Nom</Label>
+          <Label htmlFor="name">Nom (optionnel)</Label>
           <Input
-            id="autreName"
+            id="name"
             name="name"
-            value={newAutreSurface.name}
+            value={surface.name || ''}
             onChange={handleChange}
-            placeholder="Optionnel"
+            placeholder="Ex: Niche salon"
             className="mt-1"
           />
         </div>
         
         <div>
-          <Label htmlFor="autreLargeur">Largeur (m)</Label>
+          <Label htmlFor="designation">Désignation</Label>
           <Input
-            id="autreLargeur"
-            name="largeur"
-            type="number"
-            min="0"
-            step="0.01"
-            value={newAutreSurface.largeur}
+            id="designation"
+            name="designation"
+            value={surface.designation || ''}
             onChange={handleChange}
+            placeholder="Description"
             className="mt-1"
           />
         </div>
-        
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <Label htmlFor="autreHauteur">Hauteur (m)</Label>
-          <Input
-            id="autreHauteur"
-            name="hauteur"
-            type="number"
-            min="0"
-            step="0.01"
-            value={newAutreSurface.hauteur}
-            onChange={handleChange}
-            className="mt-1"
-          />
-        </div>
-        
-        <div>
-          <Label htmlFor="autreSurfaceImpactee">Surface impactée</Label>
+          <Label htmlFor="surfaceImpactee">Surface impactée</Label>
           <select
-            id="autreSurfaceImpactee"
+            id="surfaceImpactee"
             name="surfaceImpactee"
-            value={newAutreSurface.surfaceImpactee}
-            onChange={handleSurfaceImpacteeChange}
+            value={surface.surfaceImpactee}
+            onChange={handleChange}
             className="w-full p-2 border rounded mt-1"
           >
             <option value="mur">Mur</option>
@@ -186,65 +196,107 @@ const AutreSurfaceForm: React.FC<AutreSurfaceFormProps> = ({
         </div>
         
         <div>
-          <Label htmlFor="autreQuantity">Quantité</Label>
+          <Label htmlFor="estDeduction">Type d'opération</Label>
+          <div className="flex items-center mt-2">
+            <input
+              id="estDeduction"
+              name="estDeduction"
+              type="checkbox"
+              checked={surface.estDeduction}
+              onChange={handleChange}
+              className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+            <label htmlFor="estDeduction" className="ml-2 block text-sm text-gray-900">
+              {surface.estDeduction ? 'Déduction' : 'Ajout'} de surface
+            </label>
+          </div>
+        </div>
+        
+        <div>
+          <Label htmlFor="quantity">Quantité</Label>
           <Input
-            id="autreQuantity"
+            id="quantity"
             name="quantity"
             type="number"
             min="1"
-            value={newAutreSurface.quantity}
+            value={surface.quantity || 1}
             onChange={handleChange}
             className="mt-1"
           />
         </div>
       </div>
       
-      <div className="mb-4">
-        <Label>Type d'impact</Label>
-        <RadioGroup
-          value={newAutreSurface.estDeduction ? "deduire" : "ajouter"}
-          onValueChange={handleEstDeductionChange}
-          className="flex space-x-6 mt-2"
-        >
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="ajouter" id="ajouter" />
-            <Label htmlFor="ajouter" className="cursor-pointer">Ajouter cette surface</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="deduire" id="deduire" />
-            <Label htmlFor="deduire" className="cursor-pointer">Déduire cette surface</Label>
-          </div>
-        </RadioGroup>
-      </div>
-      
-      <div className="flex items-center space-x-2 mb-2">
-        <div className="bg-gray-100 p-2 rounded">
-          <span className="text-sm font-medium">Surface calculée: {calculerSurface()} m²</span>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <Label htmlFor="largeur">Largeur (m)</Label>
+          <Input
+            id="largeur"
+            name="largeur"
+            type="number"
+            min="0.01"
+            step="0.01"
+            value={surface.largeur || ''}
+            onChange={handleChange}
+            className="mt-1"
+          />
         </div>
-        <div className="bg-gray-100 p-2 rounded">
-          <span className="text-sm font-medium">
-            Surface totale: {arrondir2Decimales(calculerSurface() * newAutreSurface.quantity)} m²
-          </span>
+        
+        <div>
+          <Label htmlFor="hauteur">Hauteur (m)</Label>
+          <Input
+            id="hauteur"
+            name="hauteur"
+            type="number"
+            min="0.01"
+            step="0.01"
+            value={surface.hauteur || ''}
+            onChange={handleChange}
+            className="mt-1"
+          />
+        </div>
+        
+        <div>
+          <Label htmlFor="surfaceCalculee">Surface calculée (m²)</Label>
+          <Input
+            id="surfaceCalculee"
+            name="surfaceCalculee"
+            type="number"
+            value={surfaceCalculee.toFixed(2)}
+            readOnly
+            className="mt-1 bg-gray-100"
+          />
         </div>
       </div>
       
       <div className="flex justify-end space-x-2">
         {editingSurface && (
           <Button 
-            onClick={onCancelEdit}
-            variant="outline"
+            type="button" 
+            variant="outline" 
+            onClick={handleCancel}
           >
             Annuler
           </Button>
         )}
+        
         <Button 
-          onClick={handleSubmit}
-          variant="default"
+          type="submit" 
+          disabled={!surface.type || surface.largeur <= 0 || surface.hauteur <= 0}
         >
-          {editingSurface ? "Mettre à jour" : "Ajouter"}
+          {editingSurface ? (
+            <>
+              <Check className="h-4 w-4 mr-2" />
+              Mettre à jour
+            </>
+          ) : (
+            <>
+              <Plus className="h-4 w-4 mr-2" />
+              Ajouter
+            </>
+          )}
         </Button>
       </div>
-    </div>
+    </form>
   );
 };
 

@@ -1,71 +1,58 @@
 
 import { useState, useEffect } from 'react';
 
-/**
- * Hook personnalisé pour interagir avec localStorage
- * @param key La clé pour stocker les données dans localStorage
- * @param initialValue La valeur initiale si aucune donnée n'existe
- * @returns Un tableau contenant la valeur stockée et une fonction pour la mettre à jour
- */
-export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T | ((val: T) => T)) => void] {
-  // Fonction pour obtenir la valeur initiale
-  const getStoredValue = (): T => {
-    try {
-      const item = localStorage.getItem(key);
-      return item ? JSON.parse(item) : initialValue;
-    } catch (error) {
-      console.error(`Erreur lors de la récupération de ${key} depuis localStorage:`, error);
+export function useLocalStorage<T>(
+  key: string,
+  initialValue: T
+): [T, (value: T | ((val: T) => T)) => void] {
+  // État pour stocker notre valeur
+  const [storedValue, setStoredValue] = useState<T>(() => {
+    if (typeof window === 'undefined') {
       return initialValue;
     }
-  };
+    try {
+      // Récupérer depuis localStorage
+      const item = window.localStorage.getItem(key);
+      // Analyser le JSON stocké ou retourner initialValue
+      return item ? JSON.parse(item) : initialValue;
+    } catch (error) {
+      console.error(`Erreur lors de la récupération de ${key} dans localStorage:`, error);
+      return initialValue;
+    }
+  });
 
-  // État local pour stocker la valeur
-  const [storedValue, setStoredValue] = useState<T>(getStoredValue);
-
-  // Fonction pour mettre à jour la valeur dans localStorage et l'état local
+  // Fonction pour mettre à jour la valeur dans le state et localStorage
   const setValue = (value: T | ((val: T) => T)) => {
     try {
-      // Permet de passer une fonction comme pour useState
-      const valueToStore = value instanceof Function ? value(storedValue) : value;
-      
-      // Mettre à jour l'état local
+      // Déterminer si c'est une fonction ou une valeur directe
+      const valueToStore =
+        value instanceof Function ? value(storedValue) : value;
+      // Sauvegarder dans l'état
       setStoredValue(valueToStore);
-      
-      // Mettre à jour localStorage
-      if (valueToStore === undefined) {
-        localStorage.removeItem(key);
-      } else {
-        localStorage.setItem(key, JSON.stringify(valueToStore));
+      // Sauvegarder dans localStorage
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(key, JSON.stringify(valueToStore));
       }
     } catch (error) {
-      console.error(`Erreur lors de l'enregistrement de ${key} dans localStorage:`, error);
+      console.error(`Erreur lors de la sauvegarde de ${key} dans localStorage:`, error);
     }
   };
-
-  // Écouter les changements de localStorage depuis d'autres onglets
+  
+  // Écouter les changements de localStorage sur d'autres onglets/fenêtres
   useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === key) {
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === key && event.newValue) {
         try {
-          const newValue = e.newValue ? JSON.parse(e.newValue) : initialValue;
-          // Ne mettre à jour que si la valeur a changé pour éviter une boucle
-          if (JSON.stringify(newValue) !== JSON.stringify(storedValue)) {
-            setStoredValue(newValue);
-          }
+          setStoredValue(JSON.parse(event.newValue));
         } catch (error) {
-          console.error("Erreur lors du traitement de l'événement de stockage:", error);
+          console.error(`Erreur lors du parsing de la nouvelle valeur pour ${key}:`, error);
         }
       }
     };
-
-    // Ajouter l'écouteur d'événements
-    window.addEventListener('storage', handleStorageChange);
     
-    // Nettoyer l'écouteur à la destruction du composant
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, [key, storedValue, initialValue]);
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [key]);
 
   return [storedValue, setValue];
 }

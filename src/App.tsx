@@ -41,7 +41,6 @@ function App() {
                         <Route path="/infos-chantier" element={<InfosChantier />} />
                         <Route path="/admin/travaux" element={<AdminTravaux />} />
                         <Route path="/parametres" element={<Parametres />} />
-                        {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                         <Route path="*" element={<NotFound />} />
                       </Routes>
                     </BrowserRouter>

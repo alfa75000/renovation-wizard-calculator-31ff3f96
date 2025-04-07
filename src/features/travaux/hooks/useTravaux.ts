@@ -1,100 +1,106 @@
 
-import { useCallback } from 'react';
-import { v4 as uuidv4 } from 'uuid';
+import { useEffect, useState } from 'react';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { Travail, Room } from '@/types';
 import { useProject } from '@/contexts/ProjectContext';
-import { Travail } from '@/types';
-import { parseStringToNumber } from '@/lib/utils';
+import { useTravauxTypes } from '@/contexts/TravauxTypesContext';
+import { v4 as uuidv4 } from 'uuid';
 
 export const useTravaux = () => {
-  const { state, dispatch } = useProject();
-  const { travaux } = state;
-
-  // Ajouter un nouveau travail
-  const addTravail = useCallback((travailData: Omit<Travail, 'id'>) => {
+  const { state: projectState } = useProject();
+  const { state: travauxTypesState } = useTravauxTypes();
+  
+  // Stocker les travaux par ID de pièce
+  const [travaux, setTravaux] = useLocalStorage<Travail[]>('travaux', []);
+  
+  // Fonction pour ajouter un travail
+  const addTravail = (travailData: Omit<Travail, 'id'>) => {
+    // Générer un ID unique
     const newTravail: Travail = {
+      ...travailData,
       id: uuidv4(),
-      ...travailData
     };
     
-    dispatch({ type: 'ADD_TRAVAIL', payload: newTravail });
+    setTravaux((prevTravaux) => [...prevTravaux, newTravail]);
     return newTravail;
-  }, [dispatch]);
-
-  // Mettre à jour un travail existant
-  const updateTravail = useCallback((travail: Travail) => {
-    dispatch({ type: 'UPDATE_TRAVAIL', payload: travail });
-  }, [dispatch]);
-
-  // Supprimer un travail
-  const deleteTravail = useCallback((id: string) => {
-    dispatch({ type: 'DELETE_TRAVAIL', payload: id });
-  }, [dispatch]);
-
-  // Récupérer les travaux pour une pièce spécifique
-  const getTravauxForPiece = useCallback((pieceId: string) => {
-    return travaux.filter(travail => travail.pieceId === pieceId);
-  }, [travaux]);
-
-  // Calculer le total des travaux pour une pièce
-  const calculateTotalForPiece = useCallback((pieceId: string) => {
-    const piecesTravaux = getTravauxForPiece(pieceId);
+  };
+  
+  // Fonction pour mettre à jour un travail
+  const updateTravail = (id: string, travailData: Partial<Travail>) => {
+    setTravaux((prevTravaux) =>
+      prevTravaux.map((travail) =>
+        travail.id === id ? { ...travail, ...travailData } : travail
+      )
+    );
+  };
+  
+  // Fonction pour supprimer un travail
+  const deleteTravail = (id: string) => {
+    setTravaux((prevTravaux) => prevTravaux.filter((travail) => travail.id !== id));
+  };
+  
+  // Fonction pour obtenir les travaux d'une pièce
+  const getTravauxForPiece = (pieceId: string): Travail[] => {
+    return travaux.filter((travail) => travail.pieceId === pieceId);
+  };
+  
+  // Fonction pour obtenir tous les travaux
+  const getAllTravaux = (): Travail[] => {
+    return travaux;
+  };
+  
+  // Fonction pour obtenir le détail complet d'un travail (avec les infos du type et sous-type)
+  const getTravailDetails = (travailId: string) => {
+    const travail = travaux.find((t) => t.id === travailId);
+    if (!travail) return null;
     
-    let totalHT = 0;
-    let totalTVA = 0;
-    let totalTTC = 0;
+    const typeTravaux = travauxTypesState.types.find((type) => type.id === travail.typeTravauxId);
+    const sousType = typeTravaux?.sousTypes.find((st) => st.id === travail.sousTypeId);
     
-    piecesTravaux.forEach(travail => {
-      const prixUnitaireHT = parseStringToNumber(travail.prixUnitaire);
-      const quantite = parseStringToNumber(travail.quantite);
-      const tauxTVA = parseStringToNumber(travail.tauxTVA);
-      
-      const montantHT = prixUnitaireHT * quantite;
-      const montantTVA = montantHT * (tauxTVA / 100);
-      
-      totalHT += montantHT;
-      totalTVA += montantTVA;
-      totalTTC += montantHT + montantTVA;
-    });
+    return {
+      travail,
+      typeTravaux,
+      sousType,
+    };
+  };
+  
+  // Fonction pour calculer le total des travaux
+  const calculerTotalTravaux = (): number => {
+    return travaux.reduce(
+      (total, travail) => total + travail.quantite * (travail.prixFournitures + travail.prixMainOeuvre),
+      0
+    );
+  };
+  
+  // Fonction pour calculer le total des travaux par pièce
+  const calculerTotalTravauxParPiece = (pieceId: string): number => {
+    return getTravauxForPiece(pieceId).reduce(
+      (total, travail) => total + travail.quantite * (travail.prixFournitures + travail.prixMainOeuvre),
+      0
+    );
+  };
+  
+  // Nettoyage des travaux orphelins (pièces supprimées)
+  useEffect(() => {
+    const pieceIds = projectState.rooms.map((room) => room.id);
+    const travauxOrphelins = travaux.filter((travail) => !pieceIds.includes(travail.pieceId));
     
-    return { totalHT, totalTVA, totalTTC };
-  }, [getTravauxForPiece]);
-
-  // Calculer le total global de tous les travaux
-  const calculateGlobalTotal = useCallback(() => {
-    let totalHT = 0;
-    let totalTVA = 0;
-    let totalTTC = 0;
-    let totalFournitures = 0;
-    let totalMainOeuvre = 0;
-    
-    travaux.forEach(travail => {
-      const prixFournitures = parseStringToNumber(travail.prixFournitures);
-      const prixMainOeuvre = parseStringToNumber(travail.prixMainOeuvre);
-      const quantite = parseStringToNumber(travail.quantite);
-      const tauxTVA = parseStringToNumber(travail.tauxTVA);
-      
-      const montantFournitures = prixFournitures * quantite;
-      const montantMainOeuvre = prixMainOeuvre * quantite;
-      const montantHT = montantFournitures + montantMainOeuvre;
-      const montantTVA = montantHT * (tauxTVA / 100);
-      
-      totalFournitures += montantFournitures;
-      totalMainOeuvre += montantMainOeuvre;
-      totalHT += montantHT;
-      totalTVA += montantTVA;
-      totalTTC += montantHT + montantTVA;
-    });
-    
-    return { totalHT, totalTVA, totalTTC, totalFournitures, totalMainOeuvre };
-  }, [travaux]);
-
+    if (travauxOrphelins.length > 0) {
+      setTravaux((prevTravaux) => 
+        prevTravaux.filter((travail) => pieceIds.includes(travail.pieceId))
+      );
+    }
+  }, [projectState.rooms, travaux, setTravaux]);
+  
   return {
     travaux,
     addTravail,
     updateTravail,
     deleteTravail,
     getTravauxForPiece,
-    calculateTotalForPiece,
-    calculateGlobalTotal
+    getAllTravaux,
+    getTravailDetails,
+    calculerTotalTravaux,
+    calculerTotalTravauxParPiece,
   };
 };

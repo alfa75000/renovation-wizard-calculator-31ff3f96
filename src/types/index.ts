@@ -1,232 +1,200 @@
 
-// Types pour les pièces et menuiseries
+// Types principaux pour l'application de rénovation
+
+// Propriété principale
+export interface Property {
+  type: string;
+  floors: number;
+  totalArea: number;
+  rooms: number;
+  ceilingHeight: number;
+}
+
+// Pièce à rénover
 export interface Room {
   id: string;
   name: string;
-  // Propriétés de base
-  width: string;
-  length: string;
-  height: string;
-  surface: string;
-  typeSol: string;
-  typeMur: string;
-  // Collections associées
+  customName?: string;
+  type: string;
+  width: number;
+  length: number;
+  height: number;
+  surface: number;
+  plinthHeight: number;
+  typeSol?: string;
+  typeMur?: string;
   menuiseries: Menuiserie[];
   autresSurfaces: AutreSurface[];
   
-  // Propriétés calculées utilisées dans l'application
-  type?: string;
-  customName?: string;
-  plinthHeight?: string;
-  wallSurfaceRaw?: string;
-  totalPlinthLength?: string;
-  lineaireBrut?: string;
-  lineaireNet?: string;
-  totalPlinthSurface?: string;
+  // Valeurs calculées
+  wallSurfaceRaw: number;
+  totalPlinthLength: number;
+  totalPlinthSurface: number;
   
-  // Surfaces calculées
-  surfaceNetteSol?: string;
-  netWallSurface?: string;
-  surfaceNettePlafond?: string;
-  surfaceBruteMurs?: string;
-  surfaceBrutePlafond?: string;
+  // Surfaces d'impact
+  menuiseriesMursSurface: number;
+  menuiseriesPlafondSurface: number;
+  menuiseriesSolSurface: number;
+  autresSurfacesMurs: number;
+  autresSurfacesPlafond: number;
+  autresSurfacesSol: number;
   
-  // Surfaces impactées par les menuiseries
-  menuiseriesMursSurface?: string;
-  menuiseriesPlafondSurface?: string;
-  menuiseriesSolSurface?: string;
+  // Surfaces nettes calculées
+  netWallSurface: number;
+  surfaceNetteSol: number;
+  surfaceNettePlafond: number;
+  surfaceBruteSol: number;
+  surfaceBrutePlafond: number;
+  surfaceBruteMurs: number;
   
-  // Surfaces impactées par les autres surfaces
-  autresSurfacesMurs?: string;
-  autresSurfacesPlafond?: string;
-  autresSurfacesSol?: string;
+  // Linéaires
+  lineaireBrut?: number;
+  lineaireNet?: number;
 }
 
+// Menuiserie (fenêtre, porte, etc.)
 export interface Menuiserie {
   id: string;
   type: string;
-  largeur: string;
-  hauteur: string;
-  surface: string;
-  
-  // Propriétés additionnelles utilisées
-  surfaceImpactee?: string;
+  name: string;
+  largeur: number;
+  hauteur: number;
+  quantity: number;
+  surface: number;
+  surfaceImpactee: "mur" | "plafond" | "sol";
   impactePlinthe?: boolean;
-  quantity?: number;
 }
 
+// Autre surface (pour les ajouts ou déductions)
 export interface AutreSurface {
   id: string;
-  designation: string;
-  longueur: string;
-  hauteur: string;
-  surface: string;
-  
-  // Propriétés additionnelles utilisées
-  name?: string;
-  type?: string;
-  largeur?: number;
-  surfaceImpactee?: string;
-  estDeduction?: boolean;
-  quantity?: number;
-}
-
-export interface PropertyType {
   type: string;
-  floors: string;
-  totalArea: string;
-  rooms: string;
-  ceilingHeight: string;
+  name: string;
+  designation: string;
+  largeur: number;
+  hauteur: number;
+  surface: number;
+  quantity: number;
+  surfaceImpactee: "mur" | "plafond" | "sol";
+  estDeduction: boolean;
 }
 
-export interface Travail {
+// Types pour les menuiseries
+export interface TypeMenuiserie {
   id: string;
-  type: string;
-  designation: string;
-  unite: string;
-  quantite: string;
-  prixUnitaire: string;
-  prixTotal: string;
-  
-  // Propriétés utilisées dans le code mais non définies dans l'interface originale
-  pieceId: string;
-  typeTravauxLabel: string;
-  sousTypeLabel: string;
-  prixFournitures: string;
-  prixMainOeuvre: string;
-  tauxTVA: string;
-  personnalisation?: string;
+  nom: string;
+  description: string;
+  hauteur: number;
+  largeur: number;
+  surfaceReference: number;
+  impactePlinthe: boolean;
 }
 
-// Types pour les clients
+// Types pour les autres surfaces
+export interface TypeAutreSurface {
+  id: string;
+  nom: string;
+  description: string;
+  surfaceImpacteeParDefaut: "mur" | "plafond" | "sol";
+  estDeduction: boolean;
+}
+
+// Client
 export interface Client {
   id: string;
   nom: string;
   prenom: string;
+  telephone: string;
+  email: string;
   adresse: string;
-  tel1: string;
-  tel2?: string;
-  email?: string;
-  typeClient: string;
-  autreInfo?: string;
-  infosComplementaires?: string;
+  codePostal: string;
+  ville: string;
 }
 
-// Types pour les travaux types
+// Projet Chantier
+export interface ProjetChantier {
+  id: string;
+  nom: string;
+  adresse: string;
+  codePostal: string;
+  ville: string;
+  clientId: string;
+  dateDebut: string;
+  dateFin: string;
+  description: string;
+  statut: "en_attente" | "en_cours" | "termine";
+  montantTotal: number;
+}
+
+// Types pour les travaux
 export interface TravauxType {
   id: string;
-  type: string;
+  nom: string;
   description: string;
-  unite: string;
-  prixUnitaire: number;
+  sousTypes: SousTypeTravauxItem[];
 }
 
-// Types pour le contexte des types de travaux
 export interface TypeTravauxItem {
   id: string;
-  label: string;
-  icon: string;
-  sousTypes: SousTypeTravauxItem[];
+  nom: string;
+  description: string;
 }
 
 export interface SousTypeTravauxItem {
   id: string;
-  label: string;
+  typeTravauxId: string;
+  nom: string;
+  description: string;
+  uniteParDefaut: string;
+  prixFournituresUnitaire: number;
+  prixMainOeuvreUnitaire: number;
+  tempsMoyenMinutes: number;
+  tauxTVA: number;
+}
+
+// Travail associé à une pièce
+export interface Travail {
+  id: string;
+  pieceId: string;
+  typeTravauxId: string;
+  typeTravauxLabel: string;
+  sousTypeId: string;
+  sousTypeLabel: string;
+  menuiserieId?: string;
+  description: string;
+  quantite: number;
   unite: string;
-  prixUnitaire: string;
-  prixFournitures: string;
-  prixMainOeuvre: string;
-  tauxTVA: string;
-  surfaceReference?: string;
-  personnalisation?: string;
+  prixFournitures: number;
+  prixMainOeuvre: number;
+  tauxTVA: number;
+  commentaire: string;
 }
 
-// Types pour les menuiseries types
-export interface MenuiserieType {
-  id: string;
-  type: string;
+// Type de pièce pour la compatibilité avec les composants
+export type Piece = Room;
+
+// États du contexte
+export interface ProjectState {
+  property: Property;
+  rooms: Room[];
 }
 
-// Version étendue pour TypeMenuiserie
-export interface TypeMenuiserie {
-  id: string;
-  type: string;
-  nom: string;
-  hauteur: number;
-  largeur: number;
-  description?: string;
-  surfaceReference?: string;
-  impactePlinthe: boolean;
+export interface TravauxTypesState {
+  types: TravauxType[];
 }
 
-// Types pour les autres surfaces types
-export interface AutreSurfaceType {
-  id: string;
-  designation: string;
+export interface MenuiseriesTypesState {
+  typesMenuiseries: TypeMenuiserie[];
 }
 
-// Version étendue pour TypeAutreSurface
-export interface TypeAutreSurface {
-  id: string;
-  designation: string;
-  nom: string;
-  description?: string;
-  surfaceImpacteeParDefaut: string;
-  estDeduction: boolean;
+export interface AutresSurfacesState {
+  typesAutresSurfaces: TypeAutreSurface[];
 }
 
-// Types pour les projets chantier
-export interface ProjetChantier {
-  id: string;
-  clientId: string;
-  nomProjet: string;
-  descriptionProjet: string;
-  adresseChantier: string;
-  occupant: string;
-  infoComplementaire: string;
-  dateCreation: string;
-  dateModification: string;
-  projectData?: {
-    rooms: Room[];
-    property: PropertyType;
-    travaux: Travail[];
-  };
-}
-
-// Types pour le hook de stockage IndexedDB
-export interface IDBStorageHook<T> {
-  isDbAvailable: boolean;
-  isLoading: boolean;
-  error: Error | null;
-  getAllItems: () => Promise<T[]>;
-  getItem: (id: string) => Promise<T | null>;
-  addItem: (item: T) => Promise<string>;
-  updateItem: (id: string, item: T) => Promise<void>;
-  deleteItem: (id: string) => Promise<void>;
-  clearItems: () => Promise<void>;
-  runSilently: <R>(operation: () => R | Promise<R>) => Promise<R>;
-  setSilentOperation?: (silent: boolean) => void;
-}
-
-// Types pour les états des contexts
 export interface ClientsState {
   clients: Client[];
-  selectedClient: Client | null;
-  useIdb?: boolean;
 }
 
-export interface ClientsContextType {
-  state: ClientsState;
-  dispatch: React.Dispatch<ClientsAction>;
-  isDbAvailable?: boolean;
-  isLoading?: boolean;
+export interface ProjetChantierState {
+  projets: ProjetChantier[];
 }
-
-export type ClientsAction =
-  | { type: 'SET_CLIENTS'; payload: Client[] }
-  | { type: 'ADD_CLIENT'; payload: Client }
-  | { type: 'UPDATE_CLIENT'; payload: { id: string; client: Client } }
-  | { type: 'DELETE_CLIENT'; payload: string }
-  | { type: 'SELECT_CLIENT'; payload: string }
-  | { type: 'SET_USE_IDB'; payload: boolean }
-  | { type: 'RESET_CLIENTS' };
