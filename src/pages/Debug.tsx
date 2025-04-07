@@ -15,7 +15,7 @@ import {
 const DEBUG_AUTH_KEY = 'debug_mode_authorized';
 
 /**
- * Page de débogage accessible uniquement via une combinaison de touches
+ * Page de débogage accessible uniquement via un bouton dans le layout (en mode dev)
  * ou un accès direct avec authentification
  */
 const Debug: React.FC = () => {
@@ -32,24 +32,6 @@ const Debug: React.FC = () => {
     if (debugAuthorized) {
       logger.info('Accès à la page de debug (déjà autorisé)', 'system');
     }
-  }, []);
-  
-  // Installer l'écouteur de clavier pour la combinaison Ctrl+Shift+D
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Ctrl+Shift+D
-      if (e.ctrlKey && e.shiftKey && e.key === 'D') {
-        setIsAuthorized(true);
-        sessionStorage.setItem(DEBUG_AUTH_KEY, 'true');
-        logger.info('Accès à la page de debug (combinaison de touches)', 'system');
-      }
-    };
-    
-    window.addEventListener('keydown', handleKeyDown);
-    
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
   }, []);
   
   const handleAuthorize = () => {
@@ -100,10 +82,6 @@ const Debug: React.FC = () => {
                 Accéder
               </Button>
             </div>
-            
-            <p className="text-xs text-center text-gray-500 mt-8">
-              Astuce: Vous pouvez également utiliser la combinaison <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>D</kbd> pour accéder à cette page.
-            </p>
           </div>
         </div>
       </div>

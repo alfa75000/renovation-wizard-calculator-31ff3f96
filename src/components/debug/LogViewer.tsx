@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLogger } from '@/hooks/useLogger';
 import { LogEntry, LogLevel, LogCategory } from '@/services/logService';
@@ -29,7 +28,7 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
-import { DownloadIcon, ExportIcon, RefreshCw, Trash } from 'lucide-react';
+import { DownloadIcon, RefreshCw, Trash } from 'lucide-react';
 
 const getLevelColor = (level: LogLevel): string => {
   switch (level) {
@@ -67,7 +66,6 @@ const LogViewer: React.FC = () => {
   const [stats, setStats] = useState<any>(null);
   const [autoRefresh, setAutoRefresh] = useState(false);
 
-  // Chargement initial des logs
   useEffect(() => {
     loadLogs();
     loadSessions();
@@ -86,7 +84,6 @@ const LogViewer: React.FC = () => {
     };
   }, []);
   
-  // Auto-refresh
   useEffect(() => {
     let interval: NodeJS.Timeout;
     
@@ -102,7 +99,6 @@ const LogViewer: React.FC = () => {
     };
   }, [autoRefresh]);
   
-  // Filtrage des logs
   useEffect(() => {
     applyFilters();
   }, [logs, filter]);
@@ -139,22 +135,18 @@ const LogViewer: React.FC = () => {
     try {
       let filtered = [...logs];
       
-      // Filtre par niveau
       if (filter.level) {
         filtered = filtered.filter(log => log.level === filter.level);
       }
       
-      // Filtre par catégorie
       if (filter.category) {
         filtered = filtered.filter(log => log.category === filter.category);
       }
       
-      // Filtre par session
       if (filter.session) {
         filtered = filtered.filter(log => log.sessionId === filter.session);
       }
       
-      // Filtre par texte
       if (filter.search) {
         const searchLower = filter.search.toLowerCase();
         filtered = filtered.filter(log => {
