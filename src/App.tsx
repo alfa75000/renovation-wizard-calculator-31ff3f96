@@ -16,7 +16,6 @@ import Recapitulatif from "./pages/Recapitulatif";
 import InfosChantier from "./pages/InfosChantier";
 import AdminTravaux from "./pages/AdminTravaux";
 import Parametres from "./pages/Parametres";
-import Debug from "./pages/Debug";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,7 +40,6 @@ function App() {
                         <Route path="/infos-chantier" element={<InfosChantier />} />
                         <Route path="/admin/travaux" element={<AdminTravaux />} />
                         <Route path="/parametres" element={<Parametres />} />
-                        <Route path="/debug" element={<Debug />} />
                         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                         <Route path="*" element={<NotFound />} />
                       </Routes>

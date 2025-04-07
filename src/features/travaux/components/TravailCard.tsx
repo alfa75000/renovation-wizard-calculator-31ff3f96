@@ -20,13 +20,12 @@ const TravailCard: React.FC<TravailCardProps> = ({ travail, onDelete, onEdit }) 
   const piece = state.rooms.find(room => room.id === travail.pieceId);
   
   // Récupérer la menuiserie si elle est référencée
-  const menuiserie = travail.menuiserieId && piece?.menuiseries ? 
-    piece.menuiseries.find(m => m.id === travail.menuiserieId) : 
+  const menuiserie = travail.menuiserieId ? 
+    piece?.menuiseries.find(m => m.id === travail.menuiserieId) : 
     undefined;
   
-  // Calcul des prix
   const totalHT = (travail.prixFournitures + travail.prixMainOeuvre) * travail.quantite;
-  const totalTTC = totalHT * (1 + (typeof travail.tauxTVA === 'number' ? travail.tauxTVA : parseFloat(travail.tauxTVA as unknown as string)) / 100);
+  const totalTTC = totalHT * (1 + travail.tauxTVA / 100);
   
   return (
     <Card className="overflow-hidden">
@@ -38,7 +37,7 @@ const TravailCard: React.FC<TravailCardProps> = ({ travail, onDelete, onEdit }) 
             </CardTitle>
             {menuiserie && (
               <div className="text-sm text-blue-600 font-medium mt-1">
-                Menuiserie: {menuiserie.type} - {parseFloat(menuiserie.surface).toFixed(2)} m²
+                Menuiserie: {menuiserie.name} ({menuiserie.type}) - {menuiserie.surface.toFixed(2)} m²
               </div>
             )}
           </div>

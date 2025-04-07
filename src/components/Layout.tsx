@@ -1,8 +1,6 @@
 
 import React, { ReactNode } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Bug } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Link, useLocation } from 'react-router-dom';
 
 interface LayoutProps {
   children: ReactNode;
@@ -10,19 +8,15 @@ interface LayoutProps {
 
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
-  const navigate = useNavigate();
   
   const isActive = (path: string) => {
     return location.pathname === path ? 'bg-primary text-white' : 'text-gray-700 hover:bg-gray-100';
   };
   
-  // Toujours afficher le bouton de debug pendant le développement
-  const isDevelopment = true; // Pour s'assurer que le bouton est toujours visible pendant les tests
-  
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+        <div className="container mx-auto px-4 py-4">
           <nav className="flex flex-wrap gap-2">
             <Link 
               to="/" 
@@ -55,19 +49,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               Paramètres
             </Link>
           </nav>
-          
-          {isDevelopment && (
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={() => navigate('/debug')}
-              title="Mode Débogage"
-              className="opacity-70 hover:opacity-100"
-            >
-              <Bug className="h-4 w-4" />
-              <span className="sr-only">Débogage</span>
-            </Button>
-          )}
         </div>
       </header>
       
