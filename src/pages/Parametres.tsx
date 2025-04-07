@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { Layout } from "@/components/Layout";
 import { 
   Card, 
@@ -20,7 +21,8 @@ import {
   Link as LinkIcon,
   DoorOpen,
   Users,
-  User
+  User,
+  Loader2
 } from "lucide-react";
 import { 
   Dialog, 
@@ -33,24 +35,40 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 
-import TypeTravauxForm from "@/features/admin/components/TypeTravauxForm";
-import SousTypeTravauxForm from "@/features/admin/components/SousTypeTravauxForm";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+
 import TypeMenuiserieForm from "@/features/admin/components/TypeMenuiserieForm";
 import ClientForm from "@/features/admin/components/ClientForm";
 
-import { TravauxType, SousTypeTravauxItem, useTravauxTypes, surfacesReference } from "@/contexts/TravauxTypesContext";
+// Importation des types Supabase
+import { WorkType, ServiceGroup, Service } from "@/types/supabase";
+import { 
+  fetchWorkTypes, 
+  fetchServiceGroups, 
+  fetchServices,
+  createWorkType,
+  updateWorkType,
+  deleteWorkType,
+  createServiceGroup,
+  updateServiceGroup,
+  deleteServiceGroup,
+  createService,
+  updateService,
+  deleteService
+} from "@/services/travauxService";
+
 import { useMenuiseriesTypes, surfacesReference as menuiserieSurfacesReference } from "@/contexts/MenuiseriesTypesContext";
 import { Client, useClients, typesClients } from "@/contexts/ClientsContext";
 import { TypeMenuiserie } from "@/types";
+import { surfacesReference } from "@/contexts/TravauxTypesContext";
 import { surfacesMenuiseries } from "@/types";
 
 const Parametres = () => {
-  // Contexte des travaux, des menuiseries et des clients
-  const { state: stateTravauxTypes, dispatch: dispatchTravauxTypes } = useTravauxTypes();
-  const { types } = stateTravauxTypes;
-  
+  // Contexte des menuiseries et des clients
   const { state: stateMenuiseriesTypes, dispatch: dispatchMenuiseriesTypes } = useMenuiseriesTypes();
   const { typesMenuiseries } = stateMenuiseriesTypes;
   
@@ -60,16 +78,35 @@ const Parametres = () => {
   // Onglet actif
   const [activeTab, setActiveTab] = useState("travaux");
 
-  // États pour les travaux
-  const [selectedTypeId, setSelectedTypeId] = useState<string | null>(null);
-  const [typeFormOpen, setTypeFormOpen] = useState(false);
-  const [sousTypeFormOpen, setSousTypeFormOpen] = useState(false);
-  const [editingType, setEditingType] = useState<TravauxType | null>(null);
-  const [editingSousType, setEditingSousType] = useState<SousTypeTravauxItem | null>(null);
-  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
-  const [confirmDeleteSousTypeOpen, setConfirmDeleteSousTypeOpen] = useState(false);
-  const [typeToDelete, setTypeToDelete] = useState<string | null>(null);
-  const [sousTypeToDelete, setSousTypeToDelete] = useState<string | null>(null);
+  // États pour les travaux avec Supabase
+  const [workTypes, setWorkTypes] = useState<WorkType[]>([]);
+  const [serviceGroups, setServiceGroups] = useState<ServiceGroup[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
+  const [selectedWorkTypeId, setSelectedWorkTypeId] = useState<string | null>(null);
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [isLoadingGroups, setIsLoadingGroups] = useState<boolean>(false);
+  const [isLoadingServices, setIsLoadingServices] = useState<boolean>(false);
+
+  // États pour le formulaire de type de travaux
+  const [workTypeFormOpen, setWorkTypeFormOpen] = useState<boolean>(false);
+  const [editingWorkType, setEditingWorkType] = useState<WorkType | null>(null);
+
+  // États pour le formulaire de groupe
+  const [serviceGroupFormOpen, setServiceGroupFormOpen] = useState<boolean>(false);
+  const [editingServiceGroup, setEditingServiceGroup] = useState<ServiceGroup | null>(null);
+
+  // États pour le formulaire de service
+  const [serviceFormOpen, setServiceFormOpen] = useState<boolean>(false);
+  const [editingService, setEditingService] = useState<Service | null>(null);
+
+  // États pour les confirmations de suppression
+  const [confirmDeleteWorkTypeOpen, setConfirmDeleteWorkTypeOpen] = useState<boolean>(false);
+  const [workTypeToDelete, setWorkTypeToDelete] = useState<string | null>(null);
+  const [confirmDeleteGroupOpen, setConfirmDeleteGroupOpen] = useState<boolean>(false);
+  const [groupToDelete, setGroupToDelete] = useState<string | null>(null);
+  const [confirmDeleteServiceOpen, setConfirmDeleteServiceOpen] = useState<boolean>(false);
+  const [serviceToDelete, setServiceToDelete] = useState<string | null>(null);
 
   // États pour les menuiseries
   const [typeMenuiserieFormOpen, setTypeMenuiserieFormOpen] = useState(false);
@@ -83,9 +120,71 @@ const Parametres = () => {
   const [confirmDeleteClientOpen, setConfirmDeleteClientOpen] = useState(false);
   const [clientToDelete, setClientToDelete] = useState<string | null>(null);
 
-  const selectedType = types.find(type => type.id === selectedTypeId);
+  // Chargement initial des types de travaux
+  useEffect(() => {
+    const loadWorkTypes = async () => {
+      setLoading(true);
+      try {
+        const data = await fetchWorkTypes();
+        setWorkTypes(data);
+      } catch (error) {
+        console.error("Erreur lors du chargement des types de travaux:", error);
+        toast.error("Impossible de charger les types de travaux");
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadWorkTypes();
+  }, []);
 
-  // Gestion des types de travaux
+  // Chargement des groupes quand un type de travail est sélectionné
+  useEffect(() => {
+    if (!selectedWorkTypeId) {
+      setServiceGroups([]);
+      return;
+    }
+    
+    const loadServiceGroups = async () => {
+      setIsLoadingGroups(true);
+      try {
+        const data = await fetchServiceGroups(selectedWorkTypeId);
+        setServiceGroups(data);
+      } catch (error) {
+        console.error("Erreur lors du chargement des groupes:", error);
+        toast.error("Impossible de charger les groupes");
+      } finally {
+        setIsLoadingGroups(false);
+      }
+    };
+    
+    loadServiceGroups();
+  }, [selectedWorkTypeId]);
+
+  // Chargement des services quand un groupe est sélectionné
+  useEffect(() => {
+    if (!selectedGroupId) {
+      setServices([]);
+      return;
+    }
+    
+    const loadServices = async () => {
+      setIsLoadingServices(true);
+      try {
+        const data = await fetchServices(selectedGroupId);
+        setServices(data);
+      } catch (error) {
+        console.error("Erreur lors du chargement des services:", error);
+        toast.error("Impossible de charger les services");
+      } finally {
+        setIsLoadingServices(false);
+      }
+    };
+    
+    loadServices();
+  }, [selectedGroupId]);
+
+  // Gestion des icônes
   const getIconComponent = (iconName: string) => {
     switch (iconName) {
       case "Paintbrush":
@@ -101,116 +200,224 @@ const Parametres = () => {
     }
   };
 
-  const handleAddType = () => {
-    setEditingType(null);
-    setTypeFormOpen(true);
+  // Gestion des types de travaux
+  const handleAddWorkType = () => {
+    setEditingWorkType(null);
+    setWorkTypeFormOpen(true);
   };
 
-  const handleEditType = (type: TravauxType) => {
-    setEditingType(type);
-    setTypeFormOpen(true);
+  const handleEditWorkType = (workType: WorkType) => {
+    setEditingWorkType(workType);
+    setWorkTypeFormOpen(true);
   };
 
-  const handleDeleteType = (id: string) => {
-    setTypeToDelete(id);
-    setConfirmDeleteOpen(true);
+  const handleDeleteWorkType = (id: string) => {
+    setWorkTypeToDelete(id);
+    setConfirmDeleteWorkTypeOpen(true);
   };
 
-  const confirmTypeDelete = () => {
-    if (typeToDelete) {
-      dispatchTravauxTypes({ type: 'DELETE_TYPE', payload: typeToDelete });
-      setConfirmDeleteOpen(false);
-      setTypeToDelete(null);
-      if (selectedTypeId === typeToDelete) {
-        setSelectedTypeId(null);
+  const confirmWorkTypeDelete = async () => {
+    if (workTypeToDelete) {
+      setLoading(true);
+      const success = await deleteWorkType(workTypeToDelete);
+      setLoading(false);
+      
+      if (success) {
+        // Mettre à jour la liste des types de travaux
+        setWorkTypes(prev => prev.filter(wt => wt.id !== workTypeToDelete));
+        setConfirmDeleteWorkTypeOpen(false);
+        setWorkTypeToDelete(null);
+        
+        if (selectedWorkTypeId === workTypeToDelete) {
+          setSelectedWorkTypeId(null);
+        }
+        
+        toast.success("Type de travaux supprimé avec succès");
       }
-      toast({
-        title: "Type de travaux supprimé",
-        description: "Le type de travaux a été supprimé avec succès.",
-      });
     }
   };
 
-  const handleSubmitType = (typeData: TravauxType) => {
-    if (editingType) {
-      dispatchTravauxTypes({
-        type: 'UPDATE_TYPE',
-        payload: { id: editingType.id, type: typeData }
-      });
-      toast({
-        title: "Type de travaux mis à jour",
-        description: "Le type de travaux a été mis à jour avec succès.",
-      });
-    } else {
-      dispatchTravauxTypes({ type: 'ADD_TYPE', payload: typeData });
-      toast({
-        title: "Type de travaux ajouté",
-        description: "Le nouveau type de travaux a été ajouté avec succès.",
-      });
-    }
-    setTypeFormOpen(false);
-    setEditingType(null);
-  };
-
-  const handleAddSousType = () => {
-    if (selectedTypeId) {
-      setEditingSousType(null);
-      setSousTypeFormOpen(true);
-    }
-  };
-
-  const handleEditSousType = (sousType: SousTypeTravauxItem) => {
-    setEditingSousType(sousType);
-    setSousTypeFormOpen(true);
-  };
-
-  const handleDeleteSousType = (id: string) => {
-    setSousTypeToDelete(id);
-    setConfirmDeleteSousTypeOpen(true);
-  };
-
-  const confirmSousTypeDelete = () => {
-    if (selectedTypeId && sousTypeToDelete) {
-      dispatchTravauxTypes({
-        type: 'DELETE_SOUS_TYPE',
-        payload: { typeId: selectedTypeId, id: sousTypeToDelete }
-      });
-      setConfirmDeleteSousTypeOpen(false);
-      setSousTypeToDelete(null);
-      toast({
-        title: "Prestation supprimée",
-        description: "La prestation a été supprimée avec succès.",
-      });
-    }
-  };
-
-  const handleSubmitSousType = (sousTypeData: SousTypeTravauxItem) => {
-    if (selectedTypeId) {
-      if (editingSousType) {
-        dispatchTravauxTypes({
-          type: 'UPDATE_SOUS_TYPE',
-          payload: {
-            typeId: selectedTypeId,
-            id: editingSousType.id,
-            sousType: sousTypeData
-          }
-        });
-        toast({
-          title: "Prestation mise à jour",
-          description: "La prestation a été mise à jour avec succès.",
-        });
+  const handleSubmitWorkType = async (name: string) => {
+    setLoading(true);
+    
+    try {
+      if (editingWorkType) {
+        // Mise à jour
+        const updatedWorkType = await updateWorkType(editingWorkType.id, name);
+        
+        if (updatedWorkType) {
+          setWorkTypes(prev => prev.map(wt => 
+            wt.id === editingWorkType.id ? updatedWorkType : wt
+          ));
+          toast.success("Type de travaux mis à jour avec succès");
+        }
       } else {
-        dispatchTravauxTypes({
-          type: 'ADD_SOUS_TYPE',
-          payload: { typeId: selectedTypeId, sousType: sousTypeData }
-        });
-        toast({
-          title: "Prestation ajoutée",
-          description: "La nouvelle prestation a été ajoutée avec succès.",
-        });
+        // Création
+        const newWorkType = await createWorkType(name);
+        
+        if (newWorkType) {
+          setWorkTypes(prev => [...prev, newWorkType]);
+          toast.success("Type de travaux créé avec succès");
+        }
       }
-      setSousTypeFormOpen(false);
-      setEditingSousType(null);
+    } catch (error) {
+      console.error("Erreur:", error);
+      toast.error("Une erreur est survenue");
+    } finally {
+      setLoading(false);
+      setWorkTypeFormOpen(false);
+      setEditingWorkType(null);
+    }
+  };
+
+  // Gestion des groupes de services
+  const handleAddServiceGroup = () => {
+    if (selectedWorkTypeId) {
+      setEditingServiceGroup(null);
+      setServiceGroupFormOpen(true);
+    }
+  };
+
+  const handleEditServiceGroup = (group: ServiceGroup) => {
+    setEditingServiceGroup(group);
+    setServiceGroupFormOpen(true);
+  };
+
+  const handleDeleteServiceGroup = (id: string) => {
+    setGroupToDelete(id);
+    setConfirmDeleteGroupOpen(true);
+  };
+
+  const confirmServiceGroupDelete = async () => {
+    if (groupToDelete) {
+      setIsLoadingGroups(true);
+      const success = await deleteServiceGroup(groupToDelete);
+      setIsLoadingGroups(false);
+      
+      if (success) {
+        // Mettre à jour la liste des groupes
+        setServiceGroups(prev => prev.filter(g => g.id !== groupToDelete));
+        setConfirmDeleteGroupOpen(false);
+        setGroupToDelete(null);
+        
+        if (selectedGroupId === groupToDelete) {
+          setSelectedGroupId(null);
+        }
+        
+        toast.success("Groupe supprimé avec succès");
+      }
+    }
+  };
+
+  const handleSubmitServiceGroup = async (name: string) => {
+    if (!selectedWorkTypeId) return;
+    
+    setIsLoadingGroups(true);
+    
+    try {
+      if (editingServiceGroup) {
+        // Mise à jour
+        const updatedGroup = await updateServiceGroup(editingServiceGroup.id, name);
+        
+        if (updatedGroup) {
+          setServiceGroups(prev => prev.map(g => 
+            g.id === editingServiceGroup.id ? updatedGroup : g
+          ));
+          toast.success("Groupe mis à jour avec succès");
+        }
+      } else {
+        // Création
+        const newGroup = await createServiceGroup(name, selectedWorkTypeId);
+        
+        if (newGroup) {
+          setServiceGroups(prev => [...prev, newGroup]);
+          toast.success("Groupe créé avec succès");
+        }
+      }
+    } catch (error) {
+      console.error("Erreur:", error);
+      toast.error("Une erreur est survenue");
+    } finally {
+      setIsLoadingGroups(false);
+      setServiceGroupFormOpen(false);
+      setEditingServiceGroup(null);
+    }
+  };
+
+  // Gestion des services
+  const handleAddService = () => {
+    if (selectedGroupId) {
+      setEditingService(null);
+      setServiceFormOpen(true);
+    }
+  };
+
+  const handleEditService = (service: Service) => {
+    setEditingService(service);
+    setServiceFormOpen(true);
+  };
+
+  const handleDeleteService = (id: string) => {
+    setServiceToDelete(id);
+    setConfirmDeleteServiceOpen(true);
+  };
+
+  const confirmServiceDelete = async () => {
+    if (serviceToDelete) {
+      setIsLoadingServices(true);
+      const success = await deleteService(serviceToDelete);
+      setIsLoadingServices(false);
+      
+      if (success) {
+        // Mettre à jour la liste des services
+        setServices(prev => prev.filter(s => s.id !== serviceToDelete));
+        setConfirmDeleteServiceOpen(false);
+        setServiceToDelete(null);
+        toast.success("Service supprimé avec succès");
+      }
+    }
+  };
+
+  const handleSubmitService = async (serviceData: {
+    name: string;
+    description: string;
+    labor_price: number;
+    supply_price: number;
+  }) => {
+    if (!selectedGroupId) return;
+    
+    setIsLoadingServices(true);
+    
+    try {
+      if (editingService) {
+        // Mise à jour
+        const updatedService = await updateService(editingService.id, serviceData);
+        
+        if (updatedService) {
+          setServices(prev => prev.map(s => 
+            s.id === editingService.id ? updatedService : s
+          ));
+          toast.success("Service mis à jour avec succès");
+        }
+      } else {
+        // Création
+        const newService = await createService({
+          ...serviceData,
+          group_id: selectedGroupId
+        });
+        
+        if (newService) {
+          setServices(prev => [...prev, newService]);
+          toast.success("Service créé avec succès");
+        }
+      }
+    } catch (error) {
+      console.error("Erreur:", error);
+      toast.error("Une erreur est survenue");
+    } finally {
+      setIsLoadingServices(false);
+      setServiceFormOpen(false);
+      setEditingService(null);
     }
   };
 
@@ -218,16 +425,6 @@ const Parametres = () => {
     if (!id) return "Non spécifié";
     const surface = surfacesReference.find(surface => surface.id === id);
     return surface ? surface.label : id;
-  };
-
-  const resetToDefaults = () => {
-    if (confirm("Êtes-vous sûr de vouloir réinitialiser tous les types de travaux aux valeurs par défaut ?")) {
-      dispatchTravauxTypes({ type: 'RESET_TYPES' });
-      toast({
-        title: "Réinitialisation effectuée",
-        description: "Tous les types de travaux ont été réinitialisés aux valeurs par défaut.",
-      });
-    }
   };
 
   // Gestion des types de menuiseries
@@ -251,10 +448,7 @@ const Parametres = () => {
       dispatchMenuiseriesTypes({ type: 'DELETE_TYPE', payload: typeMenuiserieToDelete });
       setConfirmDeleteMenuiserieOpen(false);
       setTypeMenuiserieToDelete(null);
-      toast({
-        title: "Type de menuiserie supprimé",
-        description: "Le type de menuiserie a été supprimé avec succès.",
-      });
+      toast.success("Type de menuiserie supprimé avec succès");
     }
   };
 
@@ -264,16 +458,10 @@ const Parametres = () => {
         type: 'UPDATE_TYPE',
         payload: { id: editingTypeMenuiserie.id, type: typeData }
       });
-      toast({
-        title: "Type de menuiserie mis à jour",
-        description: "Le type de menuiserie a été mis à jour avec succès.",
-      });
+      toast.success("Type de menuiserie mis à jour avec succès");
     } else {
       dispatchMenuiseriesTypes({ type: 'ADD_TYPE', payload: typeData });
-      toast({
-        title: "Type de menuiserie ajouté",
-        description: "Le nouveau type de menuiserie a été ajouté avec succès.",
-      });
+      toast.success("Type de menuiserie ajouté avec succès");
     }
     setTypeMenuiserieFormOpen(false);
     setEditingTypeMenuiserie(null);
@@ -288,10 +476,7 @@ const Parametres = () => {
   const resetMenuiseriesToDefaults = () => {
     if (confirm("Êtes-vous sûr de vouloir réinitialiser tous les types de menuiseries aux valeurs par défaut ?")) {
       dispatchMenuiseriesTypes({ type: 'RESET_TYPES' });
-      toast({
-        title: "Réinitialisation effectuée",
-        description: "Tous les types de menuiseries ont été réinitialisés aux valeurs par défaut.",
-      });
+      toast.success("Tous les types de menuiseries ont été réinitialisés aux valeurs par défaut");
     }
   };
   
@@ -316,10 +501,7 @@ const Parametres = () => {
       dispatchClients({ type: 'DELETE_CLIENT', payload: clientToDelete });
       setConfirmDeleteClientOpen(false);
       setClientToDelete(null);
-      toast({
-        title: "Client supprimé",
-        description: "Le client a été supprimé avec succès.",
-      });
+      toast.success("Client supprimé avec succès");
     }
   };
   
@@ -329,16 +511,10 @@ const Parametres = () => {
         type: 'UPDATE_CLIENT',
         payload: { id: editingClient.id, client: clientData }
       });
-      toast({
-        title: "Client mis à jour",
-        description: "Le client a été mis à jour avec succès.",
-      });
+      toast.success("Client mis à jour avec succès");
     } else {
       dispatchClients({ type: 'ADD_CLIENT', payload: clientData });
-      toast({
-        title: "Client ajouté",
-        description: "Le nouveau client a été ajouté avec succès.",
-      });
+      toast.success("Client ajouté avec succès");
     }
     setClientFormOpen(false);
     setEditingClient(null);
@@ -347,10 +523,7 @@ const Parametres = () => {
   const resetClientsToDefaults = () => {
     if (confirm("Êtes-vous sûr de vouloir réinitialiser tous les clients aux valeurs par défaut ?")) {
       dispatchClients({ type: 'RESET_CLIENTS' });
-      toast({
-        title: "Réinitialisation effectuée",
-        description: "Tous les clients ont été réinitialisés aux valeurs par défaut.",
-      });
+      toast.success("Tous les clients ont été réinitialisés aux valeurs par défaut");
     }
   };
   
@@ -372,89 +545,74 @@ const Parametres = () => {
         </TabsList>
         
         <TabsContent value="travaux" className="mt-6">
-          <div className="flex justify-end mb-4">
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                if (confirm("Êtes-vous sûr de vouloir réinitialiser tous les types de travaux aux valeurs par défaut ?")) {
-                  dispatchTravauxTypes({ type: 'RESET_TYPES' });
-                  toast({
-                    title: "Réinitialisation effectuée",
-                    description: "Tous les types de travaux ont été réinitialisés aux valeurs par défaut.",
-                  });
-                }
-              }}
-              className="flex items-center gap-2"
-            >
-              Réinitialiser aux valeurs par défaut
-            </Button>
-          </div>
-
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <Card className="shadow-md lg:col-span-1">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <span>Types de travaux</span>
-                  <Button variant="outline" size="sm" onClick={() => {
-                    setEditingType(null);
-                    setTypeFormOpen(true);
-                  }}>
-                    <Plus className="h-4 w-4 mr-1" />
+                  <Button variant="outline" size="sm" onClick={handleAddWorkType} disabled={loading}>
+                    {loading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
                     Ajouter
                   </Button>
                 </CardTitle>
                 <CardDescription>
-                  Sélectionnez un type pour voir et gérer ses prestations
+                  Sélectionnez un type pour voir et gérer ses groupes et prestations
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {types.map((type) => (
-                    <div 
-                      key={type.id}
-                      className={`flex items-center justify-between p-2 rounded-md cursor-pointer ${selectedTypeId === type.id ? 'bg-blue-100' : 'hover:bg-gray-100'}`}
-                      onClick={() => setSelectedTypeId(type.id)}
-                    >
-                      <div className="flex items-center gap-2">
-                        {type.icon && getIconComponent(type.icon)}
-                        <span>{type.label}</span>
-                        <Badge variant="outline" className="ml-2">
-                          {type.sousTypes.length}
-                        </Badge>
-                      </div>
-                      <div className="flex gap-1">
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setEditingType(type);
-                            setTypeFormOpen(true);
-                          }}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setTypeToDelete(type.id);
-                            setConfirmDeleteOpen(true);
-                          }}
-                        >
-                          <Trash className="h-4 w-4" />
-                        </Button>
-                      </div>
+                  {loading ? (
+                    <div className="flex justify-center py-4">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
                     </div>
-                  ))}
-                  
-                  {types.length === 0 && (
-                    <Alert>
-                      <AlertDescription>
-                        Aucun type de travaux défini. Utilisez le bouton "Ajouter" pour créer un nouveau type.
-                      </AlertDescription>
-                    </Alert>
+                  ) : (
+                    <>
+                      {workTypes.map((type) => (
+                        <div 
+                          key={type.id}
+                          className={`flex items-center justify-between p-2 rounded-md cursor-pointer ${selectedWorkTypeId === type.id ? 'bg-blue-100' : 'hover:bg-gray-100'}`}
+                          onClick={() => {
+                            setSelectedWorkTypeId(type.id);
+                            setSelectedGroupId(null);
+                          }}
+                        >
+                          <div className="flex items-center gap-2">
+                            <Wrench className="h-5 w-5 text-gray-500" />
+                            <span>{type.name}</span>
+                          </div>
+                          <div className="flex gap-1">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditWorkType(type);
+                              }}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteWorkType(type.id);
+                              }}
+                            >
+                              <Trash className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                      
+                      {workTypes.length === 0 && (
+                        <Alert>
+                          <AlertDescription>
+                            Aucun type de travaux défini. Utilisez le bouton "Ajouter" pour créer un nouveau type.
+                          </AlertDescription>
+                        </Alert>
+                      )}
+                    </>
                   )}
                 </div>
               </CardContent>
@@ -464,84 +622,172 @@ const Parametres = () => {
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <span>
-                    {selectedType 
-                      ? `Prestations pour "${selectedType.label}"` 
-                      : "Prestations"
+                    {selectedWorkTypeId 
+                      ? `Groupes et Prestations pour "${workTypes.find(t => t.id === selectedWorkTypeId)?.name || ''}"` 
+                      : "Groupes et Prestations"
                     }
                   </span>
-                  {selectedTypeId && (
-                    <Button variant="outline" size="sm" onClick={handleAddSousType}>
-                      <Plus className="h-4 w-4 mr-1" />
-                      Ajouter une prestation
+                  {selectedWorkTypeId && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleAddServiceGroup}
+                      disabled={isLoadingGroups}
+                    >
+                      {isLoadingGroups ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
+                      Ajouter un groupe
                     </Button>
                   )}
                 </CardTitle>
                 <CardDescription>
-                  {selectedType 
-                    ? `Gérez les prestations disponibles pour le type "${selectedType.label}"`
-                    : "Sélectionnez un type de travaux pour voir ses prestations"
+                  {selectedWorkTypeId 
+                    ? `Gérez les groupes et prestations disponibles pour le type "${workTypes.find(t => t.id === selectedWorkTypeId)?.name || ''}"`
+                    : "Sélectionnez un type de travaux pour voir ses groupes et prestations"
                   }
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {selectedType ? (
-                  <div className="space-y-4">
-                    {selectedType.sousTypes.length > 0 ? (
-                      <div className="rounded-md border">
-                        <div className="grid grid-cols-12 bg-gray-100 p-3 rounded-t-md font-medium text-sm">
-                          <div className="col-span-3">Nom</div>
-                          <div className="col-span-2">Prix unitaire</div>
-                          <div className="col-span-2">Fournitures</div>
-                          <div className="col-span-2">Main d'œuvre</div>
-                          <div className="col-span-1">Unité</div>
-                          <div className="col-span-2 text-right">Actions</div>
-                        </div>
-                        <div className="divide-y">
-                          {selectedType.sousTypes.map((sousType) => (
-                            <div key={sousType.id} className="grid grid-cols-12 p-3 items-center hover:bg-gray-50">
-                              <div className="col-span-3 font-medium">
-                                <div className="truncate">{sousType.label}</div>
-                                <div className="text-xs text-gray-500 flex items-center gap-1 mt-1">
-                                  <LinkIcon className="h-3 w-3" />
-                                  {getSurfaceReferenceLabel(sousType.surfaceReference)}
-                                </div>
-                              </div>
-                              <div className="col-span-2">{sousType.prixUnitaire} €</div>
-                              <div className="col-span-2">{sousType.prixFournitures} €</div>
-                              <div className="col-span-2">{sousType.prixMainOeuvre} €</div>
-                              <div className="col-span-1">{sousType.unite}</div>
-                              <div className="col-span-2 flex justify-end gap-1">
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm"
-                                  onClick={() => handleEditSousType(sousType)}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm"
-                                  onClick={() => handleDeleteSousType(sousType.id)}
-                                >
-                                  <Trash className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
+                {selectedWorkTypeId ? (
+                  <div className="space-y-6">
+                    {isLoadingGroups ? (
+                      <div className="flex justify-center py-4">
+                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
                       </div>
                     ) : (
-                      <Alert>
-                        <AlertDescription>
-                          Aucune prestation définie pour ce type de travaux. Utilisez le bouton "Ajouter une prestation" pour en créer une.
-                        </AlertDescription>
-                      </Alert>
+                      <>
+                        {serviceGroups.length > 0 ? (
+                          <div className="space-y-6">
+                            {serviceGroups.map((group) => (
+                              <div key={group.id} className="border rounded-md overflow-hidden">
+                                <div 
+                                  className={`flex items-center justify-between p-3 ${selectedGroupId === group.id ? 'bg-blue-100' : 'bg-gray-50'} cursor-pointer`}
+                                  onClick={() => setSelectedGroupId(group.id)}
+                                >
+                                  <div className="font-medium">{group.name}</div>
+                                  <div className="flex gap-1">
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm"
+                                      onClick={() => handleAddService()}
+                                      disabled={selectedGroupId !== group.id || isLoadingServices}
+                                    >
+                                      <Plus className="h-4 w-4" />
+                                    </Button>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleEditServiceGroup(group);
+                                      }}
+                                    >
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDeleteServiceGroup(group.id);
+                                      }}
+                                    >
+                                      <Trash className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </div>
+                                
+                                {selectedGroupId === group.id && (
+                                  <div className="p-2">
+                                    <div className="flex justify-between items-center mb-3">
+                                      <h4 className="text-sm font-medium">Prestations</h4>
+                                      <Button 
+                                        variant="outline" 
+                                        size="sm" 
+                                        onClick={handleAddService}
+                                        disabled={isLoadingServices}
+                                      >
+                                        {isLoadingServices ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
+                                        Ajouter une prestation
+                                      </Button>
+                                    </div>
+                                    
+                                    {isLoadingServices ? (
+                                      <div className="flex justify-center py-4">
+                                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                                      </div>
+                                    ) : (
+                                      <>
+                                        {services.length > 0 ? (
+                                          <div className="rounded-md border">
+                                            <div className="grid grid-cols-12 bg-gray-100 p-3 rounded-t-md font-medium text-sm">
+                                              <div className="col-span-4">Nom</div>
+                                              <div className="col-span-2">Main d'œuvre</div>
+                                              <div className="col-span-2">Fournitures</div>
+                                              <div className="col-span-2">Prix total</div>
+                                              <div className="col-span-2 text-right">Actions</div>
+                                            </div>
+                                            <div className="divide-y">
+                                              {services.map((service) => (
+                                                <div key={service.id} className="grid grid-cols-12 p-3 items-center hover:bg-gray-50">
+                                                  <div className="col-span-4 font-medium">
+                                                    <div className="truncate">{service.name}</div>
+                                                    {service.description && (
+                                                      <div className="text-xs text-gray-500 mt-1 truncate">
+                                                        {service.description}
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                  <div className="col-span-2">{service.labor_price.toFixed(2)} €</div>
+                                                  <div className="col-span-2">{service.supply_price.toFixed(2)} €</div>
+                                                  <div className="col-span-2">{(service.labor_price + service.supply_price).toFixed(2)} €</div>
+                                                  <div className="col-span-2 flex justify-end gap-1">
+                                                    <Button 
+                                                      variant="ghost" 
+                                                      size="sm"
+                                                      onClick={() => handleEditService(service)}
+                                                    >
+                                                      <Edit className="h-4 w-4" />
+                                                    </Button>
+                                                    <Button 
+                                                      variant="ghost" 
+                                                      size="sm"
+                                                      onClick={() => handleDeleteService(service.id)}
+                                                    >
+                                                      <Trash className="h-4 w-4" />
+                                                    </Button>
+                                                  </div>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        ) : (
+                                          <Alert>
+                                            <AlertDescription>
+                                              Aucune prestation définie pour ce groupe. Utilisez le bouton "Ajouter une prestation" pour en créer une.
+                                            </AlertDescription>
+                                          </Alert>
+                                        )}
+                                      </>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <Alert>
+                            <AlertDescription>
+                              Aucun groupe défini pour ce type de travaux. Utilisez le bouton "Ajouter un groupe" pour en créer un.
+                            </AlertDescription>
+                          </Alert>
+                        )}
+                      </>
                     )}
                   </div>
                 ) : (
                   <div className="text-center p-8 text-gray-500">
                     <Settings className="h-12 w-12 mx-auto mb-4 opacity-30" />
-                    <p>Veuillez sélectionner un type de travaux dans la liste à gauche pour voir ses prestations</p>
+                    <p>Veuillez sélectionner un type de travaux dans la liste à gauche pour voir ses groupes et prestations</p>
                   </div>
                 )}
               </CardContent>
@@ -553,15 +799,7 @@ const Parametres = () => {
           <div className="flex justify-end mb-4">
             <Button 
               variant="outline" 
-              onClick={() => {
-                if (confirm("Êtes-vous sûr de vouloir réinitialiser tous les types de menuiseries aux valeurs par défaut ?")) {
-                  dispatchMenuiseriesTypes({ type: 'RESET_TYPES' });
-                  toast({
-                    title: "Réinitialisation effectuée",
-                    description: "Tous les types de menuiseries ont été réinitialisés aux valeurs par défaut.",
-                  });
-                }
-              }}
+              onClick={resetMenuiseriesToDefaults}
               className="flex items-center gap-2"
             >
               Réinitialiser aux valeurs par défaut
@@ -651,15 +889,7 @@ const Parametres = () => {
           <div className="flex justify-end mb-4">
             <Button 
               variant="outline" 
-              onClick={() => {
-                if (confirm("Êtes-vous sûr de vouloir réinitialiser tous les clients aux valeurs par défaut ?")) {
-                  dispatchClients({ type: 'RESET_CLIENTS' });
-                  toast({
-                    title: "Réinitialisation effectuée",
-                    description: "Tous les clients ont été réinitialisés aux valeurs par défaut.",
-                  });
-                }
-              }}
+              onClick={resetClientsToDefaults}
               className="flex items-center gap-2"
             >
               Réinitialiser aux valeurs par défaut
@@ -765,158 +995,250 @@ const Parametres = () => {
         </TabsContent>
       </Tabs>
 
-      <TypeTravauxForm
-        isOpen={typeFormOpen}
-        onClose={() => setTypeFormOpen(false)}
-        typeToEdit={editingType}
-        onSubmit={(typeData) => {
-          if (editingType) {
-            dispatchTravauxTypes({
-              type: 'UPDATE_TYPE',
-              payload: { id: editingType.id, type: typeData as TravauxType }
-            });
-            toast({
-              title: "Type de travaux mis à jour",
-              description: "Le type de travaux a été mis à jour avec succès.",
-            });
-          } else {
-            dispatchTravauxTypes({ type: 'ADD_TYPE', payload: typeData as TravauxType });
-            toast({
-              title: "Type de travaux ajouté",
-              description: "Le nouveau type de travaux a été ajouté avec succès.",
-            });
-          }
-          setTypeFormOpen(false);
-          setEditingType(null);
-        }}
-      />
+      {/* Formulaire de Type de Travaux */}
+      <Dialog open={workTypeFormOpen} onOpenChange={setWorkTypeFormOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingWorkType ? "Modifier le type de travaux" : "Ajouter un type de travaux"}</DialogTitle>
+            <DialogDescription>
+              {editingWorkType 
+                ? "Modifiez les informations du type de travaux" 
+                : "Remplissez les informations pour créer un nouveau type de travaux"}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            const formData = new FormData(e.currentTarget);
+            const name = formData.get('name') as string;
+            
+            if (name) {
+              handleSubmitWorkType(name);
+            }
+          }}>
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label htmlFor="name">Nom du type</Label>
+                <Input 
+                  id="name" 
+                  name="name" 
+                  defaultValue={editingWorkType?.name || ""} 
+                  placeholder="Ex: Revêtements muraux"
+                  required
+                />
+              </div>
+            </div>
+            
+            <DialogFooter className="mt-4">
+              <Button type="button" variant="outline" onClick={() => setWorkTypeFormOpen(false)}>
+                Annuler
+              </Button>
+              <Button type="submit" disabled={loading}>
+                {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                {editingWorkType ? "Mettre à jour" : "Ajouter"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
-      <SousTypeTravauxForm
-        isOpen={sousTypeFormOpen}
-        onClose={() => setSousTypeFormOpen(false)}
-        sousTypeToEdit={editingSousType}
-        onSubmit={(sousTypeData) => {
-          if (selectedTypeId) {
-            if (editingSousType) {
-              dispatchTravauxTypes({
-                type: 'UPDATE_SOUS_TYPE',
-                payload: {
-                  typeId: selectedTypeId,
-                  id: editingSousType.id,
-                  sousType: sousTypeData
-                }
-              });
-              toast({
-                title: "Prestation mise à jour",
-                description: "La prestation a été mise à jour avec succès.",
-              });
-            } else {
-              dispatchTravauxTypes({
-                type: 'ADD_SOUS_TYPE',
-                payload: { 
-                  typeId: selectedTypeId, 
-                  sousType: {
-                    ...sousTypeData,
-                    typeTravauxId: selectedTypeId
-                  }
-                }
-              });
-              toast({
-                title: "Prestation ajoutée",
-                description: "La nouvelle prestation a été ajoutée avec succès.",
+      {/* Formulaire de Groupe de Services */}
+      <Dialog open={serviceGroupFormOpen} onOpenChange={setServiceGroupFormOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingServiceGroup ? "Modifier le groupe" : "Ajouter un groupe"}</DialogTitle>
+            <DialogDescription>
+              {editingServiceGroup 
+                ? "Modifiez les informations du groupe" 
+                : "Remplissez les informations pour créer un nouveau groupe"}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            const formData = new FormData(e.currentTarget);
+            const name = formData.get('name') as string;
+            
+            if (name) {
+              handleSubmitServiceGroup(name);
+            }
+          }}>
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label htmlFor="name">Nom du groupe</Label>
+                <Input 
+                  id="name" 
+                  name="name" 
+                  defaultValue={editingServiceGroup?.name || ""} 
+                  placeholder="Ex: Travaux préparatoires"
+                  required
+                />
+              </div>
+            </div>
+            
+            <DialogFooter className="mt-4">
+              <Button type="button" variant="outline" onClick={() => setServiceGroupFormOpen(false)}>
+                Annuler
+              </Button>
+              <Button type="submit" disabled={isLoadingGroups}>
+                {isLoadingGroups ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                {editingServiceGroup ? "Mettre à jour" : "Ajouter"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Formulaire de Service */}
+      <Dialog open={serviceFormOpen} onOpenChange={setServiceFormOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingService ? "Modifier la prestation" : "Ajouter une prestation"}</DialogTitle>
+            <DialogDescription>
+              {editingService 
+                ? "Modifiez les informations de la prestation" 
+                : "Remplissez les informations pour créer une nouvelle prestation"}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            const formData = new FormData(e.currentTarget);
+            const name = formData.get('name') as string;
+            const description = formData.get('description') as string;
+            const laborPrice = parseFloat(formData.get('laborPrice') as string) || 0;
+            const supplyPrice = parseFloat(formData.get('supplyPrice') as string) || 0;
+            
+            if (name) {
+              handleSubmitService({
+                name,
+                description,
+                labor_price: laborPrice,
+                supply_price: supplyPrice
               });
             }
-            setSousTypeFormOpen(false);
-            setEditingSousType(null);
-          }
-        }}
-      />
+          }}>
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label htmlFor="name">Nom de la prestation</Label>
+                <Input 
+                  id="name" 
+                  name="name" 
+                  defaultValue={editingService?.name || ""} 
+                  placeholder="Ex: Peinture acrylique"
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="description">Description (optionnelle)</Label>
+                <Textarea 
+                  id="description" 
+                  name="description" 
+                  defaultValue={editingService?.description || ""} 
+                  placeholder="Description détaillée de la prestation"
+                  rows={3}
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="laborPrice">Prix main d'œuvre (€)</Label>
+                  <Input 
+                    id="laborPrice" 
+                    name="laborPrice" 
+                    type="number"
+                    step="0.01"
+                    defaultValue={editingService?.labor_price || 0} 
+                    placeholder="0.00"
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="supplyPrice">Prix fournitures (€)</Label>
+                  <Input 
+                    id="supplyPrice" 
+                    name="supplyPrice" 
+                    type="number"
+                    step="0.01"
+                    defaultValue={editingService?.supply_price || 0} 
+                    placeholder="0.00"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <DialogFooter className="mt-4">
+              <Button type="button" variant="outline" onClick={() => setServiceFormOpen(false)}>
+                Annuler
+              </Button>
+              <Button type="submit" disabled={isLoadingServices}>
+                {isLoadingServices ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                {editingService ? "Mettre à jour" : "Ajouter"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <TypeMenuiserieForm
         isOpen={typeMenuiserieFormOpen}
         onClose={() => setTypeMenuiserieFormOpen(false)}
         typeToEdit={editingTypeMenuiserie}
-        onSubmit={(typeData) => {
-          if (editingTypeMenuiserie) {
-            dispatchMenuiseriesTypes({
-              type: 'UPDATE_TYPE',
-              payload: { id: editingTypeMenuiserie.id, type: typeData }
-            });
-            toast({
-              title: "Type de menuiserie mis à jour",
-              description: "Le type de menuiserie a été mis à jour avec succès.",
-            });
-          } else {
-            dispatchMenuiseriesTypes({ type: 'ADD_TYPE', payload: typeData });
-            toast({
-              title: "Type de menuiserie ajouté",
-              description: "Le nouveau type de menuiserie a été ajouté avec succès.",
-            });
-          }
-          setTypeMenuiserieFormOpen(false);
-          setEditingTypeMenuiserie(null);
-        }}
+        onSubmit={handleSubmitTypeMenuiserie}
       />
       
       <ClientForm
         isOpen={clientFormOpen}
         onClose={() => setClientFormOpen(false)}
         clientToEdit={editingClient}
-        onSubmit={(clientData) => {
-          if (editingClient) {
-            dispatchClients({
-              type: 'UPDATE_CLIENT',
-              payload: { id: editingClient.id, client: clientData }
-            });
-            toast({
-              title: "Client mis à jour",
-              description: "Le client a été mis à jour avec succès.",
-            });
-          } else {
-            dispatchClients({ type: 'ADD_CLIENT', payload: clientData });
-            toast({
-              title: "Client ajouté",
-              description: "Le nouveau client a été ajouté avec succès.",
-            });
-          }
-          setClientFormOpen(false);
-          setEditingClient(null);
-        }}
+        onSubmit={handleSubmitClient}
       />
 
-      <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+      {/* Confirmations de suppression */}
+      <Dialog open={confirmDeleteWorkTypeOpen} onOpenChange={setConfirmDeleteWorkTypeOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Confirmer la suppression</DialogTitle>
             <DialogDescription>
-              Êtes-vous sûr de vouloir supprimer ce type de travaux ? Cette action supprimera également toutes les prestations associées et ne peut pas être annulée.
+              Êtes-vous sûr de vouloir supprimer ce type de travaux ? Cette action supprimera également tous les groupes et prestations associés et ne peut pas être annulée.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmDeleteOpen(false)}>
+            <Button variant="outline" onClick={() => setConfirmDeleteWorkTypeOpen(false)}>
               Annuler
             </Button>
-            <Button variant="destructive" onClick={() => {
-              if (typeToDelete) {
-                dispatchTravauxTypes({ type: 'DELETE_TYPE', payload: typeToDelete });
-                setConfirmDeleteOpen(false);
-                setTypeToDelete(null);
-                if (selectedTypeId === typeToDelete) {
-                  setSelectedTypeId(null);
-                }
-                toast({
-                  title: "Type de travaux supprimé",
-                  description: "Le type de travaux a été supprimé avec succès.",
-                });
-              }
-            }}>
+            <Button variant="destructive" onClick={confirmWorkTypeDelete} disabled={loading}>
+              {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
               Supprimer
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={confirmDeleteSousTypeOpen} onOpenChange={setConfirmDeleteSousTypeOpen}>
+      <Dialog open={confirmDeleteGroupOpen} onOpenChange={setConfirmDeleteGroupOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmer la suppression</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir supprimer ce groupe ? Cette action supprimera également toutes les prestations associées et ne peut pas être annulée.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDeleteGroupOpen(false)}>
+              Annuler
+            </Button>
+            <Button variant="destructive" onClick={confirmServiceGroupDelete} disabled={isLoadingGroups}>
+              {isLoadingGroups ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Supprimer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={confirmDeleteServiceOpen} onOpenChange={setConfirmDeleteServiceOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Confirmer la suppression</DialogTitle>
@@ -925,23 +1247,11 @@ const Parametres = () => {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmDeleteSousTypeOpen(false)}>
+            <Button variant="outline" onClick={() => setConfirmDeleteServiceOpen(false)}>
               Annuler
             </Button>
-            <Button variant="destructive" onClick={() => {
-              if (selectedTypeId && sousTypeToDelete) {
-                dispatchTravauxTypes({
-                  type: 'DELETE_SOUS_TYPE',
-                  payload: { typeId: selectedTypeId, id: sousTypeToDelete }
-                });
-                setConfirmDeleteSousTypeOpen(false);
-                setSousTypeToDelete(null);
-                toast({
-                  title: "Prestation supprimée",
-                  description: "La prestation a été supprimée avec succès.",
-                });
-              }
-            }}>
+            <Button variant="destructive" onClick={confirmServiceDelete} disabled={isLoadingServices}>
+              {isLoadingServices ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
               Supprimer
             </Button>
           </DialogFooter>
@@ -960,17 +1270,7 @@ const Parametres = () => {
             <Button variant="outline" onClick={() => setConfirmDeleteMenuiserieOpen(false)}>
               Annuler
             </Button>
-            <Button variant="destructive" onClick={() => {
-              if (typeMenuiserieToDelete) {
-                dispatchMenuiseriesTypes({ type: 'DELETE_TYPE', payload: typeMenuiserieToDelete });
-                setConfirmDeleteMenuiserieOpen(false);
-                setTypeMenuiserieToDelete(null);
-                toast({
-                  title: "Type de menuiserie supprimé",
-                  description: "Le type de menuiserie a été supprimé avec succès.",
-                });
-              }
-            }}>
+            <Button variant="destructive" onClick={confirmTypeMenuiserieDelete}>
               Supprimer
             </Button>
           </DialogFooter>
@@ -989,17 +1289,7 @@ const Parametres = () => {
             <Button variant="outline" onClick={() => setConfirmDeleteClientOpen(false)}>
               Annuler
             </Button>
-            <Button variant="destructive" onClick={() => {
-              if (clientToDelete) {
-                dispatchClients({ type: 'DELETE_CLIENT', payload: clientToDelete });
-                setConfirmDeleteClientOpen(false);
-                setClientToDelete(null);
-                toast({
-                  title: "Client supprimé",
-                  description: "Le client a été supprimé avec succès.",
-                });
-              }
-            }}>
+            <Button variant="destructive" onClick={confirmClientDelete}>
               Supprimer
             </Button>
           </DialogFooter>

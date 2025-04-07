@@ -1,16 +1,9 @@
 
-import { useState, useEffect } from 'react';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
-import { ServiceGroup } from "@/types/supabase";
-import { fetchServiceGroups } from "@/services/travauxService";
-import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
+import React, { useState, useEffect } from 'react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ServiceGroup } from '@/types/supabase';
+import { fetchServiceGroups } from '@/services/travauxService';
+import { toast } from 'sonner';
 
 interface ServiceGroupSelectProps {
   workTypeId: string;
@@ -18,7 +11,6 @@ interface ServiceGroupSelectProps {
   onChange: (id: string, label: string) => void;
   placeholder?: string;
   disabled?: boolean;
-  label?: string;
   className?: string;
 }
 
@@ -28,74 +20,71 @@ const ServiceGroupSelect: React.FC<ServiceGroupSelectProps> = ({
   onChange,
   placeholder = "Sélectionner un groupe",
   disabled = false,
-  label = "Groupe de prestations",
   className = "",
 }) => {
-  const [serviceGroups, setServiceGroups] = useState<ServiceGroup[]>([]);
+  const [groups, setGroups] = useState<ServiceGroup[]>([]);
   const [loading, setLoading] = useState(false);
-
-  // Charger les groupes de services quand le type de travail change
+  
+  // Charger les groupes quand le type de travail change
   useEffect(() => {
     if (!workTypeId) {
-      setServiceGroups([]);
+      setGroups([]);
       return;
     }
-
-    const loadServiceGroups = async () => {
+    
+    const loadGroups = async () => {
       setLoading(true);
       try {
         const data = await fetchServiceGroups(workTypeId);
-        setServiceGroups(data);
+        setGroups(data);
       } catch (error) {
-        console.error("Erreur lors du chargement des groupes de services:", error);
-        toast.error("Impossible de charger les groupes de prestations");
+        console.error("Erreur lors du chargement des groupes:", error);
+        toast.error("Impossible de charger les groupes");
       } finally {
         setLoading(false);
       }
     };
-
-    loadServiceGroups();
+    
+    loadGroups();
   }, [workTypeId]);
-
+  
   // Réinitialiser la valeur si le type de travail change
   useEffect(() => {
     if (workTypeId) {
+      // Réinitialiser la sélection quand le type de travail change
       onChange("", "");
     }
   }, [workTypeId, onChange]);
 
-  const handleChange = (newValue: string) => {
-    const selectedGroup = serviceGroups.find(group => group.id === newValue);
-    if (selectedGroup) {
-      onChange(selectedGroup.id, selectedGroup.name);
+  const handleChange = (groupId: string) => {
+    const group = groups.find(g => g.id === groupId);
+    if (group) {
+      onChange(group.id, group.name);
     }
   };
 
   return (
-    <div className="space-y-1">
-      {label && <Label>{label}</Label>}
-      <Select
-        value={value}
-        onValueChange={handleChange}
-        disabled={disabled || loading || serviceGroups.length === 0}
-      >
-        <SelectTrigger className={className}>
-          <SelectValue placeholder={loading ? "Chargement..." : placeholder} />
-        </SelectTrigger>
-        <SelectContent>
-          {serviceGroups.map((group) => (
-            <SelectItem key={group.id} value={group.id}>
-              {group.name}
-            </SelectItem>
-          ))}
-          {serviceGroups.length === 0 && !loading && (
-            <SelectItem value="none" disabled>
-              Aucun groupe disponible
-            </SelectItem>
-          )}
-        </SelectContent>
-      </Select>
-    </div>
+    <Select
+      value={value}
+      onValueChange={handleChange}
+      disabled={disabled || loading || groups.length === 0}
+    >
+      <SelectTrigger className={className}>
+        <SelectValue placeholder={loading ? "Chargement..." : placeholder} />
+      </SelectTrigger>
+      <SelectContent>
+        {groups.map((group) => (
+          <SelectItem key={group.id} value={group.id}>
+            {group.name}
+          </SelectItem>
+        ))}
+        {groups.length === 0 && !loading && (
+          <SelectItem value="none" disabled>
+            Aucun groupe disponible
+          </SelectItem>
+        )}
+      </SelectContent>
+    </Select>
   );
 };
 
