@@ -1,69 +1,34 @@
 
 import React, { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
+import { Client } from '@/types';
 import { useLocalStorageSync } from '@/hooks/useLocalStorageSync';
 import { useLogger } from '@/hooks/useLogger';
-import { useIndexedDB } from '@/hooks/useIndexedDB';
-import { Client } from '@/types';
+import { toast } from 'sonner';
+import db from '@/services/dbService';
 
-// Types de clients disponibles
-export const typesClients = [
-  { id: 'particulier', label: 'Particulier' },
-  { id: 'societe', label: 'Société' },
-  { id: 'gestionnaire', label: 'Gestionnaire de biens immobiliers' },
-  { id: 'syndic', label: 'Syndic' },
-  { id: 'architecte', label: 'Architecte' },
-  { id: 'bureau_etude', label: 'Bureau d\'étude' },
-  { id: 'autre', label: 'Autre' }
-];
+// Export Client pour utilisation dans d'autres fichiers
+export { Client };
 
-// Clients par défaut (pour faciliter les tests)
-const defaultClients: Client[] = [
-  {
-    id: uuidv4(),
-    nom: 'Dupont',
-    prenom: 'Jean',
-    adresse: '15 rue de la Paix, 75001 Paris',
-    tel1: '01 23 45 67 89',
-    tel2: '',
-    email: 'jean.dupont@example.com',
-    typeClient: 'particulier',
-    autreInfo: '',
-    infosComplementaires: 'Client fidèle depuis 2020'
-  },
-  {
-    id: uuidv4(),
-    nom: 'Immobilier Plus',
-    prenom: '',
-    adresse: '25 avenue des Champs-Élysées, 75008 Paris',
-    tel1: '01 23 45 67 90',
-    tel2: '06 12 34 56 78',
-    email: 'contact@immobilierplus.example.com',
-    typeClient: 'gestionnaire',
-    autreInfo: 'SIRET: 123 456 789 00012',
-    infosComplementaires: 'Gestionnaire de plusieurs immeubles dans le 8ème arrondissement'
-  }
-];
-
-// État initial
+// Interface pour l'état du contexte des clients
 interface ClientsState {
   clients: Client[];
-  useIdb: boolean; // Indicateur pour utiliser IndexedDB ou localStorage
+  clientSelectionne: Client | null;
 }
 
+// État initial
 const initialState: ClientsState = {
   clients: [],
-  useIdb: false // Par défaut, utiliser localStorage pendant la transition
+  clientSelectionne: null
 };
 
-// Actions
+// Types d'actions
 type ClientsAction =
   | { type: 'SET_CLIENTS'; payload: Client[] }
   | { type: 'ADD_CLIENT'; payload: Client }
-  | { type: 'UPDATE_CLIENT'; payload: { id: string; client: Client } }
+  | { type: 'UPDATE_CLIENT'; payload: Client }
   | { type: 'DELETE_CLIENT'; payload: string }
-  | { type: 'RESET_CLIENTS' }
-  | { type: 'SET_USE_IDB'; payload: boolean };
+  | { type: 'SELECT_CLIENT'; payload: Client | null };
 
 // Réducteur
 const clientsReducer = (state: ClientsState, action: ClientsAction): ClientsState => {
@@ -71,39 +36,47 @@ const clientsReducer = (state: ClientsState, action: ClientsAction): ClientsStat
     case 'SET_CLIENTS':
       return { ...state, clients: action.payload };
     case 'ADD_CLIENT':
-      return { ...state, clients: [...state.clients, { ...action.payload, id: action.payload.id || uuidv4() }] };
+      return {
+        ...state,
+        clients: [...state.clients, action.payload],
+        clientSelectionne: action.payload
+      };
     case 'UPDATE_CLIENT':
       return {
         ...state,
         clients: state.clients.map(client =>
-          client.id === action.payload.id ? { ...action.payload.client } : client
-        )
+          client.id === action.payload.id ? action.payload : client
+        ),
+        clientSelectionne: action.payload
       };
     case 'DELETE_CLIENT':
       return {
         ...state,
-        clients: state.clients.filter(client => client.id !== action.payload)
+        clients: state.clients.filter(client => client.id !== action.payload),
+        clientSelectionne: state.clientSelectionne?.id === action.payload ? null : state.clientSelectionne
       };
-    case 'RESET_CLIENTS':
-      return { ...state, clients: defaultClients };
-    case 'SET_USE_IDB':
-      return { ...state, useIdb: action.payload };
+    case 'SELECT_CLIENT':
+      return { ...state, clientSelectionne: action.payload };
     default:
       return state;
   }
 };
 
-// Création du contexte
+// Types pour le contexte
 interface ClientsContextType {
   state: ClientsState;
   dispatch: React.Dispatch<ClientsAction>;
-  isDbAvailable: boolean;
-  isLoading: boolean;
+  ajouterClient: (clientData: Omit<Client, 'id'>) => Promise<void>;
+  modifierClient: (id: string, clientData: Omit<Client, 'id'>) => Promise<void>;
+  supprimerClient: (id: string) => Promise<void>;
+  selectionnerClient: (client: Client | null) => void;
+  resetClients: () => Promise<void>;
 }
 
+// Création du contexte avec une valeur par défaut
 const ClientsContext = createContext<ClientsContextType | undefined>(undefined);
 
-// Hook pour utiliser le contexte
+// Hook personnalisé pour utiliser le contexte
 export const useClients = () => {
   const context = useContext(ClientsContext);
   if (context === undefined) {
@@ -112,9 +85,30 @@ export const useClients = () => {
   return context;
 };
 
-// Buffer pour tentatives de sauvegarde échouées
-const BUFFER_KEY = 'clients_buffer';
-const LOCAL_STORAGE_KEY = 'clientsData';
+// Valeurs par défaut pour les clients
+const defaultClients: Client[] = [
+  {
+    id: 'c1',
+    nom: 'Durant',
+    prenom: 'Jean',
+    adresse: '15 rue de la Paix, 75001 Paris',
+    tel1: '01 23 45 67 89',
+    email: 'jean.durant@mail.com',
+    typeClient: 'Particulier',
+    autreInfo: 'Client fidèle'
+  },
+  {
+    id: 'c2',
+    nom: 'Entreprise XYZ',
+    prenom: '',
+    adresse: '25 avenue des Champs-Élysées, 75008 Paris',
+    tel1: '01 98 76 54 32',
+    tel2: '06 12 34 56 78',
+    email: 'contact@entreprisexyz.com',
+    typeClient: 'Professionnel',
+    autreInfo: 'Grande entreprise'
+  }
+];
 
 // Provider
 interface ClientsProviderProps {
@@ -124,284 +118,253 @@ interface ClientsProviderProps {
 export const ClientsProvider: React.FC<ClientsProviderProps> = ({ children }) => {
   const logger = useLogger('ClientsProvider');
   const [state, dispatch] = useReducer(clientsReducer, initialState);
-  const { loadFromLocalStorage, saveToLocalStorage } = useLocalStorageSync<ClientsState>('clientsData', state);
+  const { loadFromLocalStorage, saveToLocalStorage } = useLocalStorageSync<ClientsState>('clients', state);
   
-  // Utilisation du hook IndexedDB
-  const {
-    isDbAvailable,
-    isLoading,
-    getAllItems: getAllClients,
-    addItem: addClientToDb,
-    updateItem: updateClientInDb,
-    deleteItem: deleteClientFromDb,
-    syncFromLocalStorage: syncClientsFromLocalStorage
-  } = useIndexedDB<Client>('clients', LOCAL_STORAGE_KEY);
-
-  // Fonction pour tenter de récupérer des données du buffer en cas d'échec
-  const tryRecoverFromBuffer = () => {
-    try {
-      const bufferedDataJSON = localStorage.getItem(BUFFER_KEY);
-      if (bufferedDataJSON) {
-        const bufferedData = JSON.parse(bufferedDataJSON) as ClientsState;
-        logger.info('Tentative de récupération des données depuis le buffer', 'storage', {
-          clientsCount: bufferedData.clients.length
-        });
-        return bufferedData;
-      }
-    } catch (error) {
-      logger.error('Erreur lors de la récupération des données depuis le buffer', error as Error, 'storage');
-    }
-    return null;
-  };
-
-  // Fonction pour enregistrer les données dans le buffer
-  const saveToBuffer = (data: ClientsState) => {
-    try {
-      localStorage.setItem(BUFFER_KEY, JSON.stringify(data));
-      logger.debug('Données sauvegardées dans le buffer', 'storage', {
-        clientsCount: data.clients.length
-      });
-    } catch (error) {
-      logger.error('Erreur lors de la sauvegarde des données dans le buffer', error as Error, 'storage');
-    }
-  };
-
-  // Lorsque IndexedDB est disponible, synchroniser depuis localStorage
+  // Variable pour éviter les doubles notifications
+  const [isSilentOperation, setIsSilentOperation] = React.useState(false);
+  
+  // Charger les clients au démarrage
   useEffect(() => {
-    if (isDbAvailable && !isLoading && state.clients.length > 0) {
-      // Synchroniser les clients actuels avec IndexedDB
-      syncClientsFromLocalStorage(state.clients)
-        .then(() => {
-          logger.info('Clients synchronisés avec IndexedDB', 'storage', {
-            count: state.clients.length
-          });
-          
-          // Activer IndexedDB comme stockage principal si la synchronisation réussit
-          if (!state.useIdb) {
-            dispatch({ type: 'SET_USE_IDB', payload: true });
-            logger.info('IndexedDB est maintenant le stockage principal', 'system');
-          }
-        })
-        .catch(error => {
-          logger.error('Erreur lors de la synchronisation avec IndexedDB', error as Error, 'storage');
-        });
-    }
-  }, [isDbAvailable, isLoading, state.clients.length]);
-
-  // Charger les données depuis localStorage au démarrage
-  useEffect(() => {
-    logger.info('Initialisation du Provider Clients', 'system');
-    
-    try {
-      const savedData = loadFromLocalStorage();
-      
-      if (savedData) {
-        logger.info('Chargement des données clients depuis localStorage', 'storage', {
-          clientsCount: savedData.clients.length
-        });
-        
-        // Si aucun client n'est enregistré, utiliser les clients par défaut
-        if (savedData.clients.length === 0) {
-          logger.info('Aucun client trouvé, utilisation des clients par défaut', 'data');
-          dispatch({ type: 'SET_CLIENTS', payload: defaultClients });
-        } else {
-          dispatch({ type: 'SET_CLIENTS', payload: savedData.clients });
-          
-          // Si IndexedDB est défini comme préférence dans localStorage, le conserver
-          if (savedData.useIdb !== undefined) {
-            dispatch({ type: 'SET_USE_IDB', payload: savedData.useIdb });
-          }
+    const loadClients = async () => {
+      try {
+        // Essayer de charger depuis IndexedDB
+        let isDbAvailable = false;
+        try {
+          isDbAvailable = await db.isAvailable();
+        } catch (err) {
+          logger.warn("IndexedDB n'est pas disponible", 'system');
         }
-      } else {
-        // Tenter de récupérer depuis le buffer
-        const bufferedData = tryRecoverFromBuffer();
         
-        if (bufferedData) {
-          logger.info('Données récupérées depuis le buffer', 'storage', {
-            clientsCount: bufferedData.clients.length
-          });
-          dispatch({ type: 'SET_CLIENTS', payload: bufferedData.clients });
+        if (isDbAvailable) {
+          logger.info("Chargement des clients depuis IndexedDB", 'storage');
+          const clients = await db.getAllClients();
           
-          if (bufferedData.useIdb !== undefined) {
-            dispatch({ type: 'SET_USE_IDB', payload: bufferedData.useIdb });
-          }
-        } else {
-          // Pas de données sauvegardées, utiliser les valeurs par défaut
-          logger.info('Aucune donnée sauvegardée, utilisation des clients par défaut', 'data');
-          dispatch({ type: 'SET_CLIENTS', payload: defaultClients });
-        }
-      }
-    } catch (error) {
-      logger.error('Erreur lors du chargement initial des clients', error as Error, 'storage');
-      
-      // En cas d'erreur, tenter de récupérer depuis le buffer
-      const bufferedData = tryRecoverFromBuffer();
-      
-      if (bufferedData) {
-        logger.info('Récupération d\'urgence depuis le buffer après erreur', 'storage');
-        dispatch({ type: 'SET_CLIENTS', payload: bufferedData.clients });
-      } else {
-        // Utiliser les clients par défaut en dernier recours
-        logger.info('Utilisation des clients par défaut après échec de récupération', 'data');
-        dispatch({ type: 'SET_CLIENTS', payload: defaultClients });
-      }
-    }
-  }, []);
-
-  // Effet pour charger les données depuis IndexedDB si activé
-  useEffect(() => {
-    if (state.useIdb && isDbAvailable && !isLoading) {
-      logger.info('Chargement des clients depuis IndexedDB', 'storage');
-      
-      getAllClients()
-        .then(clients => {
           if (clients.length > 0) {
-            logger.info(`${clients.length} clients chargés depuis IndexedDB`, 'storage');
             dispatch({ type: 'SET_CLIENTS', payload: clients });
-          } else if (state.clients.length === 0) {
-            // Si IndexedDB est vide et qu'on n'a pas encore de clients, utiliser les valeurs par défaut
-            logger.info('IndexedDB vide, utilisation des clients par défaut', 'data');
+          } else {
+            // Si aucun client dans IndexedDB, essayer localStorage
+            const savedData = loadFromLocalStorage();
+            if (savedData && savedData.clients.length > 0) {
+              logger.info("Chargement des clients depuis localStorage", 'storage');
+              dispatch({ type: 'SET_CLIENTS', payload: savedData.clients });
+              
+              // Synchroniser les clients avec IndexedDB
+              await db.syncFromLocalStorage(savedData.clients);
+            } else {
+              // Si aucun client nulle part, initialiser avec les valeurs par défaut
+              logger.info("Initialisation des clients avec les valeurs par défaut", 'storage');
+              dispatch({ type: 'SET_CLIENTS', payload: defaultClients });
+              
+              // Enregistrer dans IndexedDB
+              await db.resetClients(defaultClients);
+            }
+          }
+        } else {
+          // Charger depuis localStorage
+          const savedData = loadFromLocalStorage();
+          if (savedData && savedData.clients.length > 0) {
+            logger.info("Chargement des clients depuis localStorage", 'storage');
+            dispatch({ type: 'SET_CLIENTS', payload: savedData.clients });
+          } else {
+            // Si aucun client, initialiser avec les valeurs par défaut
+            logger.info("Initialisation des clients avec les valeurs par défaut", 'storage');
             dispatch({ type: 'SET_CLIENTS', payload: defaultClients });
           }
-        })
-        .catch(error => {
-          logger.error('Erreur lors du chargement des clients depuis IndexedDB', error as Error, 'storage');
-        });
-    }
-  }, [state.useIdb, isDbAvailable, isLoading]);
-
-  // Sauvegarder les données dans localStorage et/ou IndexedDB quand l'état change
+        }
+      } catch (error) {
+        logger.error("Erreur lors du chargement des clients", error as Error, 'storage');
+        
+        // En cas d'erreur, essayer de charger depuis localStorage
+        const savedData = loadFromLocalStorage();
+        if (savedData && savedData.clients.length > 0) {
+          logger.info("Chargement des clients depuis localStorage (fallback)", 'storage');
+          dispatch({ type: 'SET_CLIENTS', payload: savedData.clients });
+        } else {
+          // Si aucun client, initialiser avec les valeurs par défaut
+          logger.info("Initialisation des clients avec les valeurs par défaut (fallback)", 'storage');
+          dispatch({ type: 'SET_CLIENTS', payload: defaultClients });
+        }
+      }
+    };
+    
+    loadClients();
+  }, [loadFromLocalStorage, logger]);
+  
+  // Sauvegarder les clients lorsqu'ils changent
   useEffect(() => {
-    // Ne pas sauvegarder lors de l'initialisation (state vide)
-    if (state.clients.length > 0) {
+    const saveClients = async () => {
+      // Sauvegarder dans localStorage pour la compatibilité
+      saveToLocalStorage(state);
+      
+      // Essayer de sauvegarder dans IndexedDB
       try {
-        // Sauvegarder d'abord dans le buffer (sécurité)
-        saveToBuffer(state);
+        const isDbAvailable = await db.isAvailable();
         
-        // Persistance dans localStorage (toujours maintenue pendant la transition)
-        logger.debug('Sauvegarde des clients dans localStorage', 'storage', {
-          clientsCount: state.clients.length
-        });
-        saveToLocalStorage(state);
-        
-        // Si IndexedDB est activé et disponible, y sauvegarder aussi
-        if (state.useIdb && isDbAvailable) {
-          // Les opérations individuelles (ajout, mise à jour, suppression)
-          // sont gérées via le middleware loggedDispatch
-        }
-      } catch (error) {
-        logger.error('Erreur lors de la sauvegarde des clients', error as Error, 'storage', {
-          clientsCount: state.clients.length
-        });
-      }
-    }
-  }, [state, saveToLocalStorage, isDbAvailable]);
-
-  // Middleware pour logguer les actions et gérer IndexedDB
-  const loggedDispatch: React.Dispatch<ClientsAction> = async (action) => {
-    // Log avant l'action
-    const actionType = action.type;
-    
-    // Exécution des opérations dans IndexedDB en parallèle du state React
-    if (state.useIdb && isDbAvailable) {
-      try {
-        switch (actionType) {
-          case 'ADD_CLIENT':
-            logger.info('Ajout d\'un client', 'data', { 
-              clientId: action.payload.id,
-              clientName: `${action.payload.nom} ${action.payload.prenom}`.trim() 
-            });
-            await addClientToDb(action.payload);
-            break;
-            
-          case 'UPDATE_CLIENT':
-            logger.info('Mise à jour d\'un client', 'data', { 
-              clientId: action.payload.id,
-              clientName: `${action.payload.client.nom} ${action.payload.client.prenom}`.trim() 
-            });
-            await updateClientInDb(action.payload.id, action.payload.client);
-            break;
-            
-          case 'DELETE_CLIENT':
-            logger.info('Suppression d\'un client', 'data', { clientId: action.payload });
-            const clientToDelete = state.clients.find(c => c.id === action.payload);
-            if (clientToDelete) {
-              logger.debug('Détails du client supprimé', 'data', { 
-                clientName: `${clientToDelete.nom} ${clientToDelete.prenom}`.trim(),
-                clientType: clientToDelete.typeClient
-              });
-              await deleteClientFromDb(action.payload);
-            }
-            break;
-            
-          case 'RESET_CLIENTS':
-            logger.warn('Réinitialisation complète des clients', 'data');
-            // Synchroniser les clients par défaut dans IndexedDB
-            await syncClientsFromLocalStorage(defaultClients);
-            break;
-            
-          case 'SET_USE_IDB':
-            logger.info(`${action.payload ? 'Activation' : 'Désactivation'} d'IndexedDB comme stockage principal`, 'system');
-            break;
-            
-          default:
-            logger.debug(`Action ${actionType}`, 'data');
-        }
-      } catch (error) {
-        logger.error(`Erreur lors de l'opération IndexedDB pour l'action ${actionType}`, error as Error, 'storage');
-        
-        // Si l'opération IndexedDB échoue mais que localStorage est disponible,
-        // on continue avec localStorage uniquement
-        if (actionType === 'SET_USE_IDB' && action.payload === true) {
-          logger.warn('Désactivation d\'IndexedDB suite à une erreur', 'system');
-          dispatch({ type: 'SET_USE_IDB', payload: false });
-          return; // Ne pas propager l'action d'activation qui a échoué
-        }
-      }
-    } else {
-      // Logging basique lorsqu'IndexedDB n'est pas utilisé
-      switch (actionType) {
-        case 'ADD_CLIENT':
-          logger.info('Ajout d\'un client', 'data', { 
-            clientId: action.payload.id,
-            clientName: `${action.payload.nom} ${action.payload.prenom}`.trim() 
-          });
-          break;
-        case 'UPDATE_CLIENT':
-          logger.info('Mise à jour d\'un client', 'data', { 
-            clientId: action.payload.id,
-            clientName: `${action.payload.client.nom} ${action.payload.client.prenom}`.trim() 
-          });
-          break;
-        case 'DELETE_CLIENT':
-          logger.info('Suppression d\'un client', 'data', { clientId: action.payload });
-          const clientToDelete = state.clients.find(c => c.id === action.payload);
-          if (clientToDelete) {
-            logger.debug('Détails du client supprimé', 'data', { 
-              clientName: `${clientToDelete.nom} ${clientToDelete.prenom}`.trim(),
-              clientType: clientToDelete.typeClient
-            });
+        if (isDbAvailable && state.clients.length > 0) {
+          // Pour chaque client, sauvegarder ou mettre à jour
+          for (const client of state.clients) {
+            await db.updateClient(client);
           }
-          break;
-        case 'RESET_CLIENTS':
-          logger.warn('Réinitialisation complète des clients', 'data');
-          break;
-        default:
-          logger.debug(`Action ${actionType}`, 'data');
+          logger.debug("Clients sauvegardés dans IndexedDB", 'storage');
+        }
+      } catch (error) {
+        logger.error("Erreur lors de la sauvegarde des clients dans IndexedDB", error as Error, 'storage');
       }
-    }
+    };
     
-    // Exécution de l'action dans le state React
-    dispatch(action);
+    // Ne sauvegarder que si des clients sont présents
+    if (state.clients.length > 0) {
+      saveClients();
+    }
+  }, [state, saveToLocalStorage, logger]);
+  
+  // Fonction pour ajouter un client
+  const ajouterClient = async (clientData: Omit<Client, 'id'>) => {
+    try {
+      const client: Client = {
+        id: uuidv4(),
+        ...clientData
+      };
+      
+      // Mettre à jour le state
+      dispatch({ type: 'ADD_CLIENT', payload: client });
+      
+      // Essayer de sauvegarder dans IndexedDB
+      try {
+        const isDbAvailable = await db.isAvailable();
+        if (isDbAvailable) {
+          await db.addClient(client);
+        }
+      } catch (dbError) {
+        logger.error("Erreur lors de l'ajout du client dans IndexedDB", dbError as Error, 'storage');
+      }
+      
+      if (!isSilentOperation) {
+        toast.success(`Client "${client.nom} ${client.prenom}" ajouté avec succès`);
+      }
+      logger.info(`Client ajouté: ${client.id}`, 'data');
+    } catch (error) {
+      logger.error("Erreur lors de l'ajout d'un client", error as Error, 'data');
+      if (!isSilentOperation) {
+        toast.error(`Erreur lors de l'ajout du client: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
+      }
+      throw error;
+    }
   };
-
+  
+  // Fonction pour modifier un client
+  const modifierClient = async (id: string, clientData: Omit<Client, 'id'>) => {
+    try {
+      const client: Client = {
+        id,
+        ...clientData
+      };
+      
+      // Mettre à jour le state
+      dispatch({ type: 'UPDATE_CLIENT', payload: client });
+      
+      // Essayer de sauvegarder dans IndexedDB
+      try {
+        const isDbAvailable = await db.isAvailable();
+        if (isDbAvailable) {
+          await db.updateClient(client);
+        }
+      } catch (dbError) {
+        logger.error("Erreur lors de la mise à jour du client dans IndexedDB", dbError as Error, 'storage');
+      }
+      
+      if (!isSilentOperation) {
+        toast.success(`Client "${client.nom} ${client.prenom}" mis à jour avec succès`);
+      }
+      logger.info(`Client mis à jour: ${id}`, 'data');
+    } catch (error) {
+      logger.error(`Erreur lors de la mise à jour du client ${id}`, error as Error, 'data');
+      if (!isSilentOperation) {
+        toast.error(`Erreur lors de la mise à jour du client: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
+      }
+      throw error;
+    }
+  };
+  
+  // Fonction pour supprimer un client
+  const supprimerClient = async (id: string) => {
+    try {
+      // Trouver le client à supprimer pour le message
+      const clientToDelete = state.clients.find(c => c.id === id);
+      
+      // Mettre à jour le state
+      dispatch({ type: 'DELETE_CLIENT', payload: id });
+      
+      // Essayer de supprimer dans IndexedDB
+      try {
+        const isDbAvailable = await db.isAvailable();
+        if (isDbAvailable) {
+          await db.deleteClient(id);
+        }
+      } catch (dbError) {
+        logger.error("Erreur lors de la suppression du client dans IndexedDB", dbError as Error, 'storage');
+      }
+      
+      if (!isSilentOperation && clientToDelete) {
+        toast.success(`Client "${clientToDelete.nom} ${clientToDelete.prenom}" supprimé avec succès`);
+      }
+      logger.info(`Client supprimé: ${id}`, 'data');
+    } catch (error) {
+      logger.error(`Erreur lors de la suppression du client ${id}`, error as Error, 'data');
+      if (!isSilentOperation) {
+        toast.error(`Erreur lors de la suppression du client: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
+      }
+      throw error;
+    }
+  };
+  
+  // Fonction pour sélectionner un client
+  const selectionnerClient = (client: Client | null) => {
+    dispatch({ type: 'SELECT_CLIENT', payload: client });
+    logger.debug(`Client sélectionné: ${client?.id || 'aucun'}`, 'ui');
+  };
+  
+  // Fonction pour réinitialiser les clients
+  const resetClients = async () => {
+    try {
+      setIsSilentOperation(true);
+      
+      // Réinitialiser avec les valeurs par défaut
+      dispatch({ type: 'SET_CLIENTS', payload: defaultClients });
+      
+      // Réinitialiser dans IndexedDB
+      try {
+        const isDbAvailable = await db.isAvailable();
+        if (isDbAvailable) {
+          await db.resetClients(defaultClients);
+        }
+      } catch (dbError) {
+        logger.error("Erreur lors de la réinitialisation des clients dans IndexedDB", dbError as Error, 'storage');
+      }
+      
+      toast.success("Liste des clients réinitialisée avec les valeurs par défaut");
+      logger.info("Clients réinitialisés", 'data');
+    } catch (error) {
+      logger.error("Erreur lors de la réinitialisation des clients", error as Error, 'data');
+      toast.error(`Erreur lors de la réinitialisation des clients: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
+      throw error;
+    } finally {
+      setIsSilentOperation(false);
+    }
+  };
+  
   return (
-    <ClientsContext.Provider value={{ 
-      state, 
-      dispatch: loggedDispatch,
-      isDbAvailable,
-      isLoading
-    }}>
+    <ClientsContext.Provider
+      value={{
+        state,
+        dispatch,
+        ajouterClient,
+        modifierClient,
+        supprimerClient,
+        selectionnerClient,
+        resetClients
+      }}
+    >
       {children}
     </ClientsContext.Provider>
   );

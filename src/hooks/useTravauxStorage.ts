@@ -20,18 +20,20 @@ export function useTravauxStorage() {
     getItem: getTravail,
     addItem: addTravail,
     updateItem: updateTravail,
-    deleteItem: deleteTravail,
+    deleteItem: deleteTravailInternal,
     clearItems: clearTravaux,
     syncFromLocalStorage
   } = useIndexedDB<Travail>('travaux', LOCAL_STORAGE_KEY);
   
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
+  const [isSilentOperation, setIsSilentOperation] = useState<boolean>(false);
   
   // Fonction pour initialiser la synchronisation entre localStorage et IndexedDB
   const initializeSync = useCallback(async () => {
     if (!isDbAvailable || isLoading) return;
     
     try {
+      setIsSilentOperation(true);
       // Récupérer les travaux depuis localStorage
       const travauxJson = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (travauxJson) {
@@ -48,6 +50,8 @@ export function useTravauxStorage() {
       setIsInitialized(true);
     } catch (error) {
       logger.error('Erreur lors de l\'initialisation de la synchronisation des travaux', error as Error, 'storage');
+    } finally {
+      setIsSilentOperation(false);
     }
   }, [isDbAvailable, isLoading, syncFromLocalStorage, logger]);
   
@@ -59,28 +63,66 @@ export function useTravauxStorage() {
   }, [isInitialized, isDbAvailable, isLoading, initializeSync]);
   
   // Méthode simplifiée pour ajouter ou mettre à jour un travail
-  const saveTravail = useCallback(async (travail: Travail): Promise<void> => {
+  const saveTravail = useCallback(async (travail: Travail, silent = false): Promise<void> => {
     if (!travail.id) {
       throw new Error('Impossible de sauvegarder un travail sans ID');
     }
+    
+    const prevSilentState = isSilentOperation;
+    if (silent) setIsSilentOperation(true);
     
     try {
       const existingTravail = await getTravail(travail.id);
       if (existingTravail) {
         await updateTravail(travail.id, travail);
         logger.debug(`Travail mis à jour: ${travail.id}`, 'storage');
-        toast.success(`Travail mis à jour: ${travail.designation}`);
+        if (!isSilentOperation) {
+          toast.success(`Travail mis à jour: ${travail.designation}`);
+        }
       } else {
         await addTravail(travail);
         logger.debug(`Nouveau travail ajouté: ${travail.id}`, 'storage');
-        toast.success(`Nouveau travail ajouté: ${travail.designation}`);
+        if (!isSilentOperation) {
+          toast.success(`Nouveau travail ajouté: ${travail.designation}`);
+        }
       }
     } catch (err) {
       logger.error('Erreur lors de la sauvegarde d\'un travail', err as Error, 'storage');
-      toast.error(`Erreur lors de la sauvegarde du travail: ${err instanceof Error ? err.message : 'Erreur inconnue'}`);
+      if (!isSilentOperation) {
+        toast.error(`Erreur lors de la sauvegarde du travail: ${err instanceof Error ? err.message : 'Erreur inconnue'}`);
+      }
       throw err;
+    } finally {
+      if (silent) setIsSilentOperation(prevSilentState);
     }
-  }, [addTravail, updateTravail, getTravail, logger]);
+  }, [addTravail, updateTravail, getTravail, logger, isSilentOperation]);
+  
+  // Méthode pour supprimer un travail
+  const deleteTravail = useCallback(async (id: string, silent = false): Promise<void> => {
+    const prevSilentState = isSilentOperation;
+    if (silent) setIsSilentOperation(true);
+    
+    try {
+      const travailToDelete = await getTravail(id);
+      if (travailToDelete) {
+        await deleteTravailInternal(id);
+        logger.info(`Travail supprimé: ${id}`, 'storage');
+        if (!isSilentOperation) {
+          toast.success(`Travail supprimé: ${travailToDelete.designation}`);
+        }
+      } else {
+        logger.warn(`Tentative de suppression d'un travail inexistant: ${id}`, 'storage');
+      }
+    } catch (err) {
+      logger.error(`Erreur lors de la suppression du travail ${id}`, err as Error, 'storage');
+      if (!isSilentOperation) {
+        toast.error(`Erreur lors de la suppression du travail: ${err instanceof Error ? err.message : 'Erreur inconnue'}`);
+      }
+      throw err;
+    } finally {
+      if (silent) setIsSilentOperation(prevSilentState);
+    }
+  }, [deleteTravailInternal, getTravail, logger, isSilentOperation]);
   
   // Récupérer les travaux pour une pièce spécifique
   const getTravauxForPiece = useCallback(async (pieceId: string): Promise<Travail[]> => {
@@ -89,23 +131,34 @@ export function useTravauxStorage() {
       return allTravaux.filter(travail => travail.pieceId === pieceId);
     } catch (err) {
       logger.error(`Erreur lors de la récupération des travaux pour la pièce ${pieceId}`, err as Error, 'storage');
-      toast.error(`Erreur lors de la récupération des travaux: ${err instanceof Error ? err.message : 'Erreur inconnue'}`);
+      if (!isSilentOperation) {
+        toast.error(`Erreur lors de la récupération des travaux: ${err instanceof Error ? err.message : 'Erreur inconnue'}`);
+      }
       throw err;
     }
-  }, [getAllTravaux, logger]);
+  }, [getAllTravaux, logger, isSilentOperation]);
   
   // Méthode pour supprimer tous les travaux
-  const resetTravaux = useCallback(async (): Promise<void> => {
+  const resetTravaux = useCallback(async (silent = false): Promise<void> => {
+    const prevSilentState = isSilentOperation;
+    if (silent) setIsSilentOperation(true);
+    
     try {
       await clearTravaux();
       logger.info('Tous les travaux ont été supprimés', 'storage');
-      toast.success('Tous les travaux ont été supprimés');
+      if (!isSilentOperation) {
+        toast.success('Tous les travaux ont été supprimés');
+      }
     } catch (err) {
       logger.error('Erreur lors de la suppression de tous les travaux', err as Error, 'storage');
-      toast.error(`Erreur lors de la suppression des travaux: ${err instanceof Error ? err.message : 'Erreur inconnue'}`);
+      if (!isSilentOperation) {
+        toast.error(`Erreur lors de la suppression des travaux: ${err instanceof Error ? err.message : 'Erreur inconnue'}`);
+      }
       throw err;
+    } finally {
+      if (silent) setIsSilentOperation(prevSilentState);
     }
-  }, [clearTravaux, logger]);
+  }, [clearTravaux, logger, isSilentOperation]);
   
   return {
     isDbAvailable,
@@ -119,6 +172,7 @@ export function useTravauxStorage() {
     clearTravaux,
     resetTravaux,
     getTravauxForPiece,
-    syncFromLocalStorage
+    syncFromLocalStorage,
+    setSilentOperation: setIsSilentOperation
   };
 }

@@ -1,9 +1,11 @@
+
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
 import { Room, PropertyType, Travail, AutreSurface } from '@/types';
 import { useRoomsStorage } from '@/hooks/useRoomsStorage';
 import { useTravauxStorage } from '@/hooks/useTravauxStorage';
 import { usePropertyStorage } from '@/hooks/usePropertyStorage';
 import { useLogger } from '@/hooks/useLogger';
+import { toast } from 'sonner';
 
 // Interface pour définir l'état global du projet
 interface ProjectState {
@@ -106,6 +108,21 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   const roomsStorage = useRoomsStorage();
   const travauxStorage = useTravauxStorage();
   const propertyStorage = usePropertyStorage();
+
+  // Désactiver les notifications pendant les opérations en masse
+  useEffect(() => {
+    if (roomsStorage.setSilentOperation && travauxStorage.setSilentOperation) {
+      // Désactiver les notifications au montage du composant
+      roomsStorage.setSilentOperation(true);
+      travauxStorage.setSilentOperation(true);
+      
+      // Réactiver les notifications lors du démontage
+      return () => {
+        roomsStorage.setSilentOperation(false);
+        travauxStorage.setSilentOperation(false);
+      };
+    }
+  }, [roomsStorage, travauxStorage]);
 
   // Charger les données au démarrage
   useEffect(() => {
@@ -221,10 +238,13 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     };
 
     loadSavedData();
-  }, [roomsStorage.isDbAvailable, roomsStorage.isLoading, travauxStorage.isDbAvailable, travauxStorage.isLoading, propertyStorage.isDbAvailable, propertyStorage.isLoading, logger]);
+  }, [roomsStorage.isDbAvailable, roomsStorage.isLoading, roomsStorage.getAllRooms,
+      travauxStorage.isDbAvailable, travauxStorage.isLoading, travauxStorage.getAllTravaux,
+      propertyStorage.isDbAvailable, propertyStorage.isLoading, propertyStorage.getProperty, logger]);
 
   // Sauvegarde des données lorsqu'elles changent
   useEffect(() => {
+    // Éviter l'exécution lors du premier montage
     if (state.rooms.length > 0) {
       logger.info("Sauvegarde des pièces:", 'storage', { count: state.rooms.length });
       
@@ -236,7 +256,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
         // Pour chaque pièce, sauvegarder ou mettre à jour
         state.rooms.forEach(async room => {
           try {
-            await roomsStorage.saveRoom(room);
+            await roomsStorage.saveRoom(room, true); // Mode silencieux
           } catch (error) {
             logger.error(`Erreur lors de la sauvegarde de la pièce ${room.id} dans IndexedDB`, error as Error, 'storage');
           }
@@ -259,6 +279,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   }, [state.property, propertyStorage.isDbAvailable, propertyStorage.isLoading, propertyStorage.saveProperty, logger]);
   
   useEffect(() => {
+    // Éviter l'exécution lors du premier montage ou quand state.travaux est vide
     if (state.travaux.length > 0) {
       logger.info("Sauvegarde des travaux:", 'storage', { count: state.travaux.length });
       
@@ -270,7 +291,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
         // Pour chaque travail, sauvegarder ou mettre à jour
         state.travaux.forEach(async travail => {
           try {
-            await travauxStorage.saveTravail(travail);
+            await travauxStorage.saveTravail(travail, true); // Mode silencieux
           } catch (error) {
             logger.error(`Erreur lors de la sauvegarde du travail ${travail.id} dans IndexedDB`, error as Error, 'storage');
           }
@@ -279,23 +300,33 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   }, [state.travaux, travauxStorage.isDbAvailable, travauxStorage.isLoading, travauxStorage.saveTravail, logger]);
 
-  // Observer les changements de l'action RESET_PROJECT
+  // Gérer la réinitialisation du projet correctement
   useEffect(() => {
+    // Variable pour suivre s'il s'agit d'une réinitialisation
+    let isResetting = false;
+    
     const handleProjectReset = async () => {
       try {
+        if (isResetting) return; // Éviter les exécutions multiples
+        isResetting = true;
+        
+        // Désactiver les notifications pour ces opérations
+        if (roomsStorage.setSilentOperation) roomsStorage.setSilentOperation(true);
+        if (travauxStorage.setSilentOperation) travauxStorage.setSilentOperation(true);
+        
         // Effacer localStorage
         localStorage.removeItem('rooms');
-        localStorage.removeItem('property');
         localStorage.removeItem('travaux');
+        localStorage.setItem('property', JSON.stringify(initialState.property));
         
         // Si IndexedDB est disponible, effacer également ces tables
         if (roomsStorage.isDbAvailable && !roomsStorage.isLoading) {
-          await roomsStorage.clearRooms();
+          await roomsStorage.resetRooms(true); // Mode silencieux
           logger.info('Table des pièces vidée', 'storage');
         }
         
         if (travauxStorage.isDbAvailable && !travauxStorage.isLoading) {
-          await travauxStorage.clearTravaux();
+          await travauxStorage.resetTravaux(true); // Mode silencieux
           logger.info('Table des travaux vidée', 'storage');
         }
         
@@ -305,17 +336,29 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
           logger.info('Propriétés réinitialisées avec les valeurs par défaut', 'storage');
         }
         
+        // Afficher une notification unique
+        toast.success('Projet réinitialisé avec succès');
         logger.info('Projet réinitialisé avec succès', 'storage');
       } catch (error) {
         logger.error('Erreur lors de la réinitialisation du projet', error as Error, 'storage');
+        toast.error('Erreur lors de la réinitialisation du projet');
+      } finally {
+        // Réactiver les notifications
+        if (roomsStorage.setSilentOperation) roomsStorage.setSilentOperation(false);
+        if (travauxStorage.setSilentOperation) travauxStorage.setSilentOperation(false);
+        isResetting = false;
       }
     };
 
-    // Si l'état est l'état initial, cela signifie que RESET_PROJECT a été dispatché
-    if (state.rooms.length === 0 && state.travaux.length === 0) {
+    // Si l'action RESET_PROJECT a été dispatché (les tableaux sont vides)
+    if (state.rooms.length === 0 && state.travaux.length === 0 && 
+        roomsStorage.isInitialized && travauxStorage.isInitialized) {
       handleProjectReset();
     }
-  }, [state.rooms.length, state.travaux.length, roomsStorage.isDbAvailable, roomsStorage.isLoading, roomsStorage.clearRooms, travauxStorage.isDbAvailable, travauxStorage.isLoading, travauxStorage.clearTravaux, propertyStorage.isDbAvailable, propertyStorage.isLoading, propertyStorage.saveProperty, logger]);
+  }, [state.rooms.length, state.travaux.length, 
+      roomsStorage.isDbAvailable, roomsStorage.isLoading, roomsStorage.resetRooms, roomsStorage.isInitialized, roomsStorage.setSilentOperation,
+      travauxStorage.isDbAvailable, travauxStorage.isLoading, travauxStorage.resetTravaux, travauxStorage.isInitialized, travauxStorage.setSilentOperation,
+      propertyStorage.isDbAvailable, propertyStorage.isLoading, propertyStorage.saveProperty, logger]);
 
   return (
     <ProjectContext.Provider value={{ state, dispatch }}>

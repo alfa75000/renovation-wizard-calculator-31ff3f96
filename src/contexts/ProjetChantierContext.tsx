@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
+
+import React, { createContext, useContext, useReducer, ReactNode, useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { ProjetChantier } from '@/types';
 import { useLocalStorageSync } from '@/hooks/useLocalStorageSync';
@@ -95,6 +96,7 @@ export const ProjetChantierProvider: React.FC<ProjetChantierProviderProps> = ({ 
   const [state, dispatch] = useReducer(projetChantierReducer, initialState);
   const { loadFromLocalStorage, saveToLocalStorage } = useLocalStorageSync<ProjetChantierState>('projetsChantier', state);
   const { state: projectState, dispatch: projectDispatch } = useProject();
+  const [isSilentOperation, setIsSilentOperation] = useState(false);
   
   // Utilisation du hook pour IndexedDB
   const { 
@@ -109,6 +111,7 @@ export const ProjetChantierProvider: React.FC<ProjetChantierProviderProps> = ({ 
   useEffect(() => {
     const loadData = async () => {
       try {
+        setIsSilentOperation(true);
         // Si IndexedDB est disponible et initialisé, charger depuis IndexedDB
         if (isDbAvailable && isInitialized) {
           const projets = await getAllProjets();
@@ -143,6 +146,8 @@ export const ProjetChantierProvider: React.FC<ProjetChantierProviderProps> = ({ 
         }
       } catch (error) {
         logger.error('Erreur lors du chargement des projets', error as Error, 'storage');
+      } finally {
+        setIsSilentOperation(false);
       }
     };
     
@@ -204,14 +209,20 @@ export const ProjetChantierProvider: React.FC<ProjetChantierProviderProps> = ({ 
         saveProjetsToIndexedDB(projetMisAJour)
           .then(() => {
             logger.info(`Projet ${projetMisAJour.id} mis à jour dans IndexedDB`, 'storage');
-            toast.success('Projet sauvegardé dans IndexedDB');
+            if (!isSilentOperation) {
+              toast.success('Projet sauvegardé avec succès');
+            }
           })
           .catch(error => {
             logger.error(`Erreur lors de la mise à jour du projet ${projetMisAJour.id} dans IndexedDB`, error as Error, 'storage');
-            toast.error('Erreur lors de la sauvegarde dans IndexedDB');
+            if (!isSilentOperation) {
+              toast.error('Erreur lors de la sauvegarde dans IndexedDB');
+            }
           });
       } else {
-        toast.success('Projet sauvegardé dans localStorage');
+        if (!isSilentOperation) {
+          toast.success('Projet sauvegardé avec succès');
+        }
       }
     } else {
       // Création d'un nouveau projet
@@ -230,14 +241,20 @@ export const ProjetChantierProvider: React.FC<ProjetChantierProviderProps> = ({ 
         saveProjetsToIndexedDB(nouveauProjet)
           .then(() => {
             logger.info(`Projet ${nouveauProjet.id} ajouté dans IndexedDB`, 'storage');
-            toast.success('Nouveau projet sauvegardé dans IndexedDB');
+            if (!isSilentOperation) {
+              toast.success('Nouveau projet créé avec succès');
+            }
           })
           .catch(error => {
             logger.error(`Erreur lors de l'ajout du projet ${nouveauProjet.id} dans IndexedDB`, error as Error, 'storage');
-            toast.error('Erreur lors de la sauvegarde dans IndexedDB');
+            if (!isSilentOperation) {
+              toast.error('Erreur lors de la sauvegarde dans IndexedDB');
+            }
           });
       } else {
-        toast.success('Nouveau projet sauvegardé dans localStorage');
+        if (!isSilentOperation) {
+          toast.success('Nouveau projet créé avec succès');
+        }
       }
     }
   };
@@ -247,36 +264,47 @@ export const ProjetChantierProvider: React.FC<ProjetChantierProviderProps> = ({ 
     const projetACharger = state.projets.find(p => p.id === projetId);
     
     if (projetACharger) {
-      // Mettre à jour projetActif
-      dispatch({ type: 'SET_PROJET_ACTIF', payload: projetACharger });
-      
-      // Charger les données du projet (rooms, property, travaux) si elles existent
-      if (projetACharger.projectData) {
-        // Mettre à jour les pièces
-        if (projetACharger.projectData.rooms) {
-          projectDispatch({ type: 'SET_ROOMS', payload: projetACharger.projectData.rooms });
-          logger.info(`${projetACharger.projectData.rooms.length} pièces chargées depuis le projet`, 'data');
+      try {
+        setIsSilentOperation(true);
+        
+        // Mettre à jour projetActif
+        dispatch({ type: 'SET_PROJET_ACTIF', payload: projetACharger });
+        
+        // Charger les données du projet (rooms, property, travaux) si elles existent
+        if (projetACharger.projectData) {
+          // Mettre à jour les pièces
+          if (projetACharger.projectData.rooms) {
+            projectDispatch({ type: 'SET_ROOMS', payload: projetACharger.projectData.rooms });
+            logger.info(`${projetACharger.projectData.rooms.length} pièces chargées depuis le projet`, 'data');
+          }
+          
+          // Mettre à jour les propriétés
+          if (projetACharger.projectData.property) {
+            projectDispatch({ type: 'SET_PROPERTY', payload: projetACharger.projectData.property });
+          }
+          
+          // Mettre à jour les travaux
+          if (projetACharger.projectData.travaux) {
+            projectDispatch({ type: 'SET_TRAVAUX', payload: projetACharger.projectData.travaux });
+            logger.info(`${projetACharger.projectData.travaux.length} travaux chargés depuis le projet`, 'data');
+          }
         }
         
-        // Mettre à jour les propriétés
-        if (projetACharger.projectData.property) {
-          projectDispatch({ type: 'SET_PROPERTY', payload: projetACharger.projectData.property });
-        }
-        
-        // Mettre à jour les travaux
-        if (projetACharger.projectData.travaux) {
-          projectDispatch({ type: 'SET_TRAVAUX', payload: projetACharger.projectData.travaux });
-          logger.info(`${projetACharger.projectData.travaux.length} travaux chargés depuis le projet`, 'data');
-        }
+        setIsSilentOperation(false);
+        toast.info(`Projet "${projetACharger.nomProjet}" chargé`);
+      } catch (error) {
+        logger.error(`Erreur lors du chargement du projet ${projetId}`, error as Error, 'data');
+        setIsSilentOperation(false);
+        toast.error(`Erreur lors du chargement du projet: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
       }
-      
-      toast.info(`Projet "${projetACharger.nomProjet}" chargé`);
     }
   };
   
   // Fonction pour démarrer un nouveau projet
   const nouveauProjet = () => {
     try {
+      setIsSilentOperation(true);
+      
       // Effacer le projet actif
       dispatch({ type: 'SET_PROJET_ACTIF', payload: null });
       
@@ -284,9 +312,11 @@ export const ProjetChantierProvider: React.FC<ProjetChantierProviderProps> = ({ 
       projectDispatch({ type: 'RESET_PROJECT' });
       
       logger.info('Nouveau projet initialisé', 'data');
+      setIsSilentOperation(false);
       toast.success('Nouveau projet initialisé');
     } catch (error) {
       logger.error('Erreur lors de l\'initialisation d\'un nouveau projet', error as Error, 'data');
+      setIsSilentOperation(false);
       toast.error('Erreur lors de l\'initialisation d\'un nouveau projet');
     }
   };
