@@ -5,10 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import TypeTravauxSelect from "./TypeTravauxSelect";
+import ServiceGroupSelect from "./ServiceGroupSelect";
 import SousTypeSelect from "./SousTypeSelect";
 import TvaSelect from "./TvaSelect";
 import UniteSelect from "./UniteSelect";
-import { Room, Travail, SousTypeTravauxItem } from "@/types";
+import { Room, Travail } from "@/types";
+import { Service } from "@/types/supabase";
 
 interface TravailFormProps {
   piece: Room | null;
@@ -22,8 +24,12 @@ const TravailForm: React.FC<TravailFormProps> = ({
   travailAModifier,
 }) => {
   const [typeTravauxId, setTypeTravauxId] = useState<string>(travailAModifier?.typeTravauxId || "");
+  const [typeTravauxLabel, setTypeTravauxLabel] = useState<string>(travailAModifier?.typeTravauxLabel || "");
+  const [groupId, setGroupId] = useState<string>("");
+  const [groupLabel, setGroupLabel] = useState<string>("");
   const [sousTypeId, setSousTypeId] = useState<string>(travailAModifier?.sousTypeId || "");
-  const [sousType, setSousType] = useState<SousTypeTravauxItem | null>(null);
+  const [sousTypeLabel, setSousTypeLabel] = useState<string>(travailAModifier?.sousTypeLabel || "");
+  const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [description, setDescription] = useState<string>(travailAModifier?.description || "");
   const [personnalisation, setPersonnalisation] = useState<string>(travailAModifier?.personnalisation || "");
   const [quantite, setQuantite] = useState<number>(travailAModifier?.quantite || 0);
@@ -36,53 +42,42 @@ const TravailForm: React.FC<TravailFormProps> = ({
   );
   const [tauxTVA, setTauxTVA] = useState<number>(travailAModifier?.tauxTVA || 10);
   const [commentaire, setCommentaire] = useState<string>(travailAModifier?.commentaire || "");
-  const [typeTravauxLabel, setTypeTravauxLabel] = useState<string>("");
-  const [sousTypeLabel, setSousTypeLabel] = useState<string>("");
 
   // Effet pour réinitialiser les champs lorsque le type de travaux change
   useEffect(() => {
+    setGroupId("");
+    setGroupLabel("");
     setSousTypeId("");
-    setSousType(null);
+    setSousTypeLabel("");
+    setSelectedService(null);
   }, [typeTravauxId]);
 
-  // Effet pour remplir les données lorsqu'un sous-type est sélectionné
+  // Effet pour réinitialiser les champs lorsque le groupe change
   useEffect(() => {
-    if (sousType) {
-      setPrixFournitures(sousType.prixFournitures || 0);
-      setPrixMainOeuvre(sousType.prixMainOeuvre || 0);
-      setUnite(sousType.unite || "m²");
+    setSousTypeId("");
+    setSousTypeLabel("");
+    setSelectedService(null);
+  }, [groupId]);
+
+  // Effet pour remplir les données lorsqu'un service est sélectionné
+  useEffect(() => {
+    if (selectedService) {
+      setPrixFournitures(selectedService.supply_price || 0);
+      setPrixMainOeuvre(selectedService.labor_price || 0);
+      setUnite(selectedService.unit || "m²");
       
       // Calculer la quantité en fonction de la surface de référence si disponible
-      if (piece && sousType.surfaceReference) {
+      if (piece) {
         let quantiteInitiale = 0;
         
-        switch (sousType.surfaceReference) {
-          case "murs":
-            quantiteInitiale = piece.surfaceNetteMurs || 0;
-            break;
-          case "sol":
-            quantiteInitiale = piece.surfaceNetteSol || 0;
-            break;
-          case "plafond":
-            quantiteInitiale = piece.surfaceNettePlafond || 0;
-            break;
-          case "menuiseries":
-            quantiteInitiale = piece.surfaceMenuiseries || piece.totalMenuiserieSurface || 0;
-            break;
-          case "plinthes":
-            quantiteInitiale = piece.totalPlinthLength || 0;
-            break;
-          case "perimetre":
-            quantiteInitiale = piece.lineaireNet || 0;
-            break;
-          default:
-            quantiteInitiale = 0;
-        }
+        // Pour l'instant, on utilise simplement la surface de la pièce
+        // Dans une version future, on pourrait utiliser des surfaces de référence spécifiques
+        quantiteInitiale = piece.surface || 0;
         
         setQuantite(parseFloat(quantiteInitiale.toFixed(2)));
       }
     }
-  }, [sousType, piece]);
+  }, [selectedService, piece]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -112,7 +107,6 @@ const TravailForm: React.FC<TravailFormProps> = ({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <Label htmlFor="typeTravaux">Type de travaux</Label>
         <TypeTravauxSelect
           value={typeTravauxId}
           onChange={(id: string, label: string) => {
@@ -124,14 +118,27 @@ const TravailForm: React.FC<TravailFormProps> = ({
 
       {typeTravauxId && (
         <div>
-          <Label htmlFor="sousType">Sous-type de travaux</Label>
+          <ServiceGroupSelect
+            workTypeId={typeTravauxId}
+            value={groupId}
+            onChange={(id: string, label: string) => {
+              setGroupId(id);
+              setGroupLabel(label);
+            }}
+          />
+        </div>
+      )}
+
+      {groupId && (
+        <div>
+          <Label htmlFor="sousType">Prestation</Label>
           <SousTypeSelect
-            typeTravauxId={typeTravauxId}
+            groupId={groupId}
             value={sousTypeId}
-            onChange={(id: string, label: string, sousTypeData: SousTypeTravauxItem) => {
+            onChange={(id: string, label: string, service: Service) => {
               setSousTypeId(id);
               setSousTypeLabel(label);
-              setSousType(sousTypeData);
+              setSelectedService(service);
             }}
           />
         </div>

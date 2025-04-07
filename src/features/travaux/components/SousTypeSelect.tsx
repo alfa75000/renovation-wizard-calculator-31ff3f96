@@ -1,39 +1,68 @@
 
-import React, { useMemo } from 'react';
-import { useTravauxTypes } from '@/contexts/TravauxTypesContext';
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { SousTypeTravauxItem } from '@/types';
+import React, { useState, useEffect } from 'react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Service } from '@/types/supabase';
+import { fetchServices } from '@/services/travauxService';
+import { toast } from 'sonner';
 
 interface SousTypeSelectProps {
-  typeTravauxId: string;
+  groupId: string;
   value: string;
-  onChange: (id: string, label: string, sousType: SousTypeTravauxItem) => void;
+  onChange: (id: string, label: string, service: Service) => void;
   placeholder?: string;
   disabled?: boolean;
   className?: string;
 }
 
 const SousTypeSelect: React.FC<SousTypeSelectProps> = ({
-  typeTravauxId,
+  groupId,
   value,
   onChange,
-  placeholder = "Sélectionner un sous-type",
+  placeholder = "Sélectionner une prestation",
   disabled = false,
   className = "",
 }) => {
-  const { state } = useTravauxTypes();
+  const [services, setServices] = useState<Service[]>([]);
+  const [loading, setLoading] = useState(false);
   
-  // Récupérer les sous-types pour le type de travaux sélectionné
-  const sousTypes = useMemo(() => {
-    const typeTravaux = state.types.find(type => type.id === typeTravauxId);
-    return typeTravaux ? typeTravaux.sousTypes : [];
-  }, [state.types, typeTravauxId]);
+  // Charger les services quand le groupe change
+  useEffect(() => {
+    if (!groupId) {
+      setServices([]);
+      return;
+    }
+    
+    const loadServices = async () => {
+      setLoading(true);
+      try {
+        const data = await fetchServices(groupId);
+        setServices(data.map(service => ({
+          ...service,
+          unit: 'm²' // Valeur par défaut pour compatibilité
+        })));
+      } catch (error) {
+        console.error("Erreur lors du chargement des services:", error);
+        toast.error("Impossible de charger les prestations");
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadServices();
+  }, [groupId]);
+  
+  // Réinitialiser la valeur si le groupe change
+  useEffect(() => {
+    if (groupId) {
+      // Réinitialiser la sélection quand le groupe change
+      onChange("", "", {} as Service);
+    }
+  }, [groupId, onChange]);
 
-  // Gestionnaire de changement
-  const handleChange = (sousTypeId: string) => {
-    const sousType = sousTypes.find(st => st.id === sousTypeId);
-    if (sousType) {
-      onChange(sousType.id, sousType.label, sousType);
+  const handleChange = (serviceId: string) => {
+    const service = services.find(s => s.id === serviceId);
+    if (service) {
+      onChange(service.id, service.name, service);
     }
   };
 
@@ -41,24 +70,22 @@ const SousTypeSelect: React.FC<SousTypeSelectProps> = ({
     <Select
       value={value}
       onValueChange={handleChange}
-      disabled={disabled || sousTypes.length === 0}
+      disabled={disabled || loading || services.length === 0}
     >
       <SelectTrigger className={className}>
-        <SelectValue placeholder={placeholder} />
+        <SelectValue placeholder={loading ? "Chargement..." : placeholder} />
       </SelectTrigger>
       <SelectContent>
-        <SelectGroup>
-          {sousTypes.map((sousType) => (
-            <SelectItem key={sousType.id} value={sousType.id}>
-              {sousType.label} ({sousType.prixUnitaire}€/{sousType.unite})
-            </SelectItem>
-          ))}
-          {sousTypes.length === 0 && (
-            <SelectItem value="none" disabled>
-              Aucun sous-type disponible
-            </SelectItem>
-          )}
-        </SelectGroup>
+        {services.map((service) => (
+          <SelectItem key={service.id} value={service.id}>
+            {service.name} ({(service.labor_price + service.supply_price).toFixed(2)}€/m²)
+          </SelectItem>
+        ))}
+        {services.length === 0 && !loading && (
+          <SelectItem value="none" disabled>
+            Aucune prestation disponible
+          </SelectItem>
+        )}
       </SelectContent>
     </Select>
   );
