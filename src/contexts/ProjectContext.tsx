@@ -25,6 +25,29 @@ const ProjectContext = createContext<{
   dispatch: () => null,
 });
 
+// Fonction utilitaire pour générer un nom de pièce séquentiel
+const generateRoomName = (rooms: Room[], type: string): string => {
+  // Filtrer les pièces du même type
+  const sameTypeRooms = rooms.filter(room => room.type === type);
+  
+  // Trouver le numéro le plus élevé déjà utilisé
+  let maxNumber = 0;
+  
+  sameTypeRooms.forEach(room => {
+    // Extraire le numéro à la fin du nom (ex: "Chambre 1" -> 1)
+    const match = room.name.match(/\s(\d+)$/);
+    if (match && match[1]) {
+      const num = parseInt(match[1], 10);
+      if (!isNaN(num) && num > maxNumber) {
+        maxNumber = num;
+      }
+    }
+  });
+  
+  // Retourner le nom avec le numéro suivant
+  return `${type} ${maxNumber + 1}`;
+};
+
 // Reducer pour gérer les actions
 function projectReducer(state: ProjectState, action: ProjectAction): ProjectState {
   switch (action.type) {
@@ -37,11 +60,18 @@ function projectReducer(state: ProjectState, action: ProjectAction): ProjectStat
         },
       };
     
-    case 'ADD_ROOM':
+    case 'ADD_ROOM': {
+      // Si le nom n'est pas spécifié, générer un nom séquentiel
+      const roomData = action.payload;
+      if (!roomData.name || roomData.name === '') {
+        roomData.name = generateRoomName(state.rooms, roomData.type);
+      }
+      
       return {
         ...state,
-        rooms: [...state.rooms, action.payload],
+        rooms: [...state.rooms, roomData],
       };
+    }
     
     case 'UPDATE_ROOM': {
       const { id, room } = action.payload;

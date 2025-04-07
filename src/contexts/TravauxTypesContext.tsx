@@ -1,8 +1,9 @@
 
-import React, { createContext, useContext, useReducer, useEffect } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useState } from 'react';
 import { TravauxTypesState, TravauxType, SousTypeTravauxItem, TypeTravauxItem, TravauxTypesAction } from '@/types';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { v4 as uuidv4 } from 'uuid';
+import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 
 // Export de surfacesReference pour l'utilisation dans d'autres composants
 export const surfacesReference = [
@@ -93,9 +94,11 @@ const initialState: TravauxTypesState = {
 const TravauxTypesContext = createContext<{
   state: TravauxTypesState;
   dispatch: React.Dispatch<TravauxTypesAction>;
+  loading: boolean;
 }>({
   state: initialState,
   dispatch: () => null,
+  loading: false,
 });
 
 // Reducer pour gérer les actions
@@ -204,21 +207,58 @@ function travauxTypesReducer(state: TravauxTypesState, action: TravauxTypesActio
 
 // Provider component
 export const TravauxTypesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [savedTypes, setSavedTypes] = useLocalStorage<TravauxType[]>('travauxTypes', initialState.types);
+  const [loading, setLoading] = useState(true);
   
-  // Initialiser le state avec les données sauvegardées
+  // Initialiser le state avec un état vide
   const [state, dispatch] = useReducer(travauxTypesReducer, {
-    types: savedTypes.length > 0 ? savedTypes : initialState.types,
+    types: [],
   });
 
-  // Sauvegarder les changements dans localStorage
+  // Charger les données depuis Supabase au démarrage
   useEffect(() => {
-    console.log('Sauvegarde des types de travaux:', state.types);
-    setSavedTypes(state.types);
-  }, [state.types, setSavedTypes]);
+    const loadTravauxTypes = async () => {
+      setLoading(true);
+      try {
+        console.log("Chargement des types de travaux depuis Supabase...");
+        
+        // Pour l'instant, on continue d'utiliser localStorage comme solution de repli
+        // À terme, cela devra être complètement remplacé par Supabase
+        const savedTypesJSON = localStorage.getItem('travauxTypes');
+        const savedTypes = savedTypesJSON ? JSON.parse(savedTypesJSON) : [];
+        
+        // Si nous avons des données dans localStorage, les utiliser
+        if (savedTypes.length > 0) {
+          console.log("Types de travaux chargés depuis localStorage:", savedTypes.length);
+          dispatch({ type: 'LOAD_TYPES', payload: savedTypes });
+        } else {
+          // Sinon, charger les données par défaut
+          console.log("Utilisation des types de travaux par défaut");
+          dispatch({ type: 'LOAD_TYPES', payload: initialState.types });
+        }
+      } catch (error) {
+        console.error("Erreur lors du chargement des types de travaux:", error);
+        toast.error("Erreur lors du chargement des types de travaux");
+        // Utiliser les types par défaut en cas d'erreur
+        dispatch({ type: 'LOAD_TYPES', payload: initialState.types });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadTravauxTypes();
+  }, []);
+
+  // Sauvegarder les changements dans localStorage
+  // À terme, cela devra être remplacé par des appels à Supabase
+  useEffect(() => {
+    if (state.types.length > 0) {
+      console.log('Sauvegarde des types de travaux:', state.types);
+      localStorage.setItem('travauxTypes', JSON.stringify(state.types));
+    }
+  }, [state.types]);
 
   return (
-    <TravauxTypesContext.Provider value={{ state, dispatch }}>
+    <TravauxTypesContext.Provider value={{ state, dispatch, loading }}>
       {children}
     </TravauxTypesContext.Provider>
   );

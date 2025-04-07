@@ -35,11 +35,17 @@ const SousTypeSelect: React.FC<SousTypeSelectProps> = ({
     const loadServices = async () => {
       setLoading(true);
       try {
+        console.log(`SousTypeSelect - Chargement des services pour le groupe ${groupId}`);
         const data = await fetchServices(groupId);
-        setServices(data.map(service => ({
+        console.log(`SousTypeSelect - Services récupérés:`, data);
+        
+        // Ajouter une valeur par défaut pour l'unité si nécessaire
+        const formattedServices = data.map(service => ({
           ...service,
-          unit: 'm²' // Valeur par défaut pour compatibilité
-        })));
+          unit: service.unit || 'm²' // Valeur par défaut pour compatibilité
+        }));
+        
+        setServices(formattedServices);
       } catch (error) {
         console.error("Erreur lors du chargement des services:", error);
         toast.error("Impossible de charger les prestations");
@@ -53,37 +59,40 @@ const SousTypeSelect: React.FC<SousTypeSelectProps> = ({
   
   // Réinitialiser la valeur si le groupe change
   useEffect(() => {
-    if (groupId) {
-      // Réinitialiser la sélection quand le groupe change
+    if (groupId && value) {
+      // Ne réinitialiser que si le groupId change, mais pas lors du chargement initial
       onChange("", "", {} as Service);
     }
-  }, [groupId, onChange]);
+  }, [groupId, onChange, value]);
 
   const handleChange = (serviceId: string) => {
     const service = services.find(s => s.id === serviceId);
     if (service) {
+      console.log(`SousTypeSelect - Service sélectionné:`, service);
       onChange(service.id, service.name, service);
     }
   };
 
+  // Rendre le composant visible même s'il n'y a pas de services
   return (
     <Select
       value={value}
       onValueChange={handleChange}
-      disabled={disabled || loading || services.length === 0}
+      disabled={disabled || loading}
     >
       <SelectTrigger className={className}>
         <SelectValue placeholder={loading ? "Chargement..." : placeholder} />
       </SelectTrigger>
       <SelectContent>
-        {services.map((service) => (
-          <SelectItem key={service.id} value={service.id}>
-            {service.name} ({(service.labor_price + service.supply_price).toFixed(2)}€/m²)
-          </SelectItem>
-        ))}
-        {services.length === 0 && !loading && (
+        {services.length > 0 ? (
+          services.map((service) => (
+            <SelectItem key={service.id} value={service.id}>
+              {service.name} ({(service.labor_price + service.supply_price).toFixed(2)}€/m²)
+            </SelectItem>
+          ))
+        ) : (
           <SelectItem value="none" disabled>
-            Aucune prestation disponible
+            {loading ? "Chargement..." : "Aucune prestation disponible"}
           </SelectItem>
         )}
       </SelectContent>
