@@ -1,8 +1,9 @@
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { TypeTravauxItem } from "@/contexts/TravauxTypesContext";
+import { TravauxType } from "@/contexts/TravauxTypesContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect } from "react";
 import { 
@@ -24,8 +25,8 @@ import {
 interface TypeTravauxFormProps {
   isOpen: boolean;
   onClose: () => void;
-  typeToEdit: TypeTravauxItem | null;
-  onSubmit: (data: TypeTravauxItem) => void;
+  typeToEdit: TravauxType | null;
+  onSubmit: (data: TravauxType) => void;
 }
 
 // Génère un ID unique basé sur le label (pour les nouveaux types)
@@ -64,10 +65,14 @@ const TypeTravauxForm: React.FC<TypeTravauxFormProps> = ({
     id: string;
     label: string;
     icon: string;
+    nom: string;
+    description: string;
   }>({
     id: typeToEdit?.id || "",
     label: typeToEdit?.label || "",
-    icon: typeToEdit?.icon || "Wrench"
+    icon: typeToEdit?.icon || "Wrench",
+    nom: typeToEdit?.nom || "",
+    description: typeToEdit?.description || ""
   });
 
   // Mise à jour du formulaire lorsque typeToEdit change
@@ -76,13 +81,17 @@ const TypeTravauxForm: React.FC<TypeTravauxFormProps> = ({
       setFormData({
         id: typeToEdit.id,
         label: typeToEdit.label,
-        icon: typeToEdit.icon
+        icon: typeToEdit.icon || "Wrench",
+        nom: typeToEdit.nom,
+        description: typeToEdit.description
       });
     } else {
       setFormData({
         id: "",
         label: "",
-        icon: "Wrench"
+        icon: "Wrench",
+        nom: "",
+        description: ""
       });
     }
   }, [typeToEdit]);
@@ -95,7 +104,9 @@ const TypeTravauxForm: React.FC<TypeTravauxFormProps> = ({
     
     onSubmit({
       id,
+      nom: formData.label,
       label: formData.label,
+      description: formData.description || "",
       icon: formData.icon,
       sousTypes: typeToEdit?.sousTypes || []
     });
