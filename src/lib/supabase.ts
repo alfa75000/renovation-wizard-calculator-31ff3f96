@@ -11,8 +11,16 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // Fonction utilitaire pour vérifier la connexion
 export const checkSupabaseConnection = async () => {
   try {
+    console.log("Vérification de la connexion à Supabase...");
+    
     // Tenter une requête simple
-    const { data, error } = await supabase.from('work_types').select('*').limit(1);
+    const { data, error } = await supabase.from('work_types').select('*').limit(3);
+    
+    console.log("Résultat de la requête test work_types:", { 
+      data, 
+      error, 
+      count: data?.length || 0
+    });
     
     if (error) {
       console.error('Erreur de connexion à Supabase:', error);
@@ -50,6 +58,12 @@ export const checkSupabaseConnection = async () => {
       .from('services')
       .select('*')
       .limit(1);
+    
+    console.log("Structures des tables récupérées:", {
+      work_types: workTypesColumns ? Object.keys(workTypesColumns[0] || {}) : "Pas de données",
+      service_groups: serviceGroupsColumns ? Object.keys(serviceGroupsColumns[0] || {}) : "Pas de données",
+      services: servicesColumns ? Object.keys(servicesColumns[0] || {}) : "Pas de données"
+    });
     
     return {
       connected: true,

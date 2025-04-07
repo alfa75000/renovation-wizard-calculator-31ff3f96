@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { createWorkType } from "@/services/travauxService";
 
 interface TypeTravauxSelectProps {
   value: string;
@@ -45,7 +46,9 @@ const TypeTravauxSelect = ({
     const loadWorkTypes = async () => {
       setLoading(true);
       try {
+        console.log("TypeTravauxSelect - Début du chargement des types de travaux");
         const data = await fetchWorkTypes();
+        console.log("TypeTravauxSelect - Types de travaux récupérés:", data);
         setTypes(data);
       } catch (error) {
         console.error("Erreur lors du chargement des types de travaux:", error);
@@ -72,10 +75,28 @@ const TypeTravauxSelect = ({
     }
   };
   
-  const handleAddNewType = () => {
-    // Cette fonctionnalité sera implémentée plus tard
-    setOpenDialog(false);
-    toast("Cette fonctionnalité n'est pas encore disponible");
+  const handleAddNewType = async () => {
+    if (!newTypeName.trim()) {
+      toast.error("Le nom du type est requis");
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const newType = await createWorkType(newTypeName);
+      if (newType) {
+        setTypes(prev => [...prev, newType]);
+        setOpenDialog(false);
+        setNewTypeName("");
+        setNewTypeDesc("");
+        toast.success("Type de travaux ajouté avec succès");
+      }
+    } catch (error) {
+      console.error("Erreur lors de l'ajout du type:", error);
+      toast.error("Impossible d'ajouter le type de travaux");
+    } finally {
+      setLoading(false);
+    }
   };
   
   return (
@@ -92,11 +113,17 @@ const TypeTravauxSelect = ({
             <SelectValue placeholder={loading ? "Chargement..." : placeholder} />
           </SelectTrigger>
           <SelectContent>
-            {types.map((type) => (
-              <SelectItem key={type.id} value={type.id}>
-                {type.name}
-              </SelectItem>
-            ))}
+            {types.length > 0 ? (
+              types.map((type) => (
+                <SelectItem key={type.id} value={type.id}>
+                  {type.name}
+                </SelectItem>
+              ))
+            ) : (
+              <div className="px-2 py-2 text-sm text-gray-500">
+                {loading ? "Chargement..." : "Aucun type disponible"}
+              </div>
+            )}
           </SelectContent>
         </Select>
         
@@ -146,8 +173,8 @@ const TypeTravauxSelect = ({
             <Button variant="outline" onClick={() => setOpenDialog(false)}>
               Annuler
             </Button>
-            <Button onClick={handleAddNewType}>
-              Ajouter
+            <Button onClick={handleAddNewType} disabled={loading}>
+              {loading ? "Ajout en cours..." : "Ajouter"}
             </Button>
           </div>
         </DialogContent>

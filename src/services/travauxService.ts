@@ -5,15 +5,32 @@ import { toast } from 'sonner';
 // Récupérer tous les types de travaux
 export const fetchWorkTypes = async (): Promise<WorkType[]> => {
   try {
+    console.log("Début fetchWorkTypes - Tentative de récupération des types de travaux");
+    
     const { data, error } = await supabase
       .from('work_types')
       .select('*')
       .order('name', { ascending: true });
     
+    // Log détaillé pour debug
+    console.log("Résultat de la requête work_types:", { 
+      data, 
+      error, 
+      dataLength: data?.length || 0,
+      firstItem: data && data.length > 0 ? data[0] : null
+    });
+    
     if (error) {
       console.error('Erreur lors de la récupération des types de travaux:', error);
       toast.error('Erreur lors de la récupération des types de travaux');
       return [];
+    }
+    
+    // Vérification additionnelle des données reçues
+    if (!data || data.length === 0) {
+      console.log("Aucun type de travaux trouvé dans la base de données");
+    } else {
+      console.log(`${data.length} types de travaux récupérés avec succès`);
     }
     
     return data;
