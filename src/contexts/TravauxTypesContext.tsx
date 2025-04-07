@@ -1,8 +1,17 @@
-
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import { TravauxTypesState, TravauxType, SousTypeTravauxItem, TypeTravauxItem, TravauxTypesAction, surfacesReference } from '@/types';
+import { TravauxTypesState, TravauxType, SousTypeTravauxItem, TypeTravauxItem, TravauxTypesAction } from '@/types';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { v4 as uuidv4 } from 'uuid';
+
+// Export de surfacesReference pour l'utilisation dans d'autres composants
+export const surfacesReference = [
+  { id: 'murs', label: 'Surface des murs' },
+  { id: 'sol', label: 'Surface du sol' },
+  { id: 'plafond', label: 'Surface du plafond' },
+  { id: 'menuiseries', label: 'Surface des menuiseries' },
+  { id: 'plinthes', label: 'Longueur des plinthes' },
+  { id: 'perimetre', label: 'Périmètre de la pièce' }
+];
 
 // État initial
 const initialState: TravauxTypesState = {
@@ -142,5 +151,4 @@ export const useTravauxTypes = () => {
 };
 
 // Exporter pour l'utilisation dans les autres fichiers
-export { surfacesReference };
 export type { TravauxType, SousTypeTravauxItem, TypeTravauxItem };

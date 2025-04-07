@@ -40,10 +40,11 @@ import SousTypeTravauxForm from "@/features/admin/components/SousTypeTravauxForm
 import TypeMenuiserieForm from "@/features/admin/components/TypeMenuiserieForm";
 import ClientForm from "@/features/admin/components/ClientForm";
 
-import { TravauxType, SousTypeTravauxItem, useTravauxTypes } from "@/contexts/TravauxTypesContext";
-import { useMenuiseriesTypes } from "@/contexts/MenuiseriesTypesContext";
+import { TravauxType, SousTypeTravauxItem, useTravauxTypes, surfacesReference } from "@/contexts/TravauxTypesContext";
+import { useMenuiseriesTypes, surfacesReference as menuiserieSurfacesReference } from "@/contexts/MenuiseriesTypesContext";
 import { Client, useClients, typesClients } from "@/contexts/ClientsContext";
 import { TypeMenuiserie } from "@/types";
+import { surfacesMenuiseries } from "@/types";
 
 const Parametres = () => {
   // Contexte des travaux, des menuiseries et des clients
@@ -132,7 +133,6 @@ const Parametres = () => {
 
   const handleSubmitType = (typeData: TravauxType) => {
     if (editingType) {
-      // Mise à jour d'un type existant
       dispatchTravauxTypes({
         type: 'UPDATE_TYPE',
         payload: { id: editingType.id, type: typeData }
@@ -142,7 +142,6 @@ const Parametres = () => {
         description: "Le type de travaux a été mis à jour avec succès.",
       });
     } else {
-      // Ajout d'un nouveau type
       dispatchTravauxTypes({ type: 'ADD_TYPE', payload: typeData });
       toast({
         title: "Type de travaux ajouté",
@@ -188,7 +187,6 @@ const Parametres = () => {
   const handleSubmitSousType = (sousTypeData: SousTypeTravauxItem) => {
     if (selectedTypeId) {
       if (editingSousType) {
-        // Mise à jour d'un sous-type existant
         dispatchTravauxTypes({
           type: 'UPDATE_SOUS_TYPE',
           payload: {
@@ -202,7 +200,6 @@ const Parametres = () => {
           description: "La prestation a été mise à jour avec succès.",
         });
       } else {
-        // Ajout d'un nouveau sous-type
         dispatchTravauxTypes({
           type: 'ADD_SOUS_TYPE',
           payload: { typeId: selectedTypeId, sousType: sousTypeData }
@@ -263,7 +260,6 @@ const Parametres = () => {
 
   const handleSubmitTypeMenuiserie = (typeData: TypeMenuiserie) => {
     if (editingTypeMenuiserie) {
-      // Mise à jour d'un type existant
       dispatchMenuiseriesTypes({
         type: 'UPDATE_TYPE',
         payload: { id: editingTypeMenuiserie.id, type: typeData }
@@ -273,7 +269,6 @@ const Parametres = () => {
         description: "Le type de menuiserie a été mis à jour avec succès.",
       });
     } else {
-      // Ajout d'un nouveau type
       dispatchMenuiseriesTypes({ type: 'ADD_TYPE', payload: typeData });
       toast({
         title: "Type de menuiserie ajouté",
@@ -330,7 +325,6 @@ const Parametres = () => {
   
   const handleSubmitClient = (clientData: Client) => {
     if (editingClient) {
-      // Mise à jour d'un client existant
       dispatchClients({
         type: 'UPDATE_CLIENT',
         payload: { id: editingClient.id, client: clientData }
@@ -340,7 +334,6 @@ const Parametres = () => {
         description: "Le client a été mis à jour avec succès.",
       });
     } else {
-      // Ajout d'un nouveau client
       dispatchClients({ type: 'ADD_CLIENT', payload: clientData });
       toast({
         title: "Client ajouté",
