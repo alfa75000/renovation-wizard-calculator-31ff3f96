@@ -18,6 +18,7 @@ import AdminTravaux from "./pages/AdminTravaux";
 import Parametres from "./pages/Parametres";
 import NotFound from "./pages/NotFound";
 
+// Initialisation du client de requêtes
 const queryClient = new QueryClient();
 
 function App() {

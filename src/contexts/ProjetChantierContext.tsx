@@ -1,17 +1,26 @@
 
-import React, { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { ProjetChantier } from '@/types';
-import { useLocalStorageSync } from '@/hooks/useLocalStorageSync';
-import { useProject } from './ProjectContext';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { useLocalStorageSync } from '@/hooks/useLocalStorageSync';
+import { useProject } from './ProjectContext';
+import { ProjetChantier } from '@/types';
 
-// Interface pour l'état du contexte
+// Interface pour l'état des projets
 interface ProjetChantierState {
   projets: ProjetChantier[];
   projetActif: ProjetChantier | null;
 }
+
+// Actions pour le reducer
+type ProjetChantierAction =
+  | { type: 'SET_PROJETS'; payload: ProjetChantier[] }
+  | { type: 'ADD_PROJET'; payload: ProjetChantier }
+  | { type: 'UPDATE_PROJET'; payload: ProjetChantier }
+  | { type: 'DELETE_PROJET'; payload: string }
+  | { type: 'SET_PROJET_ACTIF'; payload: ProjetChantier | null }
+  | { type: 'RESET_PROJETS' };
 
 // État initial
 const initialState: ProjetChantierState = {
@@ -19,184 +28,189 @@ const initialState: ProjetChantierState = {
   projetActif: null
 };
 
-// Types d'actions
-type ProjetChantierAction =
-  | { type: 'SET_PROJETS'; payload: ProjetChantier[] }
-  | { type: 'ADD_PROJET'; payload: ProjetChantier }
-  | { type: 'UPDATE_PROJET'; payload: ProjetChantier }
-  | { type: 'DELETE_PROJET'; payload: string }
-  | { type: 'SET_PROJET_ACTIF'; payload: ProjetChantier | null };
-
-// Réducteur
-const projetChantierReducer = (
-  state: ProjetChantierState,
-  action: ProjetChantierAction
-): ProjetChantierState => {
+// Reducer pour gérer les actions
+const projetChantierReducer = (state: ProjetChantierState, action: ProjetChantierAction): ProjetChantierState => {
   switch (action.type) {
     case 'SET_PROJETS':
       return { ...state, projets: action.payload };
-    case 'ADD_PROJET':
-      return {
-        ...state,
-        projets: [...state.projets, action.payload],
-        projetActif: action.payload
-      };
+    case 'ADD_PROJET': {
+      // Vérifier si le projet existe déjà
+      const existingIndex = state.projets.findIndex(p => p.id === action.payload.id);
+      
+      if (existingIndex >= 0) {
+        // Mettre à jour le projet existant
+        return {
+          ...state,
+          projets: state.projets.map(p => 
+            p.id === action.payload.id ? action.payload : p
+          ),
+          projetActif: action.payload
+        };
+      } else {
+        // Ajouter un nouveau projet
+        return {
+          ...state,
+          projets: [...state.projets, action.payload],
+          projetActif: action.payload
+        };
+      }
+    }
     case 'UPDATE_PROJET':
       return {
         ...state,
-        projets: state.projets.map(projet =>
+        projets: state.projets.map(projet => 
           projet.id === action.payload.id ? action.payload : projet
         ),
-        projetActif: action.payload
+        projetActif: state.projetActif?.id === action.payload.id 
+          ? action.payload 
+          : state.projetActif
       };
     case 'DELETE_PROJET':
       return {
         ...state,
         projets: state.projets.filter(projet => projet.id !== action.payload),
-        projetActif: state.projetActif?.id === action.payload ? null : state.projetActif
+        projetActif: state.projetActif?.id === action.payload 
+          ? null 
+          : state.projetActif
       };
     case 'SET_PROJET_ACTIF':
       return { ...state, projetActif: action.payload };
+    case 'RESET_PROJETS':
+      return initialState;
     default:
       return state;
   }
 };
 
-// Création du contexte
+// Interface pour le contexte
 interface ProjetChantierContextType {
   state: ProjetChantierState;
   dispatch: React.Dispatch<ProjetChantierAction>;
-  sauvegarderProjet: (projetData: Omit<ProjetChantier, 'id' | 'dateCreation' | 'dateModification'>) => void;
+  sauvegarderProjet: (projetData: Partial<ProjetChantier>) => void;
   chargerProjet: (projetId: string) => void;
-  genererNomFichier: (projet: Partial<ProjetChantier>, nomClient: string) => string;
   nouveauProjet: () => void;
+  genererNomFichier: (projet: Partial<ProjetChantier>, nomClient: string) => string;
 }
 
-const ProjetChantierContext = createContext<ProjetChantierContextType | undefined>(undefined);
+// Création du contexte
+const ProjetChantierContext = createContext<ProjetChantierContextType>({
+  state: initialState,
+  dispatch: () => null,
+  sauvegarderProjet: () => {},
+  chargerProjet: () => {},
+  nouveauProjet: () => {},
+  genererNomFichier: () => ''
+});
 
-// Hook pour utiliser le contexte
+// Hook personnalisé pour utiliser le contexte
 export const useProjetChantier = () => {
   const context = useContext(ProjetChantierContext);
-  if (context === undefined) {
-    throw new Error('useProjetChantier doit être utilisé à l\'intérieur d\'un ProjetChantierProvider');
+  if (!context) {
+    throw new Error("useProjetChantier doit être utilisé à l'intérieur d'un ProjetChantierProvider");
   }
   return context;
 };
 
-// Provider
-interface ProjetChantierProviderProps {
-  children: ReactNode;
-}
-
-export const ProjetChantierProvider: React.FC<ProjetChantierProviderProps> = ({ children }) => {
-  const [state, dispatch] = useReducer(projetChantierReducer, initialState);
-  const { loadFromLocalStorage, saveToLocalStorage } = useLocalStorageSync<ProjetChantierState>('projetsChantier', state);
+// Provider du contexte
+export const ProjetChantierProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  // Accéder au contexte du projet pour les données de pièces et travaux
   const { state: projectState, dispatch: projectDispatch } = useProject();
-
-  // Charger les données depuis localStorage au démarrage
+  
+  // Utiliser le hook useLocalStorageSync pour la persistance
+  const [storedProjets, setStoredProjets, saveProjets, loadProjets] = useLocalStorageSync<ProjetChantier[]>(
+    'projetsChantier', 
+    [],
+    { syncOnMount: true, autoSave: false }
+  );
+  
+  // Initialiser le reducer avec les données sauvegardées
+  const [state, dispatch] = useReducer(projetChantierReducer, { 
+    projets: storedProjets,
+    projetActif: null
+  });
+  
+  // Sauvegarder les projets quand ils changent
   useEffect(() => {
-    const savedData = loadFromLocalStorage();
-    if (savedData) {
-      dispatch({ type: 'SET_PROJETS', payload: savedData.projets });
-      // Si un projet actif était sauvegardé, le restaurer
-      if (savedData.projetActif) {
-        dispatch({ type: 'SET_PROJET_ACTIF', payload: savedData.projetActif });
+    setStoredProjets(state.projets);
+    saveProjets();
+  }, [state.projets, setStoredProjets, saveProjets]);
+  
+  // Sauvegarder un projet avec les données du projet actuel
+  const sauvegarderProjet = (projetData: Partial<ProjetChantier>) => {
+    const now = new Date();
+    const currentDate = format(now, 'yyyy-MM-dd HH:mm:ss');
+    
+    // Récupérer l'ID du projet s'il existe déjà, sinon en créer un nouveau
+    const projetId = state.projetActif?.id || uuidv4();
+    
+    // Créer ou mettre à jour le projet
+    const projet: ProjetChantier = {
+      id: projetId,
+      clientId: projetData.clientId || state.projetActif?.clientId || '',
+      nomProjet: projetData.nomProjet || state.projetActif?.nomProjet || '',
+      descriptionProjet: projetData.descriptionProjet || state.projetActif?.descriptionProjet || '',
+      adresseChantier: projetData.adresseChantier || state.projetActif?.adresseChantier || '',
+      occupant: projetData.occupant || state.projetActif?.occupant || '',
+      infoComplementaire: projetData.infoComplementaire || state.projetActif?.infoComplementaire || '',
+      dateCreation: state.projetActif?.dateCreation || currentDate,
+      dateModification: currentDate,
+      projectData: {
+        rooms: projectState.rooms,
+        property: projectState.property,
+        travaux: projectState.travaux
       }
-    }
-  }, []);
-
-  // Fonction pour générer un nom de fichier
-  const genererNomFichier = (projet: Partial<ProjetChantier>, nomClient: string): string => {
-    const datePart = format(new Date(), 'MMyy', { locale: fr });
-    const intitule = projet.nomProjet?.substring(0, 20) || '';
-    const adresse = projet.adresseChantier?.substring(0, 20) || '';
-    
-    return `${nomClient}_${datePart}_${intitule}_${adresse}`.replace(/\s+/g, '_');
-  };
-
-  // Fonction pour sauvegarder un projet complet (infos projet + pièces + travaux)
-  const sauvegarderProjet = (
-    projetData: Omit<ProjetChantier, 'id' | 'dateCreation' | 'dateModification'>
-  ) => {
-    const maintenant = new Date().toISOString();
-    
-    // Extraction des données du projectState
-    const projectData = {
-      rooms: projectState.rooms,
-      property: projectState.property,
-      travaux: projectState.travaux
     };
     
-    // Si projetActif existe et qu'on est en train de le mettre à jour
-    if (state.projetActif && projetData.clientId === state.projetActif.clientId) {
-      const projetMisAJour: ProjetChantier = {
-        ...state.projetActif,
-        ...projetData,
-        projectData: projectData, // Ajout des données du projectState
-        dateModification: maintenant
-      };
-      
-      dispatch({ type: 'UPDATE_PROJET', payload: projetMisAJour });
-    } else {
-      // Création d'un nouveau projet
-      const nouveauProjet: ProjetChantier = {
-        id: uuidv4(),
-        ...projetData,
-        projectData: projectData, // Ajout des données du projectState
-        dateCreation: maintenant,
-        dateModification: maintenant
-      };
-      
-      dispatch({ type: 'ADD_PROJET', payload: nouveauProjet });
-    }
+    // Envoyer l'action pour ajouter ou mettre à jour le projet
+    dispatch({ type: 'ADD_PROJET', payload: projet });
   };
-
-  // Fonction pour charger un projet complet
+  
+  // Charger un projet et ses données
   const chargerProjet = (projetId: string) => {
-    const projetACharger = state.projets.find(p => p.id === projetId);
+    // Trouver le projet par son ID
+    const projet = state.projets.find(p => p.id === projetId);
     
-    if (projetACharger) {
-      // Mettre à jour projetActif
-      dispatch({ type: 'SET_PROJET_ACTIF', payload: projetACharger });
+    if (projet && projet.projectData) {
+      // Définir le projet comme actif
+      dispatch({ type: 'SET_PROJET_ACTIF', payload: projet });
       
-      // Charger les données du projet (rooms, property, travaux) si elles existent
-      if (projetACharger.projectData) {
-        // Mettre à jour les pièces
-        if (projetACharger.projectData.rooms) {
-          projectDispatch({ type: 'SET_ROOMS', payload: projetACharger.projectData.rooms });
-        }
-        
-        // Mettre à jour les propriétés
-        if (projetACharger.projectData.property) {
-          projectDispatch({ type: 'SET_PROPERTY', payload: projetACharger.projectData.property });
-        }
-        
-        // Mettre à jour les travaux
-        if (projetACharger.projectData.travaux) {
-          projectDispatch({ type: 'SET_TRAVAUX', payload: projetACharger.projectData.travaux });
-        }
-      }
+      // Charger les données du projet dans le contexte Project
+      projectDispatch({ type: 'SET_ROOMS', payload: projet.projectData.rooms });
+      projectDispatch({ type: 'SET_PROPERTY', payload: projet.projectData.property });
+      projectDispatch({ type: 'SET_TRAVAUX', payload: projet.projectData.travaux });
     }
   };
   
-  // Fonction pour démarrer un nouveau projet
+  // Créer un nouveau projet vide
   const nouveauProjet = () => {
-    // Effacer le projet actif
+    // Réinitialiser le projet actif
     dispatch({ type: 'SET_PROJET_ACTIF', payload: null });
     
-    // Réinitialiser le projectState
+    // Réinitialiser les données du projet
     projectDispatch({ type: 'RESET_PROJECT' });
+  };
+  
+  // Générer un nom de fichier pour le projet
+  const genererNomFichier = (projet: Partial<ProjetChantier>, nomClient: string): string => {
+    const date = format(new Date(), 'yyyyMMdd', { locale: fr });
+    const nomProjet = (projet.nomProjet || '').replace(/[^a-zA-Z0-9]/g, '_');
+    const adresseSimplifiee = (projet.adresseChantier || '')
+      .split(',')[0]
+      .replace(/[^a-zA-Z0-9]/g, '_')
+      .substring(0, 20);
+    
+    return `devis_${date}_${nomClient}_${nomProjet}_${adresseSimplifiee}`.replace(/_{2,}/g, '_');
   };
 
   return (
-    <ProjetChantierContext.Provider
-      value={{
-        state,
-        dispatch,
-        sauvegarderProjet,
-        chargerProjet,
-        genererNomFichier,
-        nouveauProjet
+    <ProjetChantierContext.Provider 
+      value={{ 
+        state, 
+        dispatch, 
+        sauvegarderProjet, 
+        chargerProjet, 
+        nouveauProjet, 
+        genererNomFichier 
       }}
     >
       {children}

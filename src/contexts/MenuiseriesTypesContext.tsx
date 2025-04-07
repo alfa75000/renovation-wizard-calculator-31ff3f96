@@ -1,19 +1,23 @@
 
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
-import { TypeMenuiserie } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
+import { useLocalStorageSync } from '@/hooks/useLocalStorageSync';
+import { TypeMenuiserie } from '@/types';
 
+// Surfaces de référence pour les menuiseries
 export const surfacesReference = [
-  { id: 'SurfaceNetteSol', label: 'Surface Nette Sol' },
-  { id: 'SurfaceNettePlafond', label: 'Surface Nette Plafond' },
-  { id: 'SurfaceNetteMurs', label: 'Surface Nette Murs' },
-  { id: 'LineaireNet', label: 'Linéaire Net (mètres)' },
+  { id: 'sol', label: 'Impact au sol' },
+  { id: 'mur', label: 'Impact au mur' },
+  { id: 'plafond', label: 'Impact au plafond' },
+  { id: 'aucun', label: 'Pas d\'impact' },
 ];
 
+// Interface pour l'état des types de menuiseries
 interface MenuiseriesTypesState {
   typesMenuiseries: TypeMenuiserie[];
 }
 
+// Actions pour le reducer
 type MenuiseriesTypesAction =
   | { type: 'SET_TYPES'; payload: TypeMenuiserie[] }
   | { type: 'ADD_TYPE'; payload: TypeMenuiserie }
@@ -21,41 +25,46 @@ type MenuiseriesTypesAction =
   | { type: 'DELETE_TYPE'; payload: string }
   | { type: 'RESET_TYPES' };
 
-// État initial avec quelques exemples de types de menuiseries
-const initialTypes: TypeMenuiserie[] = [
+// Données par défaut pour les types de menuiseries
+const defaultTypes: TypeMenuiserie[] = [
   {
     id: uuidv4(),
-    nom: 'Fenêtre standard',
-    hauteur: 120,
-    largeur: 80,
-    surfaceReference: 'SurfaceNetteMurs',
-    impactePlinthe: false,
-    description: 'Fenêtre standard pour salon ou chambre'
-  },
-  {
-    id: uuidv4(),
-    nom: 'Porte intérieure',
-    hauteur: 210,
+    type: 'porte',
+    nom: 'Porte standard',
+    hauteur: 205,
     largeur: 83,
-    surfaceReference: 'SurfaceNetteMurs',
-    impactePlinthe: true,
-    description: 'Porte intérieure standard'
+    description: 'Porte intérieure standard',
+    surfaceReference: 'mur',
+    impactePlinthe: true
   },
   {
     id: uuidv4(),
-    nom: 'Fenêtre de toit',
-    hauteur: 90,
-    largeur: 60,
-    surfaceReference: 'SurfaceNettePlafond',
-    impactePlinthe: false,
-    description: 'Fenêtre pour toit en pente'
+    type: 'fenetre',
+    nom: 'Fenêtre standard',
+    hauteur: 115,
+    largeur: 100,
+    description: 'Fenêtre classique',
+    surfaceReference: 'mur',
+    impactePlinthe: false
+  },
+  {
+    id: uuidv4(),
+    type: 'velux',
+    nom: 'Velux standard',
+    hauteur: 78,
+    largeur: 98,
+    description: 'Fenêtre de toit',
+    surfaceReference: 'plafond',
+    impactePlinthe: false
   }
 ];
 
+// État initial
 const initialState: MenuiseriesTypesState = {
-  typesMenuiseries: initialTypes
+  typesMenuiseries: []
 };
 
+// Reducer pour gérer les actions
 const menuiseriesTypesReducer = (state: MenuiseriesTypesState, action: MenuiseriesTypesAction): MenuiseriesTypesState => {
   switch (action.type) {
     case 'SET_TYPES':
@@ -65,31 +74,33 @@ const menuiseriesTypesReducer = (state: MenuiseriesTypesState, action: Menuiseri
     case 'UPDATE_TYPE':
       return {
         ...state,
-        typesMenuiseries: state.typesMenuiseries.map(type =>
-          type.id === action.payload.id ? action.payload.type : type
+        typesMenuiseries: state.typesMenuiseries.map(type => 
+          type.id === action.payload.id 
+            ? { ...action.payload.type, id: type.id } 
+            : type
         )
       };
     case 'DELETE_TYPE':
-      return {
-        ...state,
-        typesMenuiseries: state.typesMenuiseries.filter(type => type.id !== action.payload)
-      };
+      return { ...state, typesMenuiseries: state.typesMenuiseries.filter(type => type.id !== action.payload) };
     case 'RESET_TYPES':
-      localStorage.removeItem('typesMenuiseries');
-      return { ...initialState };
+      return { typesMenuiseries: defaultTypes };
     default:
       return state;
   }
 };
 
-const MenuiseriesTypesContext = createContext<{
+// Création du contexte
+interface MenuiseriesTypesContextType {
   state: MenuiseriesTypesState;
   dispatch: React.Dispatch<MenuiseriesTypesAction>;
-}>({
+}
+
+const MenuiseriesTypesContext = createContext<MenuiseriesTypesContextType>({
   state: initialState,
   dispatch: () => null,
 });
 
+// Hook personnalisé pour utiliser le contexte
 export const useMenuiseriesTypes = () => {
   const context = useContext(MenuiseriesTypesContext);
   if (!context) {
@@ -98,28 +109,31 @@ export const useMenuiseriesTypes = () => {
   return context;
 };
 
+// Provider du contexte
 export const MenuiseriesTypesProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [state, dispatch] = useReducer(menuiseriesTypesReducer, initialState);
-
-  // Charger les données depuis localStorage au démarrage
+  // Utiliser le hook useLocalStorageSync pour la persistance
+  const [storedTypes, setStoredTypes, saveTypes, loadTypes] = useLocalStorageSync<TypeMenuiserie[]>(
+    'menuiseriesTypes', 
+    defaultTypes,
+    { syncOnMount: true, autoSave: false }
+  );
+  
+  // Initialiser le reducer avec les données sauvegardées
+  const [state, dispatch] = useReducer(menuiseriesTypesReducer, { typesMenuiseries: storedTypes });
+  
+  // Sauvegarder les types quand ils changent
   useEffect(() => {
-    const savedTypes = localStorage.getItem('typesMenuiseries');
-    if (savedTypes) {
-      try {
-        const parsedTypes = JSON.parse(savedTypes);
-        if (Array.isArray(parsedTypes) && parsedTypes.length > 0) {
-          dispatch({ type: 'SET_TYPES', payload: parsedTypes });
-        }
-      } catch (error) {
-        console.error("Erreur lors du chargement des types de menuiseries:", error);
-      }
+    setStoredTypes(state.typesMenuiseries);
+    saveTypes();
+  }, [state.typesMenuiseries, setStoredTypes, saveTypes]);
+  
+  // Vérifier si les types sont vides et les initialiser si nécessaire
+  useEffect(() => {
+    if (state.typesMenuiseries.length === 0) {
+      console.log("Initialisation des types de menuiseries avec les valeurs par défaut");
+      dispatch({ type: 'SET_TYPES', payload: defaultTypes });
     }
-  }, []);
-
-  // Sauvegarder les données dans localStorage quand elles changent
-  useEffect(() => {
-    localStorage.setItem('typesMenuiseries', JSON.stringify(state.typesMenuiseries));
-  }, [state.typesMenuiseries]);
+  }, [state.typesMenuiseries.length]);
 
   return (
     <MenuiseriesTypesContext.Provider value={{ state, dispatch }}>

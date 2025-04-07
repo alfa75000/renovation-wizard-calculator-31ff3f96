@@ -1,145 +1,134 @@
 
-import React, { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { useLocalStorageSync } from '@/hooks/useLocalStorageSync';
-
-// Interface pour un client
-export interface Client {
-  id: string;
-  nom: string;
-  prenom: string;
-  adresse: string;
-  tel1: string;
-  tel2: string;
-  email: string;
-  typeClient: string;
-  autreInfo: string;
-  infosComplementaires: string;
-}
+import { Client, ClientsState, ClientsAction, ClientsContextType } from '@/types';
 
 // Types de clients disponibles
 export const typesClients = [
   { id: 'particulier', label: 'Particulier' },
-  { id: 'societe', label: 'Société' },
-  { id: 'gestionnaire', label: 'Gestionnaire de biens immobiliers' },
-  { id: 'syndic', label: 'Syndic' },
-  { id: 'architecte', label: 'Architecte' },
-  { id: 'bureau_etude', label: 'Bureau d\'étude' },
+  { id: 'professionnel', label: 'Professionnel' },
+  { id: 'entreprise', label: 'Entreprise' },
+  { id: 'association', label: 'Association' },
   { id: 'autre', label: 'Autre' }
 ];
 
-// Clients par défaut (pour faciliter les tests)
+// Données par défaut pour les clients
 const defaultClients: Client[] = [
   {
     id: uuidv4(),
     nom: 'Dupont',
     prenom: 'Jean',
     adresse: '15 rue de la Paix, 75001 Paris',
-    tel1: '01 23 45 67 89',
+    tel1: '06 12 34 56 78',
     tel2: '',
     email: 'jean.dupont@example.com',
     typeClient: 'particulier',
     autreInfo: '',
-    infosComplementaires: 'Client fidèle depuis 2020'
+    infosComplementaires: 'Client régulier depuis 2020'
   },
   {
     id: uuidv4(),
-    nom: 'Immobilier Plus',
+    nom: 'Martin Entreprise',
     prenom: '',
     adresse: '25 avenue des Champs-Élysées, 75008 Paris',
-    tel1: '01 23 45 67 90',
-    tel2: '06 12 34 56 78',
-    email: 'contact@immobilierplus.example.com',
-    typeClient: 'gestionnaire',
+    tel1: '01 87 65 43 21',
+    tel2: '06 98 76 54 32',
+    email: 'contact@martin-entreprise.com',
+    typeClient: 'entreprise',
     autreInfo: 'SIRET: 123 456 789 00012',
-    infosComplementaires: 'Gestionnaire de plusieurs immeubles dans le 8ème arrondissement'
+    infosComplementaires: 'Entreprise de taille moyenne, budget conséquent'
   }
 ];
 
 // État initial
-interface ClientsState {
-  clients: Client[];
-}
-
 const initialState: ClientsState = {
-  clients: []
+  clients: [],
+  selectedClient: null
 };
 
-// Actions
-type ClientsAction =
-  | { type: 'SET_CLIENTS'; payload: Client[] }
-  | { type: 'ADD_CLIENT'; payload: Client }
-  | { type: 'UPDATE_CLIENT'; payload: { id: string; client: Client } }
-  | { type: 'DELETE_CLIENT'; payload: string }
-  | { type: 'RESET_CLIENTS' };
-
-// Réducteur
+// Reducer pour gérer les actions
 const clientsReducer = (state: ClientsState, action: ClientsAction): ClientsState => {
   switch (action.type) {
     case 'SET_CLIENTS':
       return { ...state, clients: action.payload };
     case 'ADD_CLIENT':
-      return { ...state, clients: [...state.clients, { ...action.payload, id: action.payload.id || uuidv4() }] };
+      return { ...state, clients: [...state.clients, action.payload] };
     case 'UPDATE_CLIENT':
       return {
         ...state,
-        clients: state.clients.map(client =>
-          client.id === action.payload.id ? { ...action.payload.client } : client
-        )
+        clients: state.clients.map(client => 
+          client.id === action.payload.id 
+            ? action.payload.client 
+            : client
+        ),
+        selectedClient: state.selectedClient?.id === action.payload.id 
+          ? action.payload.client 
+          : state.selectedClient
       };
     case 'DELETE_CLIENT':
-      return {
-        ...state,
-        clients: state.clients.filter(client => client.id !== action.payload)
+      return { 
+        ...state, 
+        clients: state.clients.filter(client => client.id !== action.payload),
+        selectedClient: state.selectedClient?.id === action.payload 
+          ? null 
+          : state.selectedClient
+      };
+    case 'SELECT_CLIENT':
+      return { 
+        ...state, 
+        selectedClient: state.clients.find(client => client.id === action.payload) || null
       };
     case 'RESET_CLIENTS':
-      return { ...state, clients: defaultClients };
+      return { clients: defaultClients, selectedClient: null };
     default:
       return state;
   }
 };
 
 // Création du contexte
-interface ClientsContextType {
-  state: ClientsState;
-  dispatch: React.Dispatch<ClientsAction>;
-}
+const ClientsContext = createContext<ClientsContextType>({
+  state: initialState,
+  dispatch: () => null
+});
 
-const ClientsContext = createContext<ClientsContextType | undefined>(undefined);
-
-// Hook pour utiliser le contexte
+// Hook personnalisé pour utiliser le contexte
 export const useClients = () => {
   const context = useContext(ClientsContext);
-  if (context === undefined) {
-    throw new Error('useClients doit être utilisé à l\'intérieur d\'un ClientsProvider');
+  if (!context) {
+    throw new Error("useClients doit être utilisé à l'intérieur d'un ClientsProvider");
   }
   return context;
 };
 
-// Provider
-interface ClientsProviderProps {
-  children: ReactNode;
-}
-
-export const ClientsProvider: React.FC<ClientsProviderProps> = ({ children }) => {
-  const [state, dispatch] = useReducer(clientsReducer, initialState);
-  const { loadFromLocalStorage, saveToLocalStorage } = useLocalStorageSync<ClientsState>('clientsData', state);
-
-  // Charger les données depuis localStorage au démarrage
+// Provider du contexte
+export const ClientsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  // Utiliser le hook useLocalStorageSync pour la persistance
+  const [storedClients, setStoredClients, saveClients, loadClients] = useLocalStorageSync<Client[]>(
+    'clients', 
+    defaultClients,
+    { syncOnMount: true, autoSave: false }
+  );
+  
+  // Initialiser le reducer avec les données sauvegardées
+  const [state, dispatch] = useReducer(clientsReducer, { 
+    clients: storedClients,
+    selectedClient: null
+  });
+  
+  // Sauvegarder les clients quand ils changent
   useEffect(() => {
-    const savedData = loadFromLocalStorage();
-    if (savedData) {
-      // Si aucun client n'est enregistré, utiliser les clients par défaut
-      if (savedData.clients.length === 0) {
-        dispatch({ type: 'SET_CLIENTS', payload: defaultClients });
-      } else {
-        dispatch({ type: 'SET_CLIENTS', payload: savedData.clients });
-      }
-    } else {
-      // Pas de données sauvegardées, utiliser les valeurs par défaut
+    setStoredClients(state.clients);
+    saveClients();
+  }, [state.clients, setStoredClients, saveClients]);
+  
+  // Vérifier si les clients sont vides et les initialiser si nécessaire
+  useEffect(() => {
+    if (state.clients.length === 0) {
+      console.log("Initialisation des clients avec les valeurs par défaut");
       dispatch({ type: 'SET_CLIENTS', payload: defaultClients });
     }
-  }, []);
+  }, [state.clients.length]);
 
   return (
     <ClientsContext.Provider value={{ state, dispatch }}>

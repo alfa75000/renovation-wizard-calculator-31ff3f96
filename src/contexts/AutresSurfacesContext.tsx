@@ -1,91 +1,105 @@
 
-import React, { createContext, useContext, useReducer, useEffect } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
+import { v4 as uuidv4 } from 'uuid';
+import { useLocalStorageSync } from '@/hooks/useLocalStorageSync';
 import { TypeAutreSurface } from '@/types';
 
-// Interface pour définir l'état du contexte
+// Interface pour l'état des types d'autres surfaces
 interface AutresSurfacesState {
-  typesAutresSurfaces: TypeAutreSurface[];
+  types: TypeAutreSurface[];
 }
 
-// Actions possibles pour le reducer
+// Actions pour le reducer
 type AutresSurfacesAction =
   | { type: 'SET_TYPES'; payload: TypeAutreSurface[] }
   | { type: 'ADD_TYPE'; payload: TypeAutreSurface }
-  | { type: 'UPDATE_TYPE'; payload: TypeAutreSurface }
-  | { type: 'DELETE_TYPE'; payload: string };
+  | { type: 'UPDATE_TYPE'; payload: { id: string; type: TypeAutreSurface } }
+  | { type: 'DELETE_TYPE'; payload: string }
+  | { type: 'RESET_TYPES' };
 
-// État initial avec quelques types prédéfinis
+// Données par défaut pour les types d'autres surfaces
+const defaultTypes: TypeAutreSurface[] = [
+  {
+    id: uuidv4(),
+    designation: 'cheminee',
+    nom: 'Cheminée',
+    description: 'Cheminée standard',
+    surfaceImpacteeParDefaut: 'mur',
+    estDeduction: true
+  },
+  {
+    id: uuidv4(),
+    designation: 'placard',
+    nom: 'Placard',
+    description: 'Placard intégré',
+    surfaceImpacteeParDefaut: 'mur',
+    estDeduction: true
+  },
+  {
+    id: uuidv4(),
+    designation: 'niche',
+    nom: 'Niche murale',
+    description: 'Niche aménagée dans le mur',
+    surfaceImpacteeParDefaut: 'mur',
+    estDeduction: false
+  },
+  {
+    id: uuidv4(),
+    designation: 'escalier',
+    nom: 'Escalier',
+    description: 'Escalier intérieur',
+    surfaceImpacteeParDefaut: 'sol',
+    estDeduction: true
+  },
+  {
+    id: uuidv4(),
+    designation: 'autre',
+    nom: 'Autre surface',
+    description: 'Surface personnalisée',
+    surfaceImpacteeParDefaut: 'mur',
+    estDeduction: false
+  }
+];
+
+// État initial
 const initialState: AutresSurfacesState = {
-  typesAutresSurfaces: [
-    {
-      id: '1',
-      nom: 'Poteau',
-      description: 'Poteau porteur ou décoratif',
-      surfaceImpacteeParDefaut: 'mur',
-      estDeduction: false
-    },
-    {
-      id: '2',
-      nom: 'Trémie',
-      description: 'Ouverture dans une dalle',
-      surfaceImpacteeParDefaut: 'sol',
-      estDeduction: true
-    },
-    {
-      id: '3',
-      nom: 'Niche',
-      description: 'Niche murale',
-      surfaceImpacteeParDefaut: 'mur',
-      estDeduction: true
-    },
-    {
-      id: '4',
-      nom: 'Poutre apparente',
-      description: 'Poutre visible au plafond',
-      surfaceImpacteeParDefaut: 'plafond',
-      estDeduction: false
-    },
-    {
-      id: '5',
-      nom: 'Autre Surface',
-      description: 'Surface personnalisée',
-      surfaceImpacteeParDefaut: 'mur',
-      estDeduction: false
-    }
-  ]
+  types: []
 };
 
-// Fonction reducer pour gérer les modifications d'état
+// Reducer pour gérer les actions
 const autresSurfacesReducer = (state: AutresSurfacesState, action: AutresSurfacesAction): AutresSurfacesState => {
   switch (action.type) {
     case 'SET_TYPES':
-      return { ...state, typesAutresSurfaces: action.payload };
+      return { ...state, types: action.payload };
     case 'ADD_TYPE':
-      return { ...state, typesAutresSurfaces: [...state.typesAutresSurfaces, action.payload] };
+      return { ...state, types: [...state.types, action.payload] };
     case 'UPDATE_TYPE':
       return {
         ...state,
-        typesAutresSurfaces: state.typesAutresSurfaces.map(type =>
-          type.id === action.payload.id ? action.payload : type
+        types: state.types.map(type => 
+          type.id === action.payload.id 
+            ? { ...action.payload.type, id: type.id } 
+            : type
         )
       };
     case 'DELETE_TYPE':
-      return {
-        ...state,
-        typesAutresSurfaces: state.typesAutresSurfaces.filter(type => type.id !== action.payload)
-      };
+      return { ...state, types: state.types.filter(type => type.id !== action.payload) };
+    case 'RESET_TYPES':
+      return { types: defaultTypes };
     default:
       return state;
   }
 };
 
 // Création du contexte
-const AutresSurfacesContext = createContext<{
+interface AutresSurfacesContextType {
   state: AutresSurfacesState;
   dispatch: React.Dispatch<AutresSurfacesAction>;
-}>({
+}
+
+const AutresSurfacesContext = createContext<AutresSurfacesContextType>({
   state: initialState,
-  dispatch: () => null
+  dispatch: () => null,
 });
 
 // Hook personnalisé pour utiliser le contexte
@@ -98,50 +112,30 @@ export const useAutresSurfaces = () => {
 };
 
 // Provider du contexte
-export const AutresSurfacesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [state, dispatch] = useReducer(autresSurfacesReducer, initialState);
-
-  // Forcer la réinitialisation au montage
+export const AutresSurfacesProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  // Utiliser le hook useLocalStorageSync pour la persistance
+  const [storedTypes, setStoredTypes, saveTypes, loadTypes] = useLocalStorageSync<TypeAutreSurface[]>(
+    'autresSurfacesTypes', 
+    defaultTypes,
+    { syncOnMount: true, autoSave: false }
+  );
+  
+  // Initialiser le reducer avec les données sauvegardées
+  const [state, dispatch] = useReducer(autresSurfacesReducer, { types: storedTypes });
+  
+  // Sauvegarder les types quand ils changent
   useEffect(() => {
-    console.log("Réinitialisation forcée des types d'autres surfaces");
-    localStorage.removeItem('typesAutresSurfaces');
-  }, []);
-
-  // Charger les données depuis localStorage au démarrage
+    setStoredTypes(state.types);
+    saveTypes();
+  }, [state.types, setStoredTypes, saveTypes]);
+  
+  // Vérifier si les types sont vides et les initialiser si nécessaire
   useEffect(() => {
-    const loadSavedData = () => {
-      try {
-        const savedTypes = localStorage.getItem('typesAutresSurfaces');
-        if (savedTypes) {
-          const parsedTypes = JSON.parse(savedTypes);
-          if (Array.isArray(parsedTypes) && parsedTypes.length > 0) {
-            console.log("Chargement des types d'autres surfaces depuis localStorage:", parsedTypes);
-            dispatch({ type: 'SET_TYPES', payload: parsedTypes });
-          } else {
-            console.log("Aucun type d'autre surface trouvé dans localStorage");
-            // Utiliser les types par défaut
-            localStorage.setItem('typesAutresSurfaces', JSON.stringify(initialState.typesAutresSurfaces));
-            dispatch({ type: 'SET_TYPES', payload: initialState.typesAutresSurfaces });
-          }
-        } else {
-          console.log("Aucun type d'autre surface trouvé dans localStorage, initialisation avec les valeurs par défaut");
-          localStorage.setItem('typesAutresSurfaces', JSON.stringify(initialState.typesAutresSurfaces));
-          dispatch({ type: 'SET_TYPES', payload: initialState.typesAutresSurfaces });
-        }
-      } catch (error) {
-        console.error("Erreur lors du chargement des données:", error);
-        localStorage.setItem('typesAutresSurfaces', JSON.stringify(initialState.typesAutresSurfaces));
-        dispatch({ type: 'SET_TYPES', payload: initialState.typesAutresSurfaces });
-      }
-    };
-
-    loadSavedData();
-  }, []);
-
-  // Sauvegarder les données dans localStorage quand elles changent
-  useEffect(() => {
-    localStorage.setItem('typesAutresSurfaces', JSON.stringify(state.typesAutresSurfaces));
-  }, [state.typesAutresSurfaces]);
+    if (state.types.length === 0) {
+      console.log("Initialisation des types d'autres surfaces avec les valeurs par défaut");
+      dispatch({ type: 'SET_TYPES', payload: defaultTypes });
+    }
+  }, [state.types.length]);
 
   return (
     <AutresSurfacesContext.Provider value={{ state, dispatch }}>
