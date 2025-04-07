@@ -7,8 +7,14 @@ import { useLogger } from '@/hooks/useLogger';
 import { toast } from 'sonner';
 import db from '@/services/dbService';
 
-// Export Client pour utilisation dans d'autres fichiers
-export { Client };
+// Define the client types array for selection
+export const typesClients = [
+  { id: 'particulier', label: 'Particulier' },
+  { id: 'professionnel', label: 'Professionnel' },
+  { id: 'association', label: 'Association' },
+  { id: 'collectivite', label: 'Collectivité' },
+  { id: 'autre', label: 'Autre' }
+];
 
 // Interface pour l'état du contexte des clients
 interface ClientsState {
