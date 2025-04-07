@@ -24,9 +24,16 @@ export const checkSupabaseConnection = async () => {
     }
 
     // Vérifier les tables disponibles
-    const { data: tablesData, error: tablesError } = await supabase
-      .rpc('list_tables')
-      .catch(() => ({ data: null, error: { message: "La fonction list_tables n'existe pas" } }));
+    let tablesData = null;
+    let tablesError = null;
+    
+    try {
+      const result = await supabase.rpc('list_tables');
+      tablesData = result.data;
+      tablesError = result.error;
+    } catch (err) {
+      tablesError = { message: "La fonction list_tables n'existe pas" };
+    }
     
     // Récupérer les structures des tables principales
     const { data: workTypesColumns } = await supabase

@@ -5,28 +5,10 @@ import { toast } from 'sonner';
 // Récupérer tous les types de travaux
 export const fetchWorkTypes = async (): Promise<WorkType[]> => {
   try {
-    // Vérifions d'abord quelles colonnes sont disponibles
-    const { data: columnsData, error: columnsError } = await supabase
-      .from('work_types')
-      .select('*')
-      .limit(1);
-    
-    console.log("Colonnes de work_types:", columnsData ? Object.keys(columnsData[0] || {}) : 'Aucune donnée');
-    
-    if (columnsError) {
-      console.error('Erreur lors de la vérification des colonnes de work_types:', columnsError);
-      toast.error('Erreur lors de la récupération des types de travaux');
-      return [];
-    }
-    
-    // Déterminer le nom de la colonne (name ou Name)
-    const nameColumn = columnsData && columnsData[0] && 'Name' in columnsData[0] ? 'Name' : 'name';
-    
-    // Utiliser le nom de colonne correct
     const { data, error } = await supabase
       .from('work_types')
       .select('*')
-      .order(nameColumn, { ascending: true });
+      .order('name', { ascending: true });
     
     if (error) {
       console.error('Erreur lors de la récupération des types de travaux:', error);
@@ -34,18 +16,7 @@ export const fetchWorkTypes = async (): Promise<WorkType[]> => {
       return [];
     }
     
-    // Si la colonne est "Name", transformons-la en "name" pour la cohérence
-    const formattedData = data.map(item => {
-      if ('Name' in item) {
-        return {
-          ...item,
-          name: item.Name,
-        };
-      }
-      return item;
-    });
-    
-    return formattedData;
+    return data;
   } catch (error) {
     console.error('Exception lors de la récupération des types de travaux:', error);
     toast.error('Erreur lors de la récupération des types de travaux');
