@@ -18,6 +18,7 @@ export interface Menuiserie {
   largeur: string;
   hauteur: string;
   surface: string;
+  name?: string; // Ajout du champ name optionnel pour compatibilité
 }
 
 export interface AutreSurface {
@@ -38,21 +39,24 @@ export interface PropertyType {
 
 export interface Travail {
   id: string;
-  type: string;
-  designation: string;
-  unite: string;
-  quantite: string;
-  prixUnitaire: string;
-  prixTotal: string;
-  
-  // Propriétés utilisées dans le code mais non définies dans l'interface originale
   pieceId: string;
+  typeTravaux?: string;
   typeTravauxLabel: string;
+  sousType?: string;
   sousTypeLabel: string;
-  prixFournitures: string;
-  prixMainOeuvre: string;
-  tauxTVA: string;
+  unite: string;
+  quantite: number;
+  prixUnitaire: number;
+  prixTotal?: number;
+  prixFournitures: number;
+  prixMainOeuvre: number;
+  tauxTVA: number;
   personnalisation?: string;
+  menuiserieId?: string;
+  
+  // Propriétés de compatibilité avec l'ancien code
+  type?: string;
+  designation?: string;
 }
 
 // Types pour les clients
@@ -124,4 +128,6 @@ export interface ProjetChantier {
 export interface Piece {
   id: string;
   name: string;
+  menuiseries?: Menuiserie[];
+  surface?: string;
 }

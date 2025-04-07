@@ -1,8 +1,7 @@
 
-import React, { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
-import { v4 as uuidv4 } from 'uuid';
+import React, { createContext, useContext, useReducer, useEffect, useState, ReactNode } from 'react';
 import { Client } from '@/types';
-import { useLocalStorageSync } from '@/hooks/useLocalStorageSync';
+import { v4 as uuidv4 } from 'uuid';
 import { useLogger } from '@/hooks/useLogger';
 import { toast } from 'sonner';
 import db from '@/services/dbService';
@@ -22,30 +21,46 @@ interface ClientsState {
   clientSelectionne: Client | null;
 }
 
-// État initial
-const initialState: ClientsState = {
-  clients: [],
-  clientSelectionne: null
-};
-
-// Types d'actions
+// Type pour les actions possibles sur l'état des clients
 type ClientsAction =
   | { type: 'SET_CLIENTS'; payload: Client[] }
   | { type: 'ADD_CLIENT'; payload: Client }
   | { type: 'UPDATE_CLIENT'; payload: Client }
   | { type: 'DELETE_CLIENT'; payload: string }
-  | { type: 'SELECT_CLIENT'; payload: Client | null };
+  | { type: 'SELECT_CLIENT'; payload: string | null };
 
-// Réducteur
+// Définition de l'interface pour le contexte
+export interface ClientsContextType {
+  state: ClientsState;
+  dispatch: React.Dispatch<ClientsAction>;
+  addClient: (client: Omit<Client, 'id'>) => Promise<Client>;
+  updateClient: (client: Client) => Promise<void>;
+  deleteClient: (id: string) => Promise<void>;
+  resetClients: () => Promise<void>;
+  selectClient: (id: string | null) => void;
+}
+
+// Création du contexte avec une valeur par défaut
+const ClientsContext = createContext<ClientsContextType | undefined>(undefined);
+
+// État initial pour le réducteur
+const initialState: ClientsState = {
+  clients: [],
+  clientSelectionne: null
+};
+
+// Fonction de réduction pour gérer les mises à jour d'état
 const clientsReducer = (state: ClientsState, action: ClientsAction): ClientsState => {
   switch (action.type) {
     case 'SET_CLIENTS':
-      return { ...state, clients: action.payload };
+      return {
+        ...state,
+        clients: action.payload
+      };
     case 'ADD_CLIENT':
       return {
         ...state,
-        clients: [...state.clients, action.payload],
-        clientSelectionne: action.payload
+        clients: [...state.clients, action.payload]
       };
     case 'UPDATE_CLIENT':
       return {
@@ -53,325 +68,246 @@ const clientsReducer = (state: ClientsState, action: ClientsAction): ClientsStat
         clients: state.clients.map(client =>
           client.id === action.payload.id ? action.payload : client
         ),
-        clientSelectionne: action.payload
+        clientSelectionne: state.clientSelectionne?.id === action.payload.id 
+          ? action.payload 
+          : state.clientSelectionne
       };
     case 'DELETE_CLIENT':
       return {
         ...state,
         clients: state.clients.filter(client => client.id !== action.payload),
-        clientSelectionne: state.clientSelectionne?.id === action.payload ? null : state.clientSelectionne
+        clientSelectionne: state.clientSelectionne?.id === action.payload 
+          ? null 
+          : state.clientSelectionne
       };
     case 'SELECT_CLIENT':
-      return { ...state, clientSelectionne: action.payload };
+      return {
+        ...state,
+        clientSelectionne: action.payload 
+          ? state.clients.find(client => client.id === action.payload) || null 
+          : null
+      };
     default:
       return state;
   }
 };
 
-// Types pour le contexte
-interface ClientsContextType {
-  state: ClientsState;
-  dispatch: React.Dispatch<ClientsAction>;
-  ajouterClient: (clientData: Omit<Client, 'id'>) => Promise<void>;
-  modifierClient: (id: string, clientData: Omit<Client, 'id'>) => Promise<void>;
-  supprimerClient: (id: string) => Promise<void>;
-  selectionnerClient: (client: Client | null) => void;
-  resetClients: () => Promise<void>;
-}
-
-// Création du contexte avec une valeur par défaut
-const ClientsContext = createContext<ClientsContextType | undefined>(undefined);
-
-// Hook personnalisé pour utiliser le contexte
-export const useClients = () => {
-  const context = useContext(ClientsContext);
-  if (context === undefined) {
-    throw new Error('useClients doit être utilisé à l\'intérieur d\'un ClientsProvider');
-  }
-  return context;
-};
-
-// Valeurs par défaut pour les clients
-const defaultClients: Client[] = [
-  {
-    id: 'c1',
-    nom: 'Durant',
-    prenom: 'Jean',
-    adresse: '15 rue de la Paix, 75001 Paris',
-    tel1: '01 23 45 67 89',
-    email: 'jean.durant@mail.com',
-    typeClient: 'Particulier',
-    autreInfo: 'Client fidèle'
-  },
-  {
-    id: 'c2',
-    nom: 'Entreprise XYZ',
-    prenom: '',
-    adresse: '25 avenue des Champs-Élysées, 75008 Paris',
-    tel1: '01 98 76 54 32',
-    tel2: '06 12 34 56 78',
-    email: 'contact@entreprisexyz.com',
-    typeClient: 'Professionnel',
-    autreInfo: 'Grande entreprise'
-  }
-];
-
-// Provider
-interface ClientsProviderProps {
-  children: ReactNode;
-}
-
-export const ClientsProvider: React.FC<ClientsProviderProps> = ({ children }) => {
+// Composant provider du contexte
+export const ClientsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const logger = useLogger('ClientsProvider');
   const [state, dispatch] = useReducer(clientsReducer, initialState);
-  const { loadFromLocalStorage, saveToLocalStorage } = useLocalStorageSync<ClientsState>('clients', state);
-  
-  // Variable pour éviter les doubles notifications
-  const [isSilentOperation, setIsSilentOperation] = React.useState(false);
-  
-  // Charger les clients au démarrage
+  const [isDbInitialized, setIsDbInitialized] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Charger les clients depuis IndexedDB ou localStorage au démarrage
   useEffect(() => {
     const loadClients = async () => {
+      setIsLoading(true);
       try {
-        // Essayer de charger depuis IndexedDB
-        let isDbAvailable = false;
-        try {
-          isDbAvailable = await db.isAvailable();
-        } catch (err) {
-          logger.warn("IndexedDB n'est pas disponible", 'system');
-        }
+        // Vérifier si IndexedDB est disponible
+        const isDbAvailable = await db.isAvailable();
+        setIsDbInitialized(isDbAvailable);
         
         if (isDbAvailable) {
-          logger.info("Chargement des clients depuis IndexedDB", 'storage');
+          // Charger depuis IndexedDB
           const clients = await db.getAllClients();
-          
           if (clients.length > 0) {
             dispatch({ type: 'SET_CLIENTS', payload: clients });
+            logger.info(`${clients.length} clients chargés depuis IndexedDB`, 'storage');
           } else {
             // Si aucun client dans IndexedDB, essayer localStorage
-            const savedData = loadFromLocalStorage();
-            if (savedData && savedData.clients.length > 0) {
-              logger.info("Chargement des clients depuis localStorage", 'storage');
-              dispatch({ type: 'SET_CLIENTS', payload: savedData.clients });
-              
-              // Synchroniser les clients avec IndexedDB
-              await db.syncFromLocalStorage(savedData.clients);
-            } else {
-              // Si aucun client nulle part, initialiser avec les valeurs par défaut
-              logger.info("Initialisation des clients avec les valeurs par défaut", 'storage');
-              dispatch({ type: 'SET_CLIENTS', payload: defaultClients });
-              
-              // Enregistrer dans IndexedDB
-              await db.resetClients(defaultClients);
+            const savedClients = localStorage.getItem('clients');
+            if (savedClients) {
+              const parsedClients = JSON.parse(savedClients) as Client[];
+              if (Array.isArray(parsedClients) && parsedClients.length > 0) {
+                // Synchroniser avec IndexedDB
+                await db.syncFromLocalStorage(parsedClients);
+                dispatch({ type: 'SET_CLIENTS', payload: parsedClients });
+                logger.info(`${parsedClients.length} clients chargés depuis localStorage et synchronisés`, 'storage');
+              }
             }
           }
         } else {
-          // Charger depuis localStorage
-          const savedData = loadFromLocalStorage();
-          if (savedData && savedData.clients.length > 0) {
-            logger.info("Chargement des clients depuis localStorage", 'storage');
-            dispatch({ type: 'SET_CLIENTS', payload: savedData.clients });
-          } else {
-            // Si aucun client, initialiser avec les valeurs par défaut
-            logger.info("Initialisation des clients avec les valeurs par défaut", 'storage');
-            dispatch({ type: 'SET_CLIENTS', payload: defaultClients });
+          // Si IndexedDB n'est pas disponible, utiliser localStorage
+          const savedClients = localStorage.getItem('clients');
+          if (savedClients) {
+            const parsedClients = JSON.parse(savedClients) as Client[];
+            if (Array.isArray(parsedClients)) {
+              dispatch({ type: 'SET_CLIENTS', payload: parsedClients });
+              logger.info(`${parsedClients.length} clients chargés depuis localStorage`, 'storage');
+            }
           }
         }
       } catch (error) {
-        logger.error("Erreur lors du chargement des clients", error as Error, 'storage');
-        
-        // En cas d'erreur, essayer de charger depuis localStorage
-        const savedData = loadFromLocalStorage();
-        if (savedData && savedData.clients.length > 0) {
-          logger.info("Chargement des clients depuis localStorage (fallback)", 'storage');
-          dispatch({ type: 'SET_CLIENTS', payload: savedData.clients });
-        } else {
-          // Si aucun client, initialiser avec les valeurs par défaut
-          logger.info("Initialisation des clients avec les valeurs par défaut (fallback)", 'storage');
-          dispatch({ type: 'SET_CLIENTS', payload: defaultClients });
-        }
+        logger.error('Erreur lors du chargement des clients', error as Error, 'storage');
+        toast.error('Erreur lors du chargement des clients');
+      } finally {
+        setIsLoading(false);
       }
     };
-    
+
     loadClients();
-  }, [loadFromLocalStorage, logger]);
-  
+  }, [logger]);
+
   // Sauvegarder les clients lorsqu'ils changent
   useEffect(() => {
-    const saveClients = async () => {
-      // Sauvegarder dans localStorage pour la compatibilité
-      saveToLocalStorage(state);
-      
-      // Essayer de sauvegarder dans IndexedDB
-      try {
-        const isDbAvailable = await db.isAvailable();
-        
-        if (isDbAvailable && state.clients.length > 0) {
-          // Pour chaque client, sauvegarder ou mettre à jour
-          for (const client of state.clients) {
-            await db.updateClient(client);
+    if (!isLoading && state.clients.length > 0) {
+      const saveClients = async () => {
+        try {
+          // Toujours sauvegarder dans localStorage pour la compatibilité
+          localStorage.setItem('clients', JSON.stringify(state.clients));
+          
+          // Si IndexedDB est disponible
+          if (isDbInitialized) {
+            // Pour chaque client, vérifier s'il existe déjà et mettre à jour ou ajouter
+            for (const client of state.clients) {
+              try {
+                await db.updateClient(client);
+              } catch (error) {
+                logger.error(`Erreur lors de la sauvegarde du client ${client.id} dans IndexedDB`, error as Error, 'storage');
+              }
+            }
           }
-          logger.debug("Clients sauvegardés dans IndexedDB", 'storage');
+          
+          logger.debug('Clients sauvegardés', 'storage');
+        } catch (error) {
+          logger.error('Erreur lors de la sauvegarde des clients', error as Error, 'storage');
         }
-      } catch (error) {
-        logger.error("Erreur lors de la sauvegarde des clients dans IndexedDB", error as Error, 'storage');
-      }
-    };
-    
-    // Ne sauvegarder que si des clients sont présents
-    if (state.clients.length > 0) {
+      };
+
       saveClients();
     }
-  }, [state, saveToLocalStorage, logger]);
-  
-  // Fonction pour ajouter un client
-  const ajouterClient = async (clientData: Omit<Client, 'id'>) => {
+  }, [state.clients, isDbInitialized, isLoading, logger]);
+
+  // Ajouter un nouveau client
+  const addClient = async (clientData: Omit<Client, 'id'>): Promise<Client> => {
     try {
-      const client: Client = {
+      const newClient: Client = {
         id: uuidv4(),
         ...clientData
       };
       
-      // Mettre à jour le state
-      dispatch({ type: 'ADD_CLIENT', payload: client });
+      // Ajouter à l'état local via le réducteur
+      dispatch({ type: 'ADD_CLIENT', payload: newClient });
       
-      // Essayer de sauvegarder dans IndexedDB
-      try {
-        const isDbAvailable = await db.isAvailable();
-        if (isDbAvailable) {
-          await db.addClient(client);
-        }
-      } catch (dbError) {
-        logger.error("Erreur lors de l'ajout du client dans IndexedDB", dbError as Error, 'storage');
+      // Enregistrer dans IndexedDB si disponible
+      if (isDbInitialized) {
+        await db.addClient(newClient);
       }
       
-      if (!isSilentOperation) {
-        toast.success(`Client "${client.nom} ${client.prenom}" ajouté avec succès`);
-      }
-      logger.info(`Client ajouté: ${client.id}`, 'data');
+      toast.success(`Client ajouté: ${newClient.nom} ${newClient.prenom}`);
+      logger.info(`Nouveau client ajouté: ${newClient.id}`, 'storage');
+      
+      return newClient;
     } catch (error) {
-      logger.error("Erreur lors de l'ajout d'un client", error as Error, 'data');
-      if (!isSilentOperation) {
-        toast.error(`Erreur lors de l'ajout du client: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
-      }
+      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
+      logger.error('Erreur lors de l\'ajout d\'un client', error as Error, 'storage');
+      toast.error(`Erreur lors de l'ajout du client: ${errorMessage}`);
       throw error;
     }
   };
-  
-  // Fonction pour modifier un client
-  const modifierClient = async (id: string, clientData: Omit<Client, 'id'>) => {
+
+  // Mettre à jour un client existant
+  const updateClient = async (client: Client): Promise<void> => {
     try {
-      const client: Client = {
-        id,
-        ...clientData
-      };
-      
-      // Mettre à jour le state
+      // Mettre à jour l'état local via le réducteur
       dispatch({ type: 'UPDATE_CLIENT', payload: client });
       
-      // Essayer de sauvegarder dans IndexedDB
-      try {
-        const isDbAvailable = await db.isAvailable();
-        if (isDbAvailable) {
-          await db.updateClient(client);
-        }
-      } catch (dbError) {
-        logger.error("Erreur lors de la mise à jour du client dans IndexedDB", dbError as Error, 'storage');
+      // Enregistrer dans IndexedDB si disponible
+      if (isDbInitialized) {
+        await db.updateClient(client);
       }
       
-      if (!isSilentOperation) {
-        toast.success(`Client "${client.nom} ${client.prenom}" mis à jour avec succès`);
-      }
-      logger.info(`Client mis à jour: ${id}`, 'data');
+      toast.success(`Client mis à jour: ${client.nom} ${client.prenom}`);
+      logger.info(`Client mis à jour: ${client.id}`, 'storage');
     } catch (error) {
-      logger.error(`Erreur lors de la mise à jour du client ${id}`, error as Error, 'data');
-      if (!isSilentOperation) {
-        toast.error(`Erreur lors de la mise à jour du client: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
-      }
+      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
+      logger.error('Erreur lors de la mise à jour d\'un client', error as Error, 'storage');
+      toast.error(`Erreur lors de la mise à jour du client: ${errorMessage}`);
       throw error;
     }
   };
-  
-  // Fonction pour supprimer un client
-  const supprimerClient = async (id: string) => {
+
+  // Supprimer un client
+  const deleteClient = async (id: string): Promise<void> => {
     try {
-      // Trouver le client à supprimer pour le message
-      const clientToDelete = state.clients.find(c => c.id === id);
-      
-      // Mettre à jour le state
+      // Supprimer de l'état local via le réducteur
       dispatch({ type: 'DELETE_CLIENT', payload: id });
       
-      // Essayer de supprimer dans IndexedDB
-      try {
-        const isDbAvailable = await db.isAvailable();
-        if (isDbAvailable) {
-          await db.deleteClient(id);
-        }
-      } catch (dbError) {
-        logger.error("Erreur lors de la suppression du client dans IndexedDB", dbError as Error, 'storage');
+      // Supprimer dans IndexedDB si disponible
+      if (isDbInitialized) {
+        await db.deleteClient(id);
       }
       
-      if (!isSilentOperation && clientToDelete) {
-        toast.success(`Client "${clientToDelete.nom} ${clientToDelete.prenom}" supprimé avec succès`);
+      // Supprimer également du localStorage
+      const savedClients = localStorage.getItem('clients');
+      if (savedClients) {
+        const parsedClients = JSON.parse(savedClients) as Client[];
+        const updatedClients = parsedClients.filter(client => client.id !== id);
+        localStorage.setItem('clients', JSON.stringify(updatedClients));
       }
-      logger.info(`Client supprimé: ${id}`, 'data');
+      
+      toast.success('Client supprimé');
+      logger.info(`Client supprimé: ${id}`, 'storage');
     } catch (error) {
-      logger.error(`Erreur lors de la suppression du client ${id}`, error as Error, 'data');
-      if (!isSilentOperation) {
-        toast.error(`Erreur lors de la suppression du client: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
-      }
+      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
+      logger.error('Erreur lors de la suppression d\'un client', error as Error, 'storage');
+      toast.error(`Erreur lors de la suppression du client: ${errorMessage}`);
       throw error;
     }
   };
-  
-  // Fonction pour sélectionner un client
-  const selectionnerClient = (client: Client | null) => {
-    dispatch({ type: 'SELECT_CLIENT', payload: client });
-    logger.debug(`Client sélectionné: ${client?.id || 'aucun'}`, 'ui');
-  };
-  
-  // Fonction pour réinitialiser les clients
-  const resetClients = async () => {
+
+  // Réinitialiser les clients (tout supprimer)
+  const resetClients = async (): Promise<void> => {
     try {
-      setIsSilentOperation(true);
+      // Réinitialiser l'état local
+      dispatch({ type: 'SET_CLIENTS', payload: [] });
       
-      // Réinitialiser avec les valeurs par défaut
-      dispatch({ type: 'SET_CLIENTS', payload: defaultClients });
+      // Vider localStorage
+      localStorage.removeItem('clients');
       
-      // Réinitialiser dans IndexedDB
-      try {
-        const isDbAvailable = await db.isAvailable();
-        if (isDbAvailable) {
-          await db.resetClients(defaultClients);
-        }
-      } catch (dbError) {
-        logger.error("Erreur lors de la réinitialisation des clients dans IndexedDB", dbError as Error, 'storage');
+      // Vider IndexedDB si disponible
+      if (isDbInitialized) {
+        await db.resetClients([]);
       }
       
-      toast.success("Liste des clients réinitialisée avec les valeurs par défaut");
-      logger.info("Clients réinitialisés", 'data');
+      toast.success('Tous les clients ont été supprimés');
+      logger.info('Tous les clients ont été supprimés', 'storage');
     } catch (error) {
-      logger.error("Erreur lors de la réinitialisation des clients", error as Error, 'data');
-      toast.error(`Erreur lors de la réinitialisation des clients: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
+      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
+      logger.error('Erreur lors de la réinitialisation des clients', error as Error, 'storage');
+      toast.error(`Erreur lors de la suppression des clients: ${errorMessage}`);
       throw error;
-    } finally {
-      setIsSilentOperation(false);
     }
   };
-  
+
+  // Sélectionner un client
+  const selectClient = (id: string | null): void => {
+    dispatch({ type: 'SELECT_CLIENT', payload: id });
+  };
+
+  const contextValue: ClientsContextType = {
+    state,
+    dispatch,
+    addClient,
+    updateClient,
+    deleteClient,
+    resetClients,
+    selectClient
+  };
+
   return (
-    <ClientsContext.Provider
-      value={{
-        state,
-        dispatch,
-        ajouterClient,
-        modifierClient,
-        supprimerClient,
-        selectionnerClient,
-        resetClients
-      }}
-    >
+    <ClientsContext.Provider value={contextValue}>
       {children}
     </ClientsContext.Provider>
   );
+};
+
+// Hook personnalisé pour utiliser le contexte des clients
+export const useClients = (): ClientsContextType => {
+  const context = useContext(ClientsContext);
+  if (!context) {
+    throw new Error('useClients doit être utilisé à l\'intérieur d\'un ClientsProvider');
+  }
+  return context;
 };
