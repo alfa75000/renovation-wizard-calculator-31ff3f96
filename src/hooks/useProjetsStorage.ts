@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { ProjetChantier } from '@/types';
 import { useIndexedDB } from './useIndexedDB';
 import { useLogger } from './useLogger';
+import { toast } from 'sonner';
 
 /**
  * Hook personnalisé pour gérer le stockage des projets chantier avec IndexedDB et fallback localStorage
@@ -68,12 +69,15 @@ export function useProjetsStorage() {
       if (existingProjet) {
         await updateProjet(projet.id, projet);
         logger.debug(`Projet mis à jour: ${projet.id}`, 'storage');
+        toast.success(`Projet mis à jour: ${projet.nomProjet}`);
       } else {
         await addProjet(projet);
         logger.debug(`Nouveau projet ajouté: ${projet.id}`, 'storage');
+        toast.success(`Nouveau projet ajouté: ${projet.nomProjet}`);
       }
     } catch (err) {
       logger.error('Erreur lors de la sauvegarde d\'un projet', err as Error, 'storage');
+      toast.error(`Erreur lors de la sauvegarde du projet: ${err instanceof Error ? err.message : 'Erreur inconnue'}`);
       throw err;
     }
   }, [addProjet, updateProjet, getProjet, logger]);
@@ -85,9 +89,23 @@ export function useProjetsStorage() {
       return allProjets.filter(projet => projet.clientId === clientId);
     } catch (err) {
       logger.error(`Erreur lors de la récupération des projets pour le client ${clientId}`, err as Error, 'storage');
+      toast.error(`Erreur lors de la récupération des projets: ${err instanceof Error ? err.message : 'Erreur inconnue'}`);
       throw err;
     }
   }, [getAllProjets, logger]);
+  
+  // Méthode pour supprimer tous les projets
+  const resetProjets = useCallback(async (): Promise<void> => {
+    try {
+      await clearProjets();
+      logger.info('Tous les projets ont été supprimés', 'storage');
+      toast.success('Tous les projets ont été supprimés');
+    } catch (err) {
+      logger.error('Erreur lors de la suppression de tous les projets', err as Error, 'storage');
+      toast.error(`Erreur lors de la suppression des projets: ${err instanceof Error ? err.message : 'Erreur inconnue'}`);
+      throw err;
+    }
+  }, [clearProjets, logger]);
   
   return {
     isDbAvailable,
@@ -99,6 +117,7 @@ export function useProjetsStorage() {
     saveProjet,
     deleteProjet,
     clearProjets,
+    resetProjets,
     getProjetsForClient,
     syncFromLocalStorage
   };

@@ -69,6 +69,18 @@ export interface Client {
   infosComplementaires?: string;
 }
 
+// Types pour les types de menuiseries
+export interface TypeMenuiserie {
+  id: string;
+  type: string;
+}
+
+// Types pour les types d'autres surfaces
+export interface TypeAutreSurface {
+  id: string;
+  designation: string;
+}
+
 // Types pour les travaux types
 export interface TravauxType {
   id: string;
@@ -106,4 +118,10 @@ export interface ProjetChantier {
     property: PropertyType;
     travaux: Travail[];
   };
+}
+
+// Type pour les pièces utilisé dans certains composants
+export interface Piece {
+  id: string;
+  name: string;
 }

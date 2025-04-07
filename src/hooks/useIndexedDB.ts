@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import db from '@/services/dbService';
 import { useLogger } from './useLogger';
@@ -114,14 +115,28 @@ export function useIndexedDB<T>(
     }
     
     try {
-      // @ts-ignore - Accès dynamique à la propriété de db
-      const id = await db[storeName].add(item);
-      return id as string;
+      // Vérifier si l'élément existe déjà
+      // @ts-ignore - Accès à la propriété id
+      const itemId = item.id;
+      const existingItem = await getItem(itemId);
+      
+      if (existingItem) {
+        // Si l'élément existe déjà, utilisez update au lieu de add
+        // @ts-ignore - Accès dynamique à la propriété de db
+        await db[storeName].update(itemId, item);
+        logger.debug(`Élément existant mis à jour au lieu d'être ajouté: ${itemId}`, 'storage');
+        return itemId;
+      } else {
+        // @ts-ignore - Accès dynamique à la propriété de db  
+        const id = await db[storeName].add(item);
+        logger.debug(`Élément ajouté avec l'ID: ${id}`, 'storage');
+        return id as string;
+      }
     } catch (err) {
       logger.error(`Erreur lors de l'ajout d'un élément dans IndexedDB (${storeName})`, err as Error, 'storage');
       throw err;
     }
-  }, [isDbAvailable, localStorageKey, storeName]);
+  }, [isDbAvailable, localStorageKey, storeName, getItem]);
   
   // Fonction pour mettre à jour un élément
   const updateItem = useCallback(async (id: string, item: T): Promise<void> => {
@@ -150,8 +165,18 @@ export function useIndexedDB<T>(
     }
     
     try {
+      // Obtenir l'élément existant d'abord
       // @ts-ignore - Accès dynamique à la propriété de db
-      await db[storeName].update(id, item);
+      const existingItem = await db[storeName].get(id);
+      
+      if (!existingItem) {
+        throw new Error(`Élément avec l'ID ${id} non trouvé dans IndexedDB`);
+      }
+      
+      // Mise à jour utilisant les champs individuels pour éviter l'erreur de Dexie
+      // @ts-ignore - Accès dynamique à la propriété de db
+      await db[storeName].put(item); // Utiliser put au lieu de update
+      logger.debug(`Élément mis à jour dans IndexedDB: ${id}`, 'storage');
     } catch (err) {
       logger.error(`Erreur lors de la mise à jour d'un élément dans IndexedDB (${storeName})`, err as Error, 'storage');
       throw err;
@@ -179,6 +204,7 @@ export function useIndexedDB<T>(
     try {
       // @ts-ignore - Accès dynamique à la propriété de db
       await db[storeName].delete(id);
+      logger.debug(`Élément supprimé de IndexedDB: ${id}`, 'storage');
     } catch (err) {
       logger.error(`Erreur lors de la suppression d'un élément dans IndexedDB (${storeName})`, err as Error, 'storage');
       throw err;
@@ -227,8 +253,8 @@ export function useIndexedDB<T>(
         for (const item of items) {
           // @ts-ignore - Accès à la propriété id
           if (existingIds.has(item.id)) {
-            // @ts-ignore - Accès à la propriété id et mise à jour
-            await db[storeName].update(item.id, item);
+            // @ts-ignore - Utiliser put au lieu de update
+            await db[storeName].put(item);
           } else {
             // @ts-ignore - Ajout de l'élément
             await db[storeName].add(item);

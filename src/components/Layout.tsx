@@ -16,9 +16,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     return location.pathname === path ? 'bg-primary text-white' : 'text-gray-700 hover:bg-gray-100';
   };
   
-  // Déterminer si nous sommes en mode développement
-  // En production, cette valeur sera 'production'
-  const isDevelopment = process.env.NODE_ENV !== 'production';
+  // Toujours afficher le bouton de debug pendant le développement
+  const isDevelopment = true; // Pour s'assurer que le bouton est toujours visible pendant les tests
   
   return (
     <div className="min-h-screen bg-gray-50">
@@ -57,7 +56,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             </Link>
           </nav>
           
-          {/* Bouton de débogage uniquement en mode développement */}
           {isDevelopment && (
             <Button 
               variant="ghost" 

@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Room } from '@/types';
 import { useIndexedDB } from './useIndexedDB';
 import { useLogger } from './useLogger';
-import db from '@/services/dbService';
+import { toast } from 'sonner';
 
 /**
  * Hook personnalisé pour gérer le stockage des pièces avec IndexedDB et fallback localStorage
@@ -69,15 +69,31 @@ export function useRoomsStorage() {
       if (existingRoom) {
         await updateRoom(room.id, room);
         logger.debug(`Pièce mise à jour: ${room.id}`, 'storage');
+        toast.success(`Pièce mise à jour: ${room.name}`);
       } else {
         await addRoom(room);
         logger.debug(`Nouvelle pièce ajoutée: ${room.id}`, 'storage');
+        toast.success(`Nouvelle pièce ajoutée: ${room.name}`);
       }
     } catch (err) {
       logger.error('Erreur lors de la sauvegarde d\'une pièce', err as Error, 'storage');
+      toast.error(`Erreur lors de la sauvegarde de la pièce: ${err instanceof Error ? err.message : 'Erreur inconnue'}`);
       throw err;
     }
   }, [addRoom, updateRoom, getRoom, logger]);
+  
+  // Méthode pour supprimer toutes les pièces 
+  const resetRooms = useCallback(async (): Promise<void> => {
+    try {
+      await clearRooms();
+      logger.info('Toutes les pièces ont été supprimées', 'storage');
+      toast.success('Toutes les pièces ont été supprimées');
+    } catch (err) {
+      logger.error('Erreur lors de la suppression de toutes les pièces', err as Error, 'storage');
+      toast.error(`Erreur lors de la suppression des pièces: ${err instanceof Error ? err.message : 'Erreur inconnue'}`);
+      throw err;
+    }
+  }, [clearRooms, logger]);
   
   return {
     isDbAvailable,
@@ -89,6 +105,7 @@ export function useRoomsStorage() {
     saveRoom,
     deleteRoom,
     clearRooms,
+    resetRooms,
     syncFromLocalStorage
   };
 }

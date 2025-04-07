@@ -1,3 +1,4 @@
+
 import Dexie, { Table } from 'dexie';
 import { Client, Room, PropertyType, Travail, ProjetChantier } from '@/types';
 import logService from './logService';
@@ -47,9 +48,20 @@ class AppDatabase extends Dexie {
    */
   async addClient(client: Client): Promise<string> {
     try {
-      const id = await this.clients.add(client);
-      logService.info('Client ajouté à IndexedDB', 'storage', { clientId: id });
-      return id as string;
+      // Vérifier d'abord si le client existe déjà
+      const existingClient = await this.clients.get(client.id);
+      
+      if (existingClient) {
+        // Si le client existe, le mettre à jour au lieu de l'ajouter
+        await this.clients.put(client);
+        logService.info('Client mis à jour dans IndexedDB (ajout remplacé par mise à jour)', 'storage', { clientId: client.id });
+        return client.id;
+      } else {
+        // Sinon, ajouter le client
+        const id = await this.clients.add(client);
+        logService.info('Client ajouté à IndexedDB', 'storage', { clientId: id });
+        return id as string;
+      }
     } catch (error) {
       logService.error('Erreur lors de l\'ajout d\'un client dans IndexedDB', error as Error, 'storage');
       throw error;
@@ -61,7 +73,7 @@ class AppDatabase extends Dexie {
    */
   async updateClient(client: Client): Promise<void> {
     try {
-      await this.clients.update(client.id, client);
+      await this.clients.put(client);
       logService.info('Client mis à jour dans IndexedDB', 'storage', { clientId: client.id });
     } catch (error) {
       logService.error('Erreur lors de la mise à jour d\'un client dans IndexedDB', error as Error, 'storage');
@@ -110,7 +122,7 @@ class AppDatabase extends Dexie {
       await this.transaction('rw', this.clients, async () => {
         for (const client of clients) {
           if (existingIds.has(client.id)) {
-            await this.clients.update(client.id, client);
+            await this.clients.put(client);
           } else {
             await this.clients.add(client);
           }
@@ -152,9 +164,20 @@ class AppDatabase extends Dexie {
    */
   async addRoom(room: Room): Promise<string> {
     try {
-      const id = await this.rooms.add(room);
-      logService.info('Pièce ajoutée à IndexedDB', 'storage', { roomId: id });
-      return id as string;
+      // Vérifier d'abord si la pièce existe déjà
+      const existingRoom = await this.rooms.get(room.id);
+      
+      if (existingRoom) {
+        // Si la pièce existe, la mettre à jour au lieu de l'ajouter
+        await this.rooms.put(room);
+        logService.info('Pièce mise à jour dans IndexedDB (ajout remplacé par mise à jour)', 'storage', { roomId: room.id });
+        return room.id;
+      } else {
+        // Sinon, ajouter la pièce
+        const id = await this.rooms.add(room);
+        logService.info('Pièce ajoutée à IndexedDB', 'storage', { roomId: id });
+        return id as string;
+      }
     } catch (error) {
       logService.error('Erreur lors de l\'ajout d\'une pièce dans IndexedDB', error as Error, 'storage');
       throw error;
@@ -166,7 +189,8 @@ class AppDatabase extends Dexie {
    */
   async updateRoom(id: string, room: Room): Promise<void> {
     try {
-      await this.rooms.update(id, room);
+      // Utiliser put au lieu de update pour éviter les problèmes avec les champs complexes
+      await this.rooms.put(room);
       logService.info('Pièce mise à jour dans IndexedDB', 'storage', { roomId: id });
     } catch (error) {
       logService.error('Erreur lors de la mise à jour d\'une pièce dans IndexedDB', error as Error, 'storage');
@@ -211,7 +235,7 @@ class AppDatabase extends Dexie {
       await this.transaction('rw', this.rooms, async () => {
         for (const room of rooms) {
           if (existingIds.has(room.id)) {
-            await this.rooms.update(room.id, room);
+            await this.rooms.put(room);
           } else {
             await this.rooms.add(room);
           }
@@ -253,9 +277,20 @@ class AppDatabase extends Dexie {
    */
   async addTravail(travail: Travail): Promise<string> {
     try {
-      const id = await this.travaux.add(travail);
-      logService.info('Travail ajouté à IndexedDB', 'storage', { travailId: id });
-      return id as string;
+      // Vérifier d'abord si le travail existe déjà
+      const existingTravail = await this.travaux.get(travail.id);
+      
+      if (existingTravail) {
+        // Si le travail existe, le mettre à jour au lieu de l'ajouter
+        await this.travaux.put(travail);
+        logService.info('Travail mis à jour dans IndexedDB (ajout remplacé par mise à jour)', 'storage', { travailId: travail.id });
+        return travail.id;
+      } else {
+        // Sinon, ajouter le travail
+        const id = await this.travaux.add(travail);
+        logService.info('Travail ajouté à IndexedDB', 'storage', { travailId: id });
+        return id as string;
+      }
     } catch (error) {
       logService.error('Erreur lors de l\'ajout d\'un travail dans IndexedDB', error as Error, 'storage');
       throw error;
@@ -267,7 +302,8 @@ class AppDatabase extends Dexie {
    */
   async updateTravail(id: string, travail: Travail): Promise<void> {
     try {
-      await this.travaux.update(id, travail);
+      // Utiliser put au lieu de update pour éviter les problèmes avec les champs complexes
+      await this.travaux.put(travail);
       logService.info('Travail mis à jour dans IndexedDB', 'storage', { travailId: id });
     } catch (error) {
       logService.error('Erreur lors de la mise à jour d\'un travail dans IndexedDB', error as Error, 'storage');
@@ -312,7 +348,7 @@ class AppDatabase extends Dexie {
       await this.transaction('rw', this.travaux, async () => {
         for (const travail of travaux) {
           if (existingIds.has(travail.id)) {
-            await this.travaux.update(travail.id, travail);
+            await this.travaux.put(travail);
           } else {
             await this.travaux.add(travail);
           }
@@ -354,9 +390,20 @@ class AppDatabase extends Dexie {
    */
   async addProjet(projet: ProjetChantier): Promise<string> {
     try {
-      const id = await this.projets.add(projet);
-      logService.info('Projet ajouté à IndexedDB', 'storage', { projetId: id });
-      return id as string;
+      // Vérifier d'abord si le projet existe déjà
+      const existingProjet = await this.projets.get(projet.id);
+      
+      if (existingProjet) {
+        // Si le projet existe, le mettre à jour au lieu de l'ajouter
+        await this.projets.put(projet);
+        logService.info('Projet mis à jour dans IndexedDB (ajout remplacé par mise à jour)', 'storage', { projetId: projet.id });
+        return projet.id;
+      } else {
+        // Sinon, ajouter le projet
+        const id = await this.projets.add(projet);
+        logService.info('Projet ajouté à IndexedDB', 'storage', { projetId: id });
+        return id as string;
+      }
     } catch (error) {
       logService.error('Erreur lors de l\'ajout d\'un projet dans IndexedDB', error as Error, 'storage');
       throw error;
@@ -368,7 +415,8 @@ class AppDatabase extends Dexie {
    */
   async updateProjet(id: string, projet: ProjetChantier): Promise<void> {
     try {
-      await this.projets.update(id, projet);
+      // Utiliser put au lieu de update pour éviter les problèmes avec les champs complexes
+      await this.projets.put(projet);
       logService.info('Projet mis à jour dans IndexedDB', 'storage', { projetId: id });
     } catch (error) {
       logService.error('Erreur lors de la mise à jour d\'un projet dans IndexedDB', error as Error, 'storage');
@@ -400,7 +448,7 @@ class AppDatabase extends Dexie {
       await this.transaction('rw', this.projets, async () => {
         for (const projet of projets) {
           if (existingIds.has(projet.id)) {
-            await this.projets.update(projet.id, projet);
+            await this.projets.put(projet);
           } else {
             await this.projets.add(projet);
           }
@@ -433,7 +481,7 @@ class AppDatabase extends Dexie {
       
       const exists = await this.propertyInfo.get(uniqueId);
       if (exists) {
-        await this.propertyInfo.update(uniqueId, propertyWithId);
+        await this.propertyInfo.put(propertyWithId);
         logService.info('Propriétés du bien mises à jour dans IndexedDB', 'storage');
       } else {
         await this.propertyInfo.add(propertyWithId);

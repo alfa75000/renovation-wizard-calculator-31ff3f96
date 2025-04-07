@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Travail } from '@/types';
 import { useIndexedDB } from './useIndexedDB';
 import { useLogger } from './useLogger';
+import { toast } from 'sonner';
 
 /**
  * Hook personnalisé pour gérer le stockage des travaux avec IndexedDB et fallback localStorage
@@ -68,12 +69,15 @@ export function useTravauxStorage() {
       if (existingTravail) {
         await updateTravail(travail.id, travail);
         logger.debug(`Travail mis à jour: ${travail.id}`, 'storage');
+        toast.success(`Travail mis à jour: ${travail.designation}`);
       } else {
         await addTravail(travail);
         logger.debug(`Nouveau travail ajouté: ${travail.id}`, 'storage');
+        toast.success(`Nouveau travail ajouté: ${travail.designation}`);
       }
     } catch (err) {
       logger.error('Erreur lors de la sauvegarde d\'un travail', err as Error, 'storage');
+      toast.error(`Erreur lors de la sauvegarde du travail: ${err instanceof Error ? err.message : 'Erreur inconnue'}`);
       throw err;
     }
   }, [addTravail, updateTravail, getTravail, logger]);
@@ -85,9 +89,23 @@ export function useTravauxStorage() {
       return allTravaux.filter(travail => travail.pieceId === pieceId);
     } catch (err) {
       logger.error(`Erreur lors de la récupération des travaux pour la pièce ${pieceId}`, err as Error, 'storage');
+      toast.error(`Erreur lors de la récupération des travaux: ${err instanceof Error ? err.message : 'Erreur inconnue'}`);
       throw err;
     }
   }, [getAllTravaux, logger]);
+  
+  // Méthode pour supprimer tous les travaux
+  const resetTravaux = useCallback(async (): Promise<void> => {
+    try {
+      await clearTravaux();
+      logger.info('Tous les travaux ont été supprimés', 'storage');
+      toast.success('Tous les travaux ont été supprimés');
+    } catch (err) {
+      logger.error('Erreur lors de la suppression de tous les travaux', err as Error, 'storage');
+      toast.error(`Erreur lors de la suppression des travaux: ${err instanceof Error ? err.message : 'Erreur inconnue'}`);
+      throw err;
+    }
+  }, [clearTravaux, logger]);
   
   return {
     isDbAvailable,
@@ -99,6 +117,7 @@ export function useTravauxStorage() {
     saveTravail,
     deleteTravail,
     clearTravaux,
+    resetTravaux,
     getTravauxForPiece,
     syncFromLocalStorage
   };
