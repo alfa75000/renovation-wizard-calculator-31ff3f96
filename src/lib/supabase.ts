@@ -22,10 +22,37 @@ export const checkSupabaseConnection = async () => {
         details: error
       };
     }
+
+    // Vérifier les tables disponibles
+    const { data: tablesData, error: tablesError } = await supabase
+      .rpc('list_tables')
+      .catch(() => ({ data: null, error: { message: "La fonction list_tables n'existe pas" } }));
+    
+    // Récupérer les structures des tables principales
+    const { data: workTypesColumns } = await supabase
+      .from('work_types')
+      .select('*')
+      .limit(1);
+    
+    const { data: serviceGroupsColumns } = await supabase
+      .from('service_groups')
+      .select('*')
+      .limit(1);
+    
+    const { data: servicesColumns } = await supabase
+      .from('services')
+      .select('*')
+      .limit(1);
     
     return {
       connected: true,
-      data
+      data,
+      tables: tablesData || "Non disponible",
+      tableStructures: {
+        work_types: workTypesColumns ? Object.keys(workTypesColumns[0] || {}) : "Pas de données",
+        service_groups: serviceGroupsColumns ? Object.keys(serviceGroupsColumns[0] || {}) : "Pas de données",
+        services: servicesColumns ? Object.keys(servicesColumns[0] || {}) : "Pas de données"
+      }
     };
   } catch (error) {
     console.error('Exception lors de la connexion à Supabase:', error);
