@@ -11,6 +11,13 @@ export function useSilentOperation() {
   const [pendingOperationsCount, setPendingOperationsCount] = useState<number>(0);
 
   /**
+   * Définir explicitement le mode silencieux
+   */
+  const setSilentOperation = useCallback((silent: boolean) => {
+    setIsSilent(silent);
+  }, []);
+
+  /**
    * Exécute une opération en mode silencieux (sans notifications)
    */
   const runSilently = useCallback(async <T>(operation: () => Promise<T> | T): Promise<T> => {
@@ -82,6 +89,7 @@ export function useSilentOperation() {
     isSilent,
     isBatchOperation,
     pendingOperationsCount,
+    setSilentOperation,
     runSilently,
     beginBatchOperation,
     endBatchOperation,

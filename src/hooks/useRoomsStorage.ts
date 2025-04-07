@@ -1,204 +1,229 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Room } from '@/types';
-import { useIndexedDB } from './useIndexedDB';
 import { useLogger } from './useLogger';
+import { useIndexedDB } from './useIndexedDB';
 import { toast } from 'sonner';
 import { useSilentOperation } from './useSilentOperation';
 
-/**
- * Hook personnalisé pour gérer le stockage des pièces avec IndexedDB et fallback localStorage
- */
-export function useRoomsStorage() {
-  const logger = useLogger('useRoomsStorage');
-  const LOCAL_STORAGE_KEY = 'rooms';
-  const { isSilent, runSilently } = useSilentOperation();
-  
-  const {
-    isDbAvailable,
-    isLoading,
-    error,
-    getAllItems: getAllRooms,
-    getItem: getRoom,
-    addItem: addRoom,
-    updateItem: updateRoom,
-    deleteItem: deleteRoomInternal,
-    clearItems: clearRooms,
-    syncFromLocalStorage
-  } = useIndexedDB<Room>('rooms', LOCAL_STORAGE_KEY);
-  
-  const [isInitialized, setIsInitialized] = useState<boolean>(false);
-  const [lastOperation, setLastOperation] = useState<{type: string, id?: string, timestamp: number} | null>(null);
-  
-  // Fonction pour initialiser la synchronisation entre localStorage et IndexedDB
-  const initializeSync = useCallback(async () => {
-    if (!isDbAvailable || isLoading) return;
-    
-    try {
-      // Récupérer les pièces depuis localStorage
-      const roomsJson = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (roomsJson) {
-        try {
-          const rooms = JSON.parse(roomsJson) as Room[];
-          if (Array.isArray(rooms) && rooms.length > 0) {
-            // Synchroniser avec IndexedDB
-            await runSilently(() => syncFromLocalStorage(rooms));
-            logger.info(`${rooms.length} pièces synchronisées depuis localStorage vers IndexedDB`, 'storage');
-          } else {
-            logger.info('Aucune pièce trouvée dans localStorage pour synchronisation', 'storage');
-          }
-        } catch (parseError) {
-          logger.error('Erreur de parsing JSON depuis localStorage', parseError as Error, 'storage');
-        }
-      }
-      
-      setIsInitialized(true);
-    } catch (error) {
-      logger.error('Erreur lors de l\'initialisation de la synchronisation des pièces', error as Error, 'storage');
-    }
-  }, [isDbAvailable, isLoading, syncFromLocalStorage, logger, runSilently]);
-  
-  // Initialiser la synchronisation lors du premier chargement
+export const useRoomsStorage = () => {
+  const [isInitialized, setIsInitialized] = useState(false);
+  const { db, isDbAvailable, isLoading, error } = useIndexedDB();
+  const logger = useLogger('RoomsStorage');
+  const { isSilent, setSilentOperation, runSilently } = useSilentOperation();
+
+  // Initialiser la base de données
   useEffect(() => {
-    if (!isInitialized && isDbAvailable && !isLoading) {
-      initializeSync();
-    }
-  }, [isInitialized, isDbAvailable, isLoading, initializeSync]);
-  
-  // Éviter les opérations en double avec un délai minimum
-  const canPerformOperation = useCallback((type: string, id?: string, minDelay: number = 500): boolean => {
-    if (!lastOperation) return true;
-    
-    const now = Date.now();
-    return (
-      lastOperation.type !== type || 
-      lastOperation.id !== id || 
-      (now - lastOperation.timestamp) > minDelay
-    );
-  }, [lastOperation]);
-  
-  // Méthode simplifiée pour ajouter ou mettre à jour une pièce
-  const saveRoom = useCallback(async (room: Room, silent = false): Promise<void> => {
-    if (!room.id) {
-      throw new Error('Impossible de sauvegarder une pièce sans ID');
-    }
-    
-    // Éviter les opérations en double
-    if (!canPerformOperation('save', room.id)) {
-      logger.debug(`Opération ignorée (délai trop court): saveRoom ${room.id}`, 'storage');
-      return;
-    }
-    
-    try {
-      const existingRoom = await getRoom(room.id);
-      
-      if (existingRoom) {
-        await updateRoom(room.id, room);
-        logger.debug(`Pièce mise à jour: ${room.id}`, 'storage');
-        if (!silent && !isSilent) {
-          toast.success(`Pièce mise à jour: ${room.name}`);
-        }
-      } else {
-        await addRoom(room);
-        logger.debug(`Nouvelle pièce ajoutée: ${room.id}`, 'storage');
-        if (!silent && !isSilent) {
-          toast.success(`Nouvelle pièce ajoutée: ${room.name}`);
-        }
-      }
-      
-      setLastOperation({
-        type: 'save',
-        id: room.id,
-        timestamp: Date.now()
-      });
-    } catch (err) {
-      logger.error('Erreur lors de la sauvegarde d\'une pièce', err as Error, 'storage');
-      if (!silent && !isSilent) {
-        toast.error(`Erreur lors de la sauvegarde de la pièce: ${err instanceof Error ? err.message : 'Erreur inconnue'}`);
-      }
-      throw err;
-    }
-  }, [addRoom, updateRoom, getRoom, logger, isSilent, canPerformOperation]);
-  
-  // Méthode pour supprimer une pièce
-  const deleteRoom = useCallback(async (id: string, silent = false): Promise<void> => {
-    // Éviter les opérations en double
-    if (!canPerformOperation('delete', id)) {
-      logger.debug(`Opération ignorée (délai trop court): deleteRoom ${id}`, 'storage');
-      return;
-    }
-    
-    try {
-      const roomToDelete = await getRoom(id);
-      if (roomToDelete) {
-        await deleteRoomInternal(id);
-        logger.info(`Pièce supprimée: ${id}`, 'storage');
-        
-        // Assurer que localStorage est également mis à jour
+    if (db && !isInitialized) {
+      const initializeDB = async () => {
         try {
-          const storedRooms = localStorage.getItem(LOCAL_STORAGE_KEY);
-          if (storedRooms) {
-            const rooms = JSON.parse(storedRooms) as Room[];
-            const updatedRooms = rooms.filter(r => r.id !== id);
-            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedRooms));
+          if (!db.objectStoreNames.contains('rooms')) {
+            // Cette méthode ne sera pas appelée car la table est créée à l'initialisation de IndexedDB
+            // Mais c'est une bonne pratique de le vérifier
+            logger.info('Table "rooms" créée dans IndexedDB');
           }
-        } catch (localError) {
-          logger.error(`Erreur lors de la mise à jour de localStorage après suppression: ${id}`, localError as Error, 'storage');
+          setIsInitialized(true);
+        } catch (error) {
+          logger.error('Erreur lors de l\'initialisation de la table "rooms"', error as Error);
         }
-        
-        if (!silent && !isSilent) {
-          toast.success(`Pièce supprimée: ${roomToDelete.name}`);
-        }
-      } else {
-        logger.warn(`Tentative de suppression d'une pièce inexistante: ${id}`, 'storage');
-      }
-      
-      setLastOperation({
-        type: 'delete',
-        id,
-        timestamp: Date.now()
-      });
-    } catch (err) {
-      logger.error(`Erreur lors de la suppression de la pièce ${id}`, err as Error, 'storage');
-      if (!silent && !isSilent) {
-        toast.error(`Erreur lors de la suppression de la pièce: ${err instanceof Error ? err.message : 'Erreur inconnue'}`);
-      }
-      throw err;
+      };
+
+      initializeDB();
     }
-  }, [deleteRoomInternal, getRoom, logger, isSilent, canPerformOperation]);
-  
-  // Méthode pour supprimer toutes les pièces 
-  const resetRooms = useCallback(async (silent = false): Promise<void> => {
-    // Éviter les opérations en double
-    if (!canPerformOperation('reset')) {
-      logger.debug(`Opération ignorée (délai trop court): resetRooms`, 'storage');
+  }, [db, isInitialized, logger]);
+
+  const getAllRooms = useCallback(async (): Promise<Room[]> => {
+    if (!db || !isDbAvailable) {
+      logger.warn('IndexedDB non disponible pour getAllRooms');
+      return [];
+    }
+
+    try {
+      const transaction = db.transaction('rooms', 'readonly');
+      const store = transaction.objectStore('rooms');
+      const request = store.getAll();
+
+      return new Promise((resolve, reject) => {
+        request.onsuccess = () => {
+          logger.info(`${request.result.length} pièces récupérées depuis IndexedDB`);
+          resolve(request.result as Room[]);
+        };
+        request.onerror = () => {
+          logger.error('Erreur lors de la récupération des pièces', request.error);
+          reject(request.error);
+        };
+      });
+    } catch (error) {
+      logger.error('Erreur lors de l\'accès à IndexedDB pour getAllRooms', error as Error);
+      return [];
+    }
+  }, [db, isDbAvailable, logger]);
+
+  const getRoom = useCallback(async (id: string): Promise<Room | null> => {
+    if (!db || !isDbAvailable) {
+      logger.warn('IndexedDB non disponible pour getRoom');
+      return null;
+    }
+
+    try {
+      const transaction = db.transaction('rooms', 'readonly');
+      const store = transaction.objectStore('rooms');
+      const request = store.get(id);
+
+      return new Promise((resolve, reject) => {
+        request.onsuccess = () => {
+          if (request.result) {
+            logger.info(`Pièce ${id} récupérée depuis IndexedDB`);
+            resolve(request.result as Room);
+          } else {
+            logger.warn(`Pièce ${id} non trouvée dans IndexedDB`);
+            resolve(null);
+          }
+        };
+        request.onerror = () => {
+          logger.error(`Erreur lors de la récupération de la pièce ${id}`, request.error);
+          reject(request.error);
+        };
+      });
+    } catch (error) {
+      logger.error(`Erreur lors de l'accès à IndexedDB pour getRoom ${id}`, error as Error);
+      return null;
+    }
+  }, [db, isDbAvailable, logger]);
+
+  const saveRoom = useCallback(async (room: Room, silent: boolean = false): Promise<Room> => {
+    if (!db || !isDbAvailable) {
+      logger.warn('IndexedDB non disponible pour saveRoom');
+      if (!silent) toast.error('Erreur de stockage : la base de données n\'est pas disponible');
+      return room;
+    }
+
+    if (!room.id) {
+      logger.error('Tentative de sauvegarde d\'une pièce sans ID');
+      if (!silent) toast.error('Erreur de stockage : pièce sans identifiant');
+      return room;
+    }
+
+    try {
+      const transaction = db.transaction('rooms', 'readwrite');
+      const store = transaction.objectStore('rooms');
+      
+      // Vérifier si la pièce existe déjà
+      const getRequest = store.get(room.id);
+      
+      return new Promise((resolve, reject) => {
+        getRequest.onsuccess = () => {
+          const existingRoom = getRequest.result as Room | undefined;
+          
+          // Mettre à jour ou ajouter
+          const addRequest = store.put(room);
+          
+          addRequest.onsuccess = () => {
+            const operation = existingRoom ? 'mise à jour' : 'ajoutée';
+            logger.info(`Pièce ${room.id} ${operation} dans IndexedDB`);
+            
+            if (!silent && !isSilent) {
+              const message = `Pièce ${operation} : ${room.name}`;
+              toast.success(message);
+            }
+            
+            resolve(room);
+          };
+          
+          addRequest.onerror = () => {
+            logger.error(`Erreur lors de la sauvegarde de la pièce ${room.id}`, addRequest.error);
+            if (!silent) toast.error(`Erreur lors de la sauvegarde de la pièce ${room.name}`);
+            reject(addRequest.error);
+          };
+        };
+        
+        getRequest.onerror = () => {
+          logger.error(`Erreur lors de la vérification de l'existence de la pièce ${room.id}`, getRequest.error);
+          if (!silent) toast.error(`Erreur lors de la vérification de l'existence de la pièce ${room.name}`);
+          reject(getRequest.error);
+        };
+      });
+      
+    } catch (error) {
+      logger.error(`Erreur lors de l'accès à IndexedDB pour saveRoom ${room.id}`, error as Error);
+      if (!silent) toast.error(`Erreur de stockage pour la pièce ${room.name}`);
+      return room;
+    }
+  }, [db, isDbAvailable, logger, isSilent]);
+
+  const deleteRoom = useCallback(async (id: string, silent: boolean = false): Promise<void> => {
+    if (!db || !isDbAvailable) {
+      logger.warn('IndexedDB non disponible pour deleteRoom');
+      if (!silent) toast.error('Erreur de suppression : la base de données n\'est pas disponible');
       return;
     }
-    
+
     try {
-      await clearRooms();
+      const transaction = db.transaction('rooms', 'readwrite');
+      const store = transaction.objectStore('rooms');
       
-      // Assurer que localStorage est également mis à jour
-      localStorage.removeItem(LOCAL_STORAGE_KEY);
+      // Récupérer d'abord la pièce pour afficher son nom dans la notification
+      const getRequest = store.get(id);
       
-      logger.info('Toutes les pièces ont été supprimées', 'storage');
-      if (!silent && !isSilent) {
-        toast.success('Toutes les pièces ont été supprimées');
-      }
+      getRequest.onsuccess = () => {
+        const room = getRequest.result as Room | undefined;
+        const roomName = room ? room.name : id;
+        
+        const deleteRequest = store.delete(id);
+        
+        deleteRequest.onsuccess = () => {
+          logger.info(`Pièce ${id} supprimée de IndexedDB`);
+          if (!silent && !isSilent) {
+            toast.success(`Pièce supprimée : ${roomName}`);
+          }
+        };
+        
+        deleteRequest.onerror = () => {
+          logger.error(`Erreur lors de la suppression de la pièce ${id}`, deleteRequest.error);
+          if (!silent) toast.error(`Erreur lors de la suppression de la pièce ${roomName}`);
+        };
+      };
       
-      setLastOperation({
-        type: 'reset',
-        timestamp: Date.now()
-      });
-    } catch (err) {
-      logger.error('Erreur lors de la suppression de toutes les pièces', err as Error, 'storage');
-      if (!silent && !isSilent) {
-        toast.error(`Erreur lors de la suppression des pièces: ${err instanceof Error ? err.message : 'Erreur inconnue'}`);
-      }
-      throw err;
+      getRequest.onerror = () => {
+        logger.error(`Erreur lors de la récupération de la pièce ${id} pour suppression`, getRequest.error);
+        if (!silent) toast.error(`Erreur lors de la suppression de la pièce ${id}`);
+      };
+      
+    } catch (error) {
+      logger.error(`Erreur lors de l'accès à IndexedDB pour deleteRoom ${id}`, error as Error);
+      if (!silent) toast.error(`Erreur lors de la suppression de la pièce ${id}`);
     }
-  }, [clearRooms, logger, isSilent, canPerformOperation]);
-  
+  }, [db, isDbAvailable, logger, isSilent]);
+
+  const resetRooms = useCallback(async (silent: boolean = false): Promise<void> => {
+    if (!db || !isDbAvailable) {
+      logger.warn('IndexedDB non disponible pour resetRooms');
+      if (!silent) toast.error('Erreur de réinitialisation : la base de données n\'est pas disponible');
+      return;
+    }
+
+    try {
+      const transaction = db.transaction('rooms', 'readwrite');
+      const store = transaction.objectStore('rooms');
+      const request = store.clear();
+
+      request.onsuccess = () => {
+        logger.info('Toutes les pièces ont été supprimées de IndexedDB');
+        if (!silent && !isSilent) {
+          toast.success('Toutes les pièces ont été supprimées');
+        }
+      };
+
+      request.onerror = () => {
+        logger.error('Erreur lors de la suppression de toutes les pièces', request.error);
+        if (!silent) toast.error('Erreur lors de la suppression de toutes les pièces');
+      };
+    } catch (error) {
+      logger.error('Erreur lors de l\'accès à IndexedDB pour resetRooms', error as Error);
+      if (!silent) toast.error('Erreur lors de la réinitialisation des pièces');
+    }
+  }, [db, isDbAvailable, logger, isSilent]);
+
   return {
     isDbAvailable,
     isLoading,
@@ -208,9 +233,8 @@ export function useRoomsStorage() {
     getRoom,
     saveRoom,
     deleteRoom,
-    clearRooms,
     resetRooms,
-    syncFromLocalStorage,
+    setSilentOperation,
     runSilently
   };
-}
+};

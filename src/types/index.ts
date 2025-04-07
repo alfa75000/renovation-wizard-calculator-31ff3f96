@@ -10,15 +10,45 @@ export interface Room {
   typeMur: string;
   menuiseries: Menuiserie[];
   autresSurfaces: AutreSurface[];
+  
+  // Additional properties used in RenovationEstimator
+  type?: string;
+  customName?: string;
+  plinthHeight?: string;
+  wallSurfaceRaw?: string;
+  totalPlinthLength?: string;
+  totalPlinthSurface?: string;
+  totalMenuiserieSurface?: string;
+  netWallSurface?: string;
+  menuiseriesMursSurface?: string;
+  menuiseriesPlafondSurface?: string;
+  menuiseriesSolSurface?: string;
+  autresSurfacesMurs?: string;
+  autresSurfacesPlafond?: string;
+  autresSurfacesSol?: string;
+  surfaceNetteSol?: string;
+  surfaceBruteSol?: string;
+  surfaceNettePlafond?: string;
+  surfaceBrutePlafond?: string;
+  surfaceNetteMurs?: string;
+  surfaceBruteMurs?: string;
+  lineaireBrut?: string;
+  lineaireNet?: string;
+  surfaceMenuiseries?: string;
 }
 
 export interface Menuiserie {
   id: string;
   type: string;
-  largeur: string;
-  hauteur: string;
-  surface: string;
-  name?: string; // Ajout du champ name optionnel pour compatibilité
+  largeur: number;
+  hauteur: number;
+  surface: number;
+  name?: string;
+  
+  // Additional properties used in RenovationEstimator
+  quantity?: number;
+  surfaceImpactee?: string;
+  impactePlinthe?: boolean;
 }
 
 export interface AutreSurface {
@@ -26,7 +56,15 @@ export interface AutreSurface {
   designation: string;
   longueur: string;
   hauteur: string;
-  surface: string;
+  surface: number;
+  
+  // Additional properties used in RenovationEstimator
+  type?: string;
+  name?: string;
+  largeur?: number;
+  quantity?: number;
+  surfaceImpactee?: string;
+  estDeduction?: boolean;
 }
 
 export interface PropertyType {
@@ -77,12 +115,25 @@ export interface Client {
 export interface TypeMenuiserie {
   id: string;
   type: string;
+  
+  // Additional properties used in the app
+  nom?: string;
+  description?: string;
+  largeur?: number;
+  hauteur?: number;
+  surfaceReference?: number;
+  impactePlinthe?: boolean;
 }
 
 // Types pour les types d'autres surfaces
 export interface TypeAutreSurface {
   id: string;
   designation: string;
+  
+  // Additional properties used in the app
+  nom?: string;
+  surfaceImpacteeParDefaut?: string;
+  estDeduction?: boolean;
 }
 
 // Types pour les travaux types
@@ -130,4 +181,15 @@ export interface Piece {
   name: string;
   menuiseries?: Menuiserie[];
   surface?: string;
+  
+  // Additional properties used in the app
+  type?: string;
+  surfaceNetteSol?: string;
+  surfaceNettePlafond?: string;
+  surfaceNetteMurs?: string;
+  netWallSurface?: string;
+  lineaireNet?: string;
+  totalPlinthLength?: string;
+  surfaceMenuiseries?: string;
+  totalMenuiserieSurface?: string;
 }
