@@ -31,6 +31,8 @@ export function useLocalStorage<T>(
       setStoredValue(valueToStore);
       // Sauvegarder dans localStorage
       if (typeof window !== 'undefined') {
+        // Log pour le débogage
+        console.log(`Sauvegarde dans localStorage - ${key}:`, valueToStore);
         window.localStorage.setItem(key, JSON.stringify(valueToStore));
       }
     } catch (error) {
@@ -43,6 +45,7 @@ export function useLocalStorage<T>(
     const handleStorageChange = (event: StorageEvent) => {
       if (event.key === key && event.newValue) {
         try {
+          console.log(`Storage event détecté pour ${key}:`, event.newValue);
           setStoredValue(JSON.parse(event.newValue));
         } catch (error) {
           console.error(`Erreur lors du parsing de la nouvelle valeur pour ${key}:`, error);
@@ -51,8 +54,16 @@ export function useLocalStorage<T>(
     };
     
     window.addEventListener('storage', handleStorageChange);
+    
+    // Vérifier que la valeur est correctement enregistrée au montage
+    const savedItem = window.localStorage.getItem(key);
+    if (!savedItem && storedValue !== initialValue) {
+      console.log(`Valeur initiale sauvegardée pour ${key}:`, storedValue);
+      window.localStorage.setItem(key, JSON.stringify(storedValue));
+    }
+    
     return () => window.removeEventListener('storage', handleStorageChange);
-  }, [key]);
+  }, [key, initialValue, storedValue]);
 
   return [storedValue, setValue];
 }

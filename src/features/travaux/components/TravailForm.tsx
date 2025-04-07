@@ -115,7 +115,7 @@ const TravailForm: React.FC<TravailFormProps> = ({
         <Label htmlFor="typeTravaux">Type de travaux</Label>
         <TypeTravauxSelect
           value={typeTravauxId}
-          onChange={(id, label) => {
+          onChange={(id: string, label: string) => {
             setTypeTravauxId(id);
             setTypeTravauxLabel(label);
           }}
@@ -128,7 +128,7 @@ const TravailForm: React.FC<TravailFormProps> = ({
           <SousTypeSelect
             typeTravauxId={typeTravauxId}
             value={sousTypeId}
-            onChange={(id, label, sousTypeData) => {
+            onChange={(id: string, label: string, sousTypeData: SousTypeTravauxItem) => {
               setSousTypeId(id);
               setSousTypeLabel(label);
               setSousType(sousTypeData);

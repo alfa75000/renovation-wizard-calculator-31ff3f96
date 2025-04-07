@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { TravauxTypesState, TravauxType, SousTypeTravauxItem, TypeTravauxItem, TravauxTypesAction } from '@/types';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
@@ -13,9 +14,79 @@ export const surfacesReference = [
   { id: 'perimetre', label: 'Périmètre de la pièce' }
 ];
 
-// État initial
+// État initial avec quelques types de travaux prédéfinis
 const initialState: TravauxTypesState = {
-  types: [],
+  types: [
+    {
+      id: "peinture",
+      nom: "Peinture",
+      label: "Peinture",
+      description: "Travaux de peinture",
+      icon: "paintbrush",
+      sousTypes: [
+        {
+          id: "peinture-murs",
+          typeTravauxId: "peinture",
+          nom: "Peinture des murs",
+          label: "Peinture des murs",
+          description: "Application de peinture sur les murs",
+          uniteParDefaut: "m²",
+          unite: "m²",
+          prixFournitures: 5,
+          prixFournituresUnitaire: 5,
+          prixMainOeuvre: 15,
+          prixMainOeuvreUnitaire: 15,
+          prixUnitaire: 20,
+          tempsMoyenMinutes: 30,
+          tauxTVA: 10,
+          surfaceReference: "murs"
+        },
+        {
+          id: "peinture-plafond",
+          typeTravauxId: "peinture",
+          nom: "Peinture du plafond",
+          label: "Peinture du plafond",
+          description: "Application de peinture sur le plafond",
+          uniteParDefaut: "m²",
+          unite: "m²",
+          prixFournitures: 5,
+          prixFournituresUnitaire: 5,
+          prixMainOeuvre: 20,
+          prixMainOeuvreUnitaire: 20,
+          prixUnitaire: 25,
+          tempsMoyenMinutes: 40,
+          tauxTVA: 10,
+          surfaceReference: "plafond"
+        }
+      ]
+    },
+    {
+      id: "sol",
+      nom: "Revêtement de sol",
+      label: "Revêtement de sol",
+      description: "Installation de revêtements de sol",
+      icon: "layout",
+      sousTypes: [
+        {
+          id: "parquet",
+          typeTravauxId: "sol",
+          nom: "Pose de parquet",
+          label: "Pose de parquet",
+          description: "Installation de parquet",
+          uniteParDefaut: "m²",
+          unite: "m²",
+          prixFournitures: 25,
+          prixFournituresUnitaire: 25,
+          prixMainOeuvre: 20,
+          prixMainOeuvreUnitaire: 20,
+          prixUnitaire: 45,
+          tempsMoyenMinutes: 60,
+          tauxTVA: 10,
+          surfaceReference: "sol"
+        }
+      ]
+    }
+  ],
 };
 
 // Créer le contexte
@@ -31,6 +102,7 @@ const TravauxTypesContext = createContext<{
 function travauxTypesReducer(state: TravauxTypesState, action: TravauxTypesAction): TravauxTypesState {
   switch (action.type) {
     case 'ADD_TYPE': {
+      console.log('ADD_TYPE:', action.payload);
       const newType = {
         ...action.payload,
         id: action.payload.id || uuidv4(),
@@ -43,6 +115,7 @@ function travauxTypesReducer(state: TravauxTypesState, action: TravauxTypesActio
     }
     
     case 'UPDATE_TYPE': {
+      console.log('UPDATE_TYPE:', action.payload);
       const { id, type } = action.payload;
       return {
         ...state,
@@ -50,13 +123,16 @@ function travauxTypesReducer(state: TravauxTypesState, action: TravauxTypesActio
       };
     }
     
-    case 'DELETE_TYPE':
+    case 'DELETE_TYPE': {
+      console.log('DELETE_TYPE:', action.payload);
       return {
         ...state,
         types: state.types.filter((type) => type.id !== action.payload),
       };
+    }
     
     case 'ADD_SOUS_TYPE': {
+      console.log('ADD_SOUS_TYPE:', action.payload);
       const { typeId, sousType } = action.payload;
       const newSousType = {
         ...sousType,
@@ -75,6 +151,7 @@ function travauxTypesReducer(state: TravauxTypesState, action: TravauxTypesActio
     }
     
     case 'UPDATE_SOUS_TYPE': {
+      console.log('UPDATE_SOUS_TYPE:', action.payload);
       const { typeId, id, sousType } = action.payload;
       return {
         ...state,
@@ -92,6 +169,7 @@ function travauxTypesReducer(state: TravauxTypesState, action: TravauxTypesActio
     }
     
     case 'DELETE_SOUS_TYPE': {
+      console.log('DELETE_SOUS_TYPE:', action.payload);
       const { typeId, id } = action.payload;
       return {
         ...state,
@@ -106,14 +184,18 @@ function travauxTypesReducer(state: TravauxTypesState, action: TravauxTypesActio
       };
     }
     
-    case 'LOAD_TYPES':
+    case 'LOAD_TYPES': {
+      console.log('LOAD_TYPES:', action.payload);
       return {
         ...state,
         types: action.payload,
       };
+    }
       
-    case 'RESET_TYPES':
+    case 'RESET_TYPES': {
+      console.log('RESET_TYPES');
       return initialState;
+    }
     
     default:
       return state;
@@ -122,15 +204,16 @@ function travauxTypesReducer(state: TravauxTypesState, action: TravauxTypesActio
 
 // Provider component
 export const TravauxTypesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [savedTypes, setSavedTypes] = useLocalStorage<TravauxType[]>('travauxTypes', []);
+  const [savedTypes, setSavedTypes] = useLocalStorage<TravauxType[]>('travauxTypes', initialState.types);
   
   // Initialiser le state avec les données sauvegardées
   const [state, dispatch] = useReducer(travauxTypesReducer, {
-    types: savedTypes,
+    types: savedTypes.length > 0 ? savedTypes : initialState.types,
   });
 
   // Sauvegarder les changements dans localStorage
   useEffect(() => {
+    console.log('Sauvegarde des types de travaux:', state.types);
     setSavedTypes(state.types);
   }, [state.types, setSavedTypes]);
 
