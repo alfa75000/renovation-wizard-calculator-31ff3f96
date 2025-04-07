@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Client, typesClients } from '@/contexts/ClientsContext';
+import { Client, typesClients } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
@@ -35,9 +35,12 @@ const ClientForm: React.FC<ClientFormProps> = ({
     nom: '',
     prenom: '',
     adresse: '',
+    telephone: '',
+    codePostal: '',
+    ville: '',
+    email: '',
     tel1: '',
     tel2: '',
-    email: '',
     typeClient: 'particulier',
     autreInfo: '',
     infosComplementaires: ''
@@ -57,9 +60,12 @@ const ClientForm: React.FC<ClientFormProps> = ({
         nom: '',
         prenom: '',
         adresse: '',
+        telephone: '',
+        codePostal: '',
+        ville: '',
+        email: '',
         tel1: '',
         tel2: '',
-        email: '',
         typeClient: 'particulier',
         autreInfo: '',
         infosComplementaires: ''
@@ -145,9 +151,41 @@ const ClientForm: React.FC<ClientFormProps> = ({
               />
             </div>
             
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="codePostal">Code Postal</Label>
+                <Input 
+                  id="codePostal" 
+                  name="codePostal" 
+                  value={formData.codePostal} 
+                  onChange={handleChange} 
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="ville">Ville</Label>
+                <Input 
+                  id="ville" 
+                  name="ville" 
+                  value={formData.ville} 
+                  onChange={handleChange} 
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="telephone">Téléphone principal</Label>
+                <Input 
+                  id="telephone" 
+                  name="telephone" 
+                  value={formData.telephone} 
+                  onChange={handleChange} 
+                />
+              </div>
+            </div>
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="tel1">Téléphone 1</Label>
+                <Label htmlFor="tel1">Téléphone secondaire 1</Label>
                 <Input 
                   id="tel1" 
                   name="tel1" 
@@ -157,7 +195,7 @@ const ClientForm: React.FC<ClientFormProps> = ({
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="tel2">Téléphone 2</Label>
+                <Label htmlFor="tel2">Téléphone secondaire 2</Label>
                 <Input 
                   id="tel2" 
                   name="tel2" 

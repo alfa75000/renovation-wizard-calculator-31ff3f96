@@ -135,6 +135,8 @@ export interface ProjetChantier {
   nomProjet?: string;
   dateModification?: string;
   projectData?: any;
+  occupant?: string;
+  infoComplementaire?: string;
 }
 
 // Types pour les travaux
@@ -143,7 +145,7 @@ export interface TravauxType {
   nom: string;
   label: string;
   description: string;
-  icon?: React.FC<any>;
+  icon: string;
   sousTypes: SousTypeTravauxItem[];
 }
 
@@ -152,6 +154,8 @@ export interface TypeTravauxItem {
   nom: string;
   label: string;
   description: string;
+  icon?: string;
+  sousTypes: SousTypeTravauxItem[];
 }
 
 export interface SousTypeTravauxItem {
@@ -179,6 +183,12 @@ export const surfacesReference = [
   { id: 'menuiseries', label: 'Surface des menuiseries' },
   { id: 'plinthes', label: 'Longueur des plinthes' },
   { id: 'perimetre', label: 'Périmètre de la pièce' }
+];
+
+export const surfacesMenuiseries = [
+  { id: 'mur', label: 'Mur' },
+  { id: 'sol', label: 'Sol' },
+  { id: 'plafond', label: 'Plafond' }
 ];
 
 export const typesClients = [

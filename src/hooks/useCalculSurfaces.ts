@@ -99,6 +99,7 @@ export const useCalculSurfaces = () => {
     const menuiseriesMursSurface = calculerSurfaceMenuiseries(menuiseries, 'mur');
     const menuiseriesPlafondSurface = calculerSurfaceMenuiseries(menuiseries, 'plafond');
     const menuiseriesSolSurface = calculerSurfaceMenuiseries(menuiseries, 'sol');
+    const totalMenuiserieSurface = menuiseriesMursSurface + menuiseriesPlafondSurface + menuiseriesSolSurface;
     
     // Calculs des autres surfaces
     const autresMursAjout = calculerSurfaceAutres(autresSurfaces, 'mur', false);
@@ -120,6 +121,9 @@ export const useCalculSurfaces = () => {
       autresMursAjout,
       autresMursDeduction
     );
+    
+    const surfaceNetteMurs = netWallSurface;
+    const surfaceMenuiseries = totalMenuiserieSurface;
     
     const surfaceNetteSol = calculerSurfaceNetteSolPlafond(
       surfaceBruteSol,
@@ -153,6 +157,8 @@ export const useCalculSurfaces = () => {
       menuiseriesMursSurface,
       menuiseriesPlafondSurface,
       menuiseriesSolSurface,
+      surfaceMenuiseries,
+      totalMenuiserieSurface,
       
       // Autres surfaces
       autresSurfacesMurs: autresMursAjout - autresMursDeduction,
@@ -161,6 +167,7 @@ export const useCalculSurfaces = () => {
       
       // Surfaces nettes
       netWallSurface,
+      surfaceNetteMurs,
       surfaceNetteSol,
       surfaceNettePlafond,
     };

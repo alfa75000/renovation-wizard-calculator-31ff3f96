@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -63,6 +62,9 @@ const RoomForm: React.FC<RoomFormProps> = ({ onAddRoom, editingRoom, roomTypes }
     surfaceNettePlafond: 0,
     surfaceBrutePlafond: 0,
     surfaceBruteMurs: 0,
+    surfaceNetteMurs: 0,
+    surfaceMenuiseries: 0,
+    totalMenuiserieSurface: 0,
     lineaireBrut: 0,
     lineaireNet: 0
   });
@@ -160,6 +162,9 @@ const RoomForm: React.FC<RoomFormProps> = ({ onAddRoom, editingRoom, roomTypes }
       surfaceNettePlafond: 0,
       surfaceBrutePlafond: 0,
       surfaceBruteMurs: 0,
+      surfaceNetteMurs: 0,
+      surfaceMenuiseries: 0,
+      totalMenuiserieSurface: 0,
       lineaireBrut: 0,
       lineaireNet: 0
     });

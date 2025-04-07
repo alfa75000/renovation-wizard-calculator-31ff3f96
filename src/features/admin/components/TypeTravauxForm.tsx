@@ -19,7 +19,8 @@ import {
   CircuitBoard,
   Flame,
   Cable,
-  Building
+  Building,
+  LucideIcon
 } from "lucide-react";
 
 interface TypeTravauxFormProps {
@@ -39,7 +40,13 @@ const generateId = (label: string) => {
     .replace(/(^-|-$)/g, "");
 };
 
-const iconeOptions = [
+type IconOption = {
+  id: string;
+  label: string;
+  icon: JSX.Element;
+};
+
+const iconeOptions: IconOption[] = [
   { id: "Paintbrush", label: "Peinture", icon: <Paintbrush className="h-4 w-4" /> },
   { id: "Hammer", label: "Marteau", icon: <Hammer className="h-4 w-4" /> },
   { id: "Wrench", label: "Clé", icon: <Wrench className="h-4 w-4" /> },
