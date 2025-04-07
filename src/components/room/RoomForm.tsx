@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,7 @@ import { useMenuiseries } from '@/hooks/useMenuiseries';
 import { useAutresSurfaces } from '@/hooks/useAutresSurfaces';
 import MenuiserieForm from './MenuiserieForm';
 import { Separator } from '@/components/ui/separator';
+import { useProject } from '@/contexts/ProjectContext';
 
 interface RoomFormProps {
   onAddRoom: (room: Omit<Room, 'id'>) => void;
@@ -20,6 +22,7 @@ interface RoomFormProps {
 
 const RoomForm: React.FC<RoomFormProps> = ({ onAddRoom, editingRoom, roomTypes }) => {
   const { calculerToutesSurfaces } = useCalculSurfaces();
+  const { state: projectState } = useProject(); // Accès à l'état du projet pour le nommage correct
   const { 
     menuiseries, 
     setMenuiseries,
@@ -110,11 +113,25 @@ const RoomForm: React.FC<RoomFormProps> = ({ onAddRoom, editingRoom, roomTypes }
     }
   };
 
+  // Générer un nom de pièce séquentiel en utilisant les pièces existantes dans le projet
   const generateRoomName = (type: string, customName: string = ""): string => {
     if (editingRoom) return editingRoom.name;
     
-    const roomTypeCount = Math.floor(Math.random() * 100) + 1;
-    const baseRoomName = `${type} ${roomTypeCount}`;
+    // Compter les pièces du même type dans l'état actuel du projet (pas aléatoire)
+    const sameTypeRooms = projectState.rooms.filter(room => room.type === type);
+    let maxNumber = 0;
+    
+    sameTypeRooms.forEach(room => {
+      const match = room.name.match(/\s(\d+)$/);
+      if (match && match[1]) {
+        const num = parseInt(match[1], 10);
+        if (!isNaN(num) && num > maxNumber) {
+          maxNumber = num;
+        }
+      }
+    });
+    
+    const baseRoomName = `${type} ${maxNumber + 1}`;
     return customName ? `${baseRoomName} (${customName})` : baseRoomName;
   };
 

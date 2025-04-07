@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useReducer, useEffect, useState } from 'react';
 import { TravauxTypesState, TravauxType, SousTypeTravauxItem, TypeTravauxItem, TravauxTypesAction } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
@@ -17,77 +16,7 @@ export const surfacesReference = [
 
 // État initial avec quelques types de travaux prédéfinis
 const initialState: TravauxTypesState = {
-  types: [
-    {
-      id: "peinture",
-      nom: "Peinture",
-      label: "Peinture",
-      description: "Travaux de peinture",
-      icon: "paintbrush",
-      sousTypes: [
-        {
-          id: "peinture-murs",
-          typeTravauxId: "peinture",
-          nom: "Peinture des murs",
-          label: "Peinture des murs",
-          description: "Application de peinture sur les murs",
-          uniteParDefaut: "m²",
-          unite: "m²",
-          prixFournitures: 5,
-          prixFournituresUnitaire: 5,
-          prixMainOeuvre: 15,
-          prixMainOeuvreUnitaire: 15,
-          prixUnitaire: 20,
-          tempsMoyenMinutes: 30,
-          tauxTVA: 10,
-          surfaceReference: "murs"
-        },
-        {
-          id: "peinture-plafond",
-          typeTravauxId: "peinture",
-          nom: "Peinture du plafond",
-          label: "Peinture du plafond",
-          description: "Application de peinture sur le plafond",
-          uniteParDefaut: "m²",
-          unite: "m²",
-          prixFournitures: 5,
-          prixFournituresUnitaire: 5,
-          prixMainOeuvre: 20,
-          prixMainOeuvreUnitaire: 20,
-          prixUnitaire: 25,
-          tempsMoyenMinutes: 40,
-          tauxTVA: 10,
-          surfaceReference: "plafond"
-        }
-      ]
-    },
-    {
-      id: "sol",
-      nom: "Revêtement de sol",
-      label: "Revêtement de sol",
-      description: "Installation de revêtements de sol",
-      icon: "layout",
-      sousTypes: [
-        {
-          id: "parquet",
-          typeTravauxId: "sol",
-          nom: "Pose de parquet",
-          label: "Pose de parquet",
-          description: "Installation de parquet",
-          uniteParDefaut: "m²",
-          unite: "m²",
-          prixFournitures: 25,
-          prixFournituresUnitaire: 25,
-          prixMainOeuvre: 20,
-          prixMainOeuvreUnitaire: 20,
-          prixUnitaire: 45,
-          tempsMoyenMinutes: 60,
-          tauxTVA: 10,
-          surfaceReference: "sol"
-        }
-      ]
-    }
-  ],
+  types: [],
 };
 
 // Créer le contexte
@@ -210,9 +139,7 @@ export const TravauxTypesProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const [loading, setLoading] = useState(true);
   
   // Initialiser le state avec un état vide
-  const [state, dispatch] = useReducer(travauxTypesReducer, {
-    types: [],
-  });
+  const [state, dispatch] = useReducer(travauxTypesReducer, initialState);
 
   // Charger les données depuis Supabase au démarrage
   useEffect(() => {
@@ -221,25 +148,48 @@ export const TravauxTypesProvider: React.FC<{ children: React.ReactNode }> = ({ 
       try {
         console.log("Chargement des types de travaux depuis Supabase...");
         
-        // Pour l'instant, on continue d'utiliser localStorage comme solution de repli
-        // À terme, cela devra être complètement remplacé par Supabase
-        const savedTypesJSON = localStorage.getItem('travauxTypes');
-        const savedTypes = savedTypesJSON ? JSON.parse(savedTypesJSON) : [];
+        // Appel à Supabase pour récupérer les types de travaux
+        // À implémenter quand la structure Supabase est prête
+        // Pour l'instant, utiliser des données par défaut
         
-        // Si nous avons des données dans localStorage, les utiliser
-        if (savedTypes.length > 0) {
-          console.log("Types de travaux chargés depuis localStorage:", savedTypes.length);
-          dispatch({ type: 'LOAD_TYPES', payload: savedTypes });
-        } else {
-          // Sinon, charger les données par défaut
-          console.log("Utilisation des types de travaux par défaut");
-          dispatch({ type: 'LOAD_TYPES', payload: initialState.types });
-        }
+        // TEMPORAIRE: Utiliser un état initial fixe en attendant la migration complète
+        dispatch({ 
+          type: 'LOAD_TYPES', 
+          payload: [
+            {
+              id: "peinture",
+              nom: "Peinture",
+              label: "Peinture",
+              description: "Travaux de peinture",
+              icon: "paintbrush",
+              sousTypes: [
+                {
+                  id: "peinture-murs",
+                  typeTravauxId: "peinture",
+                  nom: "Peinture des murs",
+                  label: "Peinture des murs",
+                  description: "Application de peinture sur les murs",
+                  uniteParDefaut: "m²",
+                  unite: "m²",
+                  prixFournitures: 5,
+                  prixFournituresUnitaire: 5,
+                  prixMainOeuvre: 15,
+                  prixMainOeuvreUnitaire: 15,
+                  prixUnitaire: 20,
+                  tempsMoyenMinutes: 30,
+                  tauxTVA: 10,
+                  surfaceReference: "murs"
+                }
+              ]
+            }
+          ] 
+        });
       } catch (error) {
         console.error("Erreur lors du chargement des types de travaux:", error);
         toast.error("Erreur lors du chargement des types de travaux");
-        // Utiliser les types par défaut en cas d'erreur
-        dispatch({ type: 'LOAD_TYPES', payload: initialState.types });
+        
+        // En cas d'erreur, utiliser un état vide
+        dispatch({ type: 'LOAD_TYPES', payload: [] });
       } finally {
         setLoading(false);
       }
@@ -248,12 +198,14 @@ export const TravauxTypesProvider: React.FC<{ children: React.ReactNode }> = ({ 
     loadTravauxTypes();
   }, []);
 
-  // Sauvegarder les changements dans localStorage
-  // À terme, cela devra être remplacé par des appels à Supabase
+  // Sauvegarder les changements dans Supabase
+  // À implémenter quand la structure Supabase est prête
   useEffect(() => {
+    // Cette fonction sera modifiée pour utiliser les API Supabase
+    // Pour l'instant, elle ne fait rien
     if (state.types.length > 0) {
-      console.log('Sauvegarde des types de travaux:', state.types);
-      localStorage.setItem('travauxTypes', JSON.stringify(state.types));
+      console.log('Types de travaux modifiés, à synchroniser avec Supabase:', state.types);
+      // TODO: Implémenter la sauvegarde dans Supabase
     }
   }, [state.types]);
 
