@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { ProjetChantier } from '@/types';
@@ -8,6 +7,7 @@ import { useProject } from './ProjectContext';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useLogger } from '@/hooks/useLogger';
+import { toast } from 'sonner';
 
 // Interface pour l'état du contexte
 interface ProjetChantierState {
@@ -202,9 +202,16 @@ export const ProjetChantierProvider: React.FC<ProjetChantierProviderProps> = ({ 
       // Si IndexedDB est disponible, sauvegarder
       if (isDbAvailable && isInitialized) {
         saveProjetsToIndexedDB(projetMisAJour)
+          .then(() => {
+            logger.info(`Projet ${projetMisAJour.id} mis à jour dans IndexedDB`, 'storage');
+            toast.success('Projet sauvegardé dans IndexedDB');
+          })
           .catch(error => {
             logger.error(`Erreur lors de la mise à jour du projet ${projetMisAJour.id} dans IndexedDB`, error as Error, 'storage');
+            toast.error('Erreur lors de la sauvegarde dans IndexedDB');
           });
+      } else {
+        toast.success('Projet sauvegardé dans localStorage');
       }
     } else {
       // Création d'un nouveau projet
@@ -221,9 +228,16 @@ export const ProjetChantierProvider: React.FC<ProjetChantierProviderProps> = ({ 
       // Si IndexedDB est disponible, sauvegarder
       if (isDbAvailable && isInitialized) {
         saveProjetsToIndexedDB(nouveauProjet)
+          .then(() => {
+            logger.info(`Projet ${nouveauProjet.id} ajouté dans IndexedDB`, 'storage');
+            toast.success('Nouveau projet sauvegardé dans IndexedDB');
+          })
           .catch(error => {
             logger.error(`Erreur lors de l'ajout du projet ${nouveauProjet.id} dans IndexedDB`, error as Error, 'storage');
+            toast.error('Erreur lors de la sauvegarde dans IndexedDB');
           });
+      } else {
+        toast.success('Nouveau projet sauvegardé dans localStorage');
       }
     }
   };
@@ -255,18 +269,26 @@ export const ProjetChantierProvider: React.FC<ProjetChantierProviderProps> = ({ 
           logger.info(`${projetACharger.projectData.travaux.length} travaux chargés depuis le projet`, 'data');
         }
       }
+      
+      toast.info(`Projet "${projetACharger.nomProjet}" chargé`);
     }
   };
   
   // Fonction pour démarrer un nouveau projet
   const nouveauProjet = () => {
-    // Effacer le projet actif
-    dispatch({ type: 'SET_PROJET_ACTIF', payload: null });
-    
-    // Réinitialiser le projectState
-    projectDispatch({ type: 'RESET_PROJECT' });
-    
-    logger.info('Nouveau projet initialisé', 'data');
+    try {
+      // Effacer le projet actif
+      dispatch({ type: 'SET_PROJET_ACTIF', payload: null });
+      
+      // Réinitialiser le projectState avec l'action RESET_PROJECT
+      projectDispatch({ type: 'RESET_PROJECT' });
+      
+      logger.info('Nouveau projet initialisé', 'data');
+      toast.success('Nouveau projet initialisé');
+    } catch (error) {
+      logger.error('Erreur lors de l\'initialisation d\'un nouveau projet', error as Error, 'data');
+      toast.error('Erreur lors de l\'initialisation d\'un nouveau projet');
+    }
   };
 
   return (

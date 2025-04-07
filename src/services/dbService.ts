@@ -164,10 +164,10 @@ class AppDatabase extends Dexie {
   /**
    * Met à jour une pièce
    */
-  async updateRoom(room: Room): Promise<void> {
+  async updateRoom(id: string, room: Room): Promise<void> {
     try {
-      await this.rooms.update(room.id, room);
-      logService.info('Pièce mise à jour dans IndexedDB', 'storage', { roomId: room.id });
+      await this.rooms.update(id, room);
+      logService.info('Pièce mise à jour dans IndexedDB', 'storage', { roomId: id });
     } catch (error) {
       logService.error('Erreur lors de la mise à jour d\'une pièce dans IndexedDB', error as Error, 'storage');
       throw error;
@@ -183,6 +183,19 @@ class AppDatabase extends Dexie {
       logService.info('Pièce supprimée d\'IndexedDB', 'storage', { roomId: id });
     } catch (error) {
       logService.error('Erreur lors de la suppression d\'une pièce d\'IndexedDB', error as Error, 'storage');
+      throw error;
+    }
+  }
+  
+  /**
+   * Vide complètement la table des pièces
+   */
+  async clearRooms(): Promise<void> {
+    try {
+      await this.rooms.clear();
+      logService.info('Table des pièces vidée dans IndexedDB', 'storage');
+    } catch (error) {
+      logService.error('Erreur lors du vidage de la table des pièces dans IndexedDB', error as Error, 'storage');
       throw error;
     }
   }
@@ -252,10 +265,10 @@ class AppDatabase extends Dexie {
   /**
    * Met à jour un travail
    */
-  async updateTravail(travail: Travail): Promise<void> {
+  async updateTravail(id: string, travail: Travail): Promise<void> {
     try {
-      await this.travaux.update(travail.id, travail);
-      logService.info('Travail mis à jour dans IndexedDB', 'storage', { travailId: travail.id });
+      await this.travaux.update(id, travail);
+      logService.info('Travail mis à jour dans IndexedDB', 'storage', { travailId: id });
     } catch (error) {
       logService.error('Erreur lors de la mise à jour d\'un travail dans IndexedDB', error as Error, 'storage');
       throw error;
@@ -271,6 +284,19 @@ class AppDatabase extends Dexie {
       logService.info('Travail supprimé d\'IndexedDB', 'storage', { travailId: id });
     } catch (error) {
       logService.error('Erreur lors de la suppression d\'un travail d\'IndexedDB', error as Error, 'storage');
+      throw error;
+    }
+  }
+  
+  /**
+   * Vide complètement la table des travaux
+   */
+  async clearTravaux(): Promise<void> {
+    try {
+      await this.travaux.clear();
+      logService.info('Table des travaux vidée dans IndexedDB', 'storage');
+    } catch (error) {
+      logService.error('Erreur lors du vidage de la table des travaux dans IndexedDB', error as Error, 'storage');
       throw error;
     }
   }
@@ -340,10 +366,10 @@ class AppDatabase extends Dexie {
   /**
    * Met à jour un projet chantier
    */
-  async updateProjet(projet: ProjetChantier): Promise<void> {
+  async updateProjet(id: string, projet: ProjetChantier): Promise<void> {
     try {
-      await this.projets.update(projet.id, projet);
-      logService.info('Projet mis à jour dans IndexedDB', 'storage', { projetId: projet.id });
+      await this.projets.update(id, projet);
+      logService.info('Projet mis à jour dans IndexedDB', 'storage', { projetId: id });
     } catch (error) {
       logService.error('Erreur lors de la mise à jour d\'un projet dans IndexedDB', error as Error, 'storage');
       throw error;

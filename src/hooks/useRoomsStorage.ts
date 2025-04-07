@@ -21,6 +21,7 @@ export function useRoomsStorage() {
     addItem: addRoom,
     updateItem: updateRoom,
     deleteItem: deleteRoom,
+    clearItems: clearRooms,
     syncFromLocalStorage
   } = useIndexedDB<Room>('rooms', LOCAL_STORAGE_KEY);
   
@@ -87,6 +88,7 @@ export function useRoomsStorage() {
     getRoom,
     saveRoom,
     deleteRoom,
+    clearRooms,
     syncFromLocalStorage
   };
 }

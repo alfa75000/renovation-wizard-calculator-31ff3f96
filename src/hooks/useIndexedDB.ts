@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import db from '@/services/dbService';
 import { useLogger } from './useLogger';
@@ -18,6 +17,7 @@ export function useIndexedDB<T>(
   addItem: (item: T) => Promise<string>;
   updateItem: (id: string, item: T) => Promise<void>;
   deleteItem: (id: string) => Promise<void>;
+  clearItems: () => Promise<void>;
   syncFromLocalStorage: (items: T[]) => Promise<void>;
 } {
   const logger = useLogger('useIndexedDB');
@@ -185,6 +185,30 @@ export function useIndexedDB<T>(
     }
   }, [isDbAvailable, localStorageKey, storeName]);
   
+  // Fonction pour vider complètement une table
+  const clearItems = useCallback(async (): Promise<void> => {
+    if (!isDbAvailable) {
+      // Fallback vers localStorage
+      try {
+        localStorage.removeItem(localStorageKey);
+        logger.info(`Suppression des données de ${localStorageKey} dans localStorage`, 'storage');
+      } catch (err) {
+        logger.error(`Erreur lors de la suppression des données de ${localStorageKey} dans localStorage`, err as Error, 'storage');
+        throw err;
+      }
+      return;
+    }
+    
+    try {
+      // @ts-ignore - Accès dynamique à la propriété de db
+      await db[storeName].clear();
+      logger.info(`Table ${storeName} vidée dans IndexedDB`, 'storage');
+    } catch (err) {
+      logger.error(`Erreur lors du vidage de la table ${storeName} dans IndexedDB`, err as Error, 'storage');
+      throw err;
+    }
+  }, [isDbAvailable, storeName, localStorageKey]);
+  
   // Fonction pour synchroniser depuis localStorage
   const syncFromLocalStorage = useCallback(async (items: T[]): Promise<void> => {
     if (!isDbAvailable) {
@@ -239,6 +263,7 @@ export function useIndexedDB<T>(
     addItem,
     updateItem,
     deleteItem,
+    clearItems,
     syncFromLocalStorage
   };
 }

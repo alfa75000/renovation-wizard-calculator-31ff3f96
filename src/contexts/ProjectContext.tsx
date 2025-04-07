@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
 import { Room, PropertyType, Travail, AutreSurface } from '@/types';
 import { useRoomsStorage } from '@/hooks/useRoomsStorage';
@@ -74,10 +73,6 @@ const projectReducer = (state: ProjectState, action: ProjectAction): ProjectStat
     case 'DELETE_TRAVAIL':
       return { ...state, travaux: state.travaux.filter(travail => travail.id !== action.payload) };
     case 'RESET_PROJECT':
-      // Réinitialiser complètement l'état et effacer localStorage
-      localStorage.removeItem('rooms');
-      localStorage.removeItem('property');
-      localStorage.removeItem('travaux');
       return initialState;
     default:
       return state;
@@ -229,7 +224,6 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   }, [roomsStorage.isDbAvailable, roomsStorage.isLoading, travauxStorage.isDbAvailable, travauxStorage.isLoading, propertyStorage.isDbAvailable, propertyStorage.isLoading, logger]);
 
   // Sauvegarde des données lorsqu'elles changent
-  // Sauvegarder les pièces dans localStorage et/ou IndexedDB
   useEffect(() => {
     if (state.rooms.length > 0) {
       logger.info("Sauvegarde des pièces:", 'storage', { count: state.rooms.length });
@@ -251,7 +245,6 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   }, [state.rooms, roomsStorage.isDbAvailable, roomsStorage.isLoading, roomsStorage.saveRoom, logger]);
 
-  // Sauvegarder les propriétés du bien
   useEffect(() => {
     // Toujours sauvegarder dans localStorage (compatibilité)
     localStorage.setItem('property', JSON.stringify(state.property));
@@ -265,7 +258,6 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   }, [state.property, propertyStorage.isDbAvailable, propertyStorage.isLoading, propertyStorage.saveProperty, logger]);
   
-  // Sauvegarder les travaux
   useEffect(() => {
     if (state.travaux.length > 0) {
       logger.info("Sauvegarde des travaux:", 'storage', { count: state.travaux.length });
@@ -286,6 +278,44 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       }
     }
   }, [state.travaux, travauxStorage.isDbAvailable, travauxStorage.isLoading, travauxStorage.saveTravail, logger]);
+
+  // Observer les changements de l'action RESET_PROJECT
+  useEffect(() => {
+    const handleProjectReset = async () => {
+      try {
+        // Effacer localStorage
+        localStorage.removeItem('rooms');
+        localStorage.removeItem('property');
+        localStorage.removeItem('travaux');
+        
+        // Si IndexedDB est disponible, effacer également ces tables
+        if (roomsStorage.isDbAvailable && !roomsStorage.isLoading) {
+          await roomsStorage.clearRooms();
+          logger.info('Table des pièces vidée', 'storage');
+        }
+        
+        if (travauxStorage.isDbAvailable && !travauxStorage.isLoading) {
+          await travauxStorage.clearTravaux();
+          logger.info('Table des travaux vidée', 'storage');
+        }
+        
+        if (propertyStorage.isDbAvailable && !propertyStorage.isLoading) {
+          // Sauvegarder les valeurs par défaut pour la propriété
+          await propertyStorage.saveProperty(initialState.property);
+          logger.info('Propriétés réinitialisées avec les valeurs par défaut', 'storage');
+        }
+        
+        logger.info('Projet réinitialisé avec succès', 'storage');
+      } catch (error) {
+        logger.error('Erreur lors de la réinitialisation du projet', error as Error, 'storage');
+      }
+    };
+
+    // Si l'état est l'état initial, cela signifie que RESET_PROJECT a été dispatché
+    if (state.rooms.length === 0 && state.travaux.length === 0) {
+      handleProjectReset();
+    }
+  }, [state.rooms.length, state.travaux.length, roomsStorage.isDbAvailable, roomsStorage.isLoading, roomsStorage.clearRooms, travauxStorage.isDbAvailable, travauxStorage.isLoading, travauxStorage.clearTravaux, propertyStorage.isDbAvailable, propertyStorage.isLoading, propertyStorage.saveProperty, logger]);
 
   return (
     <ProjectContext.Provider value={{ state, dispatch }}>

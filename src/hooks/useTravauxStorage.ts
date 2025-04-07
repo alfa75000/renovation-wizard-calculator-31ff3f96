@@ -20,6 +20,7 @@ export function useTravauxStorage() {
     addItem: addTravail,
     updateItem: updateTravail,
     deleteItem: deleteTravail,
+    clearItems: clearTravaux,
     syncFromLocalStorage
   } = useIndexedDB<Travail>('travaux', LOCAL_STORAGE_KEY);
   
@@ -97,6 +98,7 @@ export function useTravauxStorage() {
     getTravail,
     saveTravail,
     deleteTravail,
+    clearTravaux,
     getTravauxForPiece,
     syncFromLocalStorage
   };

@@ -20,6 +20,7 @@ export function useProjetsStorage() {
     addItem: addProjet,
     updateItem: updateProjet,
     deleteItem: deleteProjet,
+    clearItems: clearProjets,
     syncFromLocalStorage
   } = useIndexedDB<ProjetChantier>('projets', LOCAL_STORAGE_KEY);
   
@@ -97,6 +98,7 @@ export function useProjetsStorage() {
     getProjet,
     saveProjet,
     deleteProjet,
+    clearProjets,
     getProjetsForClient,
     syncFromLocalStorage
   };
