@@ -172,21 +172,21 @@ export const ProjetChantierProvider: React.FC<{ children: React.ReactNode }> = (
         });
       } else {
         // Création d'un nouveau projet
-        const newProjet = {
+        const newProjet: ProjetChantier = {
           id: uuidv4(),
           nom: projetData.nomProjet || 'Nouveau projet',
           adresse: projetData.adresse || '',
-          codePostal: '',
-          ville: '',
+          codePostal: projetData.codePostal || '',
+          ville: projetData.ville || '',
           clientId: projetData.clientId || '',
           dateDebut: format(new Date(), 'yyyy-MM-dd'),
           dateFin: '',
           description: projetData.description || '',
-          statut: 'en_attente',
+          statut: 'en_attente' as const, // Forcer le type
           montantTotal: 0,
-          ...projetData,
           dateModification,
-          projectData: JSON.parse(JSON.stringify(projectState)), // Clone profond pour éviter les références circulaires
+          projectData: JSON.parse(JSON.stringify(projectState)),
+          ...projetData,
         };
         
         dispatch({

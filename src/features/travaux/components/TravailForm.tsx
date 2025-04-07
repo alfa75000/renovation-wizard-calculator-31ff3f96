@@ -179,7 +179,7 @@ const TravailForm: React.FC<TravailFormProps> = ({
               <Label htmlFor="unite">Unité</Label>
               <UniteSelect
                 value={unite}
-                onChange={setUnite}
+                onChange={(value) => setUnite(value)}
                 className="mt-1"
               />
             </div>
@@ -216,7 +216,7 @@ const TravailForm: React.FC<TravailFormProps> = ({
             <Label htmlFor="tauxTVA">Taux de TVA (%)</Label>
             <TvaSelect
               value={tauxTVA}
-              onChange={setTauxTVA}
+              onChange={(value) => setTauxTVA(value)}
               className="mt-1"
             />
           </div>

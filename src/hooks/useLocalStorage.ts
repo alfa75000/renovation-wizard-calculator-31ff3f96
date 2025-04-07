@@ -21,6 +21,8 @@ export function useLocalStorage<T>(
       // Vérifier que la valeur est valide (pour éviter les tableaux vides ou objets mal formés)
       if (Array.isArray(parsedItem) && parsedItem.length === 0 && Array.isArray(initialValue) && initialValue.length > 0) {
         console.log(`[useLocalStorage] Tableau vide détecté pour ${key}, utilisation de la valeur initiale`);
+        // Sauvegarde immédiate de la valeur initiale
+        window.localStorage.setItem(key, JSON.stringify(initialValue));
         return initialValue;
       }
       
@@ -74,7 +76,17 @@ export function useLocalStorage<T>(
           // Si l'erreur est due à un quota dépassé, essayer de libérer de l'espace
           if (e instanceof DOMException && e.name === 'QuotaExceededError') {
             console.warn('[useLocalStorage] Quota localStorage dépassé, tentative de libérer de l\'espace...');
-            // Supprimer des éléments moins importants si nécessaire
+            // On pourrait implémenter ici une logique pour supprimer des éléments moins importants
+            
+            // Dernière tentative avec uniquement les données essentielles
+            const essentialData = Array.isArray(valueToStore) ? valueToStore.slice(0, 5) : valueToStore;
+            try {
+              window.localStorage.setItem(key, JSON.stringify(essentialData));
+              console.log(`[useLocalStorage] Sauvegarde d'urgence partielle effectuée pour ${key}`);
+              setStoredValue(essentialData as T);
+            } catch (finalError) {
+              console.error('[useLocalStorage] Échec de la sauvegarde d\'urgence', finalError);
+            }
           }
         }
       }
