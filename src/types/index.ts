@@ -54,8 +54,8 @@ export interface Room {
   surface: number;
   plinthHeight: number;
   wallSurfaceRaw: number;
-  menuiseries: any[];
-  autresSurfaces: any[];
+  menuiseries: Menuiserie[];
+  autresSurfaces: AutreSurface[];
   totalPlinthLength: number;
   totalPlinthSurface: number;
   menuiseriesMursSurface: number;
@@ -124,6 +124,9 @@ export interface TypeAutreSurface {
   id: string;
   nom: string;
   surfaceReference: string;
+  surfaceImpacteeParDefaut?: string;
+  estDeduction?: boolean;
+  description?: string;
 }
 
 export interface AutreSurface {
@@ -133,7 +136,12 @@ export interface AutreSurface {
   largeur: number;
   hauteur: number;
   surface: number;
-  pieceId: string;
+  pieceId?: string;
+  name?: string;
+  designation?: string;
+  quantity?: number;
+  surfaceImpactee?: string;
+  estDeduction?: boolean;
 }
 
 export interface AutresSurfacesState {
@@ -184,7 +192,11 @@ export interface Menuiserie {
   largeur: number;
   hauteur: number;
   surface: number;
-  pieceId: string;
+  pieceId?: string;
+  name?: string;
+  surfaceImpactee?: string;
+  impactePlinthe?: boolean;
+  quantity?: number;
 }
 
 // Types for ProjetChantierContext
@@ -199,6 +211,12 @@ export interface ProjetChantier {
   status: 'draft' | 'pending' | 'in_progress' | 'completed' | 'cancelled';
   budget?: number;
   notes?: string;
+  // Alias fields for backwards compatibility
+  nom?: string;
+  adresse?: string;
+  codePostal?: string;
+  ville?: string;
+  nomProjet?: string;
 }
 
 export interface ProjetChantierState {
@@ -227,6 +245,21 @@ export interface SousTypeTravauxItem {
   description?: string;
   typeId: string;
   groupId?: string;
+  
+  // Legacy fields for compatibility
+  nom?: string;
+  label?: string;
+  typeTravauxId?: string;
+  unite?: string;
+  uniteParDefaut?: string;
+  prixUnitaire?: number;
+  prixFournitures?: number;
+  prixFournituresUnitaire?: number;
+  prixMainOeuvre?: number;
+  prixMainOeuvreUnitaire?: number;
+  tempsMoyenMinutes?: number;
+  tauxTVA?: number;
+  surfaceReference?: string;
 }
 
 export interface TravauxType {
@@ -234,6 +267,11 @@ export interface TravauxType {
   name: string;
   description?: string;
   sousTypes?: SousTypeTravauxItem[];
+  
+  // Legacy fields for compatibility
+  nom?: string;
+  label?: string;
+  icon?: string;
 }
 
 export interface TravauxTypesState {
