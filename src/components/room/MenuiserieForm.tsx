@@ -11,11 +11,13 @@ import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
+import { useMenuiseries } from '@/hooks/useMenuiseries';
 
 interface MenuiserieFormProps {
   onAddMenuiserie: (menuiserie: Omit<Menuiserie, 'id' | 'surface'>, quantity: number) => void;
   editingMenuiserie?: Omit<Menuiserie, 'id' | 'surface'> | null;
   onCancelEdit?: () => void;
+  existingMenuiseries?: Menuiserie[];
 }
 
 // Mapping pour convertir les valeurs de surface_impactee de Supabase vers les valeurs frontend
@@ -31,12 +33,15 @@ const mapSurfaceImpacteeToFrontend = (surfaceImpactee: SurfaceImpactee): "mur" |
 const MenuiserieForm: React.FC<MenuiserieFormProps> = ({ 
   onAddMenuiserie, 
   editingMenuiserie = null,
-  onCancelEdit
+  onCancelEdit,
+  existingMenuiseries = []
 }) => {
   const [menuiseriesTypes, setMenuiseriesTypes] = useState<MenuiserieType[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const [menuiserieCount, setMenuiserieCount] = useState(1);
+  
+  // Utiliser le hook pour accéder à la fonction de génération de nom
+  const { generateMenuiserieName } = useMenuiseries();
 
   const [newMenuiserie, setNewMenuiserie] = useState<Omit<Menuiserie, 'id' | 'surface'>>({
     type: "",
@@ -44,7 +49,8 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
     largeur: 0,
     hauteur: 0,
     quantity: 1,
-    surfaceImpactee: "mur"
+    surfaceImpactee: "mur",
+    description: ""
   });
 
   const [selectedTypeId, setSelectedTypeId] = useState<string>("");
@@ -99,10 +105,13 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
       setSelectedType(selected);
       const surfaceImpactee = mapSurfaceImpacteeToFrontend(selected.surface_impactee);
       
-      // Ne générons pas de nom ici pour éviter le problème de numérotation
+      // Génération du nom automatique basé sur le nombre actuel de menuiseries
+      const autoName = generateMenuiserieName(selected.name, selected.largeur, selected.hauteur);
+      
       setNewMenuiserie((prev) => ({ 
         ...prev, 
         type: selected.name,
+        name: autoName,
         largeur: selected.largeur,
         hauteur: selected.hauteur,
         surfaceImpactee,
@@ -162,7 +171,6 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
     onAddMenuiserie(menuiserieToAdd, quantity);
     
     // Réinitialiser le formulaire
-    setMenuiserieCount(prevCount => prevCount + 1);
     setNewMenuiserie(prev => ({
       ...prev,
       name: "",

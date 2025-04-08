@@ -7,6 +7,13 @@ import { createRoomMenuiserie, deleteRoomMenuiserie, updateRoomMenuiserie } from
 export const useMenuiseries = () => {
   const [menuiseries, setMenuiseries] = useState<Menuiserie[]>([]);
 
+  // Générer un nom pour une menuiserie
+  const generateMenuiserieName = (type: string, largeur: number, hauteur: number): string => {
+    const nextIndex = menuiseries.length + 1;
+    const baseInfo = type ? `(${type} (${largeur}×${hauteur} cm))` : '';
+    return `Menuiserie n° ${nextIndex} ${baseInfo}`;
+  };
+
   // Ajouter une menuiserie
   const addMenuiserie = (
     menuiserie: Omit<Menuiserie, 'id' | 'surface'>, 
@@ -14,20 +21,13 @@ export const useMenuiseries = () => {
   ): Menuiserie => {
     const surface = (menuiserie.largeur * menuiserie.hauteur) / 10000; // Convert cm² to m²
     
-    // Déterminer le prochain numéro pour la menuiserie
-    const nextIndex = menuiseries.length + 1;
-    
-    // Si un nom a été fourni, on l'utilise comme base, sinon on utilise le type
-    const baseInfo = menuiserie.type ? `(${menuiserie.type} (${menuiserie.largeur}×${menuiserie.hauteur} cm))` : '';
-    const generatedName = `Menuiserie n° ${nextIndex} ${baseInfo}`;
-    
-    // Créer la nouvelle menuiserie avec le bon nom
+    // Créer la nouvelle menuiserie
     const newMenuiserie: Menuiserie = {
       ...menuiserie,
       id: uuidv4(),
       quantity,
       surface,
-      name: menuiserie.name || generatedName
+      name: menuiserie.name || generateMenuiserieName(menuiserie.type, menuiserie.largeur, menuiserie.hauteur)
     };
 
     setMenuiseries(prevMenuiseries => {
@@ -37,7 +37,6 @@ export const useMenuiseries = () => {
     });
     
     // Appel à l'API pour sauvegarder dans Supabase sera fait au niveau du composant parent
-    // lorsque la pièce est sauvegardée avec toute la configuration
     
     return newMenuiserie;
   };
@@ -90,6 +89,7 @@ export const useMenuiseries = () => {
     setMenuiseries,
     addMenuiserie,
     updateMenuiserie,
-    deleteMenuiserie
+    deleteMenuiserie,
+    generateMenuiserieName
   };
 };
