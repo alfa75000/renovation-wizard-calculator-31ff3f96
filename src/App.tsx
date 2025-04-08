@@ -69,7 +69,7 @@ export default function App() {
                         <Route path="*" element={<NotFound />} />
                       </Routes>
                     </div>
-                    <SupabaseStatus isConnected={isConnected} />
+                    <SupabaseStatus />
                   </main>
                   <Toaster richColors position="top-right" />
                 </ProjetChantierProvider>

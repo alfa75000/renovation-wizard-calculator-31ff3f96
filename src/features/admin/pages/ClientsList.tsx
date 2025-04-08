@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Pencil, Trash2, Search } from 'lucide-react';
+import { Plus, Edit, Trash, Search } from 'lucide-react';
 import ClientForm from '@/features/admin/components/ClientForm';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
@@ -142,7 +142,7 @@ const ClientsList: React.FC = () => {
                             size="sm"
                             onClick={() => handleEditClient(client.id)}
                           >
-                            <Pencil className="h-4 w-4" />
+                            <Edit className="h-4 w-4" />
                           </Button>
                           <AlertDialog open={isDeleteDialogOpen && clientToDelete === client.id} onOpenChange={(open) => {
                             if (!open) setClientToDelete(null);
@@ -155,7 +155,7 @@ const ClientsList: React.FC = () => {
                                 className="text-red-500 hover:text-red-700 hover:bg-red-50"
                                 onClick={() => handleDeleteClient(client.id)}
                               >
-                                <Trash2 className="h-4 w-4" />
+                                <Trash className="h-4 w-4" />
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>

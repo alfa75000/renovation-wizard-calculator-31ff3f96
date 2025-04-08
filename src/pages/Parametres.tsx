@@ -1056,7 +1056,7 @@ const Parametres = () => {
                               handleEditClient(client);
                             }}
                           >
-                            <Pencil className="h-4 w-4" />
+                            <Edit className="h-4 w-4" />
                           </Button>
                           <Button 
                             variant="ghost" 
@@ -1066,7 +1066,7 @@ const Parametres = () => {
                               handleDeleteClient(client.id);
                             }}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash className="h-4 w-4" />
                           </Button>
                         </div>
                       </div>
