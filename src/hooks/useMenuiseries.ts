@@ -41,7 +41,11 @@ export const useMenuiseries = () => {
       return updatedMenuiseries;
     });
     
-    // Appel à l'API pour sauvegarder dans Supabase sera fait au niveau du composant parent
+    // Appel à l'API pour sauvegarder dans Supabase
+    if (menuiserie.roomId) {
+      createRoomMenuiserie(menuiserie.roomId, newMenuiserie)
+        .catch(error => console.error('Erreur lors de la création de la menuiserie dans Supabase:', error));
+    }
     
     return newMenuiserie;
   };
@@ -69,24 +73,36 @@ export const useMenuiseries = () => {
             surface: newSurface
           };
           
+          // Appel à l'API pour mettre à jour dans Supabase
+          if (menuiserie.roomId) {
+            updateRoomMenuiserie(menuiserie.roomId, id, updatedMenuiserie)
+              .catch(error => console.error('Erreur lors de la mise à jour de la menuiserie dans Supabase:', error));
+          }
+          
           return updatedMenuiserie;
         }
         return menuiserie;
       });
     });
-
-    // Appel à l'API pour mettre à jour dans Supabase sera fait au niveau du composant parent
     
     return updatedMenuiserie;
   };
 
   // Supprimer une menuiserie
-  const deleteMenuiserie = (id: string): void => {
+  const deleteMenuiserie = (id: string, roomId?: string): void => {
+    // Trouver la menuiserie avant de la supprimer
+    const menuiserieToDelete = menuiseries.find(m => m.id === id);
+    
     setMenuiseries(prevMenuiseries => 
       prevMenuiseries.filter(menuiserie => menuiserie.id !== id)
     );
     
-    // Appel à l'API pour supprimer dans Supabase sera fait au niveau du composant parent
+    // Appel à l'API pour supprimer dans Supabase
+    if (menuiserieToDelete && menuiserieToDelete.roomId) {
+      const actualRoomId = roomId || menuiserieToDelete.roomId;
+      deleteRoomMenuiserie(actualRoomId, id)
+        .catch(error => console.error('Erreur lors de la suppression de la menuiserie dans Supabase:', error));
+    }
   };
 
   return {
