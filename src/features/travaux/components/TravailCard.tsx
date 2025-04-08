@@ -44,7 +44,7 @@ const TravailCard: React.FC<TravailCardProps> = ({
           </div>
           
           <div className="text-sm">
-            {travail.description && <p className="mb-2">{travail.description}</p>}
+            {travail.description && <p className="mb-2 text-muted-foreground">{travail.description}</p>}
             {travail.personnalisation && (
               <p className="text-muted-foreground italic text-sm">
                 Personnalisation: {travail.personnalisation}
