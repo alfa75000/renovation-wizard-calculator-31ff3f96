@@ -1,58 +1,83 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { ProjectProvider } from './contexts/ProjectContext';
-import { TravauxTypesProvider } from './contexts/TravauxTypesContext';
-import { MenuiseriesTypesProvider } from './contexts/MenuiseriesTypesContext';
-import { AutresSurfacesProvider } from './contexts/AutresSurfacesContext';
-import { ClientsProvider } from './contexts/ClientsContext';
-import { ProjetChantierProvider } from './contexts/ProjetChantierContext';
-import Index from "./pages/Index";
-import Travaux from "./pages/Travaux";
-import Recapitulatif from "./pages/Recapitulatif";
-import InfosChantier from "./pages/InfosChantier";
-import AdminTravaux from "./pages/AdminTravaux";
-import Parametres from "./pages/Parametres";
-import NotFound from "./pages/NotFound";
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Toaster } from '@/components/ui/sonner';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
 
-// Initialisation du client de requêtes
-const queryClient = new QueryClient();
+import { ClientsProvider } from '@/contexts/ClientsContext';
+import { ProjectProvider } from '@/contexts/ProjectContext';
+import { TravauxTypesProvider } from '@/contexts/TravauxTypesContext';
+import { MenuiseriesTypesProvider } from '@/contexts/MenuiseriesTypesContext';
+import { AutresSurfacesProvider } from '@/contexts/AutresSurfacesContext';
+import { ProjetChantierProvider } from '@/contexts/ProjetChantierContext';
 
-function App() {
+import Index from '@/pages/Index';
+import Travaux from '@/pages/Travaux';
+import Recapitulatif from '@/pages/Recapitulatif';
+import AdminTravaux from '@/pages/AdminTravaux';
+import Parametres from '@/pages/Parametres';
+import InfosChantier from '@/pages/InfosChantier';
+import NotFound from '@/pages/NotFound';
+import ClientsList from '@/features/admin/pages/ClientsList';
+
+import './App.css';
+import SupabaseStatus from './components/SupabaseStatus';
+
+export default function App() {
+  const [isConnected, setIsConnected] = useState(false);
+
+  // Vérifier la connexion Supabase
+  useEffect(() => {
+    const checkConnection = async () => {
+      try {
+        const { data, error } = await supabase.from('clients').select('count', { count: 'exact', head: true });
+        if (error) throw error;
+        setIsConnected(true);
+      } catch (error) {
+        console.error('Erreur de connexion à Supabase:', error);
+        setIsConnected(false);
+      }
+    };
+
+    checkConnection();
+    
+    const intervalId = setInterval(checkConnection, 30000); // Vérifier toutes les 30 secondes
+    
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, []);
+
   return (
-    <QueryClientProvider client={queryClient}>
-      <ProjectProvider>
-        <TravauxTypesProvider>
-          <MenuiseriesTypesProvider>
-            <AutresSurfacesProvider>
-              <ClientsProvider>
+    <Router>
+      <TravauxTypesProvider>
+        <MenuiseriesTypesProvider>
+          <AutresSurfacesProvider>
+            <ClientsProvider>
+              <ProjectProvider>
                 <ProjetChantierProvider>
-                  <TooltipProvider>
-                    <Toaster />
-                    <Sonner />
-                    <BrowserRouter>
+                  <main className="min-h-screen flex flex-col">
+                    <div className="flex-1">
                       <Routes>
                         <Route path="/" element={<Index />} />
                         <Route path="/travaux" element={<Travaux />} />
                         <Route path="/recapitulatif" element={<Recapitulatif />} />
-                        <Route path="/infos-chantier" element={<InfosChantier />} />
                         <Route path="/admin/travaux" element={<AdminTravaux />} />
                         <Route path="/parametres" element={<Parametres />} />
+                        <Route path="/infos-chantier" element={<InfosChantier />} />
+                        <Route path="/admin/clients" element={<ClientsList />} />
                         <Route path="*" element={<NotFound />} />
                       </Routes>
-                    </BrowserRouter>
-                  </TooltipProvider>
+                    </div>
+                    <SupabaseStatus isConnected={isConnected} />
+                  </main>
+                  <Toaster richColors position="top-right" />
                 </ProjetChantierProvider>
-              </ClientsProvider>
-            </AutresSurfacesProvider>
-          </MenuiseriesTypesProvider>
-        </TravauxTypesProvider>
-      </ProjectProvider>
-    </QueryClientProvider>
+              </ProjectProvider>
+            </ClientsProvider>
+          </AutresSurfacesProvider>
+        </MenuiseriesTypesProvider>
+      </TravauxTypesProvider>
+    </Router>
   );
 }
-
-export default App;

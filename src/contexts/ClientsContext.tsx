@@ -3,7 +3,7 @@ import React, { createContext, useContext, useReducer, useEffect, useState } fro
 import { ClientsState, Client, ClientsAction, typesClients } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'sonner';
-import { fetchClients, createClient, updateClient, deleteClient } from '@/services/clientsService';
+import { fetchClients, createClient, updateClient, deleteClient, fetchClientTypes, ClientType } from '@/services/clientsService';
 
 // État initial
 const initialState: ClientsState = {
@@ -16,11 +16,15 @@ const ClientsContext = createContext<{
   dispatch: React.Dispatch<ClientsAction>;
   isLoading: boolean;
   error: string | null;
+  clientTypes: ClientType[];
+  getClientTypeName: (typeId: string) => string;
 }>({
   state: initialState,
   dispatch: () => null,
   isLoading: false,
   error: null,
+  clientTypes: [],
+  getClientTypeName: () => '',
 });
 
 // Reducer pour gérer les actions
@@ -70,6 +74,23 @@ export const ClientsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [state, dispatch] = useReducer(clientsReducer, initialState);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [clientTypes, setClientTypes] = useState<ClientType[]>([]);
+  
+  // Charger les types de clients depuis Supabase
+  useEffect(() => {
+    const loadClientTypes = async () => {
+      try {
+        const types = await fetchClientTypes();
+        setClientTypes(types);
+        console.log(`[ClientsContext] ${types.length} types de clients chargés depuis Supabase`);
+      } catch (error) {
+        console.error('[ClientsContext] Erreur lors du chargement des types de clients:', error);
+        setError('Erreur lors du chargement des types de clients');
+      }
+    };
+    
+    loadClientTypes();
+  }, []);
   
   // Charger les clients depuis Supabase au démarrage
   useEffect(() => {
@@ -90,6 +111,12 @@ export const ClientsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     
     loadClientsFromSupabase();
   }, []);
+  
+  // Fonction pour obtenir le nom du type de client à partir de son ID
+  const getClientTypeName = (typeId: string): string => {
+    const clientType = clientTypes.find(type => type.id === typeId);
+    return clientType?.name || typeId;
+  };
   
   // Intercepter les actions du dispatch pour synchroniser avec Supabase
   const handleDispatch = async (action: ClientsAction) => {
@@ -153,7 +180,14 @@ export const ClientsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   return (
-    <ClientsContext.Provider value={{ state, dispatch: handleDispatch, isLoading, error }}>
+    <ClientsContext.Provider value={{ 
+      state, 
+      dispatch: handleDispatch, 
+      isLoading, 
+      error, 
+      clientTypes,
+      getClientTypeName 
+    }}>
       {children}
     </ClientsContext.Provider>
   );

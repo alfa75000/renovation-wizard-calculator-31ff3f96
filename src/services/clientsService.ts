@@ -33,7 +33,6 @@ export const fetchClients = async (): Promise<Client[]> => {
       typeClient: client.client_type_id || 'particulier', // Utilisation de client_type_id
       autreInfo: client.autre_info || '',
       infosComplementaires: client.infos_complementaires || '',
-      created_at: client.created_at
     }));
     
     return clients;
@@ -92,7 +91,6 @@ export const createClient = async (client: Client): Promise<Client | null> => {
       typeClient: data.client_type_id || 'particulier',
       autreInfo: data.autre_info || '',
       infosComplementaires: data.infos_complementaires || '',
-      created_at: data.created_at
     };
   } catch (error) {
     console.error('[clientsService] Exception lors de la création du client:', error);
@@ -151,7 +149,6 @@ export const updateClient = async (id: string, client: Partial<Client>): Promise
       typeClient: data.client_type_id || 'particulier',
       autreInfo: data.autre_info || '',
       infosComplementaires: data.infos_complementaires || '',
-      created_at: data.created_at
     };
   } catch (error) {
     console.error('[clientsService] Exception lors de la mise à jour du client:', error);
@@ -182,3 +179,32 @@ export const deleteClient = async (id: string): Promise<boolean> => {
     return false;
   }
 };
+
+/**
+ * Récupère les types de clients depuis Supabase
+ */
+export interface ClientType {
+  id: string;
+  name: string;
+}
+
+export const fetchClientTypes = async (): Promise<ClientType[]> => {
+  try {
+    console.log('[clientsService] Récupération des types de clients depuis Supabase');
+    const { data, error } = await supabase
+      .from('client_types')
+      .select('*')
+      .order('name', { ascending: true });
+      
+    if (error) {
+      console.error('[clientsService] Erreur lors de la récupération des types de clients:', error);
+      throw error;
+    }
+    
+    return data as ClientType[];
+  } catch (error) {
+    console.error('[clientsService] Exception lors de la récupération des types de clients:', error);
+    return [];
+  }
+};
+

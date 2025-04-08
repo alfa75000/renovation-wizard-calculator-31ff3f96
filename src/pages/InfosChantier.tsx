@@ -18,7 +18,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 const InfosChantier: React.FC = () => {
   const navigate = useNavigate();
-  const { state: clientsState } = useClients();
+  const { state: clientsState, getClientTypeName } = useClients();
   const { 
     state: projectState, 
     isLoading, 
@@ -165,7 +165,7 @@ const InfosChantier: React.FC = () => {
                   {clientSelectionne.email && ` / ${clientSelectionne.email}`}
                 </p>
                 {clientSelectionne.typeClient && (
-                  <p><span className="font-semibold">Type:</span> {clientSelectionne.typeClient}</p>
+                  <p><span className="font-semibold">Type:</span> {getClientTypeName(clientSelectionne.typeClient)}</p>
                 )}
                 {clientSelectionne.autreInfo && (
                   <p><span className="font-semibold">Info:</span> {clientSelectionne.autreInfo}</p>
