@@ -1,4 +1,3 @@
-
 // Types principaux pour l'application de rénovation
 
 // Propriété principale
@@ -217,6 +216,7 @@ export interface Travail {
   personnalisation?: string;
   typeTravaux?: string;
   sousType?: string;
+  surfaceImpactee?: string; // Nouvelle propriété
 }
 
 // Type de pièce pour la compatibilité avec les composants

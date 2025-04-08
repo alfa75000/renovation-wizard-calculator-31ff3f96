@@ -24,6 +24,7 @@ const SousTypeSelect: React.FC<SousTypeSelectProps> = ({
 }) => {
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedValue, setSelectedValue] = useState<string>(value);
   
   // Charger les services quand le groupe change
   useEffect(() => {
@@ -64,23 +65,30 @@ const SousTypeSelect: React.FC<SousTypeSelectProps> = ({
     loadServices();
   }, [groupId]);
   
+  // Mettre à jour la valeur sélectionnée quand value change (pour la synchronisation entre composants)
+  useEffect(() => {
+    setSelectedValue(value);
+  }, [value]);
+  
   // Réinitialiser la valeur si le groupe change
   useEffect(() => {
     // S'assurer que nous ne réinitialisons pas lors du premier rendu ou quand value est déjà vide
-    if (groupId && value) {
-      const serviceExists = services.some(s => s.id === value);
+    if (groupId && selectedValue) {
+      const serviceExists = services.some(s => s.id === selectedValue);
       if (!serviceExists) {
         console.log("SousTypeSelect - Réinitialisation car le service n'existe plus dans la nouvelle liste");
         onChange("", "", {} as Service);
+        setSelectedValue("");
       }
     }
-  }, [groupId, services, onChange, value]);
+  }, [groupId, services, onChange, selectedValue]);
 
   const handleChange = (serviceId: string) => {
     console.log("SousTypeSelect - handleChange appelé avec:", serviceId);
     const service = services.find(s => s.id === serviceId);
     if (service) {
       console.log("SousTypeSelect - Service sélectionné:", service.name);
+      setSelectedValue(serviceId); // Mettre à jour l'état local
       onChange(service.id, service.name, service);
     }
   };
@@ -88,7 +96,8 @@ const SousTypeSelect: React.FC<SousTypeSelectProps> = ({
   // Debug: Affichons l'état du composant
   console.log("SousTypeSelect - Rendu avec:", { 
     groupId, 
-    value, 
+    value,
+    selectedValue,
     servicesCount: services.length, 
     loading, 
     disabled 
@@ -96,7 +105,7 @@ const SousTypeSelect: React.FC<SousTypeSelectProps> = ({
 
   return (
     <Select
-      value={value}
+      value={selectedValue}
       onValueChange={handleChange}
       disabled={disabled || loading || services.length === 0}
     >

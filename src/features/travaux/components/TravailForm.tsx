@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,8 +9,9 @@ import ServiceGroupSelect from "./ServiceGroupSelect";
 import SousTypeSelect from "./SousTypeSelect";
 import TvaSelect from "./TvaSelect";
 import UniteSelect from "./UniteSelect";
+import SurfaceImpacteeSelect from "./SurfaceImpacteeSelect";
 import { Room, Travail } from "@/types";
-import { Service } from "@/types/supabase";
+import { Service, SurfaceImpactee } from "@/types/supabase";
 
 interface TravailFormProps {
   piece: Room | null;
@@ -40,11 +42,7 @@ const TravailForm: React.FC<TravailFormProps> = ({
     travailAModifier?.prixMainOeuvre || 0
   );
   const [tauxTVA, setTauxTVA] = useState<number>(travailAModifier?.tauxTVA || 10);
-  const [commentaire, setCommentaire] = useState<string>(travailAModifier?.commentaire || "");
-
-  useEffect(() => {
-    console.log("TravailForm - Le composant est en lecture seule et ne peut être modifié.");
-  }, []);
+  const [surfaceImpactee, setSurfaceImpactee] = useState<SurfaceImpactee>('Mur');
 
   useEffect(() => {
     setGroupId("");
@@ -65,16 +63,56 @@ const TravailForm: React.FC<TravailFormProps> = ({
       setPrixFournitures(selectedService.supply_price || 0);
       setPrixMainOeuvre(selectedService.labor_price || 0);
       setUnite(selectedService.unit || "m²");
+      setDescription(selectedService.description || "");
+      setSurfaceImpactee(selectedService.surface_impactee || 'Aucune');
       
       if (piece) {
         let quantiteInitiale = 0;
         
-        quantiteInitiale = piece.surface || 0;
+        // Définir la quantité initiale en fonction de la surface impactée
+        switch (selectedService.surface_impactee) {
+          case 'Mur':
+            quantiteInitiale = piece.surfaceNetteMurs || piece.wallSurfaceRaw || 0;
+            break;
+          case 'Plafond':
+            quantiteInitiale = piece.surfaceNettePlafond || piece.surfaceBrutePlafond || 0;
+            break;
+          case 'Sol':
+            quantiteInitiale = piece.surfaceNetteSol || piece.surfaceBruteSol || 0;
+            break;
+          default:
+            quantiteInitiale = 1; // Valeur par défaut pour 'Aucune'
+        }
         
         setQuantite(parseFloat(quantiteInitiale.toFixed(2)));
       }
     }
   }, [selectedService, piece]);
+
+  // Mise à jour de la quantité lorsque la surface impactée change
+  useEffect(() => {
+    if (piece && selectedService) {
+      let quantiteAjustee = 0;
+      
+      // Ajuster la quantité en fonction de la nouvelle surface sélectionnée
+      switch (surfaceImpactee) {
+        case 'Mur':
+          quantiteAjustee = piece.surfaceNetteMurs || piece.wallSurfaceRaw || 0;
+          break;
+        case 'Plafond':
+          quantiteAjustee = piece.surfaceNettePlafond || piece.surfaceBrutePlafond || 0;
+          break;
+        case 'Sol':
+          quantiteAjustee = piece.surfaceNetteSol || piece.surfaceBruteSol || 0;
+          break;
+        default:
+          // Ne pas modifier la quantité si 'Aucune' est sélectionné
+          return;
+      }
+      
+      setQuantite(parseFloat(quantiteAjustee.toFixed(2)));
+    }
+  }, [surfaceImpactee, piece]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,7 +135,8 @@ const TravailForm: React.FC<TravailFormProps> = ({
       prixFournitures,
       prixMainOeuvre,
       tauxTVA,
-      commentaire,
+      commentaire: "", // Supprimé comme demandé
+      surfaceImpactee, // Nouvelle propriété
     });
   };
 
@@ -145,12 +184,13 @@ const TravailForm: React.FC<TravailFormProps> = ({
         <>
           <div>
             <Label htmlFor="description">Description</Label>
-            <Input
+            <Textarea
               id="description"
               placeholder="Description du travail"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="mt-1"
+              rows={4}
             />
           </div>
 
@@ -163,6 +203,15 @@ const TravailForm: React.FC<TravailFormProps> = ({
               onChange={(e) => setPersonnalisation(e.target.value)}
               className="mt-1"
               rows={2}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="surfaceImpactee">Surface impactée</Label>
+            <SurfaceImpacteeSelect
+              value={surfaceImpactee}
+              onChange={setSurfaceImpactee}
+              className="mt-1"
             />
           </div>
 
@@ -222,18 +271,6 @@ const TravailForm: React.FC<TravailFormProps> = ({
               value={tauxTVA}
               onChange={(value) => setTauxTVA(value)}
               className="mt-1"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="commentaire">Commentaire</Label>
-            <Textarea
-              id="commentaire"
-              placeholder="Commentaire ou notes supplémentaires"
-              value={commentaire}
-              onChange={(e) => setCommentaire(e.target.value)}
-              className="mt-1"
-              rows={2}
             />
           </div>
         </>

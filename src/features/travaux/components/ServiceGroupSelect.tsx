@@ -24,6 +24,7 @@ const ServiceGroupSelect: React.FC<ServiceGroupSelectProps> = ({
 }) => {
   const [groups, setGroups] = useState<ServiceGroup[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedValue, setSelectedValue] = useState<string>(value);
   
   // Charger les groupes quand le type de travail change
   useEffect(() => {
@@ -49,29 +50,37 @@ const ServiceGroupSelect: React.FC<ServiceGroupSelectProps> = ({
     loadGroups();
   }, [workTypeId]);
   
+  // Mettre à jour la valeur sélectionnée quand value change (pour la synchronisation entre composants)
+  useEffect(() => {
+    setSelectedValue(value);
+  }, [value]);
+  
+  // Réinitialiser la valeur si le type de travail change
   useEffect(() => {
     // Réinitialiser la valeur si le type de travail change
-    if (workTypeId && value) {
-      const groupExists = groups.some(g => g.id === value);
+    if (workTypeId && selectedValue) {
+      const groupExists = groups.some(g => g.id === selectedValue);
       if (!groupExists) {
         console.log("ServiceGroupSelect - Réinitialisation car le groupe n'existe plus dans la nouvelle liste");
         onChange("", "");
+        setSelectedValue("");
       }
     }
-  }, [workTypeId, groups, onChange, value]);
+  }, [workTypeId, groups, onChange, selectedValue]);
 
   const handleChange = (groupId: string) => {
     console.log("ServiceGroupSelect - handleChange appelé avec:", groupId);
     const group = groups.find(g => g.id === groupId);
     if (group) {
       console.log("ServiceGroupSelect - Groupe sélectionné:", group.name);
+      setSelectedValue(groupId); // Mettre à jour l'état local
       onChange(group.id, group.name);
     }
   };
 
   return (
     <Select
-      value={value}
+      value={selectedValue}
       onValueChange={handleChange}
       disabled={disabled || loading}
     >
