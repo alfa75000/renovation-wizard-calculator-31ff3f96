@@ -1,6 +1,5 @@
 
 import React, { useState, useEffect } from 'react';
-import { v4 as uuidv4 } from 'uuid';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,43 +7,44 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { surfacesReference } from '@/contexts/MenuiseriesTypesContext';
-import { TypeMenuiserie } from '@/types';
+import { MenuiserieType } from '@/types/supabase';
 
 interface TypeMenuiserieFormProps {
   isOpen: boolean;
   onClose: () => void;
-  typeToEdit: TypeMenuiserie | null;
-  onSubmit: (typeData: TypeMenuiserie) => void;
+  typeToEdit: MenuiserieType | null;
+  onSubmit: (typeData: MenuiserieType) => void;
+  surfacesReference: { id: string; label: string }[];
 }
 
 const TypeMenuiserieForm: React.FC<TypeMenuiserieFormProps> = ({
   isOpen,
   onClose,
   typeToEdit,
-  onSubmit
+  onSubmit,
+  surfacesReference
 }) => {
-  const [nom, setNom] = useState('');
+  const [name, setName] = useState('');
   const [hauteur, setHauteur] = useState<number>(0);
   const [largeur, setLargeur] = useState<number>(0);
-  const [surfaceReference, setSurfaceReference] = useState('SurfaceNetteMurs');
+  const [surfaceImpactee, setSurfaceImpactee] = useState<string>('Mur');
   const [impactePlinthe, setImpactePlinthe] = useState(false);
   const [description, setDescription] = useState('');
 
   useEffect(() => {
     if (typeToEdit) {
-      setNom(typeToEdit.nom);
+      setName(typeToEdit.name);
       setHauteur(typeToEdit.hauteur);
       setLargeur(typeToEdit.largeur);
-      setSurfaceReference(typeToEdit.surfaceReference);
-      setImpactePlinthe(typeToEdit.impactePlinthe);
+      setSurfaceImpactee(typeToEdit.surface_impactee);
+      setImpactePlinthe(typeToEdit.impacte_plinthe);
       setDescription(typeToEdit.description || '');
     } else {
       // Réinitialiser les champs si on ajoute un nouveau type
-      setNom('');
+      setName('');
       setHauteur(0);
       setLargeur(0);
-      setSurfaceReference('SurfaceNetteMurs');
+      setSurfaceImpactee('Mur');
       setImpactePlinthe(false);
       setDescription('');
     }
@@ -53,14 +53,15 @@ const TypeMenuiserieForm: React.FC<TypeMenuiserieFormProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    const typeData: TypeMenuiserie = {
-      id: typeToEdit ? typeToEdit.id : uuidv4(),
-      nom: nom.trim(),
+    const typeData: MenuiserieType = {
+      ...(typeToEdit && { id: typeToEdit.id }),
+      ...(typeToEdit && { created_at: typeToEdit.created_at }),
+      name: name.trim(),
       hauteur: Number(hauteur),
       largeur: Number(largeur),
-      surfaceReference,
-      impactePlinthe,
-      description: description.trim()
+      surface_impactee: surfaceImpactee as any,
+      impacte_plinthe: impactePlinthe,
+      description: description || null
     };
     
     onSubmit(typeData);
@@ -81,8 +82,8 @@ const TypeMenuiserieForm: React.FC<TypeMenuiserieFormProps> = ({
               <Label htmlFor="nom">Nom du type</Label>
               <Input
                 id="nom"
-                value={nom}
-                onChange={(e) => setNom(e.target.value)}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 placeholder="Ex: Fenêtre standard"
                 required
               />
@@ -117,20 +118,19 @@ const TypeMenuiserieForm: React.FC<TypeMenuiserieFormProps> = ({
             </div>
             
             <div className="grid gap-2">
-              <Label htmlFor="surfaceReference">Surface impactée</Label>
+              <Label htmlFor="surfaceImpactee">Surface impactée</Label>
               <Select 
-                value={surfaceReference} 
-                onValueChange={setSurfaceReference}
+                value={surfaceImpactee} 
+                onValueChange={setSurfaceImpactee}
               >
-                <SelectTrigger id="surfaceReference">
-                  <SelectValue placeholder="Sélectionner une surface de référence" />
+                <SelectTrigger id="surfaceImpactee">
+                  <SelectValue placeholder="Sélectionner une surface impactée" />
                 </SelectTrigger>
                 <SelectContent>
-                  {surfacesReference.map((surface) => (
-                    <SelectItem key={surface.id} value={surface.id}>
-                      {surface.label}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="Mur">Mur</SelectItem>
+                  <SelectItem value="Plafond">Plafond</SelectItem>
+                  <SelectItem value="Sol">Sol</SelectItem>
+                  <SelectItem value="Aucune">Aucune</SelectItem>
                 </SelectContent>
               </Select>
             </div>

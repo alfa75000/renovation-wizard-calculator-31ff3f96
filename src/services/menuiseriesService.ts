@@ -33,6 +33,101 @@ export const fetchMenuiserieTypes = async (): Promise<MenuiserieType[]> => {
   }
 };
 
+// Créer un nouveau type de menuiserie
+export const createMenuiserieType = async (menuiserieType: {
+  name: string;
+  largeur: number;
+  hauteur: number;
+  surface_impactee: string;
+  impacte_plinthe: boolean;
+  description?: string;
+}): Promise<MenuiserieType | null> => {
+  try {
+    console.log("Création d'un type de menuiserie:", menuiserieType);
+    
+    const { data, error } = await supabase
+      .from('menuiseries_types')
+      .insert(menuiserieType)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Erreur lors de la création du type de menuiserie:', error);
+      toast.error('Erreur lors de la création du type de menuiserie');
+      return null;
+    }
+    
+    toast.success('Type de menuiserie créé avec succès');
+    return data;
+  } catch (error) {
+    console.error('Exception lors de la création du type de menuiserie:', error);
+    toast.error('Erreur lors de la création du type de menuiserie');
+    return null;
+  }
+};
+
+// Mettre à jour un type de menuiserie
+export const updateMenuiserieType = async (
+  id: string,
+  updates: {
+    name?: string;
+    largeur?: number;
+    hauteur?: number;
+    surface_impactee?: string;
+    impacte_plinthe?: boolean;
+    description?: string;
+  }
+): Promise<MenuiserieType | null> => {
+  try {
+    console.log("Mise à jour du type de menuiserie:", { id, updates });
+    
+    const { data, error } = await supabase
+      .from('menuiseries_types')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Erreur lors de la mise à jour du type de menuiserie:', error);
+      toast.error('Erreur lors de la mise à jour du type de menuiserie');
+      return null;
+    }
+    
+    toast.success('Type de menuiserie mis à jour avec succès');
+    return data;
+  } catch (error) {
+    console.error('Exception lors de la mise à jour du type de menuiserie:', error);
+    toast.error('Erreur lors de la mise à jour du type de menuiserie');
+    return null;
+  }
+};
+
+// Supprimer un type de menuiserie
+export const deleteMenuiserieType = async (id: string): Promise<boolean> => {
+  try {
+    console.log("Suppression du type de menuiserie:", id);
+    
+    const { error } = await supabase
+      .from('menuiseries_types')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error('Erreur lors de la suppression du type de menuiserie:', error);
+      toast.error('Erreur lors de la suppression du type de menuiserie');
+      return false;
+    }
+    
+    toast.success('Type de menuiserie supprimé avec succès');
+    return true;
+  } catch (error) {
+    console.error('Exception lors de la suppression du type de menuiserie:', error);
+    toast.error('Erreur lors de la suppression du type de menuiserie');
+    return false;
+  }
+};
+
 // Créer une menuiserie pour une pièce
 export const createRoomMenuiserie = async (roomMenuiserie: {
   room_id: string;
