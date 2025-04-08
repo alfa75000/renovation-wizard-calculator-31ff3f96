@@ -10,6 +10,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TypeMenuiserie } from '@/types';
 import { SurfaceImpactee } from '@/types/supabase';
+import { surfacesReference } from '@/contexts/MenuiseriesTypesContext';
 
 interface TypeMenuiserieFormProps {
   isOpen: boolean;

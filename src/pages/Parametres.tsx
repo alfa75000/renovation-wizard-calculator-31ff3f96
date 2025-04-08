@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Layout } from "@/components/Layout";
 import { 
@@ -599,7 +598,8 @@ const Parametres = () => {
     }
   };
   
-  const getTypeClientLabel = (id: string) => {
+  const getTypeClientLabel = (id?: string) => {
+    if (!id) return "Non spécifié";
     const type = typesClients.find(type => type.id === id);
     return type ? type.label : id;
   };

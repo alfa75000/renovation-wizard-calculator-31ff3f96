@@ -99,6 +99,6 @@ export const useMenuiseriesTypes = () => {
   return context;
 };
 
-// Exporter les types et références pour l'utilisation dans d'autres fichiers
-export { surfacesReference };
+// Exporter les types uniquement, pas la référence à nouveau
 export type { TypeMenuiserie };
+
