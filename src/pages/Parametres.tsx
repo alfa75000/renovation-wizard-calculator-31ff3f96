@@ -171,7 +171,6 @@ const Parametres = () => {
   }, [selectedGroupId]);
 
   useEffect(() => {
-    // Chargement des types de menuiseries depuis Supabase
     const loadMenuiserieTypes = async () => {
       setIsLoadingMenuiseries(true);
       try {
@@ -904,4 +903,88 @@ const Parametres = () => {
                 <Alert>
                   <AlertDescription>
                     Aucun type de menuiserie défini. Utilisez le bouton "Ajouter un type" pour en créer un.
-                  </
+                  </AlertDescription>
+                </Alert>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="clients" className="mt-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <Card className="shadow-md lg:col-span-1">
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>Fiches Clients</span>
+                  <Button variant="outline" size="sm" onClick={handleAddClient} disabled={loading}>
+                    {loading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
+                    Ajouter
+                  </Button>
+                </CardTitle>
+                <CardDescription>
+                  Gérez les informations des clients de votre entreprise
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {loading ? (
+                    <div className="flex justify-center py-4">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                    </div>
+                  ) : (
+                    <>
+                      {clients.map((client) => (
+                        <div 
+                          key={client.id}
+                          className={`flex items-center justify-between p-2 rounded-md cursor-pointer ${selectedClientId === client.id ? 'bg-blue-100' : 'hover:bg-gray-100'}`}
+                          onClick={() => setSelectedClientId(client.id)}
+                        >
+                          <div className="flex items-center gap-2">
+                            <Users className="h-5 w-5 text-gray-500" />
+                            <span>{client.name}</span>
+                          </div>
+                          <div className="flex gap-1">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditClient(client);
+                              }}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteClient(client.id);
+                              }}
+                            >
+                              <Trash className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                      
+                      {clients.length === 0 && (
+                        <Alert>
+                          <AlertDescription>
+                            Aucun client défini. Utilisez le bouton "Ajouter" pour créer un nouveau client.
+                          </AlertDescription>
+                        </Alert>
+                      )}
+                    </>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
+    </Layout>
+  );
+};
+
+export default Parametres;
