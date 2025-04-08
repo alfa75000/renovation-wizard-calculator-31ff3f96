@@ -20,7 +20,13 @@ export const useMenuiseries = () => {
       surface
     };
 
-    setMenuiseries(prevMenuiseries => [...prevMenuiseries, newMenuiserie]);
+    setMenuiseries(prevMenuiseries => {
+      // Ajouter la nouvelle menuiserie
+      const updatedMenuiseries = [...prevMenuiseries, newMenuiserie];
+      
+      // Retourner les menuiseries mises à jour
+      return updatedMenuiseries;
+    });
     
     // Appel à l'API pour sauvegarder dans Supabase sera fait au niveau du composant parent
     // lorsque la pièce est sauvegardée avec toute la configuration

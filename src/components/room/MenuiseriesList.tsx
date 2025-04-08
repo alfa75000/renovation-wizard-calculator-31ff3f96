@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Edit, Trash2 } from 'lucide-react';
 import { Menuiserie } from '@/types';
@@ -15,6 +15,26 @@ const MenuiseriesList: React.FC<MenuiseriesListProps> = ({
   onEdit, 
   onDelete 
 }) => {
+  // Mettre à jour la numérotation des menuiseries
+  useEffect(() => {
+    if (menuiseries.length > 0) {
+      // Renumérote les menuiseries afin d'avoir toujours des numéros consécutifs
+      menuiseries.forEach((menuiserie, index) => {
+        // Extrait la base du nom (tout ce qui est après "Menuiserie n° X")
+        const baseNameMatch = menuiserie.name.match(/Menuiserie n° \d+\s*(.+)/);
+        const baseName = baseNameMatch ? baseNameMatch[1] : '';
+        
+        // Crée le nouveau nom avec le numéro corrigé
+        const newName = `Menuiserie n° ${index + 1} ${baseName}`;
+        
+        // Si le nom a changé, met à jour la menuiserie
+        if (newName !== menuiserie.name) {
+          onEdit(menuiserie.id, { ...menuiserie, name: newName });
+        }
+      });
+    }
+  }, [menuiseries.length]);
+
   if (menuiseries.length === 0) {
     return null;
   }

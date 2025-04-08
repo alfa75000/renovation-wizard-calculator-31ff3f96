@@ -10,6 +10,7 @@ import { fetchMenuiserieTypes } from '@/services/menuiseriesService';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
 
 interface MenuiserieFormProps {
   onAddMenuiserie: (menuiserie: Omit<Menuiserie, 'id' | 'surface'>, quantity: number) => void;
@@ -181,7 +182,7 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
       <h3 className="text-lg font-medium mb-3">Menuiseries</h3>
       
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4 mb-4">
-        <div className="md:col-span-4">
+        <div className="md:col-span-5">
           <Label htmlFor="menuiserieType">Type de menuiserie</Label>
           <Select
             value={selectedTypeId}
@@ -211,7 +212,7 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
           />
         </div>
         
-        <div className="md:col-span-5">
+        <div className="md:col-span-4">
           <Label htmlFor="menuiserieName">Nom</Label>
           <Input
             id="menuiserieName"
@@ -225,7 +226,7 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4 mb-4">
-        <div className="md:col-span-4">
+        <div className="md:col-span-3">
           <Label htmlFor="menuiserieLargeur">Largeur (cm)</Label>
           <Input
             id="menuiserieLargeur"
@@ -238,7 +239,7 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
           />
         </div>
         
-        <div className="md:col-span-4">
+        <div className="md:col-span-3">
           <Label htmlFor="menuiserieHauteur">Hauteur (cm)</Label>
           <Input
             id="menuiserieHauteur"
@@ -251,7 +252,7 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
           />
         </div>
         
-        <div className="md:col-span-4">
+        <div className="md:col-span-3">
           <Label htmlFor="menuiserieSurface">Surface (m²)</Label>
           <Input
             id="menuiserieSurface"
@@ -260,22 +261,8 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
             className="mt-1 bg-gray-100"
           />
         </div>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 mb-4">
-        <div className="md:col-span-6">
-          <Label htmlFor="menuiserieDescription">Descriptif</Label>
-          <Input
-            id="menuiserieDescription"
-            name="description"
-            value={selectedType?.description || ''}
-            onChange={handleMenuiserieChange}
-            placeholder="Description détaillée de la menuiserie"
-            className="mt-1"
-          />
-        </div>
         
-        <div className="md:col-span-2">
+        <div className="md:col-span-3">
           <Label htmlFor="menuiserieQuantity">Quantité</Label>
           <Input
             id="menuiserieQuantity"
@@ -287,8 +274,22 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
             className="mt-1"
           />
         </div>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 mb-4">
+        <div className="md:col-span-6">
+          <Label htmlFor="menuiserieDescription">Descriptif</Label>
+          <Textarea
+            id="menuiserieDescription"
+            name="description"
+            value={selectedType?.description || ''}
+            onChange={handleMenuiserieChange}
+            placeholder="Description détaillée de la menuiserie"
+            className="mt-1 min-h-[80px]"
+          />
+        </div>
         
-        <div className="md:col-span-2">
+        <div className="md:col-span-3">
           <Label htmlFor="menuiserieImpact">Surface impactée</Label>
           <Select
             value={newMenuiserie.surfaceImpactee || 'mur'}
@@ -305,7 +306,7 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
           </Select>
         </div>
         
-        <div className="md:col-span-2 flex items-end pb-3">
+        <div className="md:col-span-3 flex items-end pb-3">
           <div className="flex items-center space-x-2">
             <Checkbox 
               id="impactePlinthe" 
