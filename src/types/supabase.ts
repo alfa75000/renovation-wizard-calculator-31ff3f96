@@ -37,6 +37,18 @@ export type MenuiserieType = {
   impacte_plinthe: boolean;
 };
 
+export type RoomMenuiserie = {
+  id: string;
+  created_at: string;
+  room_id: string;
+  menuiserie_type_id: string;
+  quantity: number;
+  largeur?: number;
+  hauteur?: number;
+  surface_impactee?: string;
+  menuiserie_type?: MenuiserieType;
+};
+
 export type Client = {
   id: string;
   created_at: string;

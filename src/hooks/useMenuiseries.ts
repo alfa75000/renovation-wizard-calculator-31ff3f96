@@ -1,121 +1,81 @@
 
 import { useState } from 'react';
-import { Menuiserie, TypeMenuiserie } from '@/types';
-import { convertirDimensionsEnSurface, arrondir2Decimales } from '@/lib/utils';
+import { Menuiserie } from '@/types';
+import { v4 as uuidv4 } from 'uuid';
+import { createRoomMenuiserie, deleteRoomMenuiserie, updateRoomMenuiserie } from '@/services/menuiseriesService';
 
 export const useMenuiseries = () => {
   const [menuiseries, setMenuiseries] = useState<Menuiserie[]>([]);
-  
-  // Obtenir les infos de base depuis un type de menuiserie
-  const getDefaultFromType = (type: TypeMenuiserie): Partial<Menuiserie> => {
-    return {
-      type: type.nom,
-      largeur: type.largeur,
-      hauteur: type.hauteur,
-      impactePlinthe: type.impactePlinthe,
-      surfaceImpactee: getDefaultSurfaceImpactee(type.nom),
-    };
-  };
-  
-  // Déterminer la surface impactée par défaut en fonction du type
-  const getDefaultSurfaceImpactee = (type: string): "mur" | "plafond" | "sol" => {
-    const lowerType = type.toLowerCase();
-    if (
-      lowerType.includes('toit') || 
-      lowerType.includes('velux') || 
-      lowerType.includes('vélux') || 
-      lowerType.includes('plafond')
-    ) {
-      return "plafond";
-    } else if (
-      lowerType.includes('trappe') || 
-      lowerType.includes('sol')
-    ) {
-      return "sol";
-    }
-    return "mur";
-  };
-  
+
   // Ajouter une menuiserie
-  const addMenuiserie = (menuiserie: Omit<Menuiserie, 'id' | 'surface'>, quantity: number = 1): Menuiserie[] => {
-    const surfaceM2 = convertirDimensionsEnSurface(menuiserie.largeur, menuiserie.hauteur);
+  const addMenuiserie = (
+    menuiserie: Omit<Menuiserie, 'id' | 'surface'>, 
+    quantity: number = 1
+  ): Menuiserie => {
+    const surface = (menuiserie.largeur * menuiserie.hauteur) / 10000; // Convert cm² to m²
+    const newMenuiserie: Menuiserie = {
+      ...menuiserie,
+      id: uuidv4(),
+      quantity,
+      surface
+    };
+
+    setMenuiseries(prevMenuiseries => [...prevMenuiseries, newMenuiserie]);
     
-    const typeCount = menuiseries.filter(m => m.type === menuiserie.type)
-      .reduce((sum, item) => sum + item.quantity, 0);
-      
-    const newMenuiseries: Menuiserie[] = [];
+    // Appel à l'API pour sauvegarder dans Supabase sera fait au niveau du composant parent
+    // lorsque la pièce est sauvegardée avec toute la configuration
     
-    for (let i = 0; i < quantity; i++) {
-      const itemNumber = typeCount + i + 1;
-      const autoName = menuiserie.name || `${menuiserie.type} ${itemNumber}`;
-      
-      newMenuiseries.push({
-        id: Date.now().toString() + i,
-        type: menuiserie.type,
-        name: autoName,
-        largeur: menuiserie.largeur,
-        hauteur: menuiserie.hauteur,
-        quantity: 1,
-        surface: surfaceM2,
-        surfaceImpactee: menuiserie.surfaceImpactee,
-        impactePlinthe: menuiserie.impactePlinthe
-      });
-    }
-    
-    const updatedMenuiseries = [...menuiseries, ...newMenuiseries];
-    setMenuiseries(updatedMenuiseries);
-    
-    return newMenuiseries;
+    return newMenuiserie;
   };
-  
+
   // Mettre à jour une menuiserie
-  const updateMenuiserie = (id: string, menuiserie: Partial<Omit<Menuiserie, 'id' | 'surface'>>): Menuiserie | null => {
+  const updateMenuiserie = (
+    id: string, 
+    updates: Partial<Omit<Menuiserie, 'id' | 'surface'>>
+  ): Menuiserie | null => {
     let updatedMenuiserie: Menuiserie | null = null;
-    
+
     setMenuiseries(prevMenuiseries => {
-      const updated = prevMenuiseries.map(item => {
-        if (item.id === id) {
-          const newSurface = menuiserie.largeur && menuiserie.hauteur
-            ? convertirDimensionsEnSurface(menuiserie.largeur, menuiserie.hauteur)
-            : item.surface;
-            
+      return prevMenuiseries.map(menuiserie => {
+        if (menuiserie.id === id) {
+          // Calculer la nouvelle surface si les dimensions ont changé
+          const newLargeur = updates.largeur !== undefined ? updates.largeur : menuiserie.largeur;
+          const newHauteur = updates.hauteur !== undefined ? updates.hauteur : menuiserie.hauteur;
+          const newSurface = (newLargeur * newHauteur) / 10000; // Convert cm² to m²
+
           updatedMenuiserie = {
-            ...item,
             ...menuiserie,
+            ...updates,
+            largeur: newLargeur,
+            hauteur: newHauteur,
             surface: newSurface
           };
           
           return updatedMenuiserie;
         }
-        return item;
+        return menuiserie;
       });
-      
-      return updated;
     });
+
+    // Appel à l'API pour mettre à jour dans Supabase sera fait au niveau du composant parent
     
     return updatedMenuiserie;
   };
-  
+
   // Supprimer une menuiserie
   const deleteMenuiserie = (id: string): void => {
     setMenuiseries(prevMenuiseries => 
-      prevMenuiseries.filter(item => item.id !== id)
+      prevMenuiseries.filter(menuiserie => menuiserie.id !== id)
     );
+    
+    // Appel à l'API pour supprimer dans Supabase sera fait au niveau du composant parent
   };
-  
-  // Réinitialiser les menuiseries
-  const resetMenuiseries = (): void => {
-    setMenuiseries([]);
-  };
-  
+
   return {
     menuiseries,
     setMenuiseries,
-    getDefaultFromType,
-    getDefaultSurfaceImpactee,
     addMenuiserie,
     updateMenuiserie,
-    deleteMenuiserie,
-    resetMenuiseries
+    deleteMenuiserie
   };
 };

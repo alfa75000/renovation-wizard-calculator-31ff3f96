@@ -1,11 +1,13 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Check, Plus } from 'lucide-react';
 import { Menuiserie } from '@/types';
-import { useMenuiseriesTypes } from '@/contexts/MenuiseriesTypesContext';
+import { MenuiserieType } from '@/types/supabase'; 
+import { fetchMenuiserieTypes } from '@/services/menuiseriesService';
+import { useToast } from '@/hooks/use-toast';
 
 interface MenuiserieFormProps {
   onAddMenuiserie: (menuiserie: Omit<Menuiserie, 'id' | 'surface'>, quantity: number) => void;
@@ -18,7 +20,10 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
   editingMenuiserie = null,
   onCancelEdit
 }) => {
-  const { state: menuiseriesState } = useMenuiseriesTypes();
+  const [menuiseriesTypes, setMenuiseriesTypes] = useState<MenuiserieType[]>([]);
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+
   const [newMenuiserie, setNewMenuiserie] = useState<Omit<Menuiserie, 'id' | 'surface'>>({
     type: "",
     name: "",
@@ -29,6 +34,28 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
   });
 
   const [quantity, setQuantity] = useState(1);
+
+  // Chargement des types de menuiseries depuis Supabase
+  useEffect(() => {
+    const loadMenuiserieTypes = async () => {
+      setLoading(true);
+      try {
+        const types = await fetchMenuiserieTypes();
+        setMenuiseriesTypes(types);
+      } catch (error) {
+        console.error('Erreur lors du chargement des types de menuiseries:', error);
+        toast({
+          title: 'Erreur',
+          description: 'Impossible de charger les types de menuiseries',
+          variant: 'destructive'
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadMenuiserieTypes();
+  }, []);
 
   // Détecter le type de surface impactée par défaut
   const getDefaultSurfaceImpactee = (type: string): "mur" | "plafond" | "sol" => {
@@ -51,19 +78,26 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
 
   const handleMenuiserieTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const typeId = e.target.value;
-    const selectedType = menuiseriesState.typesMenuiseries.find(type => type.id === typeId);
+    const selectedType = menuiseriesTypes.find(type => type.id === typeId);
     
     if (selectedType) {
-      const surfaceImpactee = getDefaultSurfaceImpactee(selectedType.nom);
+      const surfaceImpactee = mapSurfaceImpacteeToFrontend(selectedType.surface_impactee);
       setNewMenuiserie((prev) => ({ 
         ...prev, 
-        type: selectedType.nom,
+        type: selectedType.name,
         largeur: selectedType.largeur,
         hauteur: selectedType.hauteur,
-        impactePlinthe: selectedType.impactePlinthe,
+        impactePlinthe: selectedType.impacte_plinthe,
         surfaceImpactee
       }));
     }
+  };
+
+  // Fonction utilitaire pour convertir le format de surface_impactee de Supabase vers le format frontend
+  const mapSurfaceImpacteeToFrontend = (surfaceImpactee: string): "mur" | "plafond" | "sol" => {
+    if (surfaceImpactee === 'Plafond') return 'plafond';
+    if (surfaceImpactee === 'Sol') return 'sol';
+    return 'mur'; // Par défaut Mur
   };
 
   const handleSurfaceImpacteeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -91,7 +125,11 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
 
   const handleAddMenuiserie = () => {
     if (!newMenuiserie.type) {
-      alert("Veuillez sélectionner un type de menuiserie");
+      toast({
+        title: 'Validation',
+        description: 'Veuillez sélectionner un type de menuiserie',
+        variant: 'destructive'
+      });
       return;
     }
     
@@ -116,14 +154,15 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
           <select
             id="menuiserieType"
             name="type"
-            value={newMenuiserie.type ? menuiseriesState.typesMenuiseries.find(t => t.nom === newMenuiserie.type)?.id || "" : ""}
+            value={newMenuiserie.type ? menuiseriesTypes.find(t => t.name === newMenuiserie.type)?.id || "" : ""}
             onChange={handleMenuiserieTypeChange}
             className="w-full p-2 border rounded mt-1"
+            disabled={loading}
           >
             <option value="">Sélectionner un type</option>
-            {menuiseriesState.typesMenuiseries.map((type) => (
+            {menuiseriesTypes.map((type) => (
               <option key={type.id} value={type.id}>
-                {type.nom} ({type.largeur}×{type.hauteur} cm)
+                {type.name} ({type.largeur}×{type.hauteur} cm)
               </option>
             ))}
           </select>
@@ -201,7 +240,7 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
           <Button 
             onClick={handleAddMenuiserie} 
             className="w-full"
-            disabled={!newMenuiserie.type}
+            disabled={!newMenuiserie.type || loading}
           >
             {editingMenuiserie ? (
               <>
