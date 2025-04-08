@@ -87,7 +87,7 @@ const AutreSurfaceForm: React.FC<AutreSurfaceFormProps> = ({
     } else if (name === 'surfaceImpactee') {
       setSurface(prev => ({
         ...prev,
-        surfaceImpactee: value as 'mur' | 'plafond' | 'sol'
+        surfaceImpactee: value as 'mur' | 'plafond' | 'sol' | 'aucune'
       }));
     } else {
       setSurface(prev => ({
@@ -192,6 +192,7 @@ const AutreSurfaceForm: React.FC<AutreSurfaceFormProps> = ({
             <option value="mur">Mur</option>
             <option value="plafond">Plafond</option>
             <option value="sol">Sol</option>
+            <option value="aucune">Aucune</option>
           </select>
         </div>
         
