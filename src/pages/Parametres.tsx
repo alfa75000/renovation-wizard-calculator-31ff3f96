@@ -904,3 +904,4 @@ const Parametres = () => {
                           <Button 
                             variant="ghost" 
                             size="sm"
+                            onClick={()
