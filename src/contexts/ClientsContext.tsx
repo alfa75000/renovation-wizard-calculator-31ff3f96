@@ -66,12 +66,12 @@ export const ClientsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   
   // Initialiser le state avec les données sauvegardées
   const [state, dispatch] = useReducer(clientsReducer, {
-    clients: savedClients,
+    clients: savedClients || [], // Ensure clients is always an array
   });
 
   // Sauvegarder les changements dans localStorage
   useEffect(() => {
-    setSavedClients(state.clients);
+    setSavedClients(state.clients || []); // Ensure we're saving an array even if state.clients is undefined
   }, [state.clients, setSavedClients]);
 
   return (
@@ -88,6 +88,12 @@ export const useClients = () => {
     throw new Error('useClients doit être utilisé à l\'intérieur d\'un ClientsProvider');
   }
   return context;
+};
+
+// Fonction pour obtenir le label d'un type client
+export const getTypeClientLabel = (id: string) => {
+  const type = typesClients.find(type => type.id === id);
+  return type ? type.label : id;
 };
 
 // Exporter pour l'utilisation dans d'autres fichiers

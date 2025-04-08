@@ -70,7 +70,7 @@ import {
 } from "@/services/menuiseriesService";
 
 import { useMenuiseriesTypes, surfacesReference as menuiserieSurfacesReference } from "@/contexts/MenuiseriesTypesContext";
-import { Client, useClients, typesClients } from "@/contexts/ClientsContext";
+import { Client, useClients, typesClients, getTypeClientLabel } from "@/contexts/ClientsContext";
 import { TypeMenuiserie } from "@/types";
 import { surfacesReference } from "@/contexts/TravauxTypesContext";
 import { surfacesMenuiseries } from "@/types";
@@ -540,11 +540,6 @@ const Parametres = () => {
       toast.success("Tous les clients ont été réinitialisés aux valeurs par défaut");
     }
   };
-  
-  const getTypeClientLabel = (id: string) => {
-    const type = typesClients.find(type => type.id === id);
-    return type ? type.label : id;
-  };
 
   const getSurfaceImpacteeLabel = (value: SurfaceImpactee | string | undefined): string => {
     if (!value) return "Non spécifié";
@@ -813,8 +808,7 @@ const Parametres = () => {
                                         ) : (
                                           <Alert>
                                             <AlertDescription>
-                                              Aucune prestation définie pour ce groupe. Utilisez le bouton "Ajouter une prestation" pour en créer une.
-                                            </AlertDescription>
+                                              Aucune prestation définie pour ce groupe. Utilisez le bouton "Ajouter une prestation" pour en créer une.</AlertDescription>
                                           </Alert>
                                         )}
                                       </>
@@ -904,4 +898,12 @@ const Parametres = () => {
                           <Button 
                             variant="ghost" 
                             size="sm"
-                            onClick={()
+                            onClick={() => handleDeleteMenuiserieType(type.id)}
+                          >
+                            <Trash className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
