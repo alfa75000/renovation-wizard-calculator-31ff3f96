@@ -49,8 +49,7 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
     largeur: 0,
     hauteur: 0,
     quantity: 1,
-    surfaceImpactee: "mur",
-    description: ""
+    surfaceImpactee: "mur"
   });
 
   const [selectedTypeId, setSelectedTypeId] = useState<string>("");
@@ -58,6 +57,7 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
   const [quantity, setQuantity] = useState(1);
   const [surfaceCalculee, setSurfaceCalculee] = useState(0);
   const [impactePlinthe, setImpactePlinthe] = useState(false);
+  const [description, setDescription] = useState("");
 
   useEffect(() => {
     const loadMenuiserieTypes = async () => {
@@ -114,13 +114,14 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
         name: typeNameOnly, // Utiliser juste le nom du type sans "Menuiserie n° X"
         largeur: selected.largeur,
         hauteur: selected.hauteur,
-        surfaceImpactee,
-        description: selected.description || ""
+        surfaceImpactee
       }));
       
       setImpactePlinthe(selected.impacte_plinthe);
+      setDescription(selected.description || "");
     } else {
       setSelectedType(null);
+      setDescription("");
     }
   };
 
@@ -141,6 +142,8 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
       }));
     } else if (name === "quantity") {
       setQuantity(parseInt(value) || 1);
+    } else if (name === "description") {
+      setDescription(value);
     } else {
       setNewMenuiserie((prev) => ({ ...prev, [name]: value }));
     }
@@ -177,6 +180,7 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
       quantity: 1
     }));
     setQuantity(1);
+    setDescription("");
   };
 
   return (
@@ -274,7 +278,7 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
           <Textarea
             id="menuiserieDescription"
             name="description"
-            value={newMenuiserie.description || ''}
+            value={description}
             onChange={handleMenuiserieChange}
             placeholder="Description détaillée de la menuiserie"
             className="mt-1 min-h-[80px] max-h-[120px]"

@@ -7,14 +7,14 @@ import { createRoomMenuiserie, deleteRoomMenuiserie, updateRoomMenuiserie } from
 export const useMenuiseries = () => {
   const [menuiseries, setMenuiseries] = useState<Menuiserie[]>([]);
 
-  // Générer un nom pour une menuiserie
+  // Générer un nom pour une menuiserie avec numérotation (pour la liste)
   const generateMenuiserieName = (type: string, largeur: number, hauteur: number): string => {
     const nextIndex = menuiseries.length + 1;
-    const baseInfo = type ? `(${type} (${largeur}×${hauteur} cm))` : '';
+    const baseInfo = type ? `${type} (${largeur}×${hauteur} cm)` : '';
     return `Menuiserie n° ${nextIndex} ${baseInfo}`;
   };
 
-  // Générer juste le nom du type de menuiserie sans numérotation
+  // Générer juste le nom du type de menuiserie sans numérotation (pour le formulaire)
   const getMenuiserieTypeName = (type: string, largeur: number, hauteur: number): string => {
     return type ? `${type} (${largeur}×${hauteur} cm)` : '';
   };
@@ -26,13 +26,13 @@ export const useMenuiseries = () => {
   ): Menuiserie => {
     const surface = (menuiserie.largeur * menuiserie.hauteur) / 10000; // Convert cm² to m²
     
-    // Créer la nouvelle menuiserie
+    // Créer la nouvelle menuiserie avec un nom formaté pour la liste
     const newMenuiserie: Menuiserie = {
       ...menuiserie,
       id: uuidv4(),
       quantity,
       surface,
-      name: menuiserie.name || generateMenuiserieName(menuiserie.type, menuiserie.largeur, menuiserie.hauteur)
+      name: generateMenuiserieName(menuiserie.type, menuiserie.largeur, menuiserie.hauteur)
     };
 
     setMenuiseries(prevMenuiseries => {
