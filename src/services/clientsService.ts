@@ -70,49 +70,40 @@ export const createClient = async (client: Client): Promise<Client | null> => {
       infos_complementaires: client.infosComplementaires
     };
     
-    // Insérer le client dans la base de données - sans récupérer les données
-    const { error: insertError } = await supabase
+    // Utiliser upsert pour gérer les erreurs RLS
+    const { data, error } = await supabase
       .from('clients')
-      .insert(supabaseClient);
+      .insert(supabaseClient)
+      .select('*')
+      .single();
       
-    if (insertError) {
-      console.error('[clientsService] Erreur lors de la création du client:', insertError);
-      throw insertError;
+    if (error) {
+      console.error('[clientsService] Erreur lors de la création du client:', error);
+      throw error;
     }
     
-    // Récupérer le client inséré séparément pour éviter les erreurs RLS
-    // Nous récupérons le dernier client créé avec les mêmes attributs de base
-    const { data: insertedData, error: fetchError } = await supabase
-      .from('clients')
-      .select('*')
-      .eq('nom', client.nom)
-      .eq('prenom', client.prenom)
-      .order('created_at', { ascending: false })
-      .limit(1);
-    
-    if (fetchError || !insertedData || insertedData.length === 0) {
-      console.error('[clientsService] Erreur lors de la récupération du client créé:', fetchError);
+    if (!data) {
+      console.error('[clientsService] Aucune donnée retournée après la création');
       return null;
     }
     
-    const newClient = insertedData[0];
-    console.log('[clientsService] Client créé avec succès:', newClient);
+    console.log('[clientsService] Client créé avec succès:', data);
     
     // Retourner le client créé au format Client
     return {
-      id: newClient.id,
-      nom: newClient.nom || '',
-      prenom: newClient.prenom || '',
-      adresse: newClient.adresse || '',
-      telephone: newClient.tel1 || '',
-      codePostal: newClient.code_postal || '',
-      ville: newClient.ville || '',
-      email: newClient.email || '',
-      tel1: newClient.tel1 || '',
-      tel2: newClient.tel2 || '',
-      typeClient: newClient.client_type_id || '',
-      autreInfo: newClient.autre_info || '',
-      infosComplementaires: newClient.infos_complementaires || '',
+      id: data.id,
+      nom: data.nom || '',
+      prenom: data.prenom || '',
+      adresse: data.adresse || '',
+      telephone: data.tel1 || '',
+      codePostal: data.code_postal || '',
+      ville: data.ville || '',
+      email: data.email || '',
+      tel1: data.tel1 || '',
+      tel2: data.tel2 || '',
+      typeClient: data.client_type_id || '',
+      autreInfo: data.autre_info || '',
+      infosComplementaires: data.infos_complementaires || '',
     };
   } catch (error) {
     console.error('[clientsService] Exception lors de la création du client:', error);
@@ -149,51 +140,41 @@ export const updateClient = async (id: string, client: Partial<Client>): Promise
     if (client.autreInfo !== undefined) supabaseClient.autre_info = client.autreInfo;
     if (client.infosComplementaires !== undefined) supabaseClient.infos_complementaires = client.infosComplementaires;
     
-    // Mise à jour du client dans la base de données sans récupérer les données
-    const { error: updateError } = await supabase
+    // Mise à jour du client dans la base de données avec retour des données
+    const { data, error } = await supabase
       .from('clients')
       .update(supabaseClient)
-      .eq('id', id);
-      
-    if (updateError) {
-      console.error('[clientsService] Erreur lors de la mise à jour du client:', updateError);
-      throw updateError;
-    }
-    
-    // Récupérer le client mis à jour séparément
-    const { data: updatedClient, error: fetchError } = await supabase
-      .from('clients')
-      .select('*')
       .eq('id', id)
+      .select('*')
       .single();
       
-    if (fetchError) {
-      console.error('[clientsService] Erreur lors de la récupération du client mis à jour:', fetchError);
+    if (error) {
+      console.error('[clientsService] Erreur lors de la mise à jour du client:', error);
+      throw error;
+    }
+    
+    if (!data) {
+      console.error('[clientsService] Aucune donnée retournée après la mise à jour');
       return null;
     }
     
-    if (!updatedClient) {
-      console.error('[clientsService] Le client mis à jour n\'a pas été trouvé');
-      return null;
-    }
-    
-    console.log('[clientsService] Client mis à jour avec succès:', updatedClient);
+    console.log('[clientsService] Client mis à jour avec succès:', data);
     
     // Retourner le client mis à jour au format Client
     return {
-      id: updatedClient.id,
-      nom: updatedClient.nom || '',
-      prenom: updatedClient.prenom || '',
-      adresse: updatedClient.adresse || '',
-      telephone: updatedClient.tel1 || '',
-      codePostal: updatedClient.code_postal || '',
-      ville: updatedClient.ville || '',
-      email: updatedClient.email || '',
-      tel1: updatedClient.tel1 || '',
-      tel2: updatedClient.tel2 || '',
-      typeClient: updatedClient.client_type_id || '',
-      autreInfo: updatedClient.autre_info || '',
-      infosComplementaires: updatedClient.infos_complementaires || '',
+      id: data.id,
+      nom: data.nom || '',
+      prenom: data.prenom || '',
+      adresse: data.adresse || '',
+      telephone: data.tel1 || '',
+      codePostal: data.code_postal || '',
+      ville: data.ville || '',
+      email: data.email || '',
+      tel1: data.tel1 || '',
+      tel2: data.tel2 || '',
+      typeClient: data.client_type_id || '',
+      autreInfo: data.autre_info || '',
+      infosComplementaires: data.infos_complementaires || '',
     };
   } catch (error) {
     console.error('[clientsService] Exception lors de la mise à jour du client:', error);
@@ -213,6 +194,18 @@ export const deleteClient = async (id: string): Promise<boolean> => {
       return false;
     }
     
+    // Vérifier que le client existe avant de tenter la suppression
+    const { data: existingClient, error: checkError } = await supabase
+      .from('clients')
+      .select('id')
+      .eq('id', id)
+      .single();
+      
+    if (checkError || !existingClient) {
+      console.error('[clientsService] Le client à supprimer n\'existe pas:', checkError);
+      return false;
+    }
+    
     const { error } = await supabase
       .from('clients')
       .delete()
@@ -221,6 +214,22 @@ export const deleteClient = async (id: string): Promise<boolean> => {
     if (error) {
       console.error('[clientsService] Erreur lors de la suppression du client:', error);
       throw error;
+    }
+    
+    // Vérifier que le client a bien été supprimé
+    const { data: checkDeleted, error: verifyError } = await supabase
+      .from('clients')
+      .select('id')
+      .eq('id', id);
+      
+    if (verifyError) {
+      console.error('[clientsService] Erreur lors de la vérification de la suppression:', verifyError);
+      return false;
+    }
+    
+    if (checkDeleted && checkDeleted.length > 0) {
+      console.error('[clientsService] Le client n\'a pas été supprimé correctement');
+      return false;
     }
     
     console.log('[clientsService] Client supprimé avec succès');
