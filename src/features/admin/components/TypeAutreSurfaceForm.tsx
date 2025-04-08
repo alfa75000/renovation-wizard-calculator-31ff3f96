@@ -34,7 +34,10 @@ const TypeAutreSurfaceForm: React.FC<TypeAutreSurfaceFormProps> = ({
     nom: '',
     description: '',
     surfaceImpacteeParDefaut: 'mur',
-    estDeduction: false
+    estDeduction: false,
+    largeur: 0,
+    hauteur: 0,
+    impactePlinthe: false
   });
 
   useEffect(() => {
@@ -44,7 +47,10 @@ const TypeAutreSurfaceForm: React.FC<TypeAutreSurfaceFormProps> = ({
         nom: typeToEdit.nom,
         description: typeToEdit.description,
         surfaceImpacteeParDefaut: typeToEdit.surfaceImpacteeParDefaut,
-        estDeduction: typeToEdit.estDeduction
+        estDeduction: typeToEdit.estDeduction,
+        largeur: typeToEdit.largeur || 0,
+        hauteur: typeToEdit.hauteur || 0,
+        impactePlinthe: typeToEdit.impactePlinthe || false
       });
     } else {
       setFormData({
@@ -52,14 +58,22 @@ const TypeAutreSurfaceForm: React.FC<TypeAutreSurfaceFormProps> = ({
         nom: '',
         description: '',
         surfaceImpacteeParDefaut: 'mur',
-        estDeduction: false
+        estDeduction: false,
+        largeur: 0,
+        hauteur: 0,
+        impactePlinthe: false
       });
     }
   }, [typeToEdit]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    if (name === 'largeur' || name === 'hauteur') {
+      const numValue = parseFloat(value);
+      setFormData(prev => ({ ...prev, [name]: isNaN(numValue) ? 0 : numValue }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleSelectChange = (name: keyof TypeAutreSurface, value: string) => {
@@ -127,6 +141,33 @@ const TypeAutreSurfaceForm: React.FC<TypeAutreSurfaceFormProps> = ({
             </Select>
           </div>
           
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="largeur">Largeur par défaut (m)</Label>
+              <Input 
+                id="largeur" 
+                name="largeur" 
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.largeur} 
+                onChange={handleChange} 
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="hauteur">Hauteur par défaut (m)</Label>
+              <Input 
+                id="hauteur" 
+                name="hauteur" 
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.hauteur} 
+                onChange={handleChange} 
+              />
+            </div>
+          </div>
+          
           <div className="flex items-center space-x-2">
             <Switch 
               id="estDeduction" 
@@ -135,6 +176,17 @@ const TypeAutreSurfaceForm: React.FC<TypeAutreSurfaceFormProps> = ({
             />
             <Label htmlFor="estDeduction">
               {formData.estDeduction ? 'Déduire de la surface' : 'Ajouter à la surface'}
+            </Label>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <Switch 
+              id="impactePlinthe" 
+              checked={formData.impactePlinthe} 
+              onCheckedChange={(value) => handleSwitchChange('impactePlinthe', value)} 
+            />
+            <Label htmlFor="impactePlinthe">
+              Impacte les plinthes
             </Label>
           </div>
           

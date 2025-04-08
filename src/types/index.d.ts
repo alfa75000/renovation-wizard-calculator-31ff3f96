@@ -1,10 +1,12 @@
-
 export type TypeAutreSurface = {
   id: string;
   nom: string;
   description: string;
   surfaceImpacteeParDefaut: 'mur' | 'plafond' | 'sol' | 'aucune';
   estDeduction: boolean;
+  largeur?: number;
+  hauteur?: number;
+  impactePlinthe?: boolean;
 };
 
 export type AutreSurface = {
@@ -17,6 +19,7 @@ export type AutreSurface = {
   quantity: number;
   surfaceImpactee: 'mur' | 'plafond' | 'sol' | 'aucune';
   estDeduction: boolean;
+  impactePlinthe?: boolean;
   surface: number;
 };
 
