@@ -14,6 +14,11 @@ export const useMenuiseries = () => {
     return `Menuiserie n° ${nextIndex} ${baseInfo}`;
   };
 
+  // Générer juste le nom du type de menuiserie sans numérotation
+  const getMenuiserieTypeName = (type: string, largeur: number, hauteur: number): string => {
+    return type ? `${type} (${largeur}×${hauteur} cm)` : '';
+  };
+
   // Ajouter une menuiserie
   const addMenuiserie = (
     menuiserie: Omit<Menuiserie, 'id' | 'surface'>, 
@@ -90,6 +95,7 @@ export const useMenuiseries = () => {
     addMenuiserie,
     updateMenuiserie,
     deleteMenuiserie,
-    generateMenuiserieName
+    generateMenuiserieName,
+    getMenuiserieTypeName
   };
 };

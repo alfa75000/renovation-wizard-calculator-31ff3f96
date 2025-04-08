@@ -40,8 +40,8 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   
-  // Utiliser le hook pour accéder à la fonction de génération de nom
-  const { generateMenuiserieName } = useMenuiseries();
+  // Utiliser le hook pour accéder aux fonctions de génération de nom
+  const { getMenuiserieTypeName } = useMenuiseries();
 
   const [newMenuiserie, setNewMenuiserie] = useState<Omit<Menuiserie, 'id' | 'surface'>>({
     type: "",
@@ -105,13 +105,13 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
       setSelectedType(selected);
       const surfaceImpactee = mapSurfaceImpacteeToFrontend(selected.surface_impactee);
       
-      // Génération du nom automatique basé sur le nombre actuel de menuiseries
-      const autoName = generateMenuiserieName(selected.name, selected.largeur, selected.hauteur);
+      // Utiliser uniquement le nom du type de menuiserie sans numérotation
+      const typeNameOnly = getMenuiserieTypeName(selected.name, selected.largeur, selected.hauteur);
       
       setNewMenuiserie((prev) => ({ 
         ...prev, 
         type: selected.name,
-        name: autoName,
+        name: typeNameOnly, // Utiliser juste le nom du type sans "Menuiserie n° X"
         largeur: selected.largeur,
         hauteur: selected.hauteur,
         surfaceImpactee,
@@ -282,8 +282,8 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
         </div>
         
         <div className="md:col-span-5">
-          <div className="grid grid-cols-2 gap-2">
-            <div>
+          <div className="grid grid-cols-12 gap-2">
+            <div className="col-span-6">
               <Label htmlFor="menuiserieImpact">Surface impactée</Label>
               <Select
                 value={newMenuiserie.surfaceImpactee || 'mur'}
@@ -300,7 +300,7 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
               </Select>
             </div>
             
-            <div className="mt-8">
+            <div className="col-span-6 mt-8">
               <div className="flex items-center space-x-2">
                 <Checkbox 
                   id="impactePlinthe" 
