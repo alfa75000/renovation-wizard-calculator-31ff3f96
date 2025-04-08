@@ -45,7 +45,7 @@ import TypeMenuiserieForm from "@/features/admin/components/TypeMenuiserieForm";
 import ClientForm from "@/features/admin/components/ClientForm";
 import SupabaseStatus from "@/components/SupabaseStatus";
 
-import { WorkType, ServiceGroup, Service } from "@/types/supabase";
+import { WorkType, ServiceGroup, Service, MenuiserieType } from "@/types/supabase";
 import { 
   fetchWorkTypes, 
   fetchServiceGroups, 
@@ -60,6 +60,8 @@ import {
   updateService,
   deleteService
 } from "@/services/travauxService";
+
+import { fetchMenuiserieTypes } from "@/services/menuiseriesService";
 
 import { useMenuiseriesTypes, surfacesReference as menuiserieSurfacesReference } from "@/contexts/MenuiseriesTypesContext";
 import { Client, useClients, typesClients } from "@/contexts/ClientsContext";
@@ -78,11 +80,13 @@ const Parametres = () => {
   const [workTypes, setWorkTypes] = useState<WorkType[]>([]);
   const [serviceGroups, setServiceGroups] = useState<ServiceGroup[]>([]);
   const [services, setServices] = useState<Service[]>([]);
+  const [menuiserieTypes, setMenuiserieTypes] = useState<MenuiserieType[]>([]);
   const [selectedWorkTypeId, setSelectedWorkTypeId] = useState<string | null>(null);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [isLoadingGroups, setIsLoadingGroups] = useState<boolean>(false);
   const [isLoadingServices, setIsLoadingServices] = useState<boolean>(false);
+  const [isLoadingMenuiseries, setIsLoadingMenuiseries] = useState<boolean>(false);
   const [workTypeFormOpen, setWorkTypeFormOpen] = useState<boolean>(false);
   const [editingWorkType, setEditingWorkType] = useState<WorkType | null>(null);
   const [serviceGroupFormOpen, setServiceGroupFormOpen] = useState<boolean>(false);
@@ -165,6 +169,26 @@ const Parametres = () => {
     
     loadServices();
   }, [selectedGroupId]);
+
+  useEffect(() => {
+    // Chargement des types de menuiseries depuis Supabase
+    const loadMenuiserieTypes = async () => {
+      setIsLoadingMenuiseries(true);
+      try {
+        const data = await fetchMenuiserieTypes();
+        setMenuiserieTypes(data);
+      } catch (error) {
+        console.error("Erreur lors du chargement des types de menuiseries:", error);
+        toast.error("Impossible de charger les types de menuiseries");
+      } finally {
+        setIsLoadingMenuiseries(false);
+      }
+    };
+    
+    if (activeTab === "menuiseries") {
+      loadMenuiserieTypes();
+    }
+  }, [activeTab]);
 
   const getIconComponent = (iconName: string) => {
     switch (iconName) {
@@ -499,6 +523,23 @@ const Parametres = () => {
     return type ? type.label : id;
   };
 
+  const getSurfaceImpacteeLabel = (value: string | undefined): string => {
+    if (!value) return "Non spécifié";
+    
+    switch (value) {
+      case "Mur":
+        return "Mur";
+      case "Plafond":
+        return "Plafond";
+      case "Sol":
+        return "Sol";
+      case "Aucune":
+        return "Aucune";
+      default:
+        return value;
+    }
+  };
+
   return (
     <Layout
       title="Paramètres"
@@ -809,7 +850,11 @@ const Parametres = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {typesMenuiseries.length > 0 ? (
+              {isLoadingMenuiseries ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : menuiserieTypes.length > 0 ? (
                 <div className="rounded-md border">
                   <div className="grid grid-cols-12 bg-gray-100 p-3 rounded-t-md font-medium text-sm">
                     <div className="col-span-3">Nom</div>
@@ -819,25 +864,20 @@ const Parametres = () => {
                     <div className="col-span-2 text-right">Actions</div>
                   </div>
                   <div className="divide-y">
-                    {typesMenuiseries.map((type) => (
+                    {menuiserieTypes.map((type) => (
                       <div key={type.id} className="grid grid-cols-12 p-3 items-center hover:bg-gray-50">
                         <div className="col-span-3 font-medium">
-                          <div className="truncate">{type.nom}</div>
-                          {type.description && (
-                            <div className="text-xs text-gray-500 mt-1 truncate">
-                              {type.description}
-                            </div>
-                          )}
+                          <div className="truncate">{type.name}</div>
                         </div>
                         <div className="col-span-2">
                           {type.largeur} × {type.hauteur} cm
                         </div>
                         <div className="col-span-3">
-                          {getSurfaceMenuiserieLabel(type.surfaceReference)}
+                          {getSurfaceImpacteeLabel(type.surface_impactee)}
                         </div>
                         <div className="col-span-2">
-                          <Badge variant={type.impactePlinthe ? "default" : "outline"}>
-                            {type.impactePlinthe ? "Oui" : "Non"}
+                          <Badge variant={type.impacte_plinthe ? "default" : "outline"}>
+                            {type.impacte_plinthe ? "Oui" : "Non"}
                           </Badge>
                         </div>
                         <div className="col-span-2 flex justify-end gap-1">
@@ -864,421 +904,4 @@ const Parametres = () => {
                 <Alert>
                   <AlertDescription>
                     Aucun type de menuiserie défini. Utilisez le bouton "Ajouter un type" pour en créer un.
-                  </AlertDescription>
-                </Alert>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="clients" className="mt-6">
-          <div className="flex justify-end mb-4">
-            <Button 
-              variant="outline" 
-              onClick={resetClientsToDefaults}
-              className="flex items-center gap-2"
-            >
-              Réinitialiser aux valeurs par défaut
-            </Button>
-          </div>
-          
-          <Card className="shadow-md">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Fiches Clients
-                </span>
-                <Button variant="outline" size="sm" onClick={handleAddClient}>
-                  <Plus className="h-4 w-4 mr-1" />
-                  Ajouter un client
-                </Button>
-              </CardTitle>
-              <CardDescription>
-                Gérez les fiches clients pour vos projets de rénovation
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {clients.length > 0 ? (
-                <div className="rounded-md border">
-                  <div className="grid grid-cols-12 bg-gray-100 p-3 rounded-t-md font-medium text-sm">
-                    <div className="col-span-3">Nom / Prénom</div>
-                    <div className="col-span-3">Contact</div>
-                    <div className="col-span-3">Type</div>
-                    <div className="col-span-1">Infos</div>
-                    <div className="col-span-2 text-right">Actions</div>
-                  </div>
-                  <div className="divide-y">
-                    {clients.map((client) => (
-                      <div key={client.id} className="grid grid-cols-12 p-3 items-center hover:bg-gray-50">
-                        <div className="col-span-3 font-medium">
-                          <div className="truncate flex items-center gap-2">
-                            <User className="h-4 w-4 text-gray-500" />
-                            {client.prenom ? `${client.nom} ${client.prenom}` : client.nom}
-                          </div>
-                          <div className="text-xs text-gray-500 mt-1 truncate">
-                            {client.adresse}
-                          </div>
-                        </div>
-                        <div className="col-span-3">
-                          <div className="text-sm">{client.tel1}</div>
-                          {client.tel2 && (
-                            <div className="text-xs text-gray-500">{client.tel2}</div>
-                          )}
-                          <div className="text-xs text-blue-600 mt-1">{client.email}</div>
-                        </div>
-                        <div className="col-span-3">
-                          <Badge variant="outline">
-                            {getTypeClientLabel(client.typeClient)}
-                          </Badge>
-                          {client.autreInfo && (
-                            <div className="text-xs text-gray-500 mt-1">
-                              {client.autreInfo}
-                            </div>
-                          )}
-                        </div>
-                        <div className="col-span-1">
-                          {client.infosComplementaires && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 w-7 p-0"
-                              title={client.infosComplementaires}
-                            >
-                              <Settings className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                        <div className="col-span-2 flex justify-end gap-1">
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleEditClient(client)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleDeleteClient(client.id)}
-                          >
-                            <Trash className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <Alert>
-                  <AlertDescription>
-                    Aucun client défini. Utilisez le bouton "Ajouter un client" pour en créer un.
-                  </AlertDescription>
-                </Alert>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-
-      <Dialog open={workTypeFormOpen} onOpenChange={setWorkTypeFormOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editingWorkType ? "Modifier le type de travaux" : "Ajouter un type de travaux"}</DialogTitle>
-            <DialogDescription>
-              {editingWorkType 
-                ? "Modifiez les informations du type de travaux" 
-                : "Remplissez les informations pour créer un nouveau type de travaux"}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <form onSubmit={(e) => {
-            e.preventDefault();
-            const formData = new FormData(e.currentTarget);
-            const name = formData.get('name') as string;
-            
-            if (name) {
-              handleSubmitWorkType(name);
-            }
-          }}>
-            <div className="space-y-4 py-2">
-              <div className="space-y-2">
-                <Label htmlFor="name">Nom du type</Label>
-                <Input 
-                  id="name" 
-                  name="name" 
-                  defaultValue={editingWorkType?.name || ""} 
-                  placeholder="Ex: Revêtements muraux"
-                  required
-                />
-              </div>
-            </div>
-            
-            <DialogFooter className="mt-4">
-              <Button type="button" variant="outline" onClick={() => setWorkTypeFormOpen(false)}>
-                Annuler
-              </Button>
-              <Button type="submit" disabled={loading}>
-                {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                {editingWorkType ? "Mettre à jour" : "Ajouter"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={serviceGroupFormOpen} onOpenChange={setServiceGroupFormOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editingServiceGroup ? "Modifier le groupe" : "Ajouter un groupe"}</DialogTitle>
-            <DialogDescription>
-              {editingServiceGroup 
-                ? "Modifiez les informations du groupe" 
-                : "Remplissez les informations pour créer un nouveau groupe"}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <form onSubmit={(e) => {
-            e.preventDefault();
-            const formData = new FormData(e.currentTarget);
-            const name = formData.get('name') as string;
-            
-            if (name) {
-              handleSubmitServiceGroup(name);
-            }
-          }}>
-            <div className="space-y-4 py-2">
-              <div className="space-y-2">
-                <Label htmlFor="name">Nom du groupe</Label>
-                <Input 
-                  id="name" 
-                  name="name" 
-                  defaultValue={editingServiceGroup?.name || ""} 
-                  placeholder="Ex: Travaux préparatoires"
-                  required
-                />
-              </div>
-            </div>
-            
-            <DialogFooter className="mt-4">
-              <Button type="button" variant="outline" onClick={() => setServiceGroupFormOpen(false)}>
-                Annuler
-              </Button>
-              <Button type="submit" disabled={isLoadingGroups}>
-                {isLoadingGroups ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                {editingServiceGroup ? "Mettre à jour" : "Ajouter"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={serviceFormOpen} onOpenChange={setServiceFormOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editingService ? "Modifier la prestation" : "Ajouter une prestation"}</DialogTitle>
-            <DialogDescription>
-              {editingService 
-                ? "Modifiez les informations de la prestation" 
-                : "Remplissez les informations pour créer une nouvelle prestation"}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <form onSubmit={(e) => {
-            e.preventDefault();
-            const formData = new FormData(e.currentTarget);
-            const name = formData.get('name') as string;
-            const description = formData.get('description') as string;
-            const laborPrice = parseFloat(formData.get('laborPrice') as string) || 0;
-            const supplyPrice = parseFloat(formData.get('supplyPrice') as string) || 0;
-            
-            if (name) {
-              handleSubmitService({
-                name,
-                description,
-                labor_price: laborPrice,
-                supply_price: supplyPrice
-              });
-            }
-          }}>
-            <div className="space-y-4 py-2">
-              <div className="space-y-2">
-                <Label htmlFor="name">Nom de la prestation</Label>
-                <Input 
-                  id="name" 
-                  name="name" 
-                  defaultValue={editingService?.name || ""} 
-                  placeholder="Ex: Peinture acrylique"
-                  required
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="description">Description (optionnelle)</Label>
-                <Textarea 
-                  id="description" 
-                  name="description" 
-                  defaultValue={editingService?.description || ""} 
-                  placeholder="Description détaillée de la prestation"
-                  rows={3}
-                />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="laborPrice">Prix main d'œuvre (€)</Label>
-                  <Input 
-                    id="laborPrice" 
-                    name="laborPrice" 
-                    type="number"
-                    step="0.01"
-                    defaultValue={editingService?.labor_price || 0} 
-                    placeholder="0.00"
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="supplyPrice">Prix fournitures (€)</Label>
-                  <Input 
-                    id="supplyPrice" 
-                    name="supplyPrice" 
-                    type="number"
-                    step="0.01"
-                    defaultValue={editingService?.supply_price || 0} 
-                    placeholder="0.00"
-                    required
-                  />
-                </div>
-              </div>
-            </div>
-            
-            <DialogFooter className="mt-4">
-              <Button type="button" variant="outline" onClick={() => setServiceFormOpen(false)}>
-                Annuler
-              </Button>
-              <Button type="submit" disabled={isLoadingServices}>
-                {isLoadingServices ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                {editingService ? "Mettre à jour" : "Ajouter"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      <TypeMenuiserieForm
-        isOpen={typeMenuiserieFormOpen}
-        onClose={() => setTypeMenuiserieFormOpen(false)}
-        typeToEdit={editingTypeMenuiserie}
-        onSubmit={handleSubmitTypeMenuiserie}
-      />
-      
-      <ClientForm
-        isOpen={clientFormOpen}
-        onClose={() => setClientFormOpen(false)}
-        clientToEdit={editingClient}
-        onSubmit={handleSubmitClient}
-      />
-
-      <Dialog open={confirmDeleteWorkTypeOpen} onOpenChange={setConfirmDeleteWorkTypeOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirmer la suppression</DialogTitle>
-            <DialogDescription>
-              Êtes-vous sûr de vouloir supprimer ce type de travaux ? Cette action supprimera également tous les groupes et prestations associés et ne peut pas être annulée.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmDeleteWorkTypeOpen(false)}>
-              Annuler
-            </Button>
-            <Button variant="destructive" onClick={confirmWorkTypeDelete} disabled={loading}>
-              {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              Supprimer
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={confirmDeleteGroupOpen} onOpenChange={setConfirmDeleteGroupOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirmer la suppression</DialogTitle>
-            <DialogDescription>
-              Êtes-vous sûr de vouloir supprimer ce groupe ? Cette action supprimera également toutes les prestations associées et ne peut pas être annulée.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmDeleteGroupOpen(false)}>
-              Annuler
-            </Button>
-            <Button variant="destructive" onClick={confirmServiceGroupDelete} disabled={isLoadingGroups}>
-              {isLoadingGroups ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              Supprimer
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={confirmDeleteServiceOpen} onOpenChange={setConfirmDeleteServiceOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirmer la suppression</DialogTitle>
-            <DialogDescription>
-              Êtes-vous sûr de vouloir supprimer cette prestation ? Cette action ne peut pas être annulée.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmDeleteServiceOpen(false)}>
-              Annuler
-            </Button>
-            <Button variant="destructive" onClick={confirmServiceDelete} disabled={isLoadingServices}>
-              {isLoadingServices ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              Supprimer
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={confirmDeleteMenuiserieOpen} onOpenChange={setConfirmDeleteMenuiserieOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirmer la suppression</DialogTitle>
-            <DialogDescription>
-              Êtes-vous sûr de vouloir supprimer ce type de menuiserie ? Cette action ne peut pas être annulée.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmDeleteMenuiserieOpen(false)}>
-              Annuler
-            </Button>
-            <Button variant="destructive" onClick={confirmTypeMenuiserieDelete}>
-              Supprimer
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      <Dialog open={confirmDeleteClientOpen} onOpenChange={setConfirmDeleteClientOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirmer la suppression</DialogTitle>
-            <DialogDescription>
-              Êtes-vous sûr de vouloir supprimer ce client ? Cette action ne peut pas être annulée.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmDeleteClientOpen(false)}>
-              Annuler
-            </Button>
-            <Button variant="destructive" onClick={confirmClientDelete}>
-              Supprimer
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </Layout>
-  );
-};
-
-export default Parametres;
+                  </
