@@ -1086,6 +1086,28 @@ const Parametres = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <TypeMenuiserieForm
+        isOpen={typeMenuiserieFormOpen}
+        onClose={() => setTypeMenuiserieFormOpen(false)}
+        typeToEdit={editingTypeMenuiserie}
+        onSubmit={handleSubmitTypeMenuiserie}
+      />
+      
+      <Dialog open={confirmDeleteMenuiserieOpen} onOpenChange={setConfirmDeleteMenuiserieOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Confirmer la suppression</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir supprimer ce type de menuiserie ? Cette action ne peut pas être annulée.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDeleteMenuiserieOpen(false)}>Annuler</Button>
+            <Button variant="destructive" onClick={confirmTypeMenuiserieDelete}>Supprimer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 };

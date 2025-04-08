@@ -35,6 +35,7 @@ export type MenuiserieType = {
   hauteur: number;
   surface_impactee: SurfaceImpactee;
   impacte_plinthe: boolean;
+  description?: string | null;
 };
 
 export type RoomMenuiserie = {
