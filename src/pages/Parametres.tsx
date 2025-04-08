@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Layout } from "@/components/Layout";
 import { 
@@ -917,4 +918,745 @@ const Parametres = () => {
               </CardHeader>
               <CardContent>
                 {selectedWorkTypeId ? (
-                  <div className="
+                  <div className="space-y-4">
+                    {isLoadingGroups ? (
+                      <div className="flex justify-center py-4">
+                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                      </div>
+                    ) : (
+                      <>
+                        {serviceGroups.length === 0 ? (
+                          <Alert>
+                            <AlertDescription>
+                              Aucun groupe défini pour ce type de travaux. Utilisez le bouton "Ajouter un groupe" pour en créer un.
+                            </AlertDescription>
+                          </Alert>
+                        ) : (
+                          <div className="space-y-6">
+                            {serviceGroups.map((group) => (
+                              <div key={group.id} className="border rounded-lg p-4">
+                                <div className="flex justify-between items-center mb-3">
+                                  <h3 className="font-semibold text-lg flex items-center gap-2">
+                                    <LinkIcon className="h-5 w-5 text-gray-500" />
+                                    {group.name}
+                                  </h3>
+                                  <div className="flex gap-1">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleEditServiceGroup(group)}
+                                    >
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleDeleteServiceGroup(group.id)}
+                                    >
+                                      <Trash className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => {
+                                        setSelectedGroupId(group.id);
+                                        handleAddService();
+                                      }}
+                                    >
+                                      <Plus className="h-4 w-4 mr-1" />
+                                      Ajouter un service
+                                    </Button>
+                                  </div>
+                                </div>
+                                
+                                {selectedGroupId === group.id && (
+                                  <div className="mt-3">
+                                    {isLoadingServices ? (
+                                      <div className="flex justify-center py-4">
+                                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                                      </div>
+                                    ) : (
+                                      <>
+                                        {services.length === 0 ? (
+                                          <Alert>
+                                            <AlertDescription>
+                                              Aucun service défini pour ce groupe. Utilisez le bouton "Ajouter un service" pour en créer un.
+                                            </AlertDescription>
+                                          </Alert>
+                                        ) : (
+                                          <Table>
+                                            <TableHeader>
+                                              <TableRow>
+                                                <TableHead>Nom</TableHead>
+                                                <TableHead>Description</TableHead>
+                                                <TableHead>Prix MO</TableHead>
+                                                <TableHead>Prix Fourniture</TableHead>
+                                                <TableHead>Actions</TableHead>
+                                              </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                              {services.map((service) => (
+                                                <TableRow key={service.id}>
+                                                  <TableCell className="font-medium">{service.name}</TableCell>
+                                                  <TableCell>{service.description}</TableCell>
+                                                  <TableCell>{service.labor_price} €</TableCell>
+                                                  <TableCell>{service.supply_price} €</TableCell>
+                                                  <TableCell>
+                                                    <div className="flex gap-1">
+                                                      <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => handleEditService(service)}
+                                                      >
+                                                        <Edit className="h-4 w-4" />
+                                                      </Button>
+                                                      <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => handleDeleteService(service.id)}
+                                                      >
+                                                        <Trash className="h-4 w-4" />
+                                                      </Button>
+                                                    </div>
+                                                  </TableCell>
+                                                </TableRow>
+                                              ))}
+                                            </TableBody>
+                                          </Table>
+                                        )}
+                                      </>
+                                    )}
+                                  </div>
+                                )}
+                                
+                                {selectedGroupId !== group.id && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setSelectedGroupId(group.id)}
+                                    className="mt-2"
+                                  >
+                                    Afficher les services
+                                  </Button>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                ) : (
+                  <Alert>
+                    <AlertDescription>
+                      Sélectionnez un type de travaux pour voir ses groupes et prestations.
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="menuiseries" className="mt-6">
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <DoorOpen className="h-6 w-6" />
+                Types de Menuiseries
+              </h2>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={resetMenuiseriesToDefaults}
+                >
+                  Réinitialiser aux valeurs par défaut
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleAddTypeMenuiserie}
+                  disabled={isLoadingMenuiseries}
+                >
+                  {isLoadingMenuiseries ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
+                  Ajouter un type
+                </Button>
+              </div>
+            </div>
+            
+            {isLoadingMenuiseries ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : (
+              <div className="bg-white rounded-lg shadow overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nom</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead>Dimensions</TableHead>
+                      <TableHead>Surface impactée</TableHead>
+                      <TableHead>Impacte plinthe</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {menuiserieTypes.map((type) => (
+                      <TableRow key={type.id}>
+                        <TableCell className="font-medium">{type.name}</TableCell>
+                        <TableCell>{type.description || "-"}</TableCell>
+                        <TableCell>
+                          {type.largeur && type.hauteur 
+                            ? `${type.largeur} x ${type.hauteur} cm` 
+                            : "Non spécifiées"
+                          }
+                        </TableCell>
+                        <TableCell>{getSurfaceMenuiserieLabel(type.surface_impactee)}</TableCell>
+                        <TableCell>
+                          {type.impacte_plinthe ? (
+                            <Badge variant="secondary">Oui</Badge>
+                          ) : (
+                            <Badge variant="outline">Non</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditMenuiserieType(type)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteTypeMenuiserie(type.id)}
+                            >
+                              <Trash className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    
+                    {menuiserieTypes.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-4">
+                          Aucun type de menuiserie défini
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="autresSurfaces" className="mt-6">
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <Box className="h-6 w-6" />
+                Types d'Autres Surfaces
+              </h2>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleAddTypeAutreSurface}
+                disabled={isLoadingAutresSurfaces}
+              >
+                {isLoadingAutresSurfaces ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
+                Ajouter un type
+              </Button>
+            </div>
+            
+            {isLoadingAutresSurfaces ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : (
+              <div className="bg-white rounded-lg shadow overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nom</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead>Surface impactée</TableHead>
+                      <TableHead>Type d'ajustement</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {autresSurfacesTypes.map((type) => (
+                      <TableRow key={type.id}>
+                        <TableCell className="font-medium">{type.name}</TableCell>
+                        <TableCell>{type.description || "-"}</TableCell>
+                        <TableCell>{getSurfaceImpacteeLabel(type.surface_impactee)}</TableCell>
+                        <TableCell>
+                          {type.adjustment_type === 'Déduire' ? (
+                            <Badge variant="destructive">Déduction</Badge>
+                          ) : (
+                            <Badge variant="secondary">Addition</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditTypeAutreSurface(type)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteTypeAutreSurface(type.id)}
+                            >
+                              <Trash className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    
+                    {autresSurfacesTypes.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-4">
+                          Aucun type d'autre surface défini
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="clients" className="mt-6">
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <Users className="h-6 w-6" />
+                Clients
+              </h2>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={resetClientsToDefaults}
+                >
+                  Réinitialiser aux valeurs par défaut
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleAddClient}
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Ajouter un client
+                </Button>
+              </div>
+            </div>
+            
+            <div className="bg-white rounded-lg shadow overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nom</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Téléphone</TableHead>
+                    <TableHead>Adresse</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {clients.map((client) => (
+                    <TableRow key={client.id}>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4" />
+                          {client.nom}
+                        </div>
+                      </TableCell>
+                      <TableCell>{getTypeClientLabel(client.type)}</TableCell>
+                      <TableCell>{client.email || "-"}</TableCell>
+                      <TableCell>{client.telephone || "-"}</TableCell>
+                      <TableCell>{client.adresse ? `${client.adresse}, ${client.codePostal} ${client.ville}` : "-"}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEditClient(client)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteClient(client.id)}
+                          >
+                            <Trash className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  
+                  {clients.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-4">
+                        Aucun client défini
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
+      
+      {/* Work Type Dialog */}
+      <Dialog open={workTypeFormOpen} onOpenChange={setWorkTypeFormOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingWorkType ? 'Modifier le type de travaux' : 'Ajouter un type de travaux'}</DialogTitle>
+            <DialogDescription>
+              {editingWorkType 
+                ? 'Modifiez les informations du type de travaux.' 
+                : 'Remplissez les informations pour créer un nouveau type de travaux.'
+              }
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            const nameInput = e.currentTarget.querySelector('input[name="name"]') as HTMLInputElement;
+            if (nameInput?.value) {
+              handleSubmitWorkType(nameInput.value);
+            }
+          }}>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="name">Nom</Label>
+                <Input 
+                  id="name" 
+                  name="name" 
+                  defaultValue={editingWorkType?.name || ''} 
+                  required 
+                />
+              </div>
+            </div>
+            
+            <DialogFooter className="mt-4">
+              <Button type="button" variant="outline" onClick={() => setWorkTypeFormOpen(false)}>
+                Annuler
+              </Button>
+              <Button type="submit">
+                {editingWorkType ? 'Mettre à jour' : 'Ajouter'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Service Group Dialog */}
+      <Dialog open={serviceGroupFormOpen} onOpenChange={setServiceGroupFormOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingServiceGroup ? 'Modifier le groupe' : 'Ajouter un groupe'}</DialogTitle>
+            <DialogDescription>
+              {editingServiceGroup 
+                ? 'Modifiez les informations du groupe.' 
+                : 'Remplissez les informations pour créer un nouveau groupe.'
+              }
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            const nameInput = e.currentTarget.querySelector('input[name="name"]') as HTMLInputElement;
+            if (nameInput?.value) {
+              handleSubmitServiceGroup(nameInput.value);
+            }
+          }}>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="name">Nom</Label>
+                <Input 
+                  id="name" 
+                  name="name" 
+                  defaultValue={editingServiceGroup?.name || ''} 
+                  required 
+                />
+              </div>
+            </div>
+            
+            <DialogFooter className="mt-4">
+              <Button type="button" variant="outline" onClick={() => setServiceGroupFormOpen(false)}>
+                Annuler
+              </Button>
+              <Button type="submit">
+                {editingServiceGroup ? 'Mettre à jour' : 'Ajouter'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Service Dialog */}
+      <Dialog open={serviceFormOpen} onOpenChange={setServiceFormOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingService ? 'Modifier le service' : 'Ajouter un service'}</DialogTitle>
+            <DialogDescription>
+              {editingService 
+                ? 'Modifiez les informations du service.' 
+                : 'Remplissez les informations pour créer un nouveau service.'
+              }
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            const formData = new FormData(e.currentTarget);
+            handleSubmitService({
+              name: formData.get('name') as string,
+              description: formData.get('description') as string,
+              labor_price: Number(formData.get('labor_price')),
+              supply_price: Number(formData.get('supply_price')),
+            });
+          }}>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="name">Nom</Label>
+                <Input 
+                  id="name" 
+                  name="name" 
+                  defaultValue={editingService?.name || ''} 
+                  required 
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="description">Description</Label>
+                <Textarea 
+                  id="description" 
+                  name="description" 
+                  defaultValue={editingService?.description || ''} 
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="labor_price">Prix Main d'œuvre (€)</Label>
+                  <Input 
+                    id="labor_price" 
+                    name="labor_price" 
+                    type="number" 
+                    step="0.01" 
+                    min="0" 
+                    defaultValue={editingService?.labor_price || 0} 
+                    required 
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="supply_price">Prix Fourniture (€)</Label>
+                  <Input 
+                    id="supply_price" 
+                    name="supply_price" 
+                    type="number" 
+                    step="0.01" 
+                    min="0" 
+                    defaultValue={editingService?.supply_price || 0} 
+                    required 
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <DialogFooter className="mt-4">
+              <Button type="button" variant="outline" onClick={() => setServiceFormOpen(false)}>
+                Annuler
+              </Button>
+              <Button type="submit">
+                {editingService ? 'Mettre à jour' : 'Ajouter'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Delete Work Type Confirmation */}
+      <Dialog open={confirmDeleteWorkTypeOpen} onOpenChange={setConfirmDeleteWorkTypeOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Supprimer le type de travaux</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir supprimer ce type de travaux ? Cette action est irréversible.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDeleteWorkTypeOpen(false)}>
+              Annuler
+            </Button>
+            <Button variant="destructive" onClick={confirmWorkTypeDelete}>
+              Supprimer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Delete Service Group Confirmation */}
+      <Dialog open={confirmDeleteGroupOpen} onOpenChange={setConfirmDeleteGroupOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Supprimer le groupe</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir supprimer ce groupe ? Tous les services associés seront également supprimés. Cette action est irréversible.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDeleteGroupOpen(false)}>
+              Annuler
+            </Button>
+            <Button variant="destructive" onClick={confirmServiceGroupDelete}>
+              Supprimer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Delete Service Confirmation */}
+      <Dialog open={confirmDeleteServiceOpen} onOpenChange={setConfirmDeleteServiceOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Supprimer le service</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir supprimer ce service ? Cette action est irréversible.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDeleteServiceOpen(false)}>
+              Annuler
+            </Button>
+            <Button variant="destructive" onClick={confirmServiceDelete}>
+              Supprimer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Type Menuiserie Form Dialog */}
+      {typeMenuiserieFormOpen && (
+        <TypeMenuiserieForm
+          isOpen={typeMenuiserieFormOpen}
+          onClose={() => setTypeMenuiserieFormOpen(false)}
+          typeToEdit={editingTypeMenuiserie}
+          onSubmit={handleSubmitTypeMenuiserie}
+        />
+      )}
+      
+      {/* Delete Type Menuiserie Confirmation */}
+      <Dialog open={confirmDeleteMenuiserieOpen} onOpenChange={setConfirmDeleteMenuiserieOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Supprimer le type de menuiserie</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir supprimer ce type de menuiserie ? Cette action est irréversible.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDeleteMenuiserieOpen(false)}>
+              Annuler
+            </Button>
+            <Button variant="destructive" onClick={confirmTypeMenuiserieDelete}>
+              Supprimer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Client Form Dialog */}
+      {clientFormOpen && (
+        <ClientForm
+          isOpen={clientFormOpen}
+          onClose={() => setClientFormOpen(false)}
+          clientToEdit={editingClient}
+          onSubmit={handleSubmitClient}
+        />
+      )}
+      
+      {/* Delete Client Confirmation */}
+      <Dialog open={confirmDeleteClientOpen} onOpenChange={setConfirmDeleteClientOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Supprimer le client</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir supprimer ce client ? Cette action est irréversible.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDeleteClientOpen(false)}>
+              Annuler
+            </Button>
+            <Button variant="destructive" onClick={confirmClientDelete}>
+              Supprimer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Type Autre Surface Form Dialog */}
+      {typeAutreSurfaceFormOpen && (
+        <Dialog open={typeAutreSurfaceFormOpen} onOpenChange={setTypeAutreSurfaceFormOpen}>
+          <DialogContent>
+            <TypeAutreSurfaceForm
+              isOpen={typeAutreSurfaceFormOpen}
+              onClose={() => setTypeAutreSurfaceFormOpen(false)}
+              typeToEdit={editingTypeAutreSurface}
+              onSubmit={handleSubmitTypeAutreSurface}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
+      
+      {/* Delete Type Autre Surface Confirmation */}
+      <Dialog open={confirmDeleteAutreSurfaceOpen} onOpenChange={setConfirmDeleteAutreSurfaceOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Supprimer le type d'autre surface</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir supprimer ce type d'autre surface ? Cette action est irréversible.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDeleteAutreSurfaceOpen(false)}>
+              Annuler
+            </Button>
+            <Button variant="destructive" onClick={confirmTypeAutreSurfaceDelete}>
+              Supprimer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Layout>
+  );
+};
+
+export default Parametres;
