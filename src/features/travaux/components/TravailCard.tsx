@@ -2,10 +2,9 @@
 import React from "react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, Box } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Travail } from "@/types";
-import { formaterPrix } from "@/lib/utils";
 
 interface TravailCardProps {
   travail: Travail;
@@ -56,11 +55,11 @@ const TravailCard: React.FC<TravailCardProps> = ({
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <p className="text-muted-foreground">Prix unitaire HT:</p>
-              <p>{formaterPrix(travail.prixFournitures + travail.prixMainOeuvre)}/{travail.unite}</p>
+              <p>{(travail.prixFournitures + travail.prixMainOeuvre).toFixed(2)}€/{travail.unite}</p>
             </div>
             <div>
               <p className="text-muted-foreground">Total TTC:</p>
-              <p className="font-bold">{formaterPrix(totalTTC)}</p>
+              <p className="font-bold">{totalTTC.toFixed(2)}€</p>
             </div>
           </div>
         </div>
