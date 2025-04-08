@@ -1,8 +1,17 @@
 
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import { MenuiseriesTypesState, TypeMenuiserie, MenuiseriesTypesAction, surfacesReference } from '@/types';
+import { MenuiseriesTypesState, TypeMenuiserie, MenuiseriesTypesAction } from '@/types';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { v4 as uuidv4 } from 'uuid';
+import { SurfaceImpactee } from '@/types/supabase';
+
+// Surface Reference constante correcte (adaptée aux types Supabase)
+export const surfacesReference = [
+  { id: 'Mur', label: 'Murs' },
+  { id: 'Plafond', label: 'Plafond' },
+  { id: 'Sol', label: 'Sol' },
+  { id: 'Aucune', label: 'Aucune (quantité directe)' }
+];
 
 // État initial
 const initialState: MenuiseriesTypesState = {

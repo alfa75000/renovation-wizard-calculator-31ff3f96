@@ -38,11 +38,26 @@ export const createMenuiserieType = async (data: {
   name: string;
   hauteur: number;
   largeur: number;
-  surface_impactee: string;
+  surface_impactee: string; // Doit être une des valeurs de l'enum: 'Mur', 'Plafond', 'Sol', 'Aucune'
   impacte_plinthe: boolean;
+  description?: string;
 }) => {
   try {
     console.log("Création d'un type de menuiserie:", data);
+    
+    // Vérification des valeurs requises
+    if (!data.name || !data.hauteur || !data.largeur || !data.surface_impactee) {
+      console.error("Données incomplètes pour la création du type de menuiserie:", data);
+      toast.error("Données incomplètes pour la création du type de menuiserie");
+      return null;
+    }
+    
+    // Validation de surface_impactee
+    if (!['Mur', 'Plafond', 'Sol', 'Aucune'].includes(data.surface_impactee)) {
+      console.error("Valeur invalide pour surface_impactee:", data.surface_impactee);
+      toast.error("Type de surface impactée invalide");
+      return null;
+    }
     
     const { data: newType, error } = await supabase
       .from('menuiseries_types')
@@ -70,11 +85,19 @@ export const updateMenuiserieType = async (id: string, data: {
   name?: string;
   hauteur?: number;
   largeur?: number;
-  surface_impactee?: string;
+  surface_impactee?: string; // Doit être une des valeurs de l'enum: 'Mur', 'Plafond', 'Sol', 'Aucune'
   impacte_plinthe?: boolean;
+  description?: string;
 }) => {
   try {
     console.log("Mise à jour du type de menuiserie:", { id, data });
+    
+    // Validation de surface_impactee si présente
+    if (data.surface_impactee && !['Mur', 'Plafond', 'Sol', 'Aucune'].includes(data.surface_impactee)) {
+      console.error("Valeur invalide pour surface_impactee:", data.surface_impactee);
+      toast.error("Type de surface impactée invalide");
+      return null;
+    }
     
     const { data: updatedType, error } = await supabase
       .from('menuiseries_types')
@@ -134,6 +157,31 @@ export const createRoomMenuiserie = async (roomMenuiserie: {
 }) => {
   try {
     console.log("Création d'une menuiserie pour une pièce:", roomMenuiserie);
+    
+    // Vérification que l'ID du type est bien présent
+    if (!roomMenuiserie.menuiserie_type_id) {
+      console.error("Erreur: menuiserie_type_id manquant");
+      toast.error("Erreur: Aucun type de menuiserie sélectionné");
+      return null;
+    }
+    
+    // Validation de surface_impactee si présente
+    if (roomMenuiserie.surface_impactee && 
+        !['Mur', 'Plafond', 'Sol', 'Aucune', 'mur', 'plafond', 'sol'].includes(roomMenuiserie.surface_impactee)) {
+      console.error("Valeur invalide pour surface_impactee:", roomMenuiserie.surface_impactee);
+      
+      // Conversion des valeurs frontend vers les valeurs Supabase si nécessaire
+      if (roomMenuiserie.surface_impactee === 'mur') {
+        roomMenuiserie.surface_impactee = 'Mur';
+      } else if (roomMenuiserie.surface_impactee === 'plafond') {
+        roomMenuiserie.surface_impactee = 'Plafond';
+      } else if (roomMenuiserie.surface_impactee === 'sol') {
+        roomMenuiserie.surface_impactee = 'Sol';
+      } else {
+        toast.error("Type de surface impactée invalide");
+        return null;
+      }
+    }
     
     const { data, error } = await supabase
       .from('room_menuiseries')

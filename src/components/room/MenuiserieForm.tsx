@@ -5,15 +5,27 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Check, Plus } from 'lucide-react';
 import { Menuiserie } from '@/types';
-import { MenuiserieType } from '@/types/supabase'; 
+import { MenuiserieType, SurfaceImpactee } from '@/types/supabase'; 
 import { fetchMenuiserieTypes } from '@/services/menuiseriesService';
 import { useToast } from '@/hooks/use-toast';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface MenuiserieFormProps {
   onAddMenuiserie: (menuiserie: Omit<Menuiserie, 'id' | 'surface'>, quantity: number) => void;
   editingMenuiserie?: Omit<Menuiserie, 'id' | 'surface'> | null;
   onCancelEdit?: () => void;
 }
+
+// Mapping pour convertir les valeurs de surface_impactee de Supabase vers les valeurs frontend
+const mapSurfaceImpacteeToFrontend = (surfaceImpactee: SurfaceImpactee): "mur" | "plafond" | "sol" => {
+  switch (surfaceImpactee) {
+    case 'Plafond': return 'plafond';
+    case 'Sol': return 'sol';
+    case 'Aucune': return 'mur'; // Traiter "Aucune" comme "mur" pour compatibilité
+    default: return 'mur'; // Par défaut Mur
+  }
+};
 
 const MenuiserieForm: React.FC<MenuiserieFormProps> = ({ 
   onAddMenuiserie, 
@@ -33,6 +45,8 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
     surfaceImpactee: "mur"
   });
 
+  const [selectedTypeId, setSelectedTypeId] = useState<string>("");
+  const [selectedType, setSelectedType] = useState<MenuiserieType | null>(null);
   const [quantity, setQuantity] = useState(1);
 
   // Chargement des types de menuiseries depuis Supabase
@@ -41,7 +55,17 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
       setLoading(true);
       try {
         const types = await fetchMenuiserieTypes();
-        setMenuiseriesTypes(types);
+        if (Array.isArray(types)) {
+          setMenuiseriesTypes(types);
+        } else {
+          console.error('fetchMenuiserieTypes n\'a pas retourné un tableau:', types);
+          setMenuiseriesTypes([]);
+          toast({
+            title: 'Erreur',
+            description: 'Impossible de charger les types de menuiseries',
+            variant: 'destructive'
+          });
+        }
       } catch (error) {
         console.error('Erreur lors du chargement des types de menuiseries:', error);
         toast({
@@ -57,54 +81,31 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
     loadMenuiserieTypes();
   }, []);
 
-  // Détecter le type de surface impactée par défaut
-  const getDefaultSurfaceImpactee = (type: string): "mur" | "plafond" | "sol" => {
-    const lowerType = type.toLowerCase();
-    if (
-      lowerType.includes('toit') || 
-      lowerType.includes('velux') || 
-      lowerType.includes('vélux') || 
-      lowerType.includes('plafond')
-    ) {
-      return "plafond";
-    } else if (
-      lowerType.includes('trappe') || 
-      lowerType.includes('sol')
-    ) {
-      return "sol";
-    }
-    return "mur";
-  };
-
-  const handleMenuiserieTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const typeId = e.target.value;
-    const selectedType = menuiseriesTypes.find(type => type.id === typeId);
+  const handleMenuiserieTypeChange = (typeId: string) => {
+    setSelectedTypeId(typeId);
+    const selected = menuiseriesTypes.find(type => type.id === typeId);
     
-    if (selectedType) {
-      const surfaceImpactee = mapSurfaceImpacteeToFrontend(selectedType.surface_impactee);
+    if (selected) {
+      setSelectedType(selected);
+      const surfaceImpactee = mapSurfaceImpacteeToFrontend(selected.surface_impactee);
+      
       setNewMenuiserie((prev) => ({ 
         ...prev, 
-        type: selectedType.name,
-        largeur: selectedType.largeur,
-        hauteur: selectedType.hauteur,
-        impactePlinthe: selectedType.impacte_plinthe,
+        type: selected.name,
+        largeur: selected.largeur,
+        hauteur: selected.hauteur,
+        impactePlinthe: selected.impacte_plinthe,
         surfaceImpactee
       }));
+    } else {
+      setSelectedType(null);
     }
   };
 
-  // Fonction utilitaire pour convertir le format de surface_impactee de Supabase vers le format frontend
-  const mapSurfaceImpacteeToFrontend = (surfaceImpactee: string): "mur" | "plafond" | "sol" => {
-    if (surfaceImpactee === 'Plafond') return 'plafond';
-    if (surfaceImpactee === 'Sol') return 'sol';
-    return 'mur'; // Par défaut Mur
-  };
-
-  const handleSurfaceImpacteeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value as "mur" | "plafond" | "sol";
+  const handleSurfaceImpacteeChange = (value: string) => {
     setNewMenuiserie(prev => ({
       ...prev,
-      surfaceImpactee: value
+      surfaceImpactee: value as "mur" | "plafond" | "sol"
     }));
   };
 
@@ -124,7 +125,7 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
   };
 
   const handleAddMenuiserie = () => {
-    if (!newMenuiserie.type) {
+    if (!selectedTypeId) {
       toast({
         title: 'Validation',
         description: 'Veuillez sélectionner un type de menuiserie',
@@ -133,7 +134,13 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
       return;
     }
     
-    onAddMenuiserie(newMenuiserie, quantity);
+    // Ajout des informations spécifiques du type sélectionné
+    const menuiserieToAdd = {
+      ...newMenuiserie,
+      menuiserie_type_id: selectedTypeId  // Ajouter l'ID du type sélectionné pour Supabase
+    };
+    
+    onAddMenuiserie(menuiserieToAdd, quantity);
     
     // Réinitialiser le formulaire mais conserver le type
     setNewMenuiserie(prev => ({
@@ -151,38 +158,61 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
         <div className="md:col-span-2">
           <Label htmlFor="menuiserieType">Type de menuiserie</Label>
-          <select
-            id="menuiserieType"
-            name="type"
-            value={newMenuiserie.type ? menuiseriesTypes.find(t => t.name === newMenuiserie.type)?.id || "" : ""}
-            onChange={handleMenuiserieTypeChange}
-            className="w-full p-2 border rounded mt-1"
+          <Select
+            value={selectedTypeId}
+            onValueChange={handleMenuiserieTypeChange}
             disabled={loading}
           >
-            <option value="">Sélectionner un type</option>
-            {menuiseriesTypes.map((type) => (
-              <option key={type.id} value={type.id}>
-                {type.name} ({type.largeur}×{type.hauteur} cm)
-              </option>
-            ))}
-          </select>
+            <SelectTrigger id="menuiserieType" className="w-full p-2 border rounded mt-1">
+              <SelectValue placeholder="Sélectionner un type" />
+            </SelectTrigger>
+            <SelectContent>
+              {menuiseriesTypes.map((type) => (
+                <SelectItem key={type.id} value={type.id}>
+                  {type.name} ({type.largeur}×{type.hauteur} cm)
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         
         <div className="md:col-span-2">
           <Label htmlFor="menuiserieImpact">Surface impactée</Label>
-          <select
-            id="menuiserieImpact"
-            name="surfaceImpactee"
+          <Select
             value={newMenuiserie.surfaceImpactee || 'mur'}
-            onChange={handleSurfaceImpacteeChange}
-            className="w-full p-2 border rounded mt-1"
+            onValueChange={handleSurfaceImpacteeChange}
           >
-            <option value="mur">Mur</option>
-            <option value="plafond">Plafond</option>
-            <option value="sol">Sol</option>
-          </select>
+            <SelectTrigger id="menuiserieImpact" className="w-full p-2 border rounded mt-1">
+              <SelectValue placeholder="Sélectionner une surface" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="mur">Mur</SelectItem>
+              <SelectItem value="plafond">Plafond</SelectItem>
+              <SelectItem value="sol">Sol</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
+      
+      {selectedType && (
+        <div className="bg-gray-50 p-4 rounded-md mb-4">
+          <h4 className="font-medium mb-2">Informations du type sélectionné</h4>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <span className="block text-sm text-gray-500">Dimensions par défaut:</span>
+              <span className="font-medium">{selectedType.largeur} × {selectedType.hauteur} cm</span>
+            </div>
+            <div>
+              <span className="block text-sm text-gray-500">Surface impactée par défaut:</span>
+              <span className="font-medium">{selectedType.surface_impactee}</span>
+            </div>
+            <div>
+              <span className="block text-sm text-gray-500">Impacte les plinthes:</span>
+              <span className="font-medium">{selectedType.impacte_plinthe ? 'Oui' : 'Non'}</span>
+            </div>
+          </div>
+        </div>
+      )}
       
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
         <div>
@@ -240,7 +270,7 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
           <Button 
             onClick={handleAddMenuiserie} 
             className="w-full"
-            disabled={!newMenuiserie.type || loading}
+            disabled={!selectedTypeId || loading}
           >
             {editingMenuiserie ? (
               <>

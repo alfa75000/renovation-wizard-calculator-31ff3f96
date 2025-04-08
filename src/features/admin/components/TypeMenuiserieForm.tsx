@@ -8,8 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { surfacesReference } from '@/contexts/MenuiseriesTypesContext';
 import { TypeMenuiserie } from '@/types';
+import { SurfaceImpactee } from '@/types/supabase';
 
 interface TypeMenuiserieFormProps {
   isOpen: boolean;
@@ -17,6 +17,14 @@ interface TypeMenuiserieFormProps {
   typeToEdit: TypeMenuiserie | null;
   onSubmit: (typeData: TypeMenuiserie) => void;
 }
+
+// Options de surface impactée correspondant exactement aux valeurs de l'ENUM dans Supabase
+const surfaceOptions: { value: SurfaceImpactee; label: string }[] = [
+  { value: 'Mur', label: 'Murs' },
+  { value: 'Plafond', label: 'Plafond' },
+  { value: 'Sol', label: 'Sol' },
+  { value: 'Aucune', label: 'Aucune' }
+];
 
 const TypeMenuiserieForm: React.FC<TypeMenuiserieFormProps> = ({
   isOpen,
@@ -27,7 +35,7 @@ const TypeMenuiserieForm: React.FC<TypeMenuiserieFormProps> = ({
   const [nom, setNom] = useState('');
   const [hauteur, setHauteur] = useState<number>(0);
   const [largeur, setLargeur] = useState<number>(0);
-  const [surfaceReference, setSurfaceReference] = useState('SurfaceNetteMurs');
+  const [surfaceReference, setSurfaceReference] = useState<SurfaceImpactee>('Mur');
   const [impactePlinthe, setImpactePlinthe] = useState(false);
   const [description, setDescription] = useState('');
 
@@ -36,22 +44,53 @@ const TypeMenuiserieForm: React.FC<TypeMenuiserieFormProps> = ({
       setNom(typeToEdit.nom);
       setHauteur(typeToEdit.hauteur);
       setLargeur(typeToEdit.largeur);
-      setSurfaceReference(typeToEdit.surfaceReference);
-      setImpactePlinthe(typeToEdit.impactePlinthe);
+      
+      // Conversion de la valeur stockée vers l'enum Supabase
+      if (typeToEdit.surfaceReference) {
+        const surfaceRefValue = mapToSupabaseSurfaceImpactee(typeToEdit.surfaceReference);
+        setSurfaceReference(surfaceRefValue);
+      }
+      
+      setImpactePlinthe(!!typeToEdit.impactePlinthe);
       setDescription(typeToEdit.description || '');
     } else {
       // Réinitialiser les champs si on ajoute un nouveau type
       setNom('');
       setHauteur(0);
       setLargeur(0);
-      setSurfaceReference('SurfaceNetteMurs');
+      setSurfaceReference('Mur');
       setImpactePlinthe(false);
       setDescription('');
     }
   }, [typeToEdit, isOpen]);
 
+  // Fonction pour mapper les anciennes valeurs vers les valeurs de l'enum Supabase
+  const mapToSupabaseSurfaceImpactee = (value: string): SurfaceImpactee => {
+    switch(value.toLowerCase()) {
+      case 'mur':
+      case 'murs':
+      case 'surfacenettemurs':
+        return 'Mur';
+      case 'plafond':
+      case 'surfacenetteplafond':
+        return 'Plafond';
+      case 'sol':
+      case 'surfacenettesol':
+        return 'Sol';
+      case 'aucune':
+        return 'Aucune';
+      default:
+        return 'Mur'; // Valeur par défaut si non reconnue
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!nom.trim() || hauteur <= 0 || largeur <= 0) {
+      alert("Veuillez remplir tous les champs obligatoires.");
+      return;
+    }
     
     const typeData: TypeMenuiserie = {
       id: typeToEdit ? typeToEdit.id : uuidv4(),
@@ -120,14 +159,14 @@ const TypeMenuiserieForm: React.FC<TypeMenuiserieFormProps> = ({
               <Label htmlFor="surfaceReference">Surface impactée</Label>
               <Select 
                 value={surfaceReference} 
-                onValueChange={setSurfaceReference}
+                onValueChange={(value) => setSurfaceReference(value as SurfaceImpactee)}
               >
                 <SelectTrigger id="surfaceReference">
                   <SelectValue placeholder="Sélectionner une surface de référence" />
                 </SelectTrigger>
                 <SelectContent>
-                  {surfacesReference.map((surface) => (
-                    <SelectItem key={surface.id} value={surface.id}>
+                  {surfaceOptions.map((surface) => (
+                    <SelectItem key={surface.value} value={surface.value}>
                       {surface.label}
                     </SelectItem>
                   ))}
@@ -138,16 +177,16 @@ const TypeMenuiserieForm: React.FC<TypeMenuiserieFormProps> = ({
             <div className="grid gap-2">
               <Label>Impact sur les plinthes</Label>
               <RadioGroup 
-                value={impactePlinthe ? "oui" : "non"} 
-                onValueChange={(value) => setImpactePlinthe(value === "oui")}
+                value={impactePlinthe ? "true" : "false"} 
+                onValueChange={(value) => setImpactePlinthe(value === "true")}
                 className="flex space-x-4"
               >
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="oui" id="plinthe-oui" />
+                  <RadioGroupItem value="true" id="plinthe-oui" />
                   <Label htmlFor="plinthe-oui">Oui</Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="non" id="plinthe-non" />
+                  <RadioGroupItem value="false" id="plinthe-non" />
                   <Label htmlFor="plinthe-non">Non</Label>
                 </div>
               </RadioGroup>
