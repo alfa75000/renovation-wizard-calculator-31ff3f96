@@ -79,25 +79,6 @@ export interface AutreSurface {
   quantity: number;
   surfaceImpactee: "mur" | "plafond" | "sol";
   estDeduction: boolean;
-  largeur?: number;
-  hauteur?: number;
-  impactePlinthe?: boolean;
-}
-
-// Nouveau type pour les items personnalisés dans une pièce
-export interface RoomCustomItem {
-  id: string;
-  roomId: string;
-  name: string;
-  largeur: number;
-  hauteur: number;
-  surfaceImpactee: 'mur' | 'plafond' | 'sol' | 'aucune';
-  estDeduction: boolean;
-  impactePlinthe: boolean;
-  quantity: number;
-  description: string;
-  sourceTypeId?: string;
-  surface: number; // calculé: largeur * hauteur * quantity / 10000 (en m²)
 }
 
 // Types pour les menuiseries
@@ -116,11 +97,8 @@ export interface TypeAutreSurface {
   id: string;
   nom: string;
   description: string;
-  surfaceImpacteeParDefaut: 'mur' | 'plafond' | 'sol' | 'aucune';
+  surfaceImpacteeParDefaut: "mur" | "plafond" | "sol";
   estDeduction: boolean;
-  largeur?: number;
-  hauteur?: number;
-  impactePlinthe?: boolean;
 }
 
 // Client
@@ -280,7 +258,6 @@ export interface MenuiseriesTypesState {
 
 export interface AutresSurfacesState {
   typesAutresSurfaces: TypeAutreSurface[];
-  roomCustomItems: RoomCustomItem[];
 }
 
 export interface ClientsState {
@@ -331,10 +308,6 @@ export type AutresSurfacesAction =
   | { type: 'UPDATE_TYPE'; payload: { id: string; type: TypeAutreSurface } }
   | { type: 'DELETE_TYPE'; payload: string }
   | { type: 'LOAD_TYPES'; payload: TypeAutreSurface[] }
-  | { type: 'ADD_ROOM_CUSTOM_ITEM'; payload: RoomCustomItem }
-  | { type: 'UPDATE_ROOM_CUSTOM_ITEM'; payload: { id: string; item: RoomCustomItem } }
-  | { type: 'DELETE_ROOM_CUSTOM_ITEM'; payload: string }
-  | { type: 'LOAD_ROOM_CUSTOM_ITEMS'; payload: RoomCustomItem[] }
   | { type: 'RESET_TYPES' };
 
 // Actions pour les clients

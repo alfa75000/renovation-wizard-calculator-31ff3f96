@@ -30,8 +30,7 @@ const AutreSurfaceForm: React.FC<AutreSurfaceFormProps> = ({
     hauteur: 1,
     quantity: 1,
     surfaceImpactee: "mur",
-    estDeduction: false,
-    impactePlinthe: false
+    estDeduction: false
   });
   
   const [surfaceCalculee, setSurfaceCalculee] = useState(0);
@@ -39,10 +38,7 @@ const AutreSurfaceForm: React.FC<AutreSurfaceFormProps> = ({
   // Charger la surface à éditer
   useEffect(() => {
     if (editingSurface && currentSurface) {
-      setSurface({
-        ...currentSurface,
-        impactePlinthe: currentSurface.impactePlinthe || false
-      });
+      setSurface(currentSurface);
       setSurfaceCalculee(currentSurface.largeur * currentSurface.hauteur);
     } else {
       resetForm();
@@ -64,17 +60,14 @@ const AutreSurfaceForm: React.FC<AutreSurfaceFormProps> = ({
     
     const selectedType = typesAutresSurfaces.find(type => type.id === typeId);
     if (selectedType) {
-      setSurface({
+      setSurface(prev => ({
+        ...prev,
         type: selectedType.nom,
         designation: selectedType.nom,
         name: selectedType.nom,
         surfaceImpactee: selectedType.surfaceImpacteeParDefaut,
-        estDeduction: selectedType.estDeduction,
-        largeur: selectedType.largeur || 1,
-        hauteur: selectedType.hauteur || 1,
-        quantity: 1,
-        impactePlinthe: selectedType.impactePlinthe || false
-      });
+        estDeduction: selectedType.estDeduction
+      }));
     }
   };
 
@@ -86,15 +79,15 @@ const AutreSurfaceForm: React.FC<AutreSurfaceFormProps> = ({
         ...prev,
         [name]: type === 'number' ? parseFloat(value) || 0 : value
       }));
-    } else if (name === 'estDeduction' || name === 'impactePlinthe') {
+    } else if (name === 'estDeduction') {
       setSurface(prev => ({
         ...prev,
-        [name]: checked
+        estDeduction: checked
       }));
     } else if (name === 'surfaceImpactee') {
       setSurface(prev => ({
         ...prev,
-        surfaceImpactee: value as 'mur' | 'plafond' | 'sol' | 'aucune'
+        surfaceImpactee: value as 'mur' | 'plafond' | 'sol'
       }));
     } else {
       setSurface(prev => ({
@@ -130,8 +123,7 @@ const AutreSurfaceForm: React.FC<AutreSurfaceFormProps> = ({
       hauteur: 1,
       quantity: 1,
       surfaceImpactee: "mur",
-      estDeduction: false,
-      impactePlinthe: false
+      estDeduction: false
     });
     setSurfaceCalculee(0);
   };
@@ -200,7 +192,6 @@ const AutreSurfaceForm: React.FC<AutreSurfaceFormProps> = ({
             <option value="mur">Mur</option>
             <option value="plafond">Plafond</option>
             <option value="sol">Sol</option>
-            <option value="aucune">Aucune</option>
           </select>
         </div>
         
@@ -275,20 +266,6 @@ const AutreSurfaceForm: React.FC<AutreSurfaceFormProps> = ({
             className="mt-1 bg-gray-100"
           />
         </div>
-      </div>
-      
-      <div className="flex items-center mt-2">
-        <input
-          id="impactePlinthe"
-          name="impactePlinthe"
-          type="checkbox"
-          checked={surface.impactePlinthe}
-          onChange={handleChange}
-          className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-        />
-        <label htmlFor="impactePlinthe" className="ml-2 block text-sm text-gray-900">
-          Impacte les plinthes
-        </label>
       </div>
       
       <div className="flex justify-end space-x-2">

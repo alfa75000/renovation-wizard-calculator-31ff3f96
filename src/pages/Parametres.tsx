@@ -1,39 +1,65 @@
-import React, { useState, useEffect } from 'react';
-import { toast } from "sonner"; // Changed from react-hot-toast to sonner
-import { Plus, Edit, Trash, Loader2, Database } from 'lucide-react';
-
+import React, { useState, useEffect } from "react";
+import { Layout } from "@/components/Layout";
+import { 
+  Card, 
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { 
+  Settings,
+  Edit,
+  Trash,
+  Plus,
+  Paintbrush,
+  Hammer,
+  Wrench,
+  SquarePen,
+  LinkIcon,
+  DoorOpen,
+  Users,
+  User,
+  Loader2,
+  Database
+} from "lucide-react";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle,
+  DialogDescription,
+  DialogFooter
+} from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
+
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Table,
+  TableHeader,
   TableBody,
-  TableCaption,
-  TableCell,
   TableFooter,
   TableHead,
-  TableHeader,
   TableRow,
-} from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
+  TableCell,
+  TableCaption,
+} from "@/components/ui/table";
 
-// Import Layout from correct location
-import Layout from "@/components/Layout";
+import TypeMenuiserieForm from "@/features/admin/components/TypeMenuiserieForm";
+import ClientForm from "@/features/admin/components/ClientForm";
+import SupabaseStatus from "@/components/SupabaseStatus";
 
-// Import local forms instead of non-existent modules
-import TypeTravauxForm from '@/features/travaux/components/TypeTravauxForm';
-import SousTypeTravauxForm from '@/features/travaux/components/SousTypeTravauxForm';
-import TypeMenuiserieForm from '@/features/admin/components/TypeMenuiserieForm';
-import TypeAutreSurfaceForm from '@/features/admin/components/TypeAutreSurfaceForm';
-import ClientForm from '@/features/admin/components/ClientForm';
-
-// Import locally available context providers
-import { useTravauxTypes } from '@/contexts/TravauxTypesContext';
-import { useMenuiseriesTypes } from '@/contexts/MenuiseriesTypesContext';
-import { useAutresSurfaces } from '@/contexts/AutresSurfacesContext';
-import { useClients } from '@/contexts/ClientsContext';
-
-// Use local imports for services
-import {
+import { WorkType, ServiceGroup, Service, MenuiserieType } from "@/types/supabase";
+import { 
+  fetchWorkTypes, 
+  fetchServiceGroups, 
+  fetchServices,
   createWorkType,
   updateWorkType,
   deleteWorkType,
@@ -42,219 +68,379 @@ import {
   deleteServiceGroup,
   createService,
   updateService,
-  deleteService,
-  fetchWorkTypes,
-  fetchServiceGroups,
-  fetchServices,
-  createMenuiserieType as createTypeMenuiserie,
-  updateMenuiserieType as updateTypeMenuiserie,
-  deleteMenuiserieType as deleteTypeMenuiserie,
+  deleteService
+} from "@/services/travauxService";
+
+import { 
   fetchMenuiserieTypes,
-  createAutreSurfaceType,
-  updateAutreSurfaceType,
-  deleteAutreSurfaceType,
-  fetchAutresSurfacesTypes,
-} from '@/services/supabase';
-import { Client, TypeMenuiserie, TypeAutreSurface } from '@/types';
-import { AutreSurfaceType } from '@/types/supabase';
-import { typesClients } from '@/types';
-import SupabaseStatus from '@/components/SupabaseStatus';
+  createMenuiserieType,
+  updateMenuiserieType,
+  deleteMenuiserieType
+} from "@/services/menuiseriesService";
+
+import { useMenuiseriesTypes, surfacesReference as menuiserieSurfacesReference } from "@/contexts/MenuiseriesTypesContext";
+import { Client, useClients, typesClients } from "@/contexts/ClientsContext";
+import { TypeMenuiserie } from "@/types";
+import { surfacesReference } from "@/contexts/TravauxTypesContext";
+import { surfacesMenuiseries } from "@/types";
 
 const Parametres = () => {
+  
+  const { state: stateMenuiseriesTypes, dispatch: dispatchMenuiseriesTypes } = useMenuiseriesTypes();
+  const { typesMenuiseries } = stateMenuiseriesTypes;
+  
+  const { state: stateClients, dispatch: dispatchClients } = useClients();
+  const { clients } = stateClients;
+
   const [activeTab, setActiveTab] = useState("travaux");
-  const [showDiagnostic, setShowDiagnostic] = useState(false);
-
-  // Travaux Types States
-  const [travauxFormOpen, setTravauxFormOpen] = useState(false);
-  const [editingType, setEditingType] = useState(null);
-  const [isLoadingTravaux, setIsLoadingTravaux] = useState(false);
-
-  // Sous-type Travaux States
-  const [sousTypeFormOpen, setSousTypeFormOpen] = useState(false);
-  const [editingSousType, setEditingSousType] = useState(null);
-  const [selectedTypeId, setSelectedTypeId] = useState(null);
-
-  // Menuiseries Types States
+  const [workTypes, setWorkTypes] = useState<WorkType[]>([]);
+  const [serviceGroups, setServiceGroups] = useState<ServiceGroup[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
+  const [menuiserieTypes, setMenuiserieTypes] = useState<MenuiserieType[]>([]);
+  const [selectedWorkTypeId, setSelectedWorkTypeId] = useState<string | null>(null);
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [isLoadingGroups, setIsLoadingGroups] = useState<boolean>(false);
+  const [isLoadingServices, setIsLoadingServices] = useState<boolean>(false);
+  const [isLoadingMenuiseries, setIsLoadingMenuiseries] = useState<boolean>(false);
+  const [workTypeFormOpen, setWorkTypeFormOpen] = useState<boolean>(false);
+  const [editingWorkType, setEditingWorkType] = useState<WorkType | null>(null);
+  const [serviceGroupFormOpen, setServiceGroupFormOpen] = useState<boolean>(false);
+  const [editingServiceGroup, setEditingServiceGroup] = useState<ServiceGroup | null>(null);
+  const [serviceFormOpen, setServiceFormOpen] = useState<boolean>(false);
+  const [editingService, setEditingService] = useState<Service | null>(null);
+  const [confirmDeleteWorkTypeOpen, setConfirmDeleteWorkTypeOpen] = useState<boolean>(false);
+  const [workTypeToDelete, setWorkTypeToDelete] = useState<string | null>(null);
+  const [confirmDeleteGroupOpen, setConfirmDeleteGroupOpen] = useState<boolean>(false);
+  const [groupToDelete, setGroupToDelete] = useState<string | null>(null);
+  const [confirmDeleteServiceOpen, setConfirmDeleteServiceOpen] = useState<boolean>(false);
+  const [serviceToDelete, setServiceToDelete] = useState<string | null>(null);
   const [typeMenuiserieFormOpen, setTypeMenuiserieFormOpen] = useState(false);
-  const [editingTypeMenuiserie, setEditingTypeMenuiserie] = useState(null);
-  const [isLoadingMenuiseries, setIsLoadingMenuiseries] = useState(false);
-
-  // Autres Surfaces Types States
-  const [typeAutreSurfaceFormOpen, setTypeAutreSurfaceFormOpen] = useState(false);
-  const [editingTypeAutreSurface, setEditingTypeAutreSurface] = useState(null);
-  const [isLoadingAutresSurfaces, setIsLoadingAutresSurfaces] = useState(false);
-
-  // Clients States
+  const [editingTypeMenuiserie, setEditingTypeMenuiserie] = useState<TypeMenuiserie | null>(null);
+  const [confirmDeleteMenuiserieOpen, setConfirmDeleteMenuiserieOpen] = useState(false);
+  const [typeMenuiserieToDelete, setTypeMenuiserieToDelete] = useState<string | null>(null);
   const [clientFormOpen, setClientFormOpen] = useState(false);
-  const [editingClient, setEditingClient] = useState(null);
-  const [clientToDelete, setClientToDelete] = useState<string | null>(null);
+  const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [confirmDeleteClientOpen, setConfirmDeleteClientOpen] = useState(false);
-
-  const { state: travauxState, dispatch: dispatchTravaux } = useTravauxTypes();
-  const { state: menuiseriesState, dispatch: dispatchMenuiseries } = useMenuiseriesTypes();
-  const { state: autresSurfacesState, dispatch: dispatchAutresSurfaces } = useAutresSurfaces();
-  const { state: clientsState, dispatch: dispatchClients } = useClients();
-
-  const [autresSurfacesTypes, setAutresSurfacesTypes] = useState<AutreSurfaceType[]>([]);
+  const [clientToDelete, setClientToDelete] = useState<string | null>(null);
+  const [showDiagnostic, setShowDiagnostic] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
-      setIsLoadingTravaux(true);
-      setIsLoadingMenuiseries(true);
-      setIsLoadingAutresSurfaces(true);
-
+    const loadWorkTypes = async () => {
+      setLoading(true);
       try {
-        const travaux = await fetchWorkTypes();
-        dispatchTravaux({ type: 'LOAD_TYPES', payload: travaux });
-
-        const menuiseries = await fetchMenuiserieTypes();
-        dispatchMenuiseries({ type: 'LOAD_TYPES', payload: menuiseries });
-
-        const types = await fetchAutresSurfacesTypes();
-        const supabaseTypes: AutreSurfaceType[] = types.map(item => ({
-          id: item.id,
-          created_at: '',
-          name: item.nom,
-          description: item.description,
-          surface_impactee: item.surfaceImpacteeParDefaut === 'mur' ? 'Mur' :
-                          item.surfaceImpacteeParDefaut === 'plafond' ? 'Plafond' :
-                          item.surfaceImpacteeParDefaut === 'sol' ? 'Sol' : 'Aucune',
-          adjustment_type: item.estDeduction ? 'Déduire' : 'Ajouter',
-          impacte_plinthe: item.impactePlinthe || false,
-          largeur: item.largeur || 0,
-          hauteur: item.hauteur || 0
-        }));
-        setAutresSurfacesTypes(supabaseTypes);
+        const data = await fetchWorkTypes();
+        setWorkTypes(data);
       } catch (error) {
-        console.error("Erreur lors du chargement des données:", error);
-        toast.error("Erreur lors du chargement des données");
+        console.error("Erreur lors du chargement des types de travaux:", error);
+        toast.error("Impossible de charger les types de travaux");
       } finally {
-        setIsLoadingTravaux(false);
-        setIsLoadingMenuiseries(false);
-        setIsLoadingAutresSurfaces(false);
+        setLoading(false);
       }
     };
+    
+    loadWorkTypes();
+  }, []);
 
-    fetchData();
-  }, [dispatchTravaux, dispatchMenuiseries, dispatchAutresSurfaces]);
+  useEffect(() => {
+    if (!selectedWorkTypeId) {
+      setServiceGroups([]);
+      return;
+    }
+    
+    const loadServiceGroups = async () => {
+      setIsLoadingGroups(true);
+      try {
+        const data = await fetchServiceGroups(selectedWorkTypeId);
+        setServiceGroups(data);
+      } catch (error) {
+        console.error("Erreur lors du chargement des groupes:", error);
+        toast.error("Impossible de charger les groupes");
+      } finally {
+        setIsLoadingGroups(false);
+      }
+    };
+    
+    loadServiceGroups();
+  }, [selectedWorkTypeId]);
 
-  const handleAddType = () => {
-    setEditingType(null);
-    setTravauxFormOpen(true);
-  };
+  useEffect(() => {
+    if (!selectedGroupId) {
+      setServices([]);
+      return;
+    }
+    
+    const loadServices = async () => {
+      setIsLoadingServices(true);
+      try {
+        const data = await fetchServices(selectedGroupId);
+        setServices(data);
+      } catch (error) {
+        console.error("Erreur lors du chargement des services:", error);
+        toast.error("Impossible de charger les services");
+      } finally {
+        setIsLoadingServices(false);
+      }
+    };
+    
+    loadServices();
+  }, [selectedGroupId]);
 
-  const handleEditType = (type) => {
-    setEditingType(type);
-    setTravauxFormOpen(true);
-  };
+  useEffect(() => {
+    const loadMenuiserieTypes = async () => {
+      setIsLoadingMenuiseries(true);
+      try {
+        const data = await fetchMenuiserieTypes();
+        
+        if (Array.isArray(data)) {
+          setMenuiserieTypes(data);
+        } else {
+          console.error("fetchMenuiserieTypes n'a pas retourné un tableau:", data);
+          setMenuiserieTypes([]); 
+        }
+      } catch (error) {
+        console.error("Erreur lors du chargement des types de menuiseries:", error);
+        toast.error("Impossible de charger les types de menuiseries");
+        setMenuiserieTypes([]); 
+      } finally {
+        setIsLoadingMenuiseries(false);
+      }
+    };
+    
+    if (activeTab === "menuiseries") {
+      loadMenuiserieTypes();
+    }
+  }, [activeTab]);
 
-  const handleDeleteType = async (id) => {
-    setIsLoadingTravaux(true);
-    try {
-      await deleteWorkType(id);
-      dispatchTravaux({ type: 'DELETE_TYPE', payload: id });
-      toast.success("Type de travaux supprimé avec succès");
-    } catch (error) {
-      console.error("Erreur lors de la suppression du type de travaux:", error);
-      toast.error("Erreur lors de la suppression du type de travaux");
-    } finally {
-      setIsLoadingTravaux(false);
+  const getIconComponent = (iconName: string) => {
+    switch (iconName) {
+      case "Paintbrush":
+        return <Paintbrush className="h-5 w-5" />;
+      case "Hammer":
+        return <Hammer className="h-5 w-5" />;
+      case "Wrench":
+        return <Wrench className="h-5 w-5" />;
+      case "SquarePen":
+        return <SquarePen className="h-5 w-5" />;
+      default:
+        return <Wrench className="h-5 w-5" />;
     }
   };
 
-  const handleSubmitType = async (typeData) => {
-    setIsLoadingTravaux(true);
+  const handleAddWorkType = () => {
+    setEditingWorkType(null);
+    setWorkTypeFormOpen(true);
+  };
+
+  const handleEditWorkType = (workType: WorkType) => {
+    setEditingWorkType(workType);
+    setWorkTypeFormOpen(true);
+  };
+
+  const handleDeleteWorkType = (id: string) => {
+    setWorkTypeToDelete(id);
+    setConfirmDeleteWorkTypeOpen(true);
+  };
+
+  const confirmWorkTypeDelete = async () => {
+    if (workTypeToDelete) {
+      setLoading(true);
+      const success = await deleteWorkType(workTypeToDelete);
+      setLoading(false);
+      
+      if (success) {
+        setWorkTypes(prev => prev.filter(wt => wt.id !== workTypeToDelete));
+        setConfirmDeleteWorkTypeOpen(false);
+        setWorkTypeToDelete(null);
+        
+        if (selectedWorkTypeId === workTypeToDelete) {
+          setSelectedWorkTypeId(null);
+        }
+        
+        toast.success("Type de travaux supprimé avec succès");
+      }
+    }
+  };
+
+  const handleSubmitWorkType = async (name: string) => {
+    setLoading(true);
+    
     try {
-      if (editingType) {
-        await updateWorkType(editingType.id, typeData);
-        dispatchTravaux({
-          type: 'UPDATE_TYPE',
-          payload: { id: editingType.id, type: typeData }
-        });
-        toast.success("Type de travaux mis à jour avec succès");
+      if (editingWorkType) {
+        const updatedWorkType = await updateWorkType(editingWorkType.id, name);
+        
+        if (updatedWorkType) {
+          setWorkTypes(prev => prev.map(wt => 
+            wt.id === editingWorkType.id ? updatedWorkType : wt
+          ));
+          toast.success("Type de travaux mis à jour avec succès");
+        }
       } else {
-        await createWorkType(typeData);
-        dispatchTravaux({ type: 'ADD_TYPE', payload: typeData });
-        toast.success("Type de travaux ajouté avec succès");
+        const newWorkType = await createWorkType(name);
+        
+        if (newWorkType) {
+          setWorkTypes(prev => [...prev, newWorkType]);
+          toast.success("Type de travaux créé avec succès");
+        }
       }
     } catch (error) {
-      console.error("Erreur lors de la soumission du type de travaux:", error);
-      toast.error("Erreur lors de la soumission du type de travaux");
+      console.error("Erreur:", error);
+      toast.error("Une erreur est survenue");
     } finally {
-      setIsLoadingTravaux(false);
-      setTravauxFormOpen(false);
-      setEditingType(null);
+      setLoading(false);
+      setWorkTypeFormOpen(false);
+      setEditingWorkType(null);
     }
   };
 
-  const handleAddSousType = (typeId) => {
-    setSelectedTypeId(typeId);
-    setEditingSousType(null);
-    setSousTypeFormOpen(true);
-  };
-
-  const handleEditSousType = (typeId, sousType) => {
-    setSelectedTypeId(typeId);
-    setEditingSousType(sousType);
-    setSousTypeFormOpen(true);
-  };
-
-  const handleDeleteSousType = async (typeId, sousTypeId) => {
-    setIsLoadingTravaux(true);
-    try {
-      await deleteService(sousTypeId);
-      dispatchTravaux({
-        type: 'DELETE_SOUS_TYPE',
-        payload: { typeId: typeId, id: sousTypeId }
-      });
-      toast.success("Sous-type de travaux supprimé avec succès");
-    } catch (error) {
-      console.error("Erreur lors de la suppression du sous-type de travaux:", error);
-      toast.error("Erreur lors de la suppression du sous-type de travaux");
-    } finally {
-      setIsLoadingTravaux(false);
+  const handleAddServiceGroup = () => {
+    if (selectedWorkTypeId) {
+      setEditingServiceGroup(null);
+      setServiceGroupFormOpen(true);
     }
   };
 
-  const handleSubmitSousType = async (typeId, sousTypeData) => {
-    setIsLoadingTravaux(true);
+  const handleEditServiceGroup = (group: ServiceGroup) => {
+    setEditingServiceGroup(group);
+    setServiceGroupFormOpen(true);
+  };
+
+  const handleDeleteServiceGroup = (id: string) => {
+    setGroupToDelete(id);
+    setConfirmDeleteGroupOpen(true);
+  };
+
+  const confirmServiceGroupDelete = async () => {
+    if (groupToDelete) {
+      setIsLoadingGroups(true);
+      const success = await deleteServiceGroup(groupToDelete);
+      setIsLoadingGroups(false);
+      
+      if (success) {
+        setServiceGroups(prev => prev.filter(g => g.id !== groupToDelete));
+        setConfirmDeleteGroupOpen(false);
+        setGroupToDelete(null);
+        
+        if (selectedGroupId === groupToDelete) {
+          setSelectedGroupId(null);
+        }
+        
+        toast.success("Groupe supprimé avec succès");
+      }
+    }
+  };
+
+  const handleSubmitServiceGroup = async (name: string) => {
+    if (!selectedWorkTypeId) return;
+    
+    setIsLoadingGroups(true);
+    
     try {
-      if (editingSousType) {
-        await updateService(editingSousType.id, sousTypeData);
-        dispatchTravaux({
-          type: 'UPDATE_SOUS_TYPE',
-          payload: { typeId: typeId, id: editingSousType.id, sousType: sousTypeData }
-        });
-        toast.success("Sous-type de travaux mis à jour avec succès");
+      if (editingServiceGroup) {
+        const updatedGroup = await updateServiceGroup(editingServiceGroup.id, name);
+        
+        if (updatedGroup) {
+          setServiceGroups(prev => prev.map(g => 
+            g.id === editingServiceGroup.id ? updatedGroup : g
+          ));
+          toast.success("Groupe mis à jour avec succès");
+        }
       } else {
-        await createService(sousTypeData);
-        dispatchTravaux({
-          type: 'ADD_SOUS_TYPE',
-          payload: { typeId: typeId, sousType: sousTypeData }
-        });
-        toast.success("Sous-type de travaux ajouté avec succès");
+        const newGroup = await createServiceGroup(name, selectedWorkTypeId);
+        
+        if (newGroup) {
+          setServiceGroups(prev => [...prev, newGroup]);
+          toast.success("Groupe créé avec succès");
+        }
       }
     } catch (error) {
-      console.error("Erreur lors de la soumission du sous-type de travaux:", error);
-      toast.error("Erreur lors de la soumission du sous-type de travaux");
+      console.error("Erreur:", error);
+      toast.error("Une erreur est survenue");
     } finally {
-      setIsLoadingTravaux(false);
-      setSousTypeFormOpen(false);
-      setEditingSousType(null);
-      setSelectedTypeId(null);
+      setIsLoadingGroups(false);
+      setServiceGroupFormOpen(false);
+      setEditingServiceGroup(null);
     }
   };
 
-  const getSurfaceReferenceLabel = (id) => {
-    switch (id) {
-      case 'murs': return 'Surface des murs';
-      case 'sol': return 'Surface du sol';
-      case 'plafond': return 'Surface du plafond';
-      case 'menuiseries': return 'Surface des menuiseries';
-      case 'plinthes': return 'Longueur des plinthes';
-      case 'perimetre': return 'Périmètre de la pièce';
-      default: return 'Non spécifié';
+  const handleAddService = () => {
+    if (selectedGroupId) {
+      setEditingService(null);
+      setServiceFormOpen(true);
     }
+  };
+
+  const handleEditService = (service: Service) => {
+    setEditingService(service);
+    setServiceFormOpen(true);
+  };
+
+  const handleDeleteService = (id: string) => {
+    setServiceToDelete(id);
+    setConfirmDeleteServiceOpen(true);
+  };
+
+  const confirmServiceDelete = async () => {
+    if (serviceToDelete) {
+      setIsLoadingServices(true);
+      const success = await deleteService(serviceToDelete);
+      setIsLoadingServices(false);
+      
+      if (success) {
+        setServices(prev => prev.filter(s => s.id !== serviceToDelete));
+        setConfirmDeleteServiceOpen(false);
+        setServiceToDelete(null);
+        toast.success("Service supprimé avec succès");
+      }
+    }
+  };
+
+  const handleSubmitService = async (serviceData: {
+    name: string;
+    description: string;
+    labor_price: number;
+    supply_price: number;
+  }) => {
+    if (!selectedGroupId) return;
+    
+    setIsLoadingServices(true);
+    
+    try {
+      if (editingService) {
+        const updatedService = await updateService(editingService.id, serviceData);
+        
+        if (updatedService) {
+          setServices(prev => prev.map(s => 
+            s.id === editingService.id ? updatedService : s
+          ));
+          toast.success("Service mis à jour avec succès");
+        }
+      } else {
+        const newService = await createService({
+          ...serviceData,
+          group_id: selectedGroupId
+        });
+        
+        if (newService) {
+          setServices(prev => [...prev, newService]);
+          toast.success("Service créé avec succès");
+        }
+      }
+    } catch (error) {
+      console.error("Erreur:", error);
+      toast.error("Une erreur est survenue");
+    } finally {
+      setIsLoadingServices(false);
+      setServiceFormOpen(false);
+      setEditingService(null);
+    }
+  };
+
+  const getSurfaceReferenceLabel = (id?: string) => {
+    if (!id) return "Non spécifié";
+    const surface = surfacesReference.find(surface => surface.id === id);
+    return surface ? surface.label : id;
   };
 
   const handleAddTypeMenuiserie = () => {
@@ -262,43 +448,101 @@ const Parametres = () => {
     setTypeMenuiserieFormOpen(true);
   };
 
-  const handleEditTypeMenuiserie = (type) => {
-    setEditingTypeMenuiserie(type);
+  const handleEditMenuiserieType = (type: MenuiserieType) => {
+    const typeMenuiserie: TypeMenuiserie = {
+      id: type.id,
+      nom: type.name,
+      largeur: type.largeur,
+      hauteur: type.hauteur,
+      surfaceReference: type.surface_impactee,
+      impactePlinthe: type.impacte_plinthe,
+      description: type.description || ''
+    };
+    setEditingTypeMenuiserie(typeMenuiserie);
     setTypeMenuiserieFormOpen(true);
   };
 
-  const handleDeleteTypeMenuiserie = async (id) => {
-    setIsLoadingMenuiseries(true);
-    try {
-      await deleteTypeMenuiserie(id);
-      dispatchMenuiseries({ type: 'DELETE_TYPE', payload: id });
-      toast.success("Type de menuiserie supprimé avec succès");
-    } catch (error) {
-      console.error("Erreur lors de la suppression du type de menuiserie:", error);
-      toast.error("Erreur lors de la suppression du type de menuiserie");
-    } finally {
-      setIsLoadingMenuiseries(false);
+  const handleDeleteTypeMenuiserie = (id: string) => {
+    setTypeMenuiserieToDelete(id);
+    setConfirmDeleteMenuiserieOpen(true);
+  };
+
+  const confirmTypeMenuiserieDelete = async () => {
+    if (typeMenuiserieToDelete) {
+      setIsLoadingMenuiseries(true);
+      try {
+        const success = await deleteMenuiserieType(typeMenuiserieToDelete);
+        
+        if (success) {
+          
+          const updatedTypes = await fetchMenuiserieTypes();
+          
+          if (Array.isArray(updatedTypes)) {
+            setMenuiserieTypes(updatedTypes);
+            toast.success("Type de menuiserie supprimé avec succès");
+          } else {
+            console.error("fetchMenuiserieTypes après suppression n'a pas retourné un tableau:", updatedTypes);
+            
+            setMenuiserieTypes(prevTypes => 
+              prevTypes.filter(type => type.id !== typeMenuiserieToDelete)
+            );
+            toast.success("Type de menuiserie supprimé avec succès");
+          }
+        }
+      } catch (error) {
+        console.error("Erreur lors de la suppression:", error);
+        toast.error("Une erreur est survenue lors de la suppression");
+      } finally {
+        setIsLoadingMenuiseries(false);
+        setConfirmDeleteMenuiserieOpen(false);
+        setTypeMenuiserieToDelete(null);
+      }
     }
   };
 
-  const handleSubmitTypeMenuiserie = async (typeData) => {
+  const handleSubmitTypeMenuiserie = async (typeData: TypeMenuiserie) => {
     setIsLoadingMenuiseries(true);
+    
     try {
+      const supabaseData = {
+        name: typeData.nom,
+        hauteur: typeData.hauteur,
+        largeur: typeData.largeur,
+        surface_impactee: typeData.surfaceReference,
+        impacte_plinthe: typeData.impactePlinthe,
+        description: typeData.description
+      };
+      
+      let success = false;
+      
       if (editingTypeMenuiserie) {
-        await updateTypeMenuiserie(editingTypeMenuiserie.id, typeData);
-        dispatchMenuiseries({
-          type: 'UPDATE_TYPE',
-          payload: { id: editingTypeMenuiserie.id, type: typeData }
-        });
-        toast.success("Type de menuiserie mis à jour avec succès");
+        const updatedType = await updateMenuiserieType(editingTypeMenuiserie.id, supabaseData);
+        success = updatedType !== null;
       } else {
-        await createTypeMenuiserie(typeData);
-        dispatchMenuiseries({ type: 'ADD_TYPE', payload: typeData });
-        toast.success("Type de menuiserie ajouté avec succès");
+        const newType = await createMenuiserieType(supabaseData);
+        success = newType !== null;
+      }
+      
+      if (success) {
+        
+        const updatedTypes = await fetchMenuiserieTypes();
+        
+        if (Array.isArray(updatedTypes)) {
+          setMenuiserieTypes(updatedTypes);
+        } else {
+          console.error("fetchMenuiserieTypes après ajout/modif n'a pas retourné un tableau:", updatedTypes);
+          
+          toast.warning("La liste n'a pas pu être actualisée, veuillez rafraîchir la page");
+        }
+        
+        toast.success(editingTypeMenuiserie 
+          ? "Type de menuiserie mis à jour avec succès" 
+          : "Type de menuiserie ajouté avec succès"
+        );
       }
     } catch (error) {
-      console.error("Erreur lors de la soumission du type de menuiserie:", error);
-      toast.error("Erreur lors de la soumission du type de menuiserie");
+      console.error("Erreur lors de l'opération:", error);
+      toast.error("Une erreur est survenue");
     } finally {
       setIsLoadingMenuiseries(false);
       setTypeMenuiserieFormOpen(false);
@@ -306,11 +550,24 @@ const Parametres = () => {
     }
   };
 
+  const getSurfaceMenuiserieLabel = (id?: string) => {
+    if (!id) return "Non spécifié";
+    const surface = surfacesMenuiseries.find(surface => surface.id === id);
+    return surface ? surface.label : id;
+  };
+
+  const resetMenuiseriesToDefaults = () => {
+    if (confirm("Êtes-vous sûr de vouloir réinitialiser tous les types de menuiseries aux valeurs par défaut ?")) {
+      dispatchMenuiseriesTypes({ type: 'RESET_TYPES' });
+      toast.success("Tous les types de menuiseries ont été réinitialisés aux valeurs par défaut");
+    }
+  };
+  
   const handleAddClient = () => {
     setEditingClient(null);
     setClientFormOpen(true);
   };
-
+  
   const handleEditClient = (client: Client) => {
     setEditingClient(client);
     setClientFormOpen(true);
@@ -354,117 +611,32 @@ const Parametres = () => {
   
   const getTypeClientLabel = (id?: string) => {
     if (!id) return "Non spécifié";
-    const clientType = typesClients.find(type => type.id === id);
-    return clientType ? clientType.label : id;
+    const type = typesClients.find(type => type.id === id);
+    return type ? type.label : id;
   };
 
-  const getSurfaceImpacteeLabel = (surfaceImpactee) => {
-    switch (surfaceImpactee) {
-      case 'Mur': return 'Mur';
-      case 'Plafond': return 'Plafond';
-      case 'Sol': return 'Sol';
-      case 'Aucune': return 'Aucune';
-      default: return 'Non spécifié';
-    }
-  };
-
-  const handleAddTypeAutreSurface = () => {
-    setEditingTypeAutreSurface(null);
-    setTypeAutreSurfaceFormOpen(true);
-  };
-
-  const handleEditTypeAutreSurface = (type: AutreSurfaceType) => {
-    const typeAutreSurface: TypeAutreSurface = {
-      id: type.id,
-      nom: type.name,
-      description: type.description || '',
-      surfaceImpacteeParDefaut: type.surface_impactee === 'Mur' ? 'mur' :
-                                type.surface_impactee === 'Plafond' ? 'plafond' :
-                                type.surface_impactee === 'Sol' ? 'sol' : 'aucune',
-      estDeduction: type.adjustment_type === 'Déduire',
-      impactePlinthe: type.impacte_plinthe,
-      largeur: type.largeur || 0,
-      hauteur: type.hauteur || 0
-    };
+  const getSurfaceImpacteeLabel = (value: string | undefined): string => {
+    if (!value) return "Non spécifié";
     
-    setEditingTypeAutreSurface(typeAutreSurface);
-    setTypeAutreSurfaceFormOpen(true);
-  };
-
-  const handleDeleteTypeAutreSurface = async (id) => {
-    setIsLoadingAutresSurfaces(true);
-    try {
-      await deleteAutreSurfaceType(id);
-      const updatedTypes = autresSurfacesTypes.filter(type => type.id !== id);
-      setAutresSurfacesTypes(updatedTypes);
-      toast.success("Type d'autre surface supprimé avec succès");
-    } catch (error) {
-      console.error("Erreur lors de la suppression du type d'autre surface:", error);
-      toast.error("Erreur lors de la suppression du type d'autre surface");
-    } finally {
-      setIsLoadingAutresSurfaces(false);
-    }
-  };
-
-  const confirmTypeAutreSurfaceDelete = () => {
-    // Implémentez la logique de confirmation ici si nécessaire
-  };
-
-  const handleSubmitTypeAutreSurface = async (typeData: TypeAutreSurface) => {
-    setIsLoadingAutresSurfaces(true);
-    
-    try {
-      let success = false;
-      let updatedType: TypeAutreSurface | null = null;
-      
-      if (editingTypeAutreSurface) {
-        updatedType = await updateAutreSurfaceType(editingTypeAutreSurface.id, typeData);
-        success = updatedType !== null;
-      } else {
-        updatedType = await createAutreSurfaceType(typeData);
-        success = updatedType !== null;
-      }
-      
-      if (success && updatedType) {
-        const types = await fetchAutresSurfacesTypes();
-        
-        const supabaseTypes: AutreSurfaceType[] = types.map(item => ({
-          id: item.id,
-          created_at: '',
-          name: item.nom,
-          description: item.description,
-          surface_impactee: item.surfaceImpacteeParDefaut === 'mur' ? 'Mur' :
-                          item.surfaceImpacteeParDefaut === 'plafond' ? 'Plafond' :
-                          item.surfaceImpacteeParDefaut === 'sol' ? 'Sol' : 'Aucune',
-          adjustment_type: item.estDeduction ? 'Déduire' : 'Ajouter',
-          impacte_plinthe: item.impactePlinthe || false,
-          largeur: item.largeur || 0,
-          hauteur: item.hauteur || 0
-        }));
-        
-        setAutresSurfacesTypes(supabaseTypes);
-        
-        toast.success(editingTypeAutreSurface 
-          ? "Type d'autre surface mis à jour avec succès" 
-          : "Type d'autre surface ajouté avec succès"
-        );
-      } else {
-        toast.error("Une erreur est survenue");
-      }
-    } catch (error) {
-      console.error("Erreur lors de l'opération:", error);
-      toast.error("Une erreur est survenue");
-    } finally {
-      setIsLoadingAutresSurfaces(false);
-      setTypeAutreSurfaceFormOpen(false);
-      setEditingTypeAutreSurface(null);
+    switch (value) {
+      case "Mur":
+        return "Mur";
+      case "Plafond":
+        return "Plafond";
+      case "Sol":
+        return "Sol";
+      case "Aucune":
+        return "Aucune";
+      default:
+        return value;
     }
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-2">Paramètres</h1>
-      <p className="text-gray-600 mb-6">Gérez les types de travaux, de menuiseries, les clients et leurs paramètres</p>
+    <Layout
+      title="Paramètres"
+      subtitle="Gérez les types de travaux, de menuiseries, les clients et leurs paramètres"
+    >
       
       {showDiagnostic && (
         <div className="mb-6">
@@ -489,348 +661,487 @@ const Parametres = () => {
         <TabsList className="w-full">
           <TabsTrigger value="travaux" className="flex-1">Types de Travaux</TabsTrigger>
           <TabsTrigger value="menuiseries" className="flex-1">Types de Menuiseries</TabsTrigger>
-          <TabsTrigger value="autresSurfaces" className="flex-1">Types d'Autres Surfaces</TabsTrigger>
           <TabsTrigger value="clients" className="flex-1">Fiches Clients</TabsTrigger>
         </TabsList>
         
         <TabsContent value="travaux" className="mt-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold">Types de Travaux</h2>
-            <Button onClick={handleAddType} disabled={isLoadingTravaux}>
-              {isLoadingTravaux ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
-              Ajouter
-            </Button>
-          </div>
-          
-          {isLoadingTravaux ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          ) : (
-            <div className="bg-white rounded-md shadow overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nom</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {travauxState.types.length > 0 ? (
-                    travauxState.types.map((type) => (
-                      <TableRow key={type.id}>
-                        <TableCell className="font-medium">{type.nom}</TableCell>
-                        <TableCell>{type.description}</TableCell>
-                        <TableCell className="text-right">
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleEditType(type)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleDeleteType(type.id)}
-                          >
-                            <Trash className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleAddSousType(type.id)}
-                          >
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <Card className="shadow-md lg:col-span-1">
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>Types de travaux</span>
+                  <Button variant="outline" size="sm" onClick={handleAddWorkType} disabled={loading}>
+                    {loading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
+                    Ajouter
+                  </Button>
+                </CardTitle>
+                <CardDescription>
+                  Sélectionnez un type pour voir et gérer ses groupes et prestations
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {loading ? (
+                    <div className="flex justify-center py-4">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                    </div>
                   ) : (
-                    <TableRow>
-                      <TableCell colSpan={3} className="text-center py-4">
-                        Aucun type de travaux défini.
-                      </TableCell>
-                    </TableRow>
+                    <>
+                      {workTypes.map((type) => (
+                        <div 
+                          key={type.id}
+                          className={`flex items-center justify-between p-2 rounded-md cursor-pointer ${selectedWorkTypeId === type.id ? 'bg-blue-100' : 'hover:bg-gray-100'}`}
+                          onClick={() => {
+                            setSelectedWorkTypeId(type.id);
+                            setSelectedGroupId(null);
+                          }}
+                        >
+                          <div className="flex items-center gap-2">
+                            <Wrench className="h-5 w-5 text-gray-500" />
+                            <span>{type.name}</span>
+                          </div>
+                          <div className="flex gap-1">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditWorkType(type);
+                              }}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteWorkType(type.id);
+                              }}
+                            >
+                              <Trash className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                      
+                      {workTypes.length === 0 && (
+                        <Alert>
+                          <AlertDescription>
+                            Aucun type de travaux défini. Utilisez le bouton "Ajouter" pour créer un nouveau type.
+                          </AlertDescription>
+                        </Alert>
+                      )}
+                    </>
                   )}
-                </TableBody>
-              </Table>
-            </div>
-          )}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-md lg:col-span-2">
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>
+                    {selectedWorkTypeId 
+                      ? `Groupes et Prestations pour "${workTypes.find(t => t.id === selectedWorkTypeId)?.name || ''}"` 
+                      : "Groupes et Prestations"
+                    }
+                  </span>
+                  {selectedWorkTypeId && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleAddServiceGroup}
+                      disabled={isLoadingGroups}
+                    >
+                      {isLoadingGroups ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
+                      Ajouter un groupe
+                    </Button>
+                  )}
+                </CardTitle>
+                <CardDescription>
+                  {selectedWorkTypeId 
+                    ? `Gérez les groupes et prestations disponibles pour le type "${workTypes.find(t => t.id === selectedWorkTypeId)?.name || ''}"`
+                    : "Sélectionnez un type de travaux pour voir ses groupes et prestations"
+                  }
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {selectedWorkTypeId ? (
+                  <div className="space-y-6">
+                    {isLoadingGroups ? (
+                      <div className="flex justify-center py-4">
+                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                      </div>
+                    ) : (
+                      <>
+                        {serviceGroups.length > 0 ? (
+                          <div className="space-y-6">
+                            {serviceGroups.map((group) => (
+                              <div key={group.id} className="border rounded-md overflow-hidden">
+                                <div 
+                                  className={`flex items-center justify-between p-3 ${selectedGroupId === group.id ? 'bg-blue-100' : 'bg-gray-50'} cursor-pointer`}
+                                  onClick={() => setSelectedGroupId(group.id)}
+                                >
+                                  <div className="font-medium">{group.name}</div>
+                                  <div className="flex gap-1">
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm"
+                                      onClick={() => handleAddService()}
+                                      disabled={selectedGroupId !== group.id || isLoadingServices}
+                                    >
+                                      <Plus className="h-4 w-4" />
+                                    </Button>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleEditServiceGroup(group);
+                                      }}
+                                    >
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDeleteServiceGroup(group.id);
+                                      }}
+                                    >
+                                      <Trash className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </div>
+                                
+                                {selectedGroupId === group.id && (
+                                  <div className="p-2">
+                                    <div className="flex justify-between items-center mb-3">
+                                      <h4 className="text-sm font-medium">Prestations</h4>
+                                      <Button 
+                                        variant="outline" 
+                                        size="sm" 
+                                        onClick={handleAddService}
+                                        disabled={isLoadingServices}
+                                      >
+                                        {isLoadingServices ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
+                                        Ajouter une prestation
+                                      </Button>
+                                    </div>
+                                    
+                                    {isLoadingServices ? (
+                                      <div className="flex justify-center py-4">
+                                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                                      </div>
+                                    ) : (
+                                      <>
+                                        {services.length > 0 ? (
+                                          <div className="rounded-md border">
+                                            <div className="grid grid-cols-12 bg-gray-100 p-3 rounded-t-md font-medium text-sm">
+                                              <div className="col-span-4">Nom</div>
+                                              <div className="col-span-2">Main d'œuvre</div>
+                                              <div className="col-span-2">Fournitures</div>
+                                              <div className="col-span-2">Prix total</div>
+                                              <div className="col-span-2 text-right">Actions</div>
+                                            </div>
+                                            <div className="divide-y">
+                                              {services.map((service) => (
+                                                <div key={service.id} className="grid grid-cols-12 p-3 items-center hover:bg-gray-50">
+                                                  <div className="col-span-4 font-medium">
+                                                    <div className="truncate">{service.name}</div>
+                                                    {service.description && (
+                                                      <div className="text-xs text-gray-500 mt-1 truncate">
+                                                        {service.description}
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                  <div className="col-span-2">{service.labor_price.toFixed(2)} €</div>
+                                                  <div className="col-span-2">{service.supply_price.toFixed(2)} €</div>
+                                                  <div className="col-span-2">{(service.labor_price + service.supply_price).toFixed(2)} €</div>
+                                                  <div className="col-span-2 flex justify-end gap-1">
+                                                    <Button 
+                                                      variant="ghost" 
+                                                      size="sm"
+                                                      onClick={() => handleEditService(service)}
+                                                    >
+                                                      <Edit className="h-4 w-4" />
+                                                    </Button>
+                                                    <Button 
+                                                      variant="ghost" 
+                                                      size="sm"
+                                                      onClick={() => handleDeleteService(service.id)}
+                                                    >
+                                                      <Trash className="h-4 w-4" />
+                                                    </Button>
+                                                  </div>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        ) : (
+                                          <Alert>
+                                            <AlertDescription>
+                                              Aucune prestation définie pour ce groupe. Utilisez le bouton "Ajouter une prestation" pour en créer une.
+                                            </AlertDescription>
+                                          </Alert>
+                                        )}
+                                      </>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <Alert>
+                            <AlertDescription>
+                              Aucun groupe défini pour ce type de travaux. Utilisez le bouton "Ajouter un groupe" pour en créer un.
+                            </AlertDescription>
+                          </Alert>
+                        )}
+                      </>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center p-8 text-gray-500">
+                    <Settings className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                    <p>Veuillez sélectionner un type de travaux dans la liste à gauche pour voir ses groupes et prestations</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
         
         <TabsContent value="menuiseries" className="mt-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold">Types de Menuiseries</h2>
-            <Button onClick={handleAddTypeMenuiserie} disabled={isLoadingMenuiseries}>
-              {isLoadingMenuiseries ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
-              Ajouter
+          <div className="flex justify-end mb-4">
+            <Button 
+              variant="outline" 
+              onClick={resetMenuiseriesToDefaults}
+              className="flex items-center gap-2"
+            >
+              Réinitialiser aux valeurs par défaut
             </Button>
           </div>
           
-          {isLoadingMenuiseries ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          ) : (
-            <div className="bg-white rounded-md shadow overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nom</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Surface de référence</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {menuiseriesState.typesMenuiseries.length > 0 ? (
-                    menuiseriesState.typesMenuiseries.map((type) => (
-                      <TableRow key={type.id}>
-                        <TableCell className="font-medium">{type.nom}</TableCell>
-                        <TableCell>{type.description}</TableCell>
-                        <TableCell>{type.surfaceReference}</TableCell>
-                        <TableCell className="text-right">
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleEditTypeMenuiserie(type)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleDeleteTypeMenuiserie(type.id)}
-                          >
-                            <Trash className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))
+          <Card className="shadow-md">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>Types de Menuiseries</span>
+                <Button variant="outline" size="sm" onClick={handleAddTypeMenuiserie} disabled={loading}>
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
+                  Ajouter
+                </Button>
+              </CardTitle>
+              <CardDescription>
+                Gérez les types de menuiseries et leurs paramètres
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoadingMenuiseries ? (
+                <div className="flex justify-center py-4">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {menuiserieTypes.length > 0 ? (
+                    <div className="rounded-md border overflow-hidden">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-1/6">Nom</TableHead>
+                            <TableHead className="w-1/8">Dimensions (cm)</TableHead>
+                            <TableHead className="w-1/10">Surface (m²)</TableHead>
+                            <TableHead className="w-1/8">Surface impactée</TableHead>
+                            <TableHead className="w-1/3">Description</TableHead>
+                            <TableHead className="w-1/10 text-right">Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {menuiserieTypes.map((type) => (
+                            <TableRow key={type.id}>
+                              <TableCell className="font-medium">{type.name}</TableCell>
+                              <TableCell>{type.hauteur} × {type.largeur}</TableCell>
+                              <TableCell>{((type.hauteur * type.largeur) / 10000).toFixed(2)}</TableCell>
+                              <TableCell>{getSurfaceImpacteeLabel(type.surface_impactee)}</TableCell>
+                              <TableCell className="truncate max-w-xs">{type.description || "-"}</TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end gap-1">
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={() => handleEditMenuiserieType(type)}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={() => handleDeleteTypeMenuiserie(type.id)}
+                                  >
+                                    <Trash className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
                   ) : (
-                    <TableRow>
-                      <TableCell colSpan={4} className="text-center py-4">
-                        Aucun type de menuiserie défini.
-                      </TableCell>
-                    </TableRow>
+                    <Alert>
+                      <AlertDescription>
+                        Aucun type de menuiserie défini. Utilisez le bouton "Ajouter" pour créer un nouveau type.
+                      </AlertDescription>
+                    </Alert>
                   )}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </TabsContent>
-        
-        <TabsContent value="autresSurfaces" className="mt-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold">Types d'Autres Surfaces</h2>
-            <Button onClick={handleAddTypeAutreSurface} disabled={isLoadingAutresSurfaces}>
-              {isLoadingAutresSurfaces ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
-              Ajouter
-            </Button>
-          </div>
-          
-          {isLoadingAutresSurfaces ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          ) : (
-            <div className="bg-white rounded-md shadow overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nom</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Surface impactée</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Dimensions</TableHead>
-                    <TableHead>Impact Plinthe</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {autresSurfacesTypes.length > 0 ? (
-                    autresSurfacesTypes.map((type) => (
-                      <TableRow key={type.id}>
-                        <TableCell className="font-medium">{type.name}</TableCell>
-                        <TableCell>{type.description || '-'}</TableCell>
-                        <TableCell>{getSurfaceImpacteeLabel(type.surface_impactee)}</TableCell>
-                        <TableCell>
-                          <Badge variant={type.adjustment_type === 'Déduire' ? "destructive" : "default"}>
-                            {type.adjustment_type === 'Déduire' ? 'Déduction' : 'Ajout'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {type.largeur && type.hauteur 
-                            ? `${type.largeur} × ${type.hauteur} m` 
-                            : '-'}
-                        </TableCell>
-                        <TableCell>
-                          {type.impacte_plinthe ? 'Oui' : 'Non'}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleEditTypeAutreSurface(type)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleDeleteTypeAutreSurface(type.id)}
-                          >
-                            <Trash className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center py-4">
-                        Aucun type d'autre surface défini.
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
         
         <TabsContent value="clients" className="mt-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold">Fiches Clients</h2>
-            <Button onClick={handleAddClient}>
-              <Plus className="h-4 w-4 mr-2" />
-              Ajouter
+          <div className="flex justify-end mb-4">
+            <Button 
+              variant="outline" 
+              onClick={resetClientsToDefaults}
+              className="flex items-center gap-2"
+            >
+              Réinitialiser aux valeurs par défaut
             </Button>
           </div>
           
-          <div className="bg-white rounded-md shadow overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nom</TableHead>
-                  <TableHead>Prénom</TableHead>
-                  <TableHead>Téléphone</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {clientsState.clients.length > 0 ? (
-                  clientsState.clients.map((client) => (
-                    <TableRow key={client.id}>
-                      <TableCell className="font-medium">{client.nom}</TableCell>
-                      <TableCell>{client.prenom}</TableCell>
-                      <TableCell>{client.telephone}</TableCell>
-                      <TableCell>{client.email}</TableCell>
-                      <TableCell>{getTypeClientLabel(client.typeClient)}</TableCell>
-                      <TableCell className="text-right">
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleEditClient(client)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleDeleteClient(client.id)}
-                        >
-                          <Trash className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
+          <Card className="shadow-md">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>Fiches Clients</span>
+                <Button variant="outline" size="sm" onClick={handleAddClient} disabled={loading}>
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
+                  Ajouter
+                </Button>
+              </CardTitle>
+              <CardDescription>
+                Sélectionnez un client pour voir et gérer ses informations
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {loading ? (
+                  <div className="flex justify-center py-4">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  </div>
                 ) : (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-4">
-                      Aucun client défini.
-                    </TableCell>
-                  </TableRow>
+                  <>
+                    {clients.map((client) => (
+                      <div 
+                        key={client.id}
+                        className={`flex items-center justify-between p-2 rounded-md cursor-pointer ${selectedClientId === client.id ? 'bg-blue-100' : 'hover:bg-gray-100'}`}
+                        onClick={() => {
+                          setSelectedClientId(client.id);
+                        }}
+                      >
+                        <div className="flex items-center gap-2">
+                          <User className="h-5 w-5 text-gray-500" />
+                          <span>{client.nom} {client.prenom}</span>
+                        </div>
+                        <div className="flex gap-1">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditClient(client);
+                            }}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteClient(client.id);
+                            }}
+                          >
+                            <Trash className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {clients.length === 0 && (
+                      <Alert>
+                        <AlertDescription>
+                          Aucun client défini. Utilisez le bouton "Ajouter" pour créer un nouveau client.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </>
                 )}
-              </TableBody>
-            </Table>
-          </div>
-          
-          <Button 
-            variant="destructive" 
-            className="mt-4"
-            onClick={resetClientsToDefaults}
-          >
-            Réinitialiser les clients aux valeurs par défaut
-          </Button>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
-      
-      {/* Form Dialogs */}
-      <TypeTravauxForm
-        isOpen={travauxFormOpen}
-        onClose={() => {
-          setTravauxFormOpen(false);
-          setEditingType(null);
-        }}
-        typeToEdit={editingType}
-        onSubmit={handleSubmitType}
-      />
-      
-      {selectedTypeId && (
-        <SousTypeTravauxForm
-          isOpen={sousTypeFormOpen}
-          onClose={() => {
-            setSousTypeFormOpen(false);
-            setEditingSousType(null);
-            setSelectedTypeId(null);
-          }}
-          typeId={selectedTypeId}
-          sousTypeToEdit={editingSousType}
-          onSubmit={handleSubmitSousType}
-        />
-      )}
-      
+
       <TypeMenuiserieForm
         isOpen={typeMenuiserieFormOpen}
-        onClose={() => {
-          setTypeMenuiserieFormOpen(false);
-          setEditingTypeMenuiserie(null);
-        }}
+        onClose={() => setTypeMenuiserieFormOpen(false)}
         typeToEdit={editingTypeMenuiserie}
         onSubmit={handleSubmitTypeMenuiserie}
       />
       
-      <ClientForm
-        isOpen={clientFormOpen}
-        onClose={() => {
-          setClientFormOpen(false);
-          setEditingClient(null);
-        }}
-        clientToEdit={editingClient}
-        onSubmit={handleSubmitClient}
-      />
+      <Dialog open={confirmDeleteMenuiserieOpen} onOpenChange={setConfirmDeleteMenuiserieOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Confirmer la suppression</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir supprimer ce type de menuiserie ? Cette action ne peut pas être annulée.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDeleteMenuiserieOpen(false)}>Annuler</Button>
+            <Button variant="destructive" onClick={confirmTypeMenuiserieDelete}>Supprimer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={clientFormOpen} onOpenChange={setClientFormOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>{editingClient ? 'Modifier le client' : 'Ajouter un client'}</DialogTitle>
+            <DialogDescription>
+              {editingClient 
+                ? 'Modifiez les informations du client ci-dessous.' 
+                : 'Remplissez les informations pour ajouter un nouveau client.'}
+            </DialogDescription>
+          </DialogHeader>
+          <ClientForm
+            clientToEdit={editingClient}
+            onClose={() => setClientFormOpen(false)}
+            onSubmit={handleSubmitClient}
+          />
+        </DialogContent>
+      </Dialog>
       
-      {/* Dialog for TypeAutreSurface */}
-      {typeAutreSurfaceFormOpen && (
-        <TypeAutreSurfaceForm
-          isOpen={typeAutreSurfaceFormOpen}
-          onClose={() => {
-            setTypeAutreSurfaceFormOpen(false);
-            setEditingTypeAutreSurface(null);
-          }}
-          typeToEdit={editingTypeAutreSurface}
-          onSubmit={handleSubmitTypeAutreSurface}
-        />
-      )}
-      
-      {/* Confirmation Dialogs */}
-      {/* Client Delete Confirmation Dialog */}
-      
-    </div>
+      <Dialog open={confirmDeleteClientOpen} onOpenChange={setConfirmDeleteClientOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Confirmer la suppression</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir supprimer ce client ? Cette action ne peut pas être annulée.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDeleteClientOpen(false)}>Annuler</Button>
+            <Button variant="destructive" onClick={confirmClientDelete}>Supprimer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Layout>
   );
 };
 
