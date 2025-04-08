@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { PlusCircle, Edit, Trash, Search } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search } from 'lucide-react';
 import ClientForm from '@/features/admin/components/ClientForm';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
@@ -16,6 +16,8 @@ const ClientsList: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [clientToEdit, setClientToEdit] = useState<string | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [clientToDelete, setClientToDelete] = useState<string | null>(null);
 
   // Filtrer les clients en fonction du terme de recherche
   const filteredClients = state.clients.filter(client => {
@@ -23,8 +25,8 @@ const ClientsList: React.FC = () => {
     return (
       client.nom.toLowerCase().includes(searchLower) ||
       (client.prenom && client.prenom.toLowerCase().includes(searchLower)) ||
-      client.email.toLowerCase().includes(searchLower) ||
-      client.telephone.toLowerCase().includes(searchLower)
+      (client.email && client.email.toLowerCase().includes(searchLower)) ||
+      (client.telephone && client.telephone.toLowerCase().includes(searchLower))
     );
   });
 
@@ -34,7 +36,16 @@ const ClientsList: React.FC = () => {
   };
 
   const handleDeleteClient = (clientId: string) => {
-    dispatch({ type: 'DELETE_CLIENT', payload: clientId });
+    setClientToDelete(clientId);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteClient = () => {
+    if (clientToDelete) {
+      dispatch({ type: 'DELETE_CLIENT', payload: clientToDelete });
+      setIsDeleteDialogOpen(false);
+      setClientToDelete(null);
+    }
   };
 
   const handleCloseForm = () => {
@@ -61,7 +72,7 @@ const ClientsList: React.FC = () => {
             <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
               <DialogTrigger asChild>
                 <Button onClick={() => setClientToEdit(null)}>
-                  <PlusCircle className="mr-2 h-4 w-4" />
+                  <Plus className="mr-2 h-4 w-4" />
                   Nouveau client
                 </Button>
               </DialogTrigger>
@@ -74,9 +85,9 @@ const ClientsList: React.FC = () => {
                       : 'Remplissez le formulaire pour ajouter un nouveau client.'}
                   </DialogDescription>
                 </DialogHeader>
-                <ClientForm 
-                  clientId={clientToEdit} 
-                  onClose={handleCloseForm} 
+                <ClientForm
+                  clientId={clientToEdit}
+                  onClose={handleCloseForm}
                 />
               </DialogContent>
             </Dialog>
@@ -131,16 +142,20 @@ const ClientsList: React.FC = () => {
                             size="sm"
                             onClick={() => handleEditClient(client.id)}
                           >
-                            <Edit className="h-4 w-4" />
+                            <Pencil className="h-4 w-4" />
                           </Button>
-                          <AlertDialog>
+                          <AlertDialog open={isDeleteDialogOpen && clientToDelete === client.id} onOpenChange={(open) => {
+                            if (!open) setClientToDelete(null);
+                            setIsDeleteDialogOpen(open);
+                          }}>
                             <AlertDialogTrigger asChild>
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                onClick={() => handleDeleteClient(client.id)}
                               >
-                                <Trash className="h-4 w-4" />
+                                <Trash2 className="h-4 w-4" />
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
@@ -154,7 +169,7 @@ const ClientsList: React.FC = () => {
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Annuler</AlertDialogCancel>
                                 <AlertDialogAction
-                                  onClick={() => handleDeleteClient(client.id)}
+                                  onClick={confirmDeleteClient}
                                   className="bg-red-500 hover:bg-red-600"
                                 >
                                   Supprimer

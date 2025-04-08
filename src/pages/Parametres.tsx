@@ -1045,7 +1045,7 @@ const Parametres = () => {
                       >
                         <div className="flex items-center gap-2">
                           <User className="h-5 w-5 text-gray-500" />
-                          <span>{client.nom}</span>
+                          <span>{client.nom} {client.prenom}</span>
                         </div>
                         <div className="flex gap-1">
                           <Button 
@@ -1056,7 +1056,7 @@ const Parametres = () => {
                               handleEditClient(client);
                             }}
                           >
-                            <Edit className="h-4 w-4" />
+                            <Pencil className="h-4 w-4" />
                           </Button>
                           <Button 
                             variant="ghost" 
@@ -1066,7 +1066,7 @@ const Parametres = () => {
                               handleDeleteClient(client.id);
                             }}
                           >
-                            <Trash className="h-4 w-4" />
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </div>
@@ -1105,6 +1105,39 @@ const Parametres = () => {
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmDeleteMenuiserieOpen(false)}>Annuler</Button>
             <Button variant="destructive" onClick={confirmTypeMenuiserieDelete}>Supprimer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={clientFormOpen} onOpenChange={setClientFormOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>{editingClient ? 'Modifier le client' : 'Ajouter un client'}</DialogTitle>
+            <DialogDescription>
+              {editingClient 
+                ? 'Modifiez les informations du client ci-dessous.' 
+                : 'Remplissez les informations pour ajouter un nouveau client.'}
+            </DialogDescription>
+          </DialogHeader>
+          <ClientForm
+            clientToEdit={editingClient}
+            onClose={() => setClientFormOpen(false)}
+            onSubmit={handleSubmitClient}
+          />
+        </DialogContent>
+      </Dialog>
+      
+      <Dialog open={confirmDeleteClientOpen} onOpenChange={setConfirmDeleteClientOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Confirmer la suppression</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir supprimer ce client ? Cette action ne peut pas être annulée.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDeleteClientOpen(false)}>Annuler</Button>
+            <Button variant="destructive" onClick={confirmClientDelete}>Supprimer</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

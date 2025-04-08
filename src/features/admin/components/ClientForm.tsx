@@ -1,11 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle,
-  DialogDescription,
   DialogFooter
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -16,22 +11,26 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Client, typesClients } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { useClients } from '@/contexts/ClientsContext';
 
 interface ClientFormProps {
-  isOpen: boolean;
+  clientId?: string | null;
   onClose: () => void;
-  clientToEdit: Client | null;
-  onSubmit: (clientData: Client) => void;
+  isOpen?: boolean;
+  onSubmit?: (clientData: Client) => void;
   isSubmitting?: boolean;
+  clientToEdit?: Client | null;
 }
 
 const ClientForm: React.FC<ClientFormProps> = ({
-  isOpen,
+  clientId,
   onClose,
-  clientToEdit,
+  isOpen = true,
   onSubmit,
-  isSubmitting = false
+  isSubmitting = false,
+  clientToEdit = null
 }) => {
+  const { state, dispatch, clientTypes } = useClients();
   const [formData, setFormData] = useState<Client>({
     id: '',
     nom: '',
@@ -53,27 +52,38 @@ const ClientForm: React.FC<ClientFormProps> = ({
 
   // Initialiser le formulaire avec les données du client à éditer
   useEffect(() => {
+    // Cas 1: nous avons un clientToEdit directement passé en prop
     if (clientToEdit) {
       setFormData(clientToEdit);
-    } else {
-      // Réinitialiser le formulaire pour un nouveau client
-      setFormData({
-        id: uuidv4(),
-        nom: '',
-        prenom: '',
-        adresse: '',
-        telephone: '',
-        codePostal: '',
-        ville: '',
-        email: '',
-        tel1: '',
-        tel2: '',
-        typeClient: 'particulier',
-        autreInfo: '',
-        infosComplementaires: ''
-      });
+      return;
     }
-  }, [clientToEdit, isOpen]);
+    
+    // Cas 2: nous avons un clientId, nous cherchons le client dans le state
+    if (clientId) {
+      const client = state.clients.find(c => c.id === clientId);
+      if (client) {
+        setFormData(client);
+        return;
+      }
+    }
+    
+    // Cas 3: nouveau client
+    setFormData({
+      id: uuidv4(),
+      nom: '',
+      prenom: '',
+      adresse: '',
+      telephone: '',
+      codePostal: '',
+      ville: '',
+      email: '',
+      tel1: '',
+      tel2: '',
+      typeClient: 'particulier',
+      autreInfo: '',
+      infosComplementaires: ''
+    });
+  }, [clientId, clientToEdit, state.clients, isOpen]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -94,7 +104,29 @@ const ClientForm: React.FC<ClientFormProps> = ({
       telephone: formData.telephone || formData.tel1,
     };
     
-    onSubmit(updatedFormData);
+    if (onSubmit) {
+      // Si nous avons une fonction onSubmit personnalisée, nous l'utilisons
+      onSubmit(updatedFormData);
+    } else {
+      // Sinon, nous utilisons le dispatch du contexte
+      if (clientId || clientToEdit) {
+        // Mise à jour d'un client existant
+        dispatch({
+          type: 'UPDATE_CLIENT',
+          payload: { 
+            id: clientId || (clientToEdit ? clientToEdit.id : ''), 
+            client: updatedFormData 
+          }
+        });
+      } else {
+        // Ajout d'un nouveau client
+        dispatch({ 
+          type: 'ADD_CLIENT', 
+          payload: updatedFormData 
+        });
+      }
+      onClose();
+    }
   };
   
   // Gérer la demande de fermeture
@@ -116,165 +148,158 @@ const ClientForm: React.FC<ClientFormProps> = ({
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={handleCloseRequest}>
-        <DialogContent className="sm:max-w-[600px]" onPointerDownOutside={(e) => e.preventDefault()}>
-          <DialogHeader>
-            <DialogTitle>{clientToEdit ? 'Modifier le client' : 'Ajouter un client'}</DialogTitle>
-            <DialogDescription>
-              {clientToEdit 
-                ? 'Modifiez les informations du client ci-dessous.' 
-                : 'Remplissez les informations pour ajouter un nouveau client.'}
-            </DialogDescription>
-          </DialogHeader>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="nom">Nom *</Label>
+            <Input 
+              id="nom" 
+              name="nom" 
+              value={formData.nom} 
+              onChange={handleChange} 
+              required 
+            />
+          </div>
           
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="nom">Nom *</Label>
-                <Input 
-                  id="nom" 
-                  name="nom" 
-                  value={formData.nom} 
-                  onChange={handleChange} 
-                  required 
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="prenom">Prénom</Label>
-                <Input 
-                  id="prenom" 
-                  name="prenom" 
-                  value={formData.prenom} 
-                  onChange={handleChange} 
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="adresse">Adresse</Label>
-              <Textarea 
-                id="adresse" 
-                name="adresse" 
-                value={formData.adresse} 
-                onChange={handleChange} 
-              />
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="codePostal">Code Postal</Label>
-                <Input 
-                  id="codePostal" 
-                  name="codePostal" 
-                  value={formData.codePostal} 
-                  onChange={handleChange} 
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="ville">Ville</Label>
-                <Input 
-                  id="ville" 
-                  name="ville" 
-                  value={formData.ville} 
-                  onChange={handleChange} 
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="telephone">Téléphone principal</Label>
-                <Input 
-                  id="telephone" 
-                  name="telephone" 
-                  value={formData.telephone} 
-                  onChange={handleChange} 
-                />
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="tel1">Téléphone secondaire 1</Label>
-                <Input 
-                  id="tel1" 
-                  name="tel1" 
-                  value={formData.tel1} 
-                  onChange={handleChange} 
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="tel2">Téléphone secondaire 2</Label>
-                <Input 
-                  id="tel2" 
-                  name="tel2" 
-                  value={formData.tel2} 
-                  onChange={handleChange} 
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input 
-                id="email" 
-                name="email" 
-                type="email" 
-                value={formData.email} 
-                onChange={handleChange} 
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="typeClient">Type de client</Label>
-              <Select 
-                value={formData.typeClient} 
-                onValueChange={handleTypeClientChange}
-              >
-                <SelectTrigger id="typeClient">
-                  <SelectValue placeholder="Sélectionnez un type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {typesClients.map(type => (
-                    <SelectItem key={type.id} value={type.id}>{type.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="autreInfo">Autre info</Label>
-              <Input 
-                id="autreInfo" 
-                name="autreInfo" 
-                value={formData.autreInfo} 
-                onChange={handleChange} 
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="infosComplementaires">Informations complémentaires</Label>
-              <Textarea 
-                id="infosComplementaires" 
-                name="infosComplementaires" 
-                value={formData.infosComplementaires} 
-                onChange={handleChange} 
-                className="h-24"
-              />
-            </div>
-            
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={handleCloseRequest} disabled={isSubmitting}>
-                Annuler
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? 'Chargement...' : clientToEdit ? 'Mettre à jour' : 'Ajouter'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+          <div className="space-y-2">
+            <Label htmlFor="prenom">Prénom</Label>
+            <Input 
+              id="prenom" 
+              name="prenom" 
+              value={formData.prenom} 
+              onChange={handleChange} 
+            />
+          </div>
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="adresse">Adresse</Label>
+          <Textarea 
+            id="adresse" 
+            name="adresse" 
+            value={formData.adresse} 
+            onChange={handleChange} 
+          />
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="codePostal">Code Postal</Label>
+            <Input 
+              id="codePostal" 
+              name="codePostal" 
+              value={formData.codePostal} 
+              onChange={handleChange} 
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="ville">Ville</Label>
+            <Input 
+              id="ville" 
+              name="ville" 
+              value={formData.ville} 
+              onChange={handleChange} 
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="telephone">Téléphone principal</Label>
+            <Input 
+              id="telephone" 
+              name="telephone" 
+              value={formData.telephone} 
+              onChange={handleChange} 
+            />
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="tel1">Téléphone secondaire 1</Label>
+            <Input 
+              id="tel1" 
+              name="tel1" 
+              value={formData.tel1} 
+              onChange={handleChange} 
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="tel2">Téléphone secondaire 2</Label>
+            <Input 
+              id="tel2" 
+              name="tel2" 
+              value={formData.tel2} 
+              onChange={handleChange} 
+            />
+          </div>
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="email">Email</Label>
+          <Input 
+            id="email" 
+            name="email" 
+            type="email" 
+            value={formData.email} 
+            onChange={handleChange} 
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="typeClient">Type de client</Label>
+          <Select 
+            value={formData.typeClient} 
+            onValueChange={handleTypeClientChange}
+          >
+            <SelectTrigger id="typeClient">
+              <SelectValue placeholder="Sélectionnez un type" />
+            </SelectTrigger>
+            <SelectContent>
+              {clientTypes.length > 0 ? (
+                clientTypes.map(type => (
+                  <SelectItem key={type.id} value={type.id}>{type.name}</SelectItem>
+                ))
+              ) : (
+                typesClients.map(type => (
+                  <SelectItem key={type.id} value={type.id}>{type.label}</SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="autreInfo">Autre info</Label>
+          <Input 
+            id="autreInfo" 
+            name="autreInfo" 
+            value={formData.autreInfo} 
+            onChange={handleChange} 
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="infosComplementaires">Informations complémentaires</Label>
+          <Textarea 
+            id="infosComplementaires" 
+            name="infosComplementaires" 
+            value={formData.infosComplementaires} 
+            onChange={handleChange} 
+            className="h-24"
+          />
+        </div>
+        
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={handleCloseRequest} disabled={isSubmitting}>
+            Annuler
+          </Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? 'Chargement...' : (clientId || clientToEdit) ? 'Mettre à jour' : 'Ajouter'}
+          </Button>
+        </DialogFooter>
+      </form>
       
       {/* Dialogue de confirmation */}
       <AlertDialog open={confirmClose} onOpenChange={setConfirmClose}>
