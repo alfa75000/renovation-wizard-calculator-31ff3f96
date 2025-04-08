@@ -2,35 +2,79 @@ import { supabase } from '@/lib/supabase';
 import { WorkType, ServiceGroup, Service } from '@/types/supabase';
 import { toast } from 'sonner';
 
-// Récupérer tous les types de travaux
+// Fonctions pour les types de travaux (WorkType)
 export const fetchWorkTypes = async (): Promise<WorkType[]> => {
   try {
-    console.log("Début fetchWorkTypes - Tentative de récupération des types de travaux");
-    
     const { data, error } = await supabase
       .from('work_types')
       .select('*')
-      .order('name', { ascending: true });
-    
-    // Log détaillé pour debug
-    console.log("Résultat de la requête work_types:", { 
-      data, 
-      error, 
-      dataLength: data?.length || 0,
-      firstItem: data && data.length > 0 ? data[0] : null
-    });
+      .order('name');
     
     if (error) {
-      console.error('Erreur lors de la récupération des types de travaux:', error);
-      toast.error('Erreur lors de la récupération des types de travaux');
-      return [];
+      throw error;
     }
     
     return data || [];
   } catch (error) {
-    console.error('Exception lors de la récupération des types de travaux:', error);
-    toast.error('Erreur lors de la récupération des types de travaux');
-    return [];
+    console.error('Erreur lors de la récupération des types de travaux:', error);
+    throw error;
+  }
+};
+
+export const createWorkType = async (workType: { name: string }): Promise<WorkType | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('work_types')
+      .insert(workType)
+      .select()
+      .single();
+    
+    if (error) {
+      throw error;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Erreur lors de la création du type de travaux:', error);
+    throw error;
+  }
+};
+
+export const updateWorkType = async (id: string, workType: { name: string }): Promise<WorkType | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('work_types')
+      .update(workType)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      throw error;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Erreur lors de la mise à jour du type de travaux:', error);
+    throw error;
+  }
+};
+
+export const deleteWorkType = async (id: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('work_types')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      throw error;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Erreur lors de la suppression du type de travaux:', error);
+    throw error;
   }
 };
 
@@ -114,75 +158,6 @@ export const fetchServiceById = async (serviceId: string): Promise<Service | nul
   } catch (error) {
     console.error('Exception lors de la récupération du service:', error);
     return null;
-  }
-};
-
-// Créer un nouveau type de travaux
-export const createWorkType = async (name: string): Promise<WorkType | null> => {
-  try {
-    const { data, error } = await supabase
-      .from('work_types')
-      .insert([{ name }])
-      .select()
-      .single();
-    
-    if (error) {
-      console.error('Erreur lors de la création du type de travaux:', error);
-      toast.error('Erreur lors de la création du type de travaux');
-      return null;
-    }
-    
-    return data;
-  } catch (error) {
-    console.error('Exception lors de la création du type de travaux:', error);
-    toast.error('Erreur lors de la création du type de travaux');
-    return null;
-  }
-};
-
-// Mettre à jour un type de travaux
-export const updateWorkType = async (id: string, name: string): Promise<WorkType | null> => {
-  try {
-    const { data, error } = await supabase
-      .from('work_types')
-      .update({ name })
-      .eq('id', id)
-      .select()
-      .single();
-    
-    if (error) {
-      console.error('Erreur lors de la mise à jour du type de travaux:', error);
-      toast.error('Erreur lors de la mise à jour du type de travaux');
-      return null;
-    }
-    
-    return data;
-  } catch (error) {
-    console.error('Exception lors de la mise à jour du type de travaux:', error);
-    toast.error('Erreur lors de la mise à jour du type de travaux');
-    return null;
-  }
-};
-
-// Supprimer un type de travaux
-export const deleteWorkType = async (id: string): Promise<boolean> => {
-  try {
-    const { error } = await supabase
-      .from('work_types')
-      .delete()
-      .eq('id', id);
-    
-    if (error) {
-      console.error('Erreur lors de la suppression du type de travaux:', error);
-      toast.error('Erreur lors de la suppression du type de travaux');
-      return false;
-    }
-    
-    return true;
-  } catch (error) {
-    console.error('Exception lors de la suppression du type de travaux:', error);
-    toast.error('Erreur lors de la suppression du type de travaux');
-    return false;
   }
 };
 
