@@ -35,6 +35,7 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
   const [menuiseriesTypes, setMenuiseriesTypes] = useState<MenuiserieType[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const [menuiserieCount, setMenuiserieCount] = useState(1);
 
   const [newMenuiserie, setNewMenuiserie] = useState<Omit<Menuiserie, 'id' | 'surface'>>({
     type: "",
@@ -48,6 +49,8 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
   const [selectedTypeId, setSelectedTypeId] = useState<string>("");
   const [selectedType, setSelectedType] = useState<MenuiserieType | null>(null);
   const [quantity, setQuantity] = useState(1);
+  const [surfaceCalculee, setSurfaceCalculee] = useState(0);
+  const [impactePlinthe, setImpactePlinthe] = useState(false);
 
   // Chargement des types de menuiseries depuis Supabase
   useEffect(() => {
@@ -81,6 +84,14 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
     loadMenuiserieTypes();
   }, []);
 
+  // Calculer la surface lorsque les dimensions changent
+  useEffect(() => {
+    const largeur = newMenuiserie.largeur || 0;
+    const hauteur = newMenuiserie.hauteur || 0;
+    const surfaceM2 = (largeur * hauteur) / 10000; // Conversion cm² en m²
+    setSurfaceCalculee(surfaceM2);
+  }, [newMenuiserie.largeur, newMenuiserie.hauteur]);
+
   const handleMenuiserieTypeChange = (typeId: string) => {
     setSelectedTypeId(typeId);
     const selected = menuiseriesTypes.find(type => type.id === typeId);
@@ -89,14 +100,20 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
       setSelectedType(selected);
       const surfaceImpactee = mapSurfaceImpacteeToFrontend(selected.surface_impactee);
       
+      // Générer un numéro automatique pour la menuiserie
+      const menuiserieName = `Menuiserie n° ${menuiserieCount} (${selected.name} (${selected.largeur}×${selected.hauteur} cm))`;
+      
       setNewMenuiserie((prev) => ({ 
         ...prev, 
         type: selected.name,
+        name: menuiserieName,
         largeur: selected.largeur,
         hauteur: selected.hauteur,
-        impactePlinthe: selected.impacte_plinthe,
-        surfaceImpactee
+        surfaceImpactee,
+        description: selected.description || ""
       }));
+      
+      setImpactePlinthe(selected.impacte_plinthe);
     } else {
       setSelectedType(null);
     }
@@ -109,7 +126,7 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
     }));
   };
 
-  const handleMenuiserieChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMenuiserieChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     
     if (name === "largeur" || name === "hauteur") {
@@ -122,6 +139,10 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
     } else {
       setNewMenuiserie((prev) => ({ ...prev, [name]: value }));
     }
+  };
+
+  const handleImpactePlinthesChange = (checked: boolean) => {
+    setImpactePlinthe(checked);
   };
 
   const handleAddMenuiserie = () => {
@@ -137,10 +158,14 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
     // Ajout des informations spécifiques du type sélectionné
     const menuiserieToAdd = {
       ...newMenuiserie,
-      menuiserie_type_id: selectedTypeId  // Ajouter l'ID du type sélectionné pour Supabase
+      menuiserie_type_id: selectedTypeId,  // Ajouter l'ID du type sélectionné pour Supabase
+      impactePlinthe
     };
     
     onAddMenuiserie(menuiserieToAdd, quantity);
+    
+    // Incrémentation du compteur de menuiserie
+    setMenuiserieCount(prevCount => prevCount + 1);
     
     // Réinitialiser le formulaire mais conserver le type
     setNewMenuiserie(prev => ({
@@ -155,8 +180,8 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
     <div className="mb-6">
       <h3 className="text-lg font-medium mb-3">Menuiseries</h3>
       
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-        <div className="md:col-span-2">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 mb-4">
+        <div className="md:col-span-4">
           <Label htmlFor="menuiserieType">Type de menuiserie</Label>
           <Select
             value={selectedTypeId}
@@ -176,6 +201,93 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
           </Select>
         </div>
         
+        <div className="md:col-span-3">
+          <Label htmlFor="menuiserieNumAuto">Numérotation automatique</Label>
+          <Input
+            id="menuiserieNumAuto"
+            value={`Menuiserie n° ${menuiserieCount}`}
+            readOnly
+            className="mt-1 bg-gray-100"
+          />
+        </div>
+        
+        <div className="md:col-span-5">
+          <Label htmlFor="menuiserieName">Nom</Label>
+          <Input
+            id="menuiserieName"
+            name="name"
+            value={newMenuiserie.name || ''}
+            onChange={handleMenuiserieChange}
+            placeholder="Ex: Porte d'entrée"
+            className="mt-1"
+          />
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 mb-4">
+        <div className="md:col-span-4">
+          <Label htmlFor="menuiserieLargeur">Largeur (cm)</Label>
+          <Input
+            id="menuiserieLargeur"
+            name="largeur"
+            type="number"
+            min="0"
+            value={newMenuiserie.largeur || ''}
+            onChange={handleMenuiserieChange}
+            className="mt-1"
+          />
+        </div>
+        
+        <div className="md:col-span-4">
+          <Label htmlFor="menuiserieHauteur">Hauteur (cm)</Label>
+          <Input
+            id="menuiserieHauteur"
+            name="hauteur"
+            type="number"
+            min="0"
+            value={newMenuiserie.hauteur || ''}
+            onChange={handleMenuiserieChange}
+            className="mt-1"
+          />
+        </div>
+        
+        <div className="md:col-span-4">
+          <Label htmlFor="menuiserieSurface">Surface (m²)</Label>
+          <Input
+            id="menuiserieSurface"
+            value={surfaceCalculee.toFixed(2)}
+            readOnly
+            className="mt-1 bg-gray-100"
+          />
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 mb-4">
+        <div className="md:col-span-6">
+          <Label htmlFor="menuiserieDescription">Descriptif</Label>
+          <Input
+            id="menuiserieDescription"
+            name="description"
+            value={selectedType?.description || ''}
+            onChange={handleMenuiserieChange}
+            placeholder="Description détaillée de la menuiserie"
+            className="mt-1"
+          />
+        </div>
+        
+        <div className="md:col-span-2">
+          <Label htmlFor="menuiserieQuantity">Quantité</Label>
+          <Input
+            id="menuiserieQuantity"
+            name="quantity"
+            type="number"
+            min="1"
+            value={quantity}
+            onChange={handleMenuiserieChange}
+            className="mt-1"
+          />
+        </div>
+        
         <div className="md:col-span-2">
           <Label htmlFor="menuiserieImpact">Surface impactée</Label>
           <Select
@@ -192,99 +304,37 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
             </SelectContent>
           </Select>
         </div>
-      </div>
-      
-      {selectedType && (
-        <div className="bg-gray-50 p-4 rounded-md mb-4">
-          <h4 className="font-medium mb-2">Informations du type sélectionné</h4>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <span className="block text-sm text-gray-500">Dimensions par défaut:</span>
-              <span className="font-medium">{selectedType.largeur} × {selectedType.hauteur} cm</span>
-            </div>
-            <div>
-              <span className="block text-sm text-gray-500">Surface impactée par défaut:</span>
-              <span className="font-medium">{selectedType.surface_impactee}</span>
-            </div>
-            <div>
-              <span className="block text-sm text-gray-500">Impacte les plinthes:</span>
-              <span className="font-medium">{selectedType.impacte_plinthe ? 'Oui' : 'Non'}</span>
-            </div>
+        
+        <div className="md:col-span-2 flex items-end pb-3">
+          <div className="flex items-center space-x-2">
+            <Checkbox 
+              id="impactePlinthe" 
+              checked={impactePlinthe} 
+              onCheckedChange={handleImpactePlinthesChange}
+            />
+            <Label htmlFor="impactePlinthe">Impacte plinthes</Label>
           </div>
         </div>
-      )}
+      </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
-        <div>
-          <Label htmlFor="menuiserieName">Nom (optionnel)</Label>
-          <Input
-            id="menuiserieName"
-            name="name"
-            value={newMenuiserie.name || ''}
-            onChange={handleMenuiserieChange}
-            placeholder="Ex: Porte d'entrée"
-            className="mt-1"
-          />
-        </div>
-        
-        <div>
-          <Label htmlFor="menuiserieLargeur">Largeur (cm)</Label>
-          <Input
-            id="menuiserieLargeur"
-            name="largeur"
-            type="number"
-            min="0"
-            value={newMenuiserie.largeur || ''}
-            onChange={handleMenuiserieChange}
-            className="mt-1"
-          />
-        </div>
-        
-        <div>
-          <Label htmlFor="menuiserieHauteur">Hauteur (cm)</Label>
-          <Input
-            id="menuiserieHauteur"
-            name="hauteur"
-            type="number"
-            min="0"
-            value={newMenuiserie.hauteur || ''}
-            onChange={handleMenuiserieChange}
-            className="mt-1"
-          />
-        </div>
-        
-        <div>
-          <Label htmlFor="menuiserieQuantity">Quantité</Label>
-          <Input
-            id="menuiserieQuantity"
-            name="quantity"
-            type="number"
-            min="1"
-            value={quantity}
-            onChange={handleMenuiserieChange}
-            className="mt-1"
-          />
-        </div>
-        
-        <div className="flex items-end">
-          <Button 
-            onClick={handleAddMenuiserie} 
-            className="w-full"
-            disabled={!selectedTypeId || loading}
-          >
-            {editingMenuiserie ? (
-              <>
-                <Check className="h-4 w-4 mr-2" />
-                Mettre à jour
-              </>
-            ) : (
-              <>
-                <Plus className="h-4 w-4 mr-2" />
-                Ajouter
-              </>
-            )}
-          </Button>
-        </div>
+      <div className="flex justify-end">
+        <Button 
+          onClick={handleAddMenuiserie} 
+          className="w-auto"
+          disabled={!selectedTypeId || loading}
+        >
+          {editingMenuiserie ? (
+            <>
+              <Check className="h-4 w-4 mr-2" />
+              Mettre à jour
+            </>
+          ) : (
+            <>
+              <Plus className="h-4 w-4 mr-2" />
+              Ajouter
+            </>
+          )}
+        </Button>
       </div>
     </div>
   );
