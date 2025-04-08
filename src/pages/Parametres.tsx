@@ -654,7 +654,6 @@ const Parametres = () => {
           <TabsTrigger value="clients" className="flex-1">Fiches Clients</TabsTrigger>
         </TabsList>
         
-        {/* Tab Content for Travaux */}
         <TabsContent value="travaux" className="mt-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <Card className="shadow-md lg:col-span-1">
@@ -906,7 +905,6 @@ const Parametres = () => {
           </div>
         </TabsContent>
         
-        {/* Tab Content for Menuiseries */}
         <TabsContent value="menuiseries" className="mt-6">
           <div className="flex justify-end mb-4">
             <Button 
@@ -928,70 +926,73 @@ const Parametres = () => {
                 </Button>
               </CardTitle>
               <CardDescription>
-                Sélectionnez un type de menuiserie pour voir et gérer ses surfaces et paramètres
+                Gérez les types de menuiseries et leurs paramètres
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                {loading ? (
-                  <div className="flex justify-center py-4">
-                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                  </div>
-                ) : (
-                  <>
-                    {menuiserieTypes.map((type) => (
-                      <div 
-                        key={type.id}
-                        className={`flex items-center justify-between p-2 rounded-md cursor-pointer ${selectedWorkTypeId === type.id ? 'bg-blue-100' : 'hover:bg-gray-100'}`}
-                        onClick={() => {
-                          setSelectedWorkTypeId(type.id);
-                          setSelectedGroupId(null);
-                        }}
-                      >
-                        <div className="flex items-center gap-2">
-                          <Wrench className="h-5 w-5 text-gray-500" />
-                          <span>{type.name}</span>
-                        </div>
-                        <div className="flex gap-1">
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEditTypeMenuiserie(type);
-                            }}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteTypeMenuiserie(type.id);
-                            }}
-                          >
-                            <Trash className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                    
-                    {menuiserieTypes.length === 0 && (
-                      <Alert>
-                        <AlertDescription>
-                          Aucun type de menuiserie défini. Utilisez le bouton "Ajouter" pour créer un nouveau type.
-                        </AlertDescription>
-                      </Alert>
-                    )}
-                  </>
-                )}
-              </div>
+              {isLoadingMenuiseries ? (
+                <div className="flex justify-center py-4">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {menuiserieTypes.length > 0 ? (
+                    <div className="rounded-md border overflow-hidden">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-1/6">Nom</TableHead>
+                            <TableHead className="w-1/6">Dimensions (cm)</TableHead>
+                            <TableHead className="w-1/12">Surface (m²)</TableHead>
+                            <TableHead className="w-1/6">Surface impactée</TableHead>
+                            <TableHead className="w-1/4">Description</TableHead>
+                            <TableHead className="w-1/12 text-right">Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {menuiserieTypes.map((type) => (
+                            <TableRow key={type.id}>
+                              <TableCell className="font-medium">{type.name}</TableCell>
+                              <TableCell>{type.hauteur} × {type.largeur}</TableCell>
+                              <TableCell>{((type.hauteur * type.largeur) / 10000).toFixed(2)}</TableCell>
+                              <TableCell>{getSurfaceImpacteeLabel(type.surface_impactee)}</TableCell>
+                              <TableCell className="truncate max-w-xs">{type.description || "-"}</TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end gap-1">
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={() => handleEditMenuiserieType(type)}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={() => handleDeleteTypeMenuiserie(type.id)}
+                                  >
+                                    <Trash className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  ) : (
+                    <Alert>
+                      <AlertDescription>
+                        Aucun type de menuiserie défini. Utilisez le bouton "Ajouter" pour créer un nouveau type.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
         
-        {/* Tab Content for Clients */}
         <TabsContent value="clients" className="mt-6">
           <div className="flex justify-end mb-4">
             <Button 
@@ -1027,15 +1028,14 @@ const Parametres = () => {
                     {clients.map((client) => (
                       <div 
                         key={client.id}
-                        className={`flex items-center justify-between p-2 rounded-md cursor-pointer ${selectedWorkTypeId === client.id ? 'bg-blue-100' : 'hover:bg-gray-100'}`}
+                        className={`flex items-center justify-between p-2 rounded-md cursor-pointer ${selectedClientId === client.id ? 'bg-blue-100' : 'hover:bg-gray-100'}`}
                         onClick={() => {
-                          setSelectedWorkTypeId(client.id);
-                          setSelectedGroupId(null);
+                          setSelectedClientId(client.id);
                         }}
                       >
                         <div className="flex items-center gap-2">
-                          <Wrench className="h-5 w-5 text-gray-500" />
-                          <span>{client.name}</span>
+                          <User className="h-5 w-5 text-gray-500" />
+                          <span>{client.nom}</span>
                         </div>
                         <div className="flex gap-1">
                           <Button 
