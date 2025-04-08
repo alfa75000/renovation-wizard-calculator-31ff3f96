@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { toast } from "react-hot-toast";
+import { toast } from "sonner"; // Changed from react-hot-toast to sonner
 import { Plus, Edit, Trash, Loader2, Database } from 'lucide-react';
 
 import { Button } from "@/components/ui/button";
@@ -17,17 +16,23 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 
+// Import Layout from correct location
+import Layout from "@/components/Layout";
+
+// Import local forms instead of non-existent modules
 import TypeTravauxForm from '@/features/travaux/components/TypeTravauxForm';
 import SousTypeTravauxForm from '@/features/travaux/components/SousTypeTravauxForm';
 import TypeMenuiserieForm from '@/features/admin/components/TypeMenuiserieForm';
 import TypeAutreSurfaceForm from '@/features/admin/components/TypeAutreSurfaceForm';
 import ClientForm from '@/features/admin/components/ClientForm';
 
+// Import locally available context providers
 import { useTravauxTypes } from '@/contexts/TravauxTypesContext';
 import { useMenuiseriesTypes } from '@/contexts/MenuiseriesTypesContext';
 import { useAutresSurfaces } from '@/contexts/AutresSurfacesContext';
 import { useClients } from '@/contexts/ClientsContext';
 
+// Use local imports for services
 import {
   createWorkType,
   updateWorkType,
@@ -377,9 +382,9 @@ const Parametres = () => {
                                 type.surface_impactee === 'Plafond' ? 'plafond' :
                                 type.surface_impactee === 'Sol' ? 'sol' : 'aucune',
       estDeduction: type.adjustment_type === 'Déduire',
+      impactePlinthe: type.impacte_plinthe,
       largeur: type.largeur || 0,
-      hauteur: type.hauteur || 0,
-      impactePlinthe: type.impacte_plinthe
+      hauteur: type.hauteur || 0
     };
     
     setEditingTypeAutreSurface(typeAutreSurface);
@@ -823,7 +828,6 @@ const Parametres = () => {
       )}
       
       {/* Confirmation Dialogs */}
-      {/* Client Delete Confirmation Dialog */}
       {/* Client Delete Confirmation Dialog */}
       
     </div>

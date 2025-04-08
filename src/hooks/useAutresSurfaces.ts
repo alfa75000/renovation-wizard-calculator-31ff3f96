@@ -13,7 +13,7 @@ export const useAutresSurfaces = () => {
       designation: type.nom,
       surfaceImpactee: type.surfaceImpacteeParDefaut,
       estDeduction: type.estDeduction,
-      impactePlinthe: type.impactePlinthe,
+      impactePlinthe: type.impactePlinthe || false,
       largeur: type.largeur || 0,
       hauteur: type.hauteur || 0
     };

@@ -12,12 +12,11 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface SousTypeTravauxFormProps {
   isOpen: boolean;
   onClose: () => void;
-  typeId: string;
+  typeId: string | null;
   sousTypeToEdit: any | null;
   onSubmit: (typeId: string, sousTypeData: any) => void;
 }
@@ -33,7 +32,7 @@ const SousTypeTravauxForm: React.FC<SousTypeTravauxFormProps> = ({
     name: '',
     description: '',
     labor_price: 0,
-    supply_price: 0,
+    supply_price: 0
   });
 
   useEffect(() => {
@@ -42,14 +41,14 @@ const SousTypeTravauxForm: React.FC<SousTypeTravauxFormProps> = ({
         name: sousTypeToEdit.name || '',
         description: sousTypeToEdit.description || '',
         labor_price: sousTypeToEdit.labor_price || 0,
-        supply_price: sousTypeToEdit.supply_price || 0,
+        supply_price: sousTypeToEdit.supply_price || 0
       });
     } else {
       setFormData({
         name: '',
         description: '',
         labor_price: 0,
-        supply_price: 0,
+        supply_price: 0
       });
     }
   }, [sousTypeToEdit]);
@@ -66,18 +65,20 @@ const SousTypeTravauxForm: React.FC<SousTypeTravauxFormProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(typeId, formData);
+    if (typeId) {
+      onSubmit(typeId, formData);
+    }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{sousTypeToEdit ? 'Modifier la prestation' : 'Ajouter une prestation'}</DialogTitle>
+          <DialogTitle>{sousTypeToEdit ? 'Modifier le sous-type de travaux' : 'Ajouter un sous-type de travaux'}</DialogTitle>
           <DialogDescription>
             {sousTypeToEdit 
-              ? 'Modifiez les informations de la prestation ci-dessous.' 
-              : 'Remplissez les informations pour ajouter une nouvelle prestation.'}
+              ? 'Modifiez les informations du sous-type de travaux ci-dessous.' 
+              : 'Remplissez les informations pour ajouter un nouveau sous-type de travaux.'}
           </DialogDescription>
         </DialogHeader>
         

@@ -79,6 +79,9 @@ export interface AutreSurface {
   quantity: number;
   surfaceImpactee: "mur" | "plafond" | "sol";
   estDeduction: boolean;
+  largeur?: number;
+  hauteur?: number;
+  impactePlinthe?: boolean;
 }
 
 // Nouveau type pour les items personnalisés dans une pièce
@@ -115,6 +118,9 @@ export interface TypeAutreSurface {
   description: string;
   surfaceImpacteeParDefaut: 'mur' | 'plafond' | 'sol' | 'aucune';
   estDeduction: boolean;
+  largeur?: number;
+  hauteur?: number;
+  impactePlinthe?: boolean;
 }
 
 // Client

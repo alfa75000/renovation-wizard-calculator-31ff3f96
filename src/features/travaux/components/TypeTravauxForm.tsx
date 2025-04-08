@@ -11,8 +11,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { TravauxType } from '@/types';
 
 interface TypeTravauxFormProps {
   isOpen: boolean;
