@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -98,12 +99,10 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
       setSelectedType(selected);
       const surfaceImpactee = mapSurfaceImpacteeToFrontend(selected.surface_impactee);
       
-      const menuiserieName = `Menuiserie n° ${menuiserieCount} (${selected.name} (${selected.largeur}×${selected.hauteur} cm))`;
-      
+      // Ne générons pas de nom ici pour éviter le problème de numérotation
       setNewMenuiserie((prev) => ({ 
         ...prev, 
         type: selected.name,
-        name: menuiserieName,
         largeur: selected.largeur,
         hauteur: selected.hauteur,
         surfaceImpactee,
@@ -152,16 +151,18 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
       return;
     }
     
+    // Créer un objet menuiserie à ajouter
     const menuiserieToAdd = {
       ...newMenuiserie,
       menuiserie_type_id: selectedTypeId,
       impactePlinthe
     };
     
+    // Ajouter la menuiserie
     onAddMenuiserie(menuiserieToAdd, quantity);
     
+    // Réinitialiser le formulaire
     setMenuiserieCount(prevCount => prevCount + 1);
-    
     setNewMenuiserie(prev => ({
       ...prev,
       name: "",
@@ -260,7 +261,7 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4 mb-4">
-        <div className="md:col-span-6">
+        <div className="md:col-span-7">
           <Label htmlFor="menuiserieDescription">Descriptif</Label>
           <Textarea
             id="menuiserieDescription"
@@ -268,13 +269,13 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
             value={newMenuiserie.description || ''}
             onChange={handleMenuiserieChange}
             placeholder="Description détaillée de la menuiserie"
-            className="mt-1 min-h-[80px]"
+            className="mt-1 min-h-[80px] max-h-[120px]"
           />
         </div>
         
-        <div className="md:col-span-6">
-          <div className="flex gap-4 items-start">
-            <div className="w-3/6">
+        <div className="md:col-span-5">
+          <div className="grid grid-cols-2 gap-2">
+            <div>
               <Label htmlFor="menuiserieImpact">Surface impactée</Label>
               <Select
                 value={newMenuiserie.surfaceImpactee || 'mur'}
@@ -291,7 +292,7 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
               </Select>
             </div>
             
-            <div className="w-3/6 mt-7">
+            <div className="mt-8">
               <div className="flex items-center space-x-2">
                 <Checkbox 
                   id="impactePlinthe" 

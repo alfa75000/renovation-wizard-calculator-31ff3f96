@@ -13,18 +13,26 @@ export const useMenuiseries = () => {
     quantity: number = 1
   ): Menuiserie => {
     const surface = (menuiserie.largeur * menuiserie.hauteur) / 10000; // Convert cm² to m²
+    
+    // Déterminer le prochain numéro pour la menuiserie
+    const nextIndex = menuiseries.length + 1;
+    
+    // Si un nom a été fourni, on l'utilise comme base, sinon on utilise le type
+    const baseInfo = menuiserie.type ? `(${menuiserie.type} (${menuiserie.largeur}×${menuiserie.hauteur} cm))` : '';
+    const generatedName = `Menuiserie n° ${nextIndex} ${baseInfo}`;
+    
+    // Créer la nouvelle menuiserie avec le bon nom
     const newMenuiserie: Menuiserie = {
       ...menuiserie,
       id: uuidv4(),
       quantity,
-      surface
+      surface,
+      name: menuiserie.name || generatedName
     };
 
     setMenuiseries(prevMenuiseries => {
       // Ajouter la nouvelle menuiserie
       const updatedMenuiseries = [...prevMenuiseries, newMenuiserie];
-      
-      // Retourner les menuiseries mises à jour
       return updatedMenuiseries;
     });
     
