@@ -35,7 +35,7 @@ export const fetchClients = async (): Promise<Client[]> => {
       email: client.email || '',
       tel1: client.tel1 || '',
       tel2: client.tel2 || '',
-      typeClient: client.client_type_id || '', // Utilisation de client_type_id
+      typeClient: client.client_type_id || 'particulier', // Utilisation de client_type_id
       autreInfo: client.autre_info || '',
       infosComplementaires: client.infos_complementaires || '',
     }));
@@ -65,45 +65,45 @@ export const createClient = async (client: Client): Promise<Client | null> => {
       tel1: client.tel1 || client.telephone, // Utiliser tel1 ou telephone
       tel2: client.tel2,
       email: client.email,
-      client_type_id: client.typeClient || null, // Permettre null si vide
+      client_type_id: client.typeClient,
       autre_info: client.autreInfo,
       infos_complementaires: client.infosComplementaires
     };
     
-    // Utiliser upsert pour gérer les erreurs RLS
-    const { data, error } = await supabase
+    // Insérer le client dans la base de données
+    const { error: insertError, data: insertData } = await supabase
       .from('clients')
       .insert(supabaseClient)
-      .select('*')
-      .single();
+      .select();
       
-    if (error) {
-      console.error('[clientsService] Erreur lors de la création du client:', error);
-      throw error;
+    if (insertError) {
+      console.error('[clientsService] Erreur lors de la création du client:', insertError);
+      throw insertError;
     }
     
-    if (!data) {
-      console.error('[clientsService] Aucune donnée retournée après la création');
+    if (!insertData || insertData.length === 0) {
+      console.error('[clientsService] Aucune donnée retournée après l\'insertion');
       return null;
     }
     
-    console.log('[clientsService] Client créé avec succès:', data);
+    const newClient = insertData[0];
+    console.log('[clientsService] Client créé avec succès:', newClient);
     
     // Retourner le client créé au format Client
     return {
-      id: data.id,
-      nom: data.nom || '',
-      prenom: data.prenom || '',
-      adresse: data.adresse || '',
-      telephone: data.tel1 || '',
-      codePostal: data.code_postal || '',
-      ville: data.ville || '',
-      email: data.email || '',
-      tel1: data.tel1 || '',
-      tel2: data.tel2 || '',
-      typeClient: data.client_type_id || '',
-      autreInfo: data.autre_info || '',
-      infosComplementaires: data.infos_complementaires || '',
+      id: newClient.id,
+      nom: newClient.nom || '',
+      prenom: newClient.prenom || '',
+      adresse: newClient.adresse || '',
+      telephone: newClient.tel1 || '',
+      codePostal: newClient.code_postal || '',
+      ville: newClient.ville || '',
+      email: newClient.email || '',
+      tel1: newClient.tel1 || '',
+      tel2: newClient.tel2 || '',
+      typeClient: newClient.client_type_id || 'particulier',
+      autreInfo: newClient.autre_info || '',
+      infosComplementaires: newClient.infos_complementaires || '',
     };
   } catch (error) {
     console.error('[clientsService] Exception lors de la création du client:', error);
@@ -136,45 +136,58 @@ export const updateClient = async (id: string, client: Partial<Client>): Promise
     if (client.tel2 !== undefined) supabaseClient.tel2 = client.tel2;
     if (client.telephone !== undefined) supabaseClient.tel1 = client.telephone; // Compatibilité
     if (client.email !== undefined) supabaseClient.email = client.email;
-    if (client.typeClient !== undefined) supabaseClient.client_type_id = client.typeClient || null; // Permettre null
+    if (client.typeClient !== undefined) supabaseClient.client_type_id = client.typeClient;
     if (client.autreInfo !== undefined) supabaseClient.autre_info = client.autreInfo;
     if (client.infosComplementaires !== undefined) supabaseClient.infos_complementaires = client.infosComplementaires;
     
-    // Mise à jour du client dans la base de données avec retour des données
-    const { data, error } = await supabase
+    // Mise à jour du client dans la base de données
+    const { error: updateError, data: updateData } = await supabase
       .from('clients')
       .update(supabaseClient)
       .eq('id', id)
-      .select('*')
-      .single();
+      .select();
       
-    if (error) {
-      console.error('[clientsService] Erreur lors de la mise à jour du client:', error);
-      throw error;
+    if (updateError) {
+      console.error('[clientsService] Erreur lors de la mise à jour du client:', updateError);
+      throw updateError;
     }
     
-    if (!data) {
+    if (!updateData || updateData.length === 0) {
       console.error('[clientsService] Aucune donnée retournée après la mise à jour');
-      return null;
+      
+      // Essayer de récupérer le client mis à jour
+      const { data: retrievedClient, error: retrieveError } = await supabase
+        .from('clients')
+        .select('*')
+        .eq('id', id)
+        .single();
+        
+      if (retrieveError || !retrievedClient) {
+        console.error('[clientsService] Impossible de récupérer le client après la mise à jour:', retrieveError);
+        return null;
+      }
+      
+      updateData[0] = retrievedClient;
     }
     
-    console.log('[clientsService] Client mis à jour avec succès:', data);
+    const updatedClient = updateData[0];
+    console.log('[clientsService] Client mis à jour avec succès:', updatedClient);
     
     // Retourner le client mis à jour au format Client
     return {
-      id: data.id,
-      nom: data.nom || '',
-      prenom: data.prenom || '',
-      adresse: data.adresse || '',
-      telephone: data.tel1 || '',
-      codePostal: data.code_postal || '',
-      ville: data.ville || '',
-      email: data.email || '',
-      tel1: data.tel1 || '',
-      tel2: data.tel2 || '',
-      typeClient: data.client_type_id || '',
-      autreInfo: data.autre_info || '',
-      infosComplementaires: data.infos_complementaires || '',
+      id: updatedClient.id,
+      nom: updatedClient.nom || '',
+      prenom: updatedClient.prenom || '',
+      adresse: updatedClient.adresse || '',
+      telephone: updatedClient.tel1 || '',
+      codePostal: updatedClient.code_postal || '',
+      ville: updatedClient.ville || '',
+      email: updatedClient.email || '',
+      tel1: updatedClient.tel1 || '',
+      tel2: updatedClient.tel2 || '',
+      typeClient: updatedClient.client_type_id || 'particulier',
+      autreInfo: updatedClient.autre_info || '',
+      infosComplementaires: updatedClient.infos_complementaires || '',
     };
   } catch (error) {
     console.error('[clientsService] Exception lors de la mise à jour du client:', error);
@@ -194,18 +207,6 @@ export const deleteClient = async (id: string): Promise<boolean> => {
       return false;
     }
     
-    // Vérifier que le client existe avant de tenter la suppression
-    const { data: existingClient, error: checkError } = await supabase
-      .from('clients')
-      .select('id')
-      .eq('id', id)
-      .single();
-      
-    if (checkError || !existingClient) {
-      console.error('[clientsService] Le client à supprimer n\'existe pas:', checkError);
-      return false;
-    }
-    
     const { error } = await supabase
       .from('clients')
       .delete()
@@ -214,22 +215,6 @@ export const deleteClient = async (id: string): Promise<boolean> => {
     if (error) {
       console.error('[clientsService] Erreur lors de la suppression du client:', error);
       throw error;
-    }
-    
-    // Vérifier que le client a bien été supprimé
-    const { data: checkDeleted, error: verifyError } = await supabase
-      .from('clients')
-      .select('id')
-      .eq('id', id);
-      
-    if (verifyError) {
-      console.error('[clientsService] Erreur lors de la vérification de la suppression:', verifyError);
-      return false;
-    }
-    
-    if (checkDeleted && checkDeleted.length > 0) {
-      console.error('[clientsService] Le client n\'a pas été supprimé correctement');
-      return false;
     }
     
     console.log('[clientsService] Client supprimé avec succès');

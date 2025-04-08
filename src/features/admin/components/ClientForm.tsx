@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   DialogFooter
 } from "@/components/ui/dialog";
@@ -11,7 +11,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Client, typesClients } from '@/types';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useClients } from '@/contexts/ClientsContext';
-import { toast } from 'sonner';
 
 interface ClientFormProps {
   clientId?: string | null;
@@ -30,7 +29,7 @@ const ClientForm: React.FC<ClientFormProps> = ({
   isSubmitting = false,
   clientToEdit = null
 }) => {
-  const { state, dispatch, clientTypes, isLoading, error } = useClients();
+  const { state, dispatch, clientTypes, isLoading } = useClients();
   const [formData, setFormData] = useState<Client>({
     id: '',
     nom: '',
@@ -42,7 +41,7 @@ const ClientForm: React.FC<ClientFormProps> = ({
     email: '',
     tel1: '',
     tel2: '',
-    typeClient: '',
+    typeClient: 'particulier',
     autreInfo: '',
     infosComplementaires: ''
   });
@@ -50,14 +49,6 @@ const ClientForm: React.FC<ClientFormProps> = ({
   // État pour le dialogue d'alerte de confirmation
   const [confirmClose, setConfirmClose] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
-
-  // Réinitialiser l'erreur de formulaire quand le contexte change
-  useEffect(() => {
-    if (error) {
-      setFormError(error);
-    }
-  }, [error]);
 
   // Initialiser le formulaire avec les données du client à éditer
   useEffect(() => {
@@ -71,7 +62,7 @@ const ClientForm: React.FC<ClientFormProps> = ({
     if (clientId) {
       const client = state.clients.find(c => c.id === clientId);
       if (client) {
-        setFormData({...client});
+        setFormData(client);
         return;
       }
     }
@@ -88,41 +79,29 @@ const ClientForm: React.FC<ClientFormProps> = ({
       email: '',
       tel1: '',
       tel2: '',
-      typeClient: clientTypes.length > 0 ? clientTypes[0].id : '',
+      typeClient: 'particulier',
       autreInfo: '',
       infosComplementaires: ''
     });
-  }, [clientId, clientToEdit, state.clients, isOpen, clientTypes]);
+  }, [clientId, clientToEdit, state.clients, isOpen]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    // Effacer les erreurs quand l'utilisateur commence à taper
-    setFormError(null);
   };
 
   const handleTypeClientChange = (value: string) => {
     setFormData(prev => ({ ...prev, typeClient: value }));
-    setFormError(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (submitting || isSubmitting || isLoading) {
-      console.log("Formulaire déjà en cours de soumission, ignoré");
       return; // Éviter les soumissions multiples
     }
     
-    // Validation basique
-    if (!formData.nom) {
-      setFormError("Le nom est obligatoire");
-      toast.error("Le nom est obligatoire");
-      return;
-    }
-    
     setSubmitting(true);
-    setFormError(null);
     
     // S'assurer que tel1 est synchronisé avec telephone pour la compatibilité
     const updatedFormData = {
@@ -154,18 +133,9 @@ const ClientForm: React.FC<ClientFormProps> = ({
           });
         }
       }
-      
-      // Gérer la fermeture après succès
-      // Si le contexte est en erreur, ne pas fermer le formulaire
-      if (!error) {
-        // Attendre un court délai pour permettre aux toasts de s'afficher
-        setTimeout(() => {
-          onClose();
-        }, 500);
-      }
-    } catch (err: any) {
-      console.error("Erreur lors de la soumission du formulaire:", err);
-      setFormError(err.message || "Erreur lors de la soumission du formulaire");
+      onClose();
+    } catch (error) {
+      console.error("Erreur lors de la soumission du formulaire:", error);
       // L'erreur est déjà gérée dans le contexte
     } finally {
       setSubmitting(false);
@@ -174,11 +144,6 @@ const ClientForm: React.FC<ClientFormProps> = ({
   
   // Gérer la demande de fermeture
   const handleCloseRequest = () => {
-    // Si le formulaire est en cours de soumission, ne pas permettre la fermeture
-    if (submitting || isSubmitting) {
-      return;
-    }
-    
     // Si le formulaire contient des données, montrer la confirmation
     if (formData.nom || formData.prenom || formData.adresse || formData.tel1 || formData.email) {
       setConfirmClose(true);
@@ -197,12 +162,6 @@ const ClientForm: React.FC<ClientFormProps> = ({
   return (
     <>
       <form onSubmit={handleSubmit} className="space-y-4">
-        {formError && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-            {formError}
-          </div>
-        )}
-        
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="nom">Nom *</Label>
@@ -212,7 +171,6 @@ const ClientForm: React.FC<ClientFormProps> = ({
               value={formData.nom} 
               onChange={handleChange} 
               required 
-              className={formError && !formData.nom ? "border-red-500" : ""}
             />
           </div>
           
@@ -271,7 +229,17 @@ const ClientForm: React.FC<ClientFormProps> = ({
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="tel2">Téléphone secondaire</Label>
+            <Label htmlFor="tel1">Téléphone secondaire 1</Label>
+            <Input 
+              id="tel1" 
+              name="tel1" 
+              value={formData.tel1} 
+              onChange={handleChange} 
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="tel2">Téléphone secondaire 2</Label>
             <Input 
               id="tel2" 
               name="tel2" 
@@ -279,17 +247,17 @@ const ClientForm: React.FC<ClientFormProps> = ({
               onChange={handleChange} 
             />
           </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input 
-              id="email" 
-              name="email" 
-              type="email" 
-              value={formData.email} 
-              onChange={handleChange} 
-            />
-          </div>
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="email">Email</Label>
+          <Input 
+            id="email" 
+            name="email" 
+            type="email" 
+            value={formData.email} 
+            onChange={handleChange} 
+          />
         </div>
         
         <div className="space-y-2">
