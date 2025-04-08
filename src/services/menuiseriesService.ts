@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { MenuiserieType } from '@/types/supabase';
 import { toast } from 'sonner';

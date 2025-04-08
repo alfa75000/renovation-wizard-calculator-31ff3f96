@@ -1,6 +1,4 @@
-
 import React, { useState, useEffect } from 'react';
-import { v4 as uuidv4 } from 'uuid';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,12 +18,10 @@ interface TypeMenuiserieFormProps {
 }
 
 // Options de surface impactée correspondant exactement aux valeurs de l'ENUM dans Supabase
-const surfaceOptions: { value: SurfaceImpactee; label: string }[] = [
-  { value: 'Mur', label: 'Murs' },
-  { value: 'Plafond', label: 'Plafond' },
-  { value: 'Sol', label: 'Sol' },
-  { value: 'Aucune', label: 'Aucune' }
-];
+const surfaceOptions: { value: SurfaceImpactee; label: string }[] = surfacesReference.map(s => ({
+  value: s.id as SurfaceImpactee,
+  label: s.label
+}));
 
 const TypeMenuiserieForm: React.FC<TypeMenuiserieFormProps> = ({
   isOpen,
@@ -46,10 +42,9 @@ const TypeMenuiserieForm: React.FC<TypeMenuiserieFormProps> = ({
       setHauteur(typeToEdit.hauteur);
       setLargeur(typeToEdit.largeur);
       
-      // Conversion de la valeur stockée vers l'enum Supabase
+      // Utiliser directement la valeur de surface comme une valeur de l'enum Supabase
       if (typeToEdit.surfaceReference) {
-        const surfaceRefValue = mapToSupabaseSurfaceImpactee(typeToEdit.surfaceReference);
-        setSurfaceReference(surfaceRefValue);
+        setSurfaceReference(typeToEdit.surfaceReference as SurfaceImpactee);
       }
       
       setImpactePlinthe(!!typeToEdit.impactePlinthe);
@@ -65,26 +60,6 @@ const TypeMenuiserieForm: React.FC<TypeMenuiserieFormProps> = ({
     }
   }, [typeToEdit, isOpen]);
 
-  // Fonction pour mapper les anciennes valeurs vers les valeurs de l'enum Supabase
-  const mapToSupabaseSurfaceImpactee = (value: string): SurfaceImpactee => {
-    switch(value.toLowerCase()) {
-      case 'mur':
-      case 'murs':
-      case 'surfacenettemurs':
-        return 'Mur';
-      case 'plafond':
-      case 'surfacenetteplafond':
-        return 'Plafond';
-      case 'sol':
-      case 'surfacenettesol':
-        return 'Sol';
-      case 'aucune':
-        return 'Aucune';
-      default:
-        return 'Mur'; // Valeur par défaut si non reconnue
-    }
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -94,7 +69,7 @@ const TypeMenuiserieForm: React.FC<TypeMenuiserieFormProps> = ({
     }
     
     const typeData: TypeMenuiserie = {
-      id: typeToEdit ? typeToEdit.id : uuidv4(),
+      id: typeToEdit ? typeToEdit.id : '',
       nom: nom.trim(),
       hauteur: Number(hauteur),
       largeur: Number(largeur),
