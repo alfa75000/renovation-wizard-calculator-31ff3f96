@@ -1,24 +1,23 @@
 
 import { useState, useEffect } from 'react';
 
-type StorageOptions = {
-  syncOnMount?: boolean;
-  autoSave?: boolean;
-  debounce?: number;
-};
-
 /**
- * Hook personnalisé pour la synchronisation bidirectionnelle avec localStorage
- * @param key La clé pour stocker dans localStorage
- * @param initialState État initial si rien n'est trouvé dans localStorage
- * @param options Options de configuration
- * @returns [state, setState, saveToStorage, loadFromStorage]
+ * @deprecated Ce hook est déprécié et sera supprimé dans une version future.
+ * Utilisez les services Supabase à la place pour la persistance des données.
  */
 export function useLocalStorageSync<T>(
   key: string,
   initialState: T,
-  options: StorageOptions = {}
+  options: {
+    syncOnMount?: boolean;
+    autoSave?: boolean;
+    debounce?: number;
+  } = {}
 ): [T, (value: T | ((prevState: T) => T)) => void, () => void, () => void] {
+  console.warn(
+    `[DEPRECATED] useLocalStorageSync est déprécié. Utilisez les services Supabase à la place. Clé: ${key}`
+  );
+  
   // Options par défaut
   const { syncOnMount = true, autoSave = true, debounce = 500 } = options;
   

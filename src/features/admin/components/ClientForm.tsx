@@ -22,13 +22,15 @@ interface ClientFormProps {
   onClose: () => void;
   clientToEdit: Client | null;
   onSubmit: (clientData: Client) => void;
+  isSubmitting?: boolean;
 }
 
 const ClientForm: React.FC<ClientFormProps> = ({
   isOpen,
   onClose,
   clientToEdit,
-  onSubmit
+  onSubmit,
+  isSubmitting = false
 }) => {
   const [formData, setFormData] = useState<Client>({
     id: '',
@@ -84,7 +86,15 @@ const ClientForm: React.FC<ClientFormProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    
+    // S'assurer que tel1 est synchronisé avec telephone pour la compatibilité
+    const updatedFormData = {
+      ...formData,
+      tel1: formData.tel1 || formData.telephone,
+      telephone: formData.telephone || formData.tel1,
+    };
+    
+    onSubmit(updatedFormData);
   };
   
   // Gérer la demande de fermeture
@@ -255,11 +265,11 @@ const ClientForm: React.FC<ClientFormProps> = ({
             </div>
             
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={handleCloseRequest}>
+              <Button type="button" variant="outline" onClick={handleCloseRequest} disabled={isSubmitting}>
                 Annuler
               </Button>
-              <Button type="submit">
-                {clientToEdit ? 'Mettre à jour' : 'Ajouter'}
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Chargement...' : clientToEdit ? 'Mettre à jour' : 'Ajouter'}
               </Button>
             </DialogFooter>
           </form>
