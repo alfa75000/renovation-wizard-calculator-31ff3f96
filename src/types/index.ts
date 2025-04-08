@@ -1,3 +1,4 @@
+
 // Type pour un type de menuiserie (utilisé dans le contexte MenuiseriesTypesContext)
 export interface TypeMenuiserie {
   id: string;
@@ -87,6 +88,18 @@ export interface Travail {
   tva: number;
   pieceId: string;
   surfaceImpactee: SurfaceImpactee;
+  
+  // Legacy properties needed for compatibility
+  typeTravauxId?: string;
+  typeTravauxLabel?: string;
+  sousTypeId?: string;
+  sousTypeLabel?: string;
+  prixFournitures?: number;
+  prixMainOeuvre?: number;
+  unite?: string;
+  quantite?: number;
+  tauxTVA?: number;
+  personnalisation?: string;
 }
 
 export interface ProjectState {
@@ -105,3 +118,134 @@ export type ProjectAction =
   | { type: 'DELETE_TRAVAIL'; payload: string }
   | { type: 'RESET_PROJECT' }
   | { type: 'LOAD_PROJECT'; payload: ProjectState };
+
+// Types for AutresSurfacesContext
+export interface TypeAutreSurface {
+  id: string;
+  nom: string;
+  surfaceReference: string;
+}
+
+export interface AutreSurface {
+  id: string;
+  type: string;
+  typeName?: string;
+  largeur: number;
+  hauteur: number;
+  surface: number;
+  pieceId: string;
+}
+
+export interface AutresSurfacesState {
+  typesAutresSurfaces: TypeAutreSurface[];
+}
+
+// Types for ClientsContext
+export interface Client {
+  id: string;
+  nom: string;
+  prenom: string;
+  adresse: string;
+  telephone: string;
+  codePostal: string;
+  ville: string;
+  email: string;
+  tel1: string;
+  tel2: string;
+  typeClient: string;
+  autreInfo: string;
+  infosComplementaires: string;
+}
+
+export interface ClientsState {
+  clients: Client[];
+}
+
+export type ClientsAction =
+  | { type: 'ADD_CLIENT'; payload: Client }
+  | { type: 'UPDATE_CLIENT'; payload: { id: string; client: Partial<Client> } }
+  | { type: 'DELETE_CLIENT'; payload: string }
+  | { type: 'LOAD_CLIENTS'; payload: Client[] }
+  | { type: 'RESET_CLIENTS' };
+
+// Types Clients data
+export const typesClients = [
+  { id: 'particulier', label: 'Particulier' },
+  { id: 'professionnel', label: 'Professionnel' },
+  { id: 'administration', label: 'Administration' },
+  { id: 'autre', label: 'Autre' }
+];
+
+// Types for MenuiserieContext
+export interface Menuiserie {
+  id: string;
+  type: string;
+  typeName?: string;
+  largeur: number;
+  hauteur: number;
+  surface: number;
+  pieceId: string;
+}
+
+// Types for ProjetChantierContext
+export interface ProjetChantier {
+  id: string;
+  name: string;
+  description?: string;
+  clientId?: string;
+  address?: string;
+  startDate?: string;
+  endDate?: string;
+  status: 'draft' | 'pending' | 'in_progress' | 'completed' | 'cancelled';
+  budget?: number;
+  notes?: string;
+}
+
+export interface ProjetChantierState {
+  projets: ProjetChantier[];
+  currentProjet: ProjetChantier | null;
+}
+
+export type ProjetChantierAction =
+  | { type: 'ADD_PROJET'; payload: ProjetChantier }
+  | { type: 'UPDATE_PROJET'; payload: { id: string; projet: Partial<ProjetChantier> } }
+  | { type: 'DELETE_PROJET'; payload: string }
+  | { type: 'SET_CURRENT_PROJET'; payload: string | null }
+  | { type: 'LOAD_PROJETS'; payload: ProjetChantier[] }
+  | { type: 'RESET_PROJETS' };
+
+// Types for TravauxTypesContext
+export interface TypeTravauxItem {
+  id: string;
+  name: string;
+  description?: string;
+}
+
+export interface SousTypeTravauxItem {
+  id: string;
+  name: string;
+  description?: string;
+  typeId: string;
+  groupId?: string;
+}
+
+export interface TravauxType {
+  id: string;
+  name: string;
+  description?: string;
+  sousTypes?: SousTypeTravauxItem[];
+}
+
+export interface TravauxTypesState {
+  travauxTypes: TravauxType[];
+}
+
+export type TravauxTypesAction =
+  | { type: 'ADD_TYPE_TRAVAUX'; payload: TypeTravauxItem }
+  | { type: 'UPDATE_TYPE_TRAVAUX'; payload: { id: string; type: Partial<TypeTravauxItem> } }
+  | { type: 'DELETE_TYPE_TRAVAUX'; payload: string }
+  | { type: 'ADD_SOUS_TYPE_TRAVAUX'; payload: SousTypeTravauxItem }
+  | { type: 'UPDATE_SOUS_TYPE_TRAVAUX'; payload: { id: string; sousType: Partial<SousTypeTravauxItem> } }
+  | { type: 'DELETE_SOUS_TYPE_TRAVAUX'; payload: string }
+  | { type: 'LOAD_TYPES_TRAVAUX'; payload: TravauxType[] }
+  | { type: 'RESET_TYPES_TRAVAUX' };

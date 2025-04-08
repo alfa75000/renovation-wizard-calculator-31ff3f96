@@ -33,16 +33,18 @@ const TravailForm: React.FC<TravailFormProps> = ({
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [description, setDescription] = useState<string>(travailAModifier?.description || "");
   const [personnalisation, setPersonnalisation] = useState<string>(travailAModifier?.personnalisation || "");
-  const [quantite, setQuantite] = useState<number>(travailAModifier?.quantite || 0);
-  const [unite, setUnite] = useState<string>(travailAModifier?.unite || "m²");
+  const [quantite, setQuantite] = useState<number>(travailAModifier?.quantite || travailAModifier?.quantity || 0);
+  const [unite, setUnite] = useState<string>(travailAModifier?.unite || travailAModifier?.unit || "m²");
   const [prixFournitures, setPrixFournitures] = useState<number>(
-    travailAModifier?.prixFournitures || 0
+    travailAModifier?.prixFournitures || travailAModifier?.supplyPrice || 0
   );
   const [prixMainOeuvre, setPrixMainOeuvre] = useState<number>(
-    travailAModifier?.prixMainOeuvre || 0
+    travailAModifier?.prixMainOeuvre || travailAModifier?.laborPrice || 0
   );
-  const [tauxTVA, setTauxTVA] = useState<number>(travailAModifier?.tauxTVA || 10);
-  const [surfaceImpactee, setSurfaceImpactee] = useState<SurfaceImpactee>('Mur');
+  const [tauxTVA, setTauxTVA] = useState<number>(travailAModifier?.tauxTVA || travailAModifier?.tva || 10);
+  const [surfaceImpactee, setSurfaceImpactee] = useState<SurfaceImpactee>(
+    travailAModifier?.surfaceImpactee || 'Mur'
+  );
 
   useEffect(() => {
     setGroupId("");
@@ -124,19 +126,25 @@ const TravailForm: React.FC<TravailFormProps> = ({
     
     onAddTravail({
       pieceId: piece.id,
+      name: `${typeTravauxLabel}: ${sousTypeLabel}`,
+      description: description,
+      quantity: quantite,
+      unit: unite,
+      supplyPrice: prixFournitures,
+      laborPrice: prixMainOeuvre,
+      tva: tauxTVA,
+      // Champs legacy pour compatibilité
       typeTravauxId,
       typeTravauxLabel,
       sousTypeId,
       sousTypeLabel,
-      description,
       personnalisation,
       quantite,
-      unite,
+      unite, 
       prixFournitures,
       prixMainOeuvre,
       tauxTVA,
-      commentaire: "", // Supprimé comme demandé
-      surfaceImpactee, // Nouvelle propriété
+      surfaceImpactee,
     });
   };
 
