@@ -73,6 +73,7 @@ export const ClientsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [clientTypes, setClientTypes] = useState<ClientType[]>([]);
+  const [isProcessing, setIsProcessing] = useState(false);
   
   // Charger les types de clients depuis Supabase
   useEffect(() => {
@@ -112,61 +113,82 @@ export const ClientsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   
   // Fonction pour obtenir le nom du type de client à partir de son ID
   const getClientTypeName = (typeId: string): string => {
+    if (!typeId) return '';
     const clientType = clientTypes.find(type => type.id === typeId);
     return clientType?.name || typeId;
   };
   
   // Intercepter les actions du dispatch pour synchroniser avec Supabase
   const handleDispatch = async (action: ClientsAction) => {
+    if (isProcessing) {
+      console.log('[ClientsContext] Une opération est déjà en cours, veuillez patienter');
+      return;
+    }
+    
     try {
+      setIsProcessing(true);
       setIsLoading(true);
+      setError(null);
       
       switch(action.type) {
         case 'ADD_CLIENT': {
           console.log('[ClientsContext] Ajout d\'un nouveau client', action.payload);
-          const newClient = action.payload;
-          const result = await createClient(newClient);
+          
+          const result = await createClient(action.payload);
           
           if (!result) {
+            setError('Erreur lors de la création du client');
             toast.error('Erreur lors de la création du client');
-          } else {
-            dispatch({ type: 'ADD_CLIENT', payload: result });
-            toast.success('Client ajouté avec succès');
+            return;
           }
+          
+          // Mettre à jour le state avec le client retourné par Supabase (avec l'ID)
+          dispatch({ type: 'ADD_CLIENT', payload: result });
+          toast.success('Client ajouté avec succès');
           break;
         }
         
         case 'UPDATE_CLIENT': {
           console.log('[ClientsContext] Mise à jour du client', action.payload);
           const { id, client } = action.payload;
+          
           const result = await updateClient(id, client);
           
           if (!result) {
+            setError('Erreur lors de la mise à jour du client');
             toast.error('Erreur lors de la mise à jour du client');
-            // Recharger les clients pour annuler la modification locale
+            
+            // Recharger les clients pour assurer la cohérence des données
             const clients = await fetchClients();
             dispatch({ type: 'LOAD_CLIENTS', payload: clients });
-          } else {
-            dispatch({ type: 'UPDATE_CLIENT', payload: { id, client: result } });
-            toast.success('Client mis à jour avec succès');
+            return;
           }
+          
+          // Mettre à jour le state avec le client mis à jour
+          dispatch({ type: 'UPDATE_CLIENT', payload: { id, client: result } });
+          toast.success('Client mis à jour avec succès');
           break;
         }
         
         case 'DELETE_CLIENT': {
           console.log('[ClientsContext] Suppression du client', action.payload);
           const id = action.payload;
-          const result = await deleteClient(id);
           
-          if (!result) {
+          const success = await deleteClient(id);
+          
+          if (!success) {
+            setError('Erreur lors de la suppression du client');
             toast.error('Erreur lors de la suppression du client');
-            // Recharger les clients pour annuler la modification locale
+            
+            // Recharger les clients pour assurer la cohérence des données
             const clients = await fetchClients();
             dispatch({ type: 'LOAD_CLIENTS', payload: clients });
-          } else {
-            dispatch({ type: 'DELETE_CLIENT', payload: id });
-            toast.success('Client supprimé avec succès');
+            return;
           }
+          
+          // Supprimer le client du state
+          dispatch({ type: 'DELETE_CLIENT', payload: id });
+          toast.success('Client supprimé avec succès');
           break;
         }
         
@@ -178,6 +200,7 @@ export const ClientsProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
     } catch (error) {
       console.error('[ClientsContext] Erreur lors de la synchronisation avec Supabase:', error);
+      setError('Erreur de synchronisation avec la base de données');
       toast.error('Erreur de synchronisation avec la base de données');
       
       // Recharger les clients en cas d'erreur pour avoir un état cohérent
@@ -189,6 +212,7 @@ export const ClientsProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
     } finally {
       setIsLoading(false);
+      setIsProcessing(false);
     }
   };
 

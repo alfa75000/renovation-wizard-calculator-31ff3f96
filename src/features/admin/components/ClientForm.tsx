@@ -29,7 +29,7 @@ const ClientForm: React.FC<ClientFormProps> = ({
   isSubmitting = false,
   clientToEdit = null
 }) => {
-  const { state, dispatch, clientTypes, isLoading } = useClients();
+  const { state, dispatch, clientTypes, isLoading, error } = useClients();
   const [formData, setFormData] = useState<Client>({
     id: '',
     nom: '',
@@ -41,7 +41,7 @@ const ClientForm: React.FC<ClientFormProps> = ({
     email: '',
     tel1: '',
     tel2: '',
-    typeClient: 'particulier',
+    typeClient: '',
     autreInfo: '',
     infosComplementaires: ''
   });
@@ -79,11 +79,11 @@ const ClientForm: React.FC<ClientFormProps> = ({
       email: '',
       tel1: '',
       tel2: '',
-      typeClient: 'particulier',
+      typeClient: clientTypes.length > 0 ? clientTypes[0].id : '',
       autreInfo: '',
       infosComplementaires: ''
     });
-  }, [clientId, clientToEdit, state.clients, isOpen]);
+  }, [clientId, clientToEdit, state.clients, isOpen, clientTypes]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -133,7 +133,10 @@ const ClientForm: React.FC<ClientFormProps> = ({
           });
         }
       }
-      onClose();
+      
+      if (!error) {
+        onClose();
+      }
     } catch (error) {
       console.error("Erreur lors de la soumission du formulaire:", error);
       // L'erreur est déjà gérée dans le contexte

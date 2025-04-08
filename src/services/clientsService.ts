@@ -35,7 +35,7 @@ export const fetchClients = async (): Promise<Client[]> => {
       email: client.email || '',
       tel1: client.tel1 || '',
       tel2: client.tel2 || '',
-      typeClient: client.client_type_id || 'particulier', // Utilisation de client_type_id
+      typeClient: client.client_type_id || '', // Utilisation de client_type_id
       autreInfo: client.autre_info || '',
       infosComplementaires: client.infos_complementaires || '',
     }));
@@ -65,28 +65,37 @@ export const createClient = async (client: Client): Promise<Client | null> => {
       tel1: client.tel1 || client.telephone, // Utiliser tel1 ou telephone
       tel2: client.tel2,
       email: client.email,
-      client_type_id: client.typeClient,
+      client_type_id: client.typeClient || null, // Permettre null si vide
       autre_info: client.autreInfo,
       infos_complementaires: client.infosComplementaires
     };
     
-    // Insérer le client dans la base de données
-    const { error: insertError, data: insertData } = await supabase
+    // Insérer le client dans la base de données - sans récupérer les données
+    const { error: insertError } = await supabase
       .from('clients')
-      .insert(supabaseClient)
-      .select();
+      .insert(supabaseClient);
       
     if (insertError) {
       console.error('[clientsService] Erreur lors de la création du client:', insertError);
       throw insertError;
     }
     
-    if (!insertData || insertData.length === 0) {
-      console.error('[clientsService] Aucune donnée retournée après l\'insertion');
+    // Récupérer le client inséré séparément pour éviter les erreurs RLS
+    // Nous récupérons le dernier client créé avec les mêmes attributs de base
+    const { data: insertedData, error: fetchError } = await supabase
+      .from('clients')
+      .select('*')
+      .eq('nom', client.nom)
+      .eq('prenom', client.prenom)
+      .order('created_at', { ascending: false })
+      .limit(1);
+    
+    if (fetchError || !insertedData || insertedData.length === 0) {
+      console.error('[clientsService] Erreur lors de la récupération du client créé:', fetchError);
       return null;
     }
     
-    const newClient = insertData[0];
+    const newClient = insertedData[0];
     console.log('[clientsService] Client créé avec succès:', newClient);
     
     // Retourner le client créé au format Client
@@ -101,7 +110,7 @@ export const createClient = async (client: Client): Promise<Client | null> => {
       email: newClient.email || '',
       tel1: newClient.tel1 || '',
       tel2: newClient.tel2 || '',
-      typeClient: newClient.client_type_id || 'particulier',
+      typeClient: newClient.client_type_id || '',
       autreInfo: newClient.autre_info || '',
       infosComplementaires: newClient.infos_complementaires || '',
     };
@@ -136,41 +145,38 @@ export const updateClient = async (id: string, client: Partial<Client>): Promise
     if (client.tel2 !== undefined) supabaseClient.tel2 = client.tel2;
     if (client.telephone !== undefined) supabaseClient.tel1 = client.telephone; // Compatibilité
     if (client.email !== undefined) supabaseClient.email = client.email;
-    if (client.typeClient !== undefined) supabaseClient.client_type_id = client.typeClient;
+    if (client.typeClient !== undefined) supabaseClient.client_type_id = client.typeClient || null; // Permettre null
     if (client.autreInfo !== undefined) supabaseClient.autre_info = client.autreInfo;
     if (client.infosComplementaires !== undefined) supabaseClient.infos_complementaires = client.infosComplementaires;
     
-    // Mise à jour du client dans la base de données
-    const { error: updateError, data: updateData } = await supabase
+    // Mise à jour du client dans la base de données sans récupérer les données
+    const { error: updateError } = await supabase
       .from('clients')
       .update(supabaseClient)
-      .eq('id', id)
-      .select();
+      .eq('id', id);
       
     if (updateError) {
       console.error('[clientsService] Erreur lors de la mise à jour du client:', updateError);
       throw updateError;
     }
     
-    if (!updateData || updateData.length === 0) {
-      console.error('[clientsService] Aucune donnée retournée après la mise à jour');
+    // Récupérer le client mis à jour séparément
+    const { data: updatedClient, error: fetchError } = await supabase
+      .from('clients')
+      .select('*')
+      .eq('id', id)
+      .single();
       
-      // Essayer de récupérer le client mis à jour
-      const { data: retrievedClient, error: retrieveError } = await supabase
-        .from('clients')
-        .select('*')
-        .eq('id', id)
-        .single();
-        
-      if (retrieveError || !retrievedClient) {
-        console.error('[clientsService] Impossible de récupérer le client après la mise à jour:', retrieveError);
-        return null;
-      }
-      
-      updateData[0] = retrievedClient;
+    if (fetchError) {
+      console.error('[clientsService] Erreur lors de la récupération du client mis à jour:', fetchError);
+      return null;
     }
     
-    const updatedClient = updateData[0];
+    if (!updatedClient) {
+      console.error('[clientsService] Le client mis à jour n\'a pas été trouvé');
+      return null;
+    }
+    
     console.log('[clientsService] Client mis à jour avec succès:', updatedClient);
     
     // Retourner le client mis à jour au format Client
@@ -185,7 +191,7 @@ export const updateClient = async (id: string, client: Partial<Client>): Promise
       email: updatedClient.email || '',
       tel1: updatedClient.tel1 || '',
       tel2: updatedClient.tel2 || '',
-      typeClient: updatedClient.client_type_id || 'particulier',
+      typeClient: updatedClient.client_type_id || '',
       autreInfo: updatedClient.autre_info || '',
       infosComplementaires: updatedClient.infos_complementaires || '',
     };
