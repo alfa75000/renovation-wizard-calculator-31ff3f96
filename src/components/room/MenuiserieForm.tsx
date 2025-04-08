@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -53,7 +52,6 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
   const [surfaceCalculee, setSurfaceCalculee] = useState(0);
   const [impactePlinthe, setImpactePlinthe] = useState(false);
 
-  // Chargement des types de menuiseries depuis Supabase
   useEffect(() => {
     const loadMenuiserieTypes = async () => {
       setLoading(true);
@@ -85,7 +83,6 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
     loadMenuiserieTypes();
   }, []);
 
-  // Calculer la surface lorsque les dimensions changent
   useEffect(() => {
     const largeur = newMenuiserie.largeur || 0;
     const hauteur = newMenuiserie.hauteur || 0;
@@ -101,8 +98,7 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
       setSelectedType(selected);
       const surfaceImpactee = mapSurfaceImpacteeToFrontend(selected.surface_impactee);
       
-      // Générer un numéro automatique pour la menuiserie
-      const menuiserieName = `Menuiserie n° 1 (${selected.name} (${selected.largeur}×${selected.hauteur} cm))`;
+      const menuiserieName = `Menuiserie n° ${menuiserieCount} (${selected.name} (${selected.largeur}×${selected.hauteur} cm))`;
       
       setNewMenuiserie((prev) => ({ 
         ...prev, 
@@ -156,19 +152,16 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
       return;
     }
     
-    // Ajout des informations spécifiques du type sélectionné
     const menuiserieToAdd = {
       ...newMenuiserie,
-      menuiserie_type_id: selectedTypeId,  // Ajouter l'ID du type sélectionné pour Supabase
+      menuiserie_type_id: selectedTypeId,
       impactePlinthe
     };
     
     onAddMenuiserie(menuiserieToAdd, quantity);
     
-    // Incrémentation du compteur de menuiserie
     setMenuiserieCount(prevCount => prevCount + 1);
     
-    // Réinitialiser le formulaire mais conserver le type
     setNewMenuiserie(prev => ({
       ...prev,
       name: "",
@@ -202,17 +195,7 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
           </Select>
         </div>
         
-        <div className="md:col-span-3">
-          <Label htmlFor="menuiserieNumAuto">Numérotation automatique</Label>
-          <Input
-            id="menuiserieNumAuto"
-            value="Menuiserie n° 1"
-            readOnly
-            className="mt-1 bg-gray-100"
-          />
-        </div>
-        
-        <div className="md:col-span-4">
+        <div className="md:col-span-7">
           <Label htmlFor="menuiserieName">Nom</Label>
           <Input
             id="menuiserieName"
@@ -282,39 +265,41 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
           <Textarea
             id="menuiserieDescription"
             name="description"
-            value={selectedType?.description || ''}
+            value={newMenuiserie.description || ''}
             onChange={handleMenuiserieChange}
             placeholder="Description détaillée de la menuiserie"
-            className="mt-1 min-h-[120px]"
+            className="mt-1 min-h-[80px]"
           />
         </div>
         
         <div className="md:col-span-6">
-          <div className="mb-4">
-            <Label htmlFor="menuiserieImpact">Surface impactée</Label>
-            <Select
-              value={newMenuiserie.surfaceImpactee || 'mur'}
-              onValueChange={handleSurfaceImpacteeChange}
-            >
-              <SelectTrigger id="menuiserieImpact" className="w-full p-2 border rounded mt-1">
-                <SelectValue placeholder="Sélectionner une surface" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="mur">Mur</SelectItem>
-                <SelectItem value="plafond">Plafond</SelectItem>
-                <SelectItem value="sol">Sol</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="mb-4">
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="impactePlinthe" 
-                checked={impactePlinthe} 
-                onCheckedChange={handleImpactePlinthesChange}
-              />
-              <Label htmlFor="impactePlinthe">Impacte plinthes</Label>
+          <div className="flex gap-4 items-start">
+            <div className="w-3/6">
+              <Label htmlFor="menuiserieImpact">Surface impactée</Label>
+              <Select
+                value={newMenuiserie.surfaceImpactee || 'mur'}
+                onValueChange={handleSurfaceImpacteeChange}
+              >
+                <SelectTrigger id="menuiserieImpact" className="w-full p-2 border rounded mt-1">
+                  <SelectValue placeholder="Sélectionner une surface" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="mur">Mur</SelectItem>
+                  <SelectItem value="plafond">Plafond</SelectItem>
+                  <SelectItem value="sol">Sol</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="w-3/6 mt-7">
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="impactePlinthe" 
+                  checked={impactePlinthe} 
+                  onCheckedChange={handleImpactePlinthesChange}
+                />
+                <Label htmlFor="impactePlinthe">Impacte plinthes</Label>
+              </div>
             </div>
           </div>
           
