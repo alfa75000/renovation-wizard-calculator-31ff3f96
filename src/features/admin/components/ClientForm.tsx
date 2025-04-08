@@ -12,6 +12,9 @@ import { Client, typesClients } from '@/types';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useClients } from '@/contexts/ClientsContext';
 
+// ID du type de client "Particulier" dans Supabase
+const DEFAULT_CLIENT_TYPE_ID = '4b3375f8-af78-455f-be8c-1d506df4f753';
+
 interface ClientFormProps {
   clientId?: string | null;
   onClose: () => void;
@@ -41,7 +44,7 @@ const ClientForm: React.FC<ClientFormProps> = ({
     email: '',
     tel1: '',
     tel2: '',
-    typeClient: 'particulier',
+    typeClient: DEFAULT_CLIENT_TYPE_ID, // Définir la valeur par défaut
     autreInfo: '',
     infosComplementaires: ''
   });
@@ -54,7 +57,11 @@ const ClientForm: React.FC<ClientFormProps> = ({
   useEffect(() => {
     // Cas 1: nous avons un clientToEdit directement passé en prop
     if (clientToEdit) {
-      setFormData(clientToEdit);
+      setFormData({
+        ...clientToEdit,
+        // S'assurer que typeClient a une valeur par défaut si non défini
+        typeClient: clientToEdit.typeClient || DEFAULT_CLIENT_TYPE_ID
+      });
       return;
     }
     
@@ -62,12 +69,16 @@ const ClientForm: React.FC<ClientFormProps> = ({
     if (clientId) {
       const client = state.clients.find(c => c.id === clientId);
       if (client) {
-        setFormData(client);
+        setFormData({
+          ...client,
+          // S'assurer que typeClient a une valeur par défaut si non défini
+          typeClient: client.typeClient || DEFAULT_CLIENT_TYPE_ID
+        });
         return;
       }
     }
     
-    // Cas 3: nouveau client
+    // Cas 3: nouveau client - utiliser l'état initial avec la valeur par défaut
     setFormData({
       id: '', // ID vide pour les nouveaux clients
       nom: '',
@@ -79,7 +90,7 @@ const ClientForm: React.FC<ClientFormProps> = ({
       email: '',
       tel1: '',
       tel2: '',
-      typeClient: 'particulier',
+      typeClient: DEFAULT_CLIENT_TYPE_ID,
       autreInfo: '',
       infosComplementaires: ''
     });
@@ -104,10 +115,12 @@ const ClientForm: React.FC<ClientFormProps> = ({
     setSubmitting(true);
     
     // S'assurer que tel1 est synchronisé avec telephone pour la compatibilité
+    // Et que typeClient a une valeur par défaut
     const updatedFormData = {
       ...formData,
       tel1: formData.tel1 || formData.telephone,
       telephone: formData.telephone || formData.tel1,
+      typeClient: formData.typeClient || DEFAULT_CLIENT_TYPE_ID,
     };
     
     try {

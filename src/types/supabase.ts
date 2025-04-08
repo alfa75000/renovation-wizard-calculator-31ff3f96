@@ -14,6 +14,8 @@ export type ServiceGroup = {
 
 // Type Surface pour Supabase enum type_surface_enum
 export type SurfaceImpactee = 'Mur' | 'Plafond' | 'Sol' | 'Aucune';
+// Type Ajustement pour Supabase enum adjustment_type_enum
+export type AdjustmentType = 'Ajouter' | 'Déduire';
 
 export type Service = {
   id: string;
@@ -68,4 +70,32 @@ export type ClientType = {
   id: string;
   created_at: string;
   name: string;
+};
+
+// Nouveaux types pour la gestion des autres surfaces
+export type AutreSurfaceType = {
+  id: string;
+  created_at: string;
+  name: string;
+  description: string | null;
+  largeur: number;
+  hauteur: number;
+  surface_impactee: SurfaceImpactee;
+  adjustment_type: AdjustmentType; // Ajouter ou Déduire
+  impacte_plinthe: boolean;
+};
+
+export type RoomCustomItem = {
+  id: string;
+  created_at: string;
+  room_id: string;
+  name: string;
+  largeur: number;
+  hauteur: number;
+  surface_impactee: SurfaceImpactee;
+  adjustment_type: AdjustmentType;
+  impacte_plinthe: boolean;
+  quantity: number;
+  description: string | null;
+  source_type_id: string | null;
 };

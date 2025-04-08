@@ -22,7 +22,8 @@ import {
   Users,
   User,
   Loader2,
-  Database
+  Database,
+  Box
 } from "lucide-react";
 import { 
   Dialog, 
@@ -53,9 +54,10 @@ import {
 
 import TypeMenuiserieForm from "@/features/admin/components/TypeMenuiserieForm";
 import ClientForm from "@/features/admin/components/ClientForm";
+import TypeAutreSurfaceForm from "@/features/admin/components/TypeAutreSurfaceForm";
 import SupabaseStatus from "@/components/SupabaseStatus";
 
-import { WorkType, ServiceGroup, Service, MenuiserieType } from "@/types/supabase";
+import { WorkType, ServiceGroup, Service, MenuiserieType, AutreSurfaceType } from "@/types/supabase";
 import { 
   fetchWorkTypes, 
   fetchServiceGroups, 
@@ -78,9 +80,16 @@ import {
   deleteMenuiserieType
 } from "@/services/menuiseriesService";
 
+import {
+  fetchAutresSurfacesTypes,
+  createAutreSurfaceType,
+  updateAutreSurfaceType,
+  deleteAutreSurfaceType
+} from "@/services/autresSurfacesService";
+
 import { useMenuiseriesTypes, surfacesReference as menuiserieSurfacesReference } from "@/contexts/MenuiseriesTypesContext";
-import { Client, useClients, typesClients } from "@/contexts/ClientsContext";
-import { TypeMenuiserie } from "@/types";
+import { useClients, typesClients } from "@/contexts/ClientsContext";
+import { TypeMenuiserie, TypeAutreSurface } from "@/types";
 import { surfacesReference } from "@/contexts/TravauxTypesContext";
 import { surfacesMenuiseries } from "@/types";
 
@@ -125,6 +134,12 @@ const Parametres = () => {
   const [confirmDeleteClientOpen, setConfirmDeleteClientOpen] = useState(false);
   const [clientToDelete, setClientToDelete] = useState<string | null>(null);
   const [showDiagnostic, setShowDiagnostic] = useState(true);
+  const [typeAutreSurfaceFormOpen, setTypeAutreSurfaceFormOpen] = useState(false);
+  const [editingTypeAutreSurface, setEditingTypeAutreSurface] = useState<TypeAutreSurface | null>(null);
+  const [confirmDeleteAutreSurfaceOpen, setConfirmDeleteAutreSurfaceOpen] = useState(false);
+  const [typeAutreSurfaceToDelete, setTypeAutreSurfaceToDelete] = useState<string | null>(null);
+  const [autresSurfacesTypes, setAutresSurfacesTypes] = useState<AutreSurfaceType[]>([]);
+  const [isLoadingAutresSurfaces, setIsLoadingAutresSurfaces] = useState<boolean>(false);
 
   useEffect(() => {
     const loadWorkTypes = async () => {
@@ -211,6 +226,40 @@ const Parametres = () => {
     if (activeTab === "menuiseries") {
       loadMenuiserieTypes();
     }
+  }, [activeTab]);
+
+  useEffect(() => {
+    const loadAutresSurfacesTypes = async () => {
+      if (activeTab !== "autresSurfaces") return;
+      
+      setIsLoadingAutresSurfaces(true);
+      try {
+        const data = await fetchAutresSurfacesTypes();
+        
+        const supabaseTypes: AutreSurfaceType[] = data.map(item => ({
+          id: item.id,
+          created_at: '',
+          name: item.nom,
+          description: item.description,
+          surface_impactee: item.surfaceImpacteeParDefaut === 'mur' ? 'Mur' :
+                           item.surfaceImpacteeParDefaut === 'plafond' ? 'Plafond' :
+                           item.surfaceImpacteeParDefaut === 'sol' ? 'Sol' : 'Aucune',
+          adjustment_type: item.estDeduction ? 'Déduire' : 'Ajouter',
+          impacte_plinthe: false,
+          largeur: 0,
+          hauteur: 0
+        }));
+        
+        setAutresSurfacesTypes(supabaseTypes);
+      } catch (error) {
+        console.error("Erreur lors du chargement des types d'autres surfaces:", error);
+        toast.error("Impossible de charger les types d'autres surfaces");
+      } finally {
+        setIsLoadingAutresSurfaces(false);
+      }
+    };
+    
+    loadAutresSurfacesTypes();
   }, [activeTab]);
 
   const getIconComponent = (iconName: string) => {
@@ -632,6 +681,105 @@ const Parametres = () => {
     }
   };
 
+  const handleAddTypeAutreSurface = () => {
+    setEditingTypeAutreSurface(null);
+    setTypeAutreSurfaceFormOpen(true);
+  };
+
+  const handleEditTypeAutreSurface = (type: AutreSurfaceType) => {
+    const typeAutreSurface: TypeAutreSurface = {
+      id: type.id,
+      nom: type.name,
+      description: type.description || '',
+      surfaceImpacteeParDefaut: type.surface_impactee === 'Mur' ? 'mur' :
+                                type.surface_impactee === 'Plafond' ? 'plafond' :
+                                type.surface_impactee === 'Sol' ? 'sol' : 'aucune',
+      estDeduction: type.adjustment_type === 'Déduire'
+    };
+    
+    setEditingTypeAutreSurface(typeAutreSurface);
+    setTypeAutreSurfaceFormOpen(true);
+  };
+
+  const handleDeleteTypeAutreSurface = (id: string) => {
+    setTypeAutreSurfaceToDelete(id);
+    setConfirmDeleteAutreSurfaceOpen(true);
+  };
+
+  const confirmTypeAutreSurfaceDelete = async () => {
+    if (typeAutreSurfaceToDelete) {
+      setIsLoadingAutresSurfaces(true);
+      try {
+        const success = await deleteAutreSurfaceType(typeAutreSurfaceToDelete);
+        
+        if (success) {
+          setAutresSurfacesTypes(prev => prev.filter(type => type.id !== typeAutreSurfaceToDelete));
+          toast.success("Type d'autre surface supprimé avec succès");
+        } else {
+          toast.error("Échec de la suppression du type d'autre surface");
+        }
+      } catch (error) {
+        console.error("Erreur lors de la suppression:", error);
+        toast.error("Une erreur est survenue lors de la suppression");
+      } finally {
+        setIsLoadingAutresSurfaces(false);
+        setConfirmDeleteAutreSurfaceOpen(false);
+        setTypeAutreSurfaceToDelete(null);
+      }
+    }
+  };
+
+  const handleSubmitTypeAutreSurface = async (typeData: TypeAutreSurface) => {
+    setIsLoadingAutresSurfaces(true);
+    
+    try {
+      let success = false;
+      let updatedType: TypeAutreSurface | null = null;
+      
+      if (editingTypeAutreSurface) {
+        updatedType = await updateAutreSurfaceType(editingTypeAutreSurface.id, typeData);
+        success = updatedType !== null;
+      } else {
+        updatedType = await createAutreSurfaceType(typeData);
+        success = updatedType !== null;
+      }
+      
+      if (success && updatedType) {
+        const types = await fetchAutresSurfacesTypes();
+        
+        const supabaseTypes: AutreSurfaceType[] = types.map(item => ({
+          id: item.id,
+          created_at: '',
+          name: item.nom,
+          description: item.description,
+          surface_impactee: item.surfaceImpacteeParDefaut === 'mur' ? 'Mur' :
+                          item.surfaceImpacteeParDefaut === 'plafond' ? 'Plafond' :
+                          item.surfaceImpacteeParDefaut === 'sol' ? 'Sol' : 'Aucune',
+          adjustment_type: item.estDeduction ? 'Déduire' : 'Ajouter',
+          impacte_plinthe: false,
+          largeur: 0,
+          hauteur: 0
+        }));
+        
+        setAutresSurfacesTypes(supabaseTypes);
+        
+        toast.success(editingTypeAutreSurface 
+          ? "Type d'autre surface mis à jour avec succès" 
+          : "Type d'autre surface ajouté avec succès"
+        );
+      } else {
+        toast.error("Une erreur est survenue");
+      }
+    } catch (error) {
+      console.error("Erreur lors de l'opération:", error);
+      toast.error("Une erreur est survenue");
+    } finally {
+      setIsLoadingAutresSurfaces(false);
+      setTypeAutreSurfaceFormOpen(false);
+      setEditingTypeAutreSurface(null);
+    }
+  };
+
   return (
     <Layout
       title="Paramètres"
@@ -661,6 +809,7 @@ const Parametres = () => {
         <TabsList className="w-full">
           <TabsTrigger value="travaux" className="flex-1">Types de Travaux</TabsTrigger>
           <TabsTrigger value="menuiseries" className="flex-1">Types de Menuiseries</TabsTrigger>
+          <TabsTrigger value="autresSurfaces" className="flex-1">Types d'Autres Surfaces</TabsTrigger>
           <TabsTrigger value="clients" className="flex-1">Fiches Clients</TabsTrigger>
         </TabsList>
         
@@ -1003,6 +1152,87 @@ const Parametres = () => {
           </Card>
         </TabsContent>
         
+        <TabsContent value="autresSurfaces" className="mt-6">
+          <Card className="shadow-md">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>Types d'Autres Surfaces</span>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleAddTypeAutreSurface}
+                  disabled={isLoadingAutresSurfaces}
+                >
+                  {isLoadingAutresSurfaces ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
+                  Ajouter
+                </Button>
+              </CardTitle>
+              <CardDescription>
+                Gérez les types d'éléments spécifiques qui peuvent être ajoutés aux pièces et qui impactent les calculs de surface
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoadingAutresSurfaces ? (
+                <div className="flex justify-center py-4">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {autresSurfacesTypes.length > 0 ? (
+                    <div className="rounded-md border overflow-hidden">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-1/4">Nom</TableHead>
+                            <TableHead className="w-1/4">Surface impactée</TableHead>
+                            <TableHead className="w-1/4">Type d'ajustement</TableHead>
+                            <TableHead className="w-1/4">Description</TableHead>
+                            <TableHead className="w-1/12 text-right">Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {autresSurfacesTypes.map((type) => (
+                            <TableRow key={type.id}>
+                              <TableCell className="font-medium">{type.name}</TableCell>
+                              <TableCell>{type.surface_impactee}</TableCell>
+                              <TableCell>{type.adjustment_type}</TableCell>
+                              <TableCell className="truncate max-w-xs">{type.description || "-"}</TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end gap-1">
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={() => handleEditTypeAutreSurface(type)}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={() => handleDeleteTypeAutreSurface(type.id)}
+                                  >
+                                    <Trash className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  ) : (
+                    <Alert>
+                      <AlertDescription>
+                        Aucun type d'autre surface défini. Utilisez le bouton "Ajouter" pour créer un nouveau type.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
         <TabsContent value="clients" className="mt-6">
           <div className="flex justify-end mb-4">
             <Button 
@@ -1138,6 +1368,28 @@ const Parametres = () => {
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmDeleteClientOpen(false)}>Annuler</Button>
             <Button variant="destructive" onClick={confirmClientDelete}>Supprimer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <TypeAutreSurfaceForm
+        isOpen={typeAutreSurfaceFormOpen}
+        onClose={() => setTypeAutreSurfaceFormOpen(false)}
+        typeToEdit={editingTypeAutreSurface}
+        onSubmit={handleSubmitTypeAutreSurface}
+      />
+      
+      <Dialog open={confirmDeleteAutreSurfaceOpen} onOpenChange={setConfirmDeleteAutreSurfaceOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Confirmer la suppression</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir supprimer ce type d'autre surface ? Cette action ne peut pas être annulée.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDeleteAutreSurfaceOpen(false)}>Annuler</Button>
+            <Button variant="destructive" onClick={confirmTypeAutreSurfaceDelete}>Supprimer</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
