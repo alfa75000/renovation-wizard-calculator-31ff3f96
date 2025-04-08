@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Layout } from "@/components/Layout";
 import { 
@@ -83,6 +84,7 @@ const Parametres = () => {
   const [menuiserieTypes, setMenuiserieTypes] = useState<MenuiserieType[]>([]);
   const [selectedWorkTypeId, setSelectedWorkTypeId] = useState<string | null>(null);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [isLoadingGroups, setIsLoadingGroups] = useState<boolean>(false);
   const [isLoadingServices, setIsLoadingServices] = useState<boolean>(false);
@@ -426,6 +428,22 @@ const Parametres = () => {
 
   const handleEditTypeMenuiserie = (type: TypeMenuiserie) => {
     setEditingTypeMenuiserie(type);
+    setTypeMenuiserieFormOpen(true);
+  };
+
+  // Fonction adaptée pour gérer le type MenuiserieType
+  const handleEditMenuiserieType = (type: MenuiserieType) => {
+    // Conversion de MenuiserieType vers TypeMenuiserie
+    const typeMenuiserie: TypeMenuiserie = {
+      id: type.id,
+      nom: type.name,
+      largeur: type.largeur,
+      hauteur: type.hauteur,
+      surfaceReference: type.surface_impactee,
+      impactePlinthe: type.impacte_plinthe,
+      description: ''
+    };
+    setEditingTypeMenuiserie(typeMenuiserie);
     setTypeMenuiserieFormOpen(true);
   };
 
@@ -883,7 +901,7 @@ const Parametres = () => {
                           <Button 
                             variant="ghost" 
                             size="sm"
-                            onClick={() => handleEditTypeMenuiserie(type)}
+                            onClick={() => handleEditMenuiserieType(type)}
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -941,7 +959,7 @@ const Parametres = () => {
                         >
                           <div className="flex items-center gap-2">
                             <Users className="h-5 w-5 text-gray-500" />
-                            <span>{client.name}</span>
+                            <span>{client.name || client.first_name}</span>
                           </div>
                           <div className="flex gap-1">
                             <Button 
