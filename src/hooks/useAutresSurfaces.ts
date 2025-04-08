@@ -13,6 +13,9 @@ export const useAutresSurfaces = () => {
       designation: type.nom,
       surfaceImpactee: type.surfaceImpacteeParDefaut,
       estDeduction: type.estDeduction,
+      impactePlinthe: type.impactePlinthe,
+      largeur: type.largeur || 0,
+      hauteur: type.hauteur || 0
     };
   };
   
@@ -42,7 +45,8 @@ export const useAutresSurfaces = () => {
         quantity: 1,
         surface: surfaceM2,
         surfaceImpactee: surface.surfaceImpactee,
-        estDeduction: surface.estDeduction
+        estDeduction: surface.estDeduction,
+        impactePlinthe: surface.impactePlinthe
       });
     }
     
