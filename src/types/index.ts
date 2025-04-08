@@ -148,7 +148,7 @@ export interface AutresSurfacesState {
   typesAutresSurfaces: TypeAutreSurface[];
 }
 
-// Types for ClientsContext
+// Types pour ClientsContext
 export interface Client {
   id: string;
   nom: string;
@@ -184,10 +184,10 @@ export const typesClients = [
   { id: 'autre', label: 'Autre' }
 ];
 
-// Types for MenuiserieContext
+// Types for Menuiserie
 export interface Menuiserie {
   id: string;
-  type: string;
+  type?: string;
   typeName?: string;
   largeur: number;
   hauteur: number;
