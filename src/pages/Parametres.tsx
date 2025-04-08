@@ -191,7 +191,9 @@ const Parametres = () => {
     const loadMenuiserieTypes = async () => {
       setIsLoadingMenuiseries(true);
       try {
-        const data = await fetchMenuiserieTypes();
+        const result = await fetchMenuiserieTypes();
+        
+        const data = result && result.data ? result.data : [];
         
         if (Array.isArray(data)) {
           setMenuiserieTypes(data);
@@ -475,7 +477,8 @@ const Parametres = () => {
         
         if (success) {
           
-          const updatedTypes = await fetchMenuiserieTypes();
+          const updatedResult = await fetchMenuiserieTypes();
+          const updatedTypes = updatedResult && updatedResult.data ? updatedResult.data : [];
           
           if (Array.isArray(updatedTypes)) {
             setMenuiserieTypes(updatedTypes);
@@ -525,7 +528,8 @@ const Parametres = () => {
       
       if (success) {
         
-        const updatedTypes = await fetchMenuiserieTypes();
+        const updatedResult = await fetchMenuiserieTypes();
+        const updatedTypes = updatedResult && updatedResult.data ? updatedResult.data : [];
         
         if (Array.isArray(updatedTypes)) {
           setMenuiserieTypes(updatedTypes);
