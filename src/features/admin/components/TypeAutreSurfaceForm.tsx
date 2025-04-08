@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import {
+  Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
@@ -23,6 +24,7 @@ interface TypeAutreSurfaceFormProps {
 }
 
 const TypeAutreSurfaceForm: React.FC<TypeAutreSurfaceFormProps> = ({
+  isOpen,
   onClose,
   typeToEdit,
   onSubmit
@@ -74,77 +76,79 @@ const TypeAutreSurfaceForm: React.FC<TypeAutreSurfaceFormProps> = ({
   };
 
   return (
-    <>
-      <DialogHeader>
-        <DialogTitle>{typeToEdit ? 'Modifier le type d\'autre surface' : 'Ajouter un type d\'autre surface'}</DialogTitle>
-        <DialogDescription>
-          {typeToEdit 
-            ? 'Modifiez les informations du type d\'autre surface ci-dessous.' 
-            : 'Remplissez les informations pour ajouter un nouveau type d\'autre surface.'}
-        </DialogDescription>
-      </DialogHeader>
-      
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="nom">Nom *</Label>
-          <Input 
-            id="nom" 
-            name="nom" 
-            value={formData.nom} 
-            onChange={handleChange} 
-            required 
-          />
-        </div>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{typeToEdit ? 'Modifier le type d\'autre surface' : 'Ajouter un type d\'autre surface'}</DialogTitle>
+          <DialogDescription>
+            {typeToEdit 
+              ? 'Modifiez les informations du type d\'autre surface ci-dessous.' 
+              : 'Remplissez les informations pour ajouter un nouveau type d\'autre surface.'}
+          </DialogDescription>
+        </DialogHeader>
         
-        <div className="space-y-2">
-          <Label htmlFor="description">Description</Label>
-          <Textarea 
-            id="description" 
-            name="description" 
-            value={formData.description} 
-            onChange={handleChange} 
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="surfaceImpacteeParDefaut">Surface impactée par défaut</Label>
-          <Select 
-            value={formData.surfaceImpacteeParDefaut} 
-            onValueChange={(value) => handleSelectChange('surfaceImpacteeParDefaut', value)}
-          >
-            <SelectTrigger id="surfaceImpacteeParDefaut">
-              <SelectValue placeholder="Sélectionnez une surface" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="mur">Mur</SelectItem>
-              <SelectItem value="plafond">Plafond</SelectItem>
-              <SelectItem value="sol">Sol</SelectItem>
-              <SelectItem value="aucune">Aucune</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        
-        <div className="flex items-center space-x-2">
-          <Switch 
-            id="estDeduction" 
-            checked={formData.estDeduction} 
-            onCheckedChange={(value) => handleSwitchChange('estDeduction', value)} 
-          />
-          <Label htmlFor="estDeduction">
-            {formData.estDeduction ? 'Déduire de la surface' : 'Ajouter à la surface'}
-          </Label>
-        </div>
-        
-        <DialogFooter className="pt-4">
-          <Button type="button" variant="outline" onClick={onClose}>
-            Annuler
-          </Button>
-          <Button type="submit">
-            {typeToEdit ? 'Mettre à jour' : 'Ajouter'}
-          </Button>
-        </DialogFooter>
-      </form>
-    </>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="nom">Nom *</Label>
+            <Input 
+              id="nom" 
+              name="nom" 
+              value={formData.nom} 
+              onChange={handleChange} 
+              required 
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea 
+              id="description" 
+              name="description" 
+              value={formData.description} 
+              onChange={handleChange} 
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="surfaceImpacteeParDefaut">Surface impactée par défaut</Label>
+            <Select 
+              value={formData.surfaceImpacteeParDefaut} 
+              onValueChange={(value) => handleSelectChange('surfaceImpacteeParDefaut', value)}
+            >
+              <SelectTrigger id="surfaceImpacteeParDefaut">
+                <SelectValue placeholder="Sélectionnez une surface" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="mur">Mur</SelectItem>
+                <SelectItem value="plafond">Plafond</SelectItem>
+                <SelectItem value="sol">Sol</SelectItem>
+                <SelectItem value="aucune">Aucune</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <Switch 
+              id="estDeduction" 
+              checked={formData.estDeduction} 
+              onCheckedChange={(value) => handleSwitchChange('estDeduction', value)} 
+            />
+            <Label htmlFor="estDeduction">
+              {formData.estDeduction ? 'Déduire de la surface' : 'Ajouter à la surface'}
+            </Label>
+          </div>
+          
+          <DialogFooter className="pt-4">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Annuler
+            </Button>
+            <Button type="submit">
+              {typeToEdit ? 'Mettre à jour' : 'Ajouter'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 };
 
