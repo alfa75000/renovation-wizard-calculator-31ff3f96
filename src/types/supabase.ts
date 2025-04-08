@@ -1,4 +1,3 @@
-
 export type WorkType = {
   id: string;
   created_at: string;
@@ -29,12 +28,24 @@ export type Service = {
 
 export type MenuiserieType = {
   id: string;
-  created_at: string;
   name: string;
+  description?: string;
   largeur: number;
   hauteur: number;
-  surface_impactee: SurfaceImpactee;
-  impacte_plinthe: boolean;
+  surface_impactee: 'Mur' | 'Sol' | 'Plafond';
+  impacts_plinthe: boolean;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type RoomMenuiserie = {
+  id: string;
+  room_id: string;
+  menuiserie_type_id: string;
+  quantity: number;
+  created_at?: string;
+  updated_at?: string;
+  menuiserie_type?: MenuiserieType;
 };
 
 export type Client = {
