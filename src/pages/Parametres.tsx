@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Layout } from "@/components/Layout";
 import { 
@@ -45,7 +46,7 @@ import TypeMenuiserieForm from "@/features/admin/components/TypeMenuiserieForm";
 import ClientForm from "@/features/admin/components/ClientForm";
 import SupabaseStatus from "@/components/SupabaseStatus";
 
-import { WorkType, ServiceGroup, Service, MenuiserieType, Client } from "@/types/supabase";
+import { WorkType, ServiceGroup, Service, MenuiserieType } from "@/types/supabase";
 import { 
   fetchWorkTypes, 
   fetchServiceGroups, 
@@ -61,15 +62,10 @@ import {
   deleteService
 } from "@/services/travauxService";
 
-import { 
-  fetchMenuiserieTypes,
-  createMenuiserieType,
-  updateMenuiserieType,
-  deleteMenuiserieType
-} from "@/services/menuiseriesService";
+import { fetchMenuiserieTypes } from "@/services/menuiseriesService";
 
 import { useMenuiseriesTypes, surfacesReference as menuiserieSurfacesReference } from "@/contexts/MenuiseriesTypesContext";
-import { useClients, typesClients } from "@/contexts/ClientsContext";
+import { Client, useClients, typesClients } from "@/contexts/ClientsContext";
 import { TypeMenuiserie } from "@/types";
 import { surfacesReference } from "@/contexts/TravauxTypesContext";
 import { surfacesMenuiseries } from "@/types";
@@ -106,7 +102,7 @@ const Parametres = () => {
   const [confirmDeleteServiceOpen, setConfirmDeleteServiceOpen] = useState<boolean>(false);
   const [serviceToDelete, setServiceToDelete] = useState<string | null>(null);
   const [typeMenuiserieFormOpen, setTypeMenuiserieFormOpen] = useState(false);
-  const [editingTypeMenuiserie, setEditingTypeMenuiserie] = useState<MenuiserieType | null>(null);
+  const [editingTypeMenuiserie, setEditingTypeMenuiserie] = useState<TypeMenuiserie | null>(null);
   const [confirmDeleteMenuiserieOpen, setConfirmDeleteMenuiserieOpen] = useState(false);
   const [typeMenuiserieToDelete, setTypeMenuiserieToDelete] = useState<string | null>(null);
   const [clientFormOpen, setClientFormOpen] = useState(false);
@@ -430,8 +426,24 @@ const Parametres = () => {
     setTypeMenuiserieFormOpen(true);
   };
 
-  const handleEditMenuiserieType = (type: MenuiserieType) => {
+  const handleEditTypeMenuiserie = (type: TypeMenuiserie) => {
     setEditingTypeMenuiserie(type);
+    setTypeMenuiserieFormOpen(true);
+  };
+
+  // Fonction adaptée pour gérer le type MenuiserieType
+  const handleEditMenuiserieType = (type: MenuiserieType) => {
+    // Conversion de MenuiserieType vers TypeMenuiserie
+    const typeMenuiserie: TypeMenuiserie = {
+      id: type.id,
+      nom: type.name,
+      largeur: type.largeur,
+      hauteur: type.hauteur,
+      surfaceReference: type.surface_impactee,
+      impactePlinthe: type.impacte_plinthe,
+      description: ''
+    };
+    setEditingTypeMenuiserie(typeMenuiserie);
     setTypeMenuiserieFormOpen(true);
   };
 
@@ -440,66 +452,34 @@ const Parametres = () => {
     setConfirmDeleteMenuiserieOpen(true);
   };
 
-  const confirmTypeMenuiserieDelete = async () => {
+  const confirmTypeMenuiserieDelete = () => {
     if (typeMenuiserieToDelete) {
-      setIsLoadingMenuiseries(true);
-      const success = await deleteMenuiserieType(typeMenuiserieToDelete);
-      setIsLoadingMenuiseries(false);
-      
-      if (success) {
-        setMenuiserieTypes(prev => prev.filter(type => type.id !== typeMenuiserieToDelete));
-        setConfirmDeleteMenuiserieOpen(false);
-        setTypeMenuiserieToDelete(null);
-        toast.success("Type de menuiserie supprimé avec succès");
-      }
+      dispatchMenuiseriesTypes({ type: 'DELETE_TYPE', payload: typeMenuiserieToDelete });
+      setConfirmDeleteMenuiserieOpen(false);
+      setTypeMenuiserieToDelete(null);
+      toast.success("Type de menuiserie supprimé avec succès");
     }
   };
 
-  const handleSubmitTypeMenuiserie = async (typeData: MenuiserieType) => {
-    setIsLoadingMenuiseries(true);
-    
-    try {
-      // Si typeData a un ID, c'est une mise à jour
-      if (typeData.id) {
-        const updatedMenuiserieType = await updateMenuiserieType(typeData.id, {
-          name: typeData.name,
-          largeur: typeData.largeur,
-          hauteur: typeData.hauteur,
-          surface_impactee: typeData.surface_impactee,
-          impacte_plinthe: typeData.impacte_plinthe,
-          description: typeData.description || ''
-        });
-        
-        if (updatedMenuiserieType) {
-          setMenuiserieTypes(prev => prev.map(type => 
-            type.id === typeData.id ? updatedMenuiserieType : type
-          ));
-          toast.success("Type de menuiserie mis à jour avec succès");
-        }
-      } else {
-        // Création d'un nouveau type
-        const newMenuiserieType = await createMenuiserieType({
-          name: typeData.name,
-          largeur: typeData.largeur,
-          hauteur: typeData.hauteur,
-          surface_impactee: typeData.surface_impactee,
-          impacte_plinthe: typeData.impacte_plinthe,
-          description: typeData.description || ''
-        });
-        
-        if (newMenuiserieType) {
-          setMenuiserieTypes(prev => [...prev, newMenuiserieType]);
-          toast.success("Type de menuiserie créé avec succès");
-        }
-      }
-    } catch (error) {
-      console.error("Erreur lors de l'opération sur le type de menuiserie:", error);
-      toast.error("Une erreur est survenue");
-    } finally {
-      setIsLoadingMenuiseries(false);
-      setTypeMenuiserieFormOpen(false);
-      setEditingTypeMenuiserie(null);
+  const handleSubmitTypeMenuiserie = (typeData: TypeMenuiserie) => {
+    if (editingTypeMenuiserie) {
+      dispatchMenuiseriesTypes({
+        type: 'UPDATE_TYPE',
+        payload: { id: editingTypeMenuiserie.id, type: typeData }
+      });
+      toast.success("Type de menuiserie mis à jour avec succès");
+    } else {
+      dispatchMenuiseriesTypes({ type: 'ADD_TYPE', payload: typeData });
+      toast.success("Type de menuiserie ajouté avec succès");
     }
+    setTypeMenuiserieFormOpen(false);
+    setEditingTypeMenuiserie(null);
+  };
+
+  const getSurfaceMenuiserieLabel = (id?: string) => {
+    if (!id) return "Non spécifié";
+    const surface = surfacesMenuiseries.find(surface => surface.id === id);
+    return surface ? surface.label : id;
   };
 
   const resetMenuiseriesToDefaults = () => {
@@ -902,4 +882,127 @@ const Parametres = () => {
                   </div>
                   <div className="divide-y">
                     {menuiserieTypes.map((type) => (
-                      <div key={type.id} className="grid grid-cols-12 p-3 items-center hover
+                      <div key={type.id} className="grid grid-cols-12 p-3 items-center hover:bg-gray-50">
+                        <div className="col-span-3 font-medium">
+                          <div className="truncate">{type.name}</div>
+                        </div>
+                        <div className="col-span-2">
+                          {type.largeur} × {type.hauteur} cm
+                        </div>
+                        <div className="col-span-3">
+                          {getSurfaceImpacteeLabel(type.surface_impactee)}
+                        </div>
+                        <div className="col-span-2">
+                          <Badge variant={type.impacte_plinthe ? "default" : "outline"}>
+                            {type.impacte_plinthe ? "Oui" : "Non"}
+                          </Badge>
+                        </div>
+                        <div className="col-span-2 flex justify-end gap-1">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleEditMenuiserieType(type)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleDeleteTypeMenuiserie(type.id)}
+                          >
+                            <Trash className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <Alert>
+                  <AlertDescription>
+                    Aucun type de menuiserie défini. Utilisez le bouton "Ajouter un type" pour en créer un.
+                  </AlertDescription>
+                </Alert>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="clients" className="mt-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <Card className="shadow-md lg:col-span-1">
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>Fiches Clients</span>
+                  <Button variant="outline" size="sm" onClick={handleAddClient} disabled={loading}>
+                    {loading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
+                    Ajouter
+                  </Button>
+                </CardTitle>
+                <CardDescription>
+                  Gérez les informations des clients de votre entreprise
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {loading ? (
+                    <div className="flex justify-center py-4">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                    </div>
+                  ) : (
+                    <>
+                      {clients.map((client) => (
+                        <div 
+                          key={client.id}
+                          className={`flex items-center justify-between p-2 rounded-md cursor-pointer ${selectedClientId === client.id ? 'bg-blue-100' : 'hover:bg-gray-100'}`}
+                          onClick={() => setSelectedClientId(client.id)}
+                        >
+                          <div className="flex items-center gap-2">
+                            <Users className="h-5 w-5 text-gray-500" />
+                            <span>{client.name || client.first_name}</span>
+                          </div>
+                          <div className="flex gap-1">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditClient(client);
+                              }}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteClient(client.id);
+                              }}
+                            >
+                              <Trash className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                      
+                      {clients.length === 0 && (
+                        <Alert>
+                          <AlertDescription>
+                            Aucun client défini. Utilisez le bouton "Ajouter" pour créer un nouveau client.
+                          </AlertDescription>
+                        </Alert>
+                      )}
+                    </>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
+    </Layout>
+  );
+};
+
+export default Parametres;
