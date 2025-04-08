@@ -24,14 +24,8 @@ export const useCalculSurfaces = () => {
     let doorWidths = 0;
     
     menuiseries.forEach(item => {
-      // Vérifier que type existe et n'est pas undefined avant d'appeler toLowerCase
-      const impactePlinthe = item.impactePlinthe || false;
-      const typeLowerCase = item.type?.toLowerCase() || '';
-      const surfaceImpactee = item.surfaceImpactee || 'mur';
-      const quantity = item.quantity || 1;
-      
-      if ((typeLowerCase.includes('porte') || impactePlinthe) && surfaceImpactee === 'mur') {
-        doorWidths += (item.largeur / 100) * quantity;
+      if ((item.type.toLowerCase().includes('porte') || item.impactePlinthe) && item.surfaceImpactee === 'mur') {
+        doorWidths += (item.largeur / 100) * item.quantity;
       }
     });
     
@@ -47,8 +41,8 @@ export const useCalculSurfaces = () => {
   const calculerSurfaceMenuiseries = (menuiseries: Menuiserie[], surfaceImpactee: 'mur' | 'plafond' | 'sol'): number => {
     return arrondir2Decimales(
       menuiseries
-        .filter(m => (m.surfaceImpactee || 'mur') === surfaceImpactee)
-        .reduce((total, m) => total + m.surface * (m.quantity || 1), 0)
+        .filter(m => m.surfaceImpactee === surfaceImpactee)
+        .reduce((total, m) => total + m.surface * m.quantity, 0)
     );
   };
   
@@ -60,8 +54,8 @@ export const useCalculSurfaces = () => {
   ): number => {
     return arrondir2Decimales(
       autresSurfaces
-        .filter(s => (s.surfaceImpactee || 'mur') === surfaceImpactee && (s.estDeduction || false) === estDeduction)
-        .reduce((total, s) => total + s.surface * (s.quantity || 1), 0)
+        .filter(s => s.surfaceImpactee === surfaceImpactee && s.estDeduction === estDeduction)
+        .reduce((total, s) => total + s.surface * s.quantity, 0)
     );
   };
   
@@ -93,7 +87,7 @@ export const useCalculSurfaces = () => {
   // Calculer toutes les surfaces pour une pièce
   const calculerToutesSurfaces = (room: Omit<Room, 'id'>): Partial<Room> => {
     // Extraire les valeurs
-    const { length, width, height, plinthHeight, menuiseries = [], autresSurfaces = [] } = room;
+    const { length, width, height, plinthHeight, menuiseries, autresSurfaces } = room;
     
     // Calculs de base
     const surfaceBruteSol = calculerSurfaceBrute(length, width);

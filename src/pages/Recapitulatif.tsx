@@ -1,3 +1,4 @@
+
 import React from "react";
 import { 
   Card, 
@@ -20,29 +21,14 @@ const Recapitulatif: React.FC = () => {
   const { travaux, getTravauxForPiece } = useTravaux();
 
   // Calcul des totaux généraux
-  const totalFournitures = travaux.reduce((sum, t) => {
-    const prix = t.prixFournitures !== undefined ? t.prixFournitures : t.supplyPrice;
-    const quantite = t.quantite !== undefined ? t.quantite : t.quantity;
-    return sum + prix * quantite;
-  }, 0);
-  
-  const totalMainOeuvre = travaux.reduce((sum, t) => {
-    const prix = t.prixMainOeuvre !== undefined ? t.prixMainOeuvre : t.laborPrice;
-    const quantite = t.quantite !== undefined ? t.quantite : t.quantity;
-    return sum + prix * quantite;
-  }, 0);
-  
+  const totalFournitures = travaux.reduce((sum, t) => sum + t.prixFournitures * t.quantite, 0);
+  const totalMainOeuvre = travaux.reduce((sum, t) => sum + t.prixMainOeuvre * t.quantite, 0);
   const totalHT = totalFournitures + totalMainOeuvre;
-  
   const totalTVA = travaux.reduce((sum, t) => {
-    const prixHT = ((t.prixFournitures !== undefined ? t.prixFournitures : t.supplyPrice) + 
-                    (t.prixMainOeuvre !== undefined ? t.prixMainOeuvre : t.laborPrice)) * 
-                    (t.quantite !== undefined ? t.quantite : t.quantity);
-    const tauxTVA = t.tauxTVA !== undefined ? t.tauxTVA : t.tva;
-    const montantTVA = prixHT * (tauxTVA / 100);
+    const prixHT = (t.prixFournitures + t.prixMainOeuvre) * t.quantite;
+    const montantTVA = prixHT * (t.tauxTVA / 100);
     return sum + montantTVA;
   }, 0);
-  
   const totalTTC = totalHT + totalTVA;
 
   return (
@@ -129,29 +115,14 @@ const Recapitulatif: React.FC = () => {
             const travauxPiece = getTravauxForPiece(room.id);
             if (travauxPiece.length === 0) return null;
             
-            const totalPieceFournitures = travauxPiece.reduce((sum, t) => {
-              const prix = t.prixFournitures !== undefined ? t.prixFournitures : t.supplyPrice;
-              const quantite = t.quantite !== undefined ? t.quantite : t.quantity;
-              return sum + prix * quantite;
-            }, 0);
-            
-            const totalPieceMainOeuvre = travauxPiece.reduce((sum, t) => {
-              const prix = t.prixMainOeuvre !== undefined ? t.prixMainOeuvre : t.laborPrice;
-              const quantite = t.quantite !== undefined ? t.quantite : t.quantity;
-              return sum + prix * quantite;
-            }, 0);
-            
+            const totalPieceFournitures = travauxPiece.reduce((sum, t) => sum + t.prixFournitures * t.quantite, 0);
+            const totalPieceMainOeuvre = travauxPiece.reduce((sum, t) => sum + t.prixMainOeuvre * t.quantite, 0);
             const totalPieceHT = totalPieceFournitures + totalPieceMainOeuvre;
-            
             const totalPieceTVA = travauxPiece.reduce((sum, t) => {
-              const prixHT = ((t.prixFournitures !== undefined ? t.prixFournitures : t.supplyPrice) + 
-                             (t.prixMainOeuvre !== undefined ? t.prixMainOeuvre : t.laborPrice)) * 
-                             (t.quantite !== undefined ? t.quantite : t.quantity);
-              const tauxTVA = t.tauxTVA !== undefined ? t.tauxTVA : t.tva;
-              const montantTVA = prixHT * (tauxTVA / 100);
+              const prixHT = (t.prixFournitures + t.prixMainOeuvre) * t.quantite;
+              const montantTVA = prixHT * (t.tauxTVA / 100);
               return sum + montantTVA;
             }, 0);
-            
             const totalPieceTTC = totalPieceHT + totalPieceTVA;
             
             return (
@@ -171,38 +142,28 @@ const Recapitulatif: React.FC = () => {
                     </thead>
                     <tbody>
                       {travauxPiece.map(travail => {
-                        const prixFourniture = travail.prixFournitures !== undefined ? travail.prixFournitures : travail.supplyPrice;
-                        const prixMainOeuvre = travail.prixMainOeuvre !== undefined ? travail.prixMainOeuvre : travail.laborPrice;
-                        const quantite = travail.quantite !== undefined ? travail.quantite : travail.quantity;
-                        const tauxTVA = travail.tauxTVA !== undefined ? travail.tauxTVA : travail.tva;
-                        const prixUnitaireHT = prixFourniture + prixMainOeuvre;
-                        const totalHT = prixUnitaireHT * quantite;
-                        const montantTVA = totalHT * (tauxTVA / 100);
+                        const prixUnitaireHT = travail.prixFournitures + travail.prixMainOeuvre;
+                        const totalHT = prixUnitaireHT * travail.quantite;
+                        const montantTVA = totalHT * (travail.tauxTVA / 100);
                         const totalTTC = totalHT + montantTVA;
-                        const unitLabel = travail.unite !== undefined ? travail.unite : travail.unit;
-                        const typeTravauxLabel = travail.typeTravauxLabel || travail.name?.split(':')[0] || '';
-                        const sousTypeLabel = travail.sousTypeLabel || (travail.name?.includes(':') ? travail.name.split(':')[1]?.trim() : travail.name) || '';
                         
                         return (
                           <tr key={travail.id} className="border-b">
                             <td className="px-3 py-2">
-                              <div>{typeTravauxLabel}: {sousTypeLabel}</div>
+                              <div>{travail.typeTravauxLabel}: {travail.sousTypeLabel}</div>
                               {travail.personnalisation && (
                                 <div className="text-xs text-gray-600 mt-1 italic">
                                   {travail.personnalisation}
                                 </div>
                               )}
                               <div className="text-xs text-gray-600 mt-1">
-                                {travail.description}
-                              </div>
-                              <div className="text-xs text-gray-600 mt-1">
-                                MO: {formaterPrix(prixMainOeuvre)}/u, Fourn: {formaterPrix(prixFourniture)}/u 
+                                MO: {formaterPrix(travail.prixMainOeuvre)}/u, Fourn: {formaterPrix(travail.prixFournitures)}/u 
                                 (total: {formaterPrix(prixUnitaireHT)}/u)
                               </div>
                             </td>
-                            <td className="px-3 py-2 text-right">{quantite} {unitLabel}</td>
+                            <td className="px-3 py-2 text-right">{travail.quantite} {travail.unite}</td>
                             <td className="px-3 py-2 text-right">{formaterPrix(prixUnitaireHT)}</td>
-                            <td className="px-3 py-2 text-right">{tauxTVA}%</td>
+                            <td className="px-3 py-2 text-right">{travail.tauxTVA}%</td>
                             <td className="px-3 py-2 text-right font-medium">{formaterPrix(totalTTC)}</td>
                           </tr>
                         );

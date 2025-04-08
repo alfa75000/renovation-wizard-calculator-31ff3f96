@@ -1,3 +1,4 @@
+
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -75,12 +76,4 @@ export function estNombrePositif(valeur: string | number): boolean {
 // Convertir une surface en m² à partir des dimensions en cm
 export function convertirDimensionsEnSurface(largeur: number, hauteur: number): number {
   return arrondir2Decimales((largeur / 100) * (hauteur / 100));
-}
-
-// Format currency in EUR
-export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency: 'EUR',
-  }).format(amount);
 }
