@@ -102,7 +102,7 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
       const surfaceImpactee = mapSurfaceImpacteeToFrontend(selected.surface_impactee);
       
       // Générer un numéro automatique pour la menuiserie
-      const menuiserieName = `Menuiserie n° ${menuiserieCount} (${selected.name} (${selected.largeur}×${selected.hauteur} cm))`;
+      const menuiserieName = `Menuiserie n° 1 (${selected.name} (${selected.largeur}×${selected.hauteur} cm))`;
       
       setNewMenuiserie((prev) => ({ 
         ...prev, 
@@ -206,7 +206,7 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
           <Label htmlFor="menuiserieNumAuto">Numérotation automatique</Label>
           <Input
             id="menuiserieNumAuto"
-            value={`Menuiserie n° ${menuiserieCount}`}
+            value="Menuiserie n° 1"
             readOnly
             className="mt-1 bg-gray-100"
           />
@@ -285,57 +285,59 @@ const MenuiserieForm: React.FC<MenuiserieFormProps> = ({
             value={selectedType?.description || ''}
             onChange={handleMenuiserieChange}
             placeholder="Description détaillée de la menuiserie"
-            className="mt-1 min-h-[80px]"
+            className="mt-1 min-h-[120px]"
           />
         </div>
         
-        <div className="md:col-span-3">
-          <Label htmlFor="menuiserieImpact">Surface impactée</Label>
-          <Select
-            value={newMenuiserie.surfaceImpactee || 'mur'}
-            onValueChange={handleSurfaceImpacteeChange}
-          >
-            <SelectTrigger id="menuiserieImpact" className="w-full p-2 border rounded mt-1">
-              <SelectValue placeholder="Sélectionner une surface" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="mur">Mur</SelectItem>
-              <SelectItem value="plafond">Plafond</SelectItem>
-              <SelectItem value="sol">Sol</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        
-        <div className="md:col-span-3 flex items-end pb-3">
-          <div className="flex items-center space-x-2">
-            <Checkbox 
-              id="impactePlinthe" 
-              checked={impactePlinthe} 
-              onCheckedChange={handleImpactePlinthesChange}
-            />
-            <Label htmlFor="impactePlinthe">Impacte plinthes</Label>
+        <div className="md:col-span-6">
+          <div className="mb-4">
+            <Label htmlFor="menuiserieImpact">Surface impactée</Label>
+            <Select
+              value={newMenuiserie.surfaceImpactee || 'mur'}
+              onValueChange={handleSurfaceImpacteeChange}
+            >
+              <SelectTrigger id="menuiserieImpact" className="w-full p-2 border rounded mt-1">
+                <SelectValue placeholder="Sélectionner une surface" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="mur">Mur</SelectItem>
+                <SelectItem value="plafond">Plafond</SelectItem>
+                <SelectItem value="sol">Sol</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="mb-4">
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="impactePlinthe" 
+                checked={impactePlinthe} 
+                onCheckedChange={handleImpactePlinthesChange}
+              />
+              <Label htmlFor="impactePlinthe">Impacte plinthes</Label>
+            </div>
+          </div>
+          
+          <div className="flex justify-end mt-4">
+            <Button 
+              onClick={handleAddMenuiserie} 
+              className="w-auto"
+              disabled={!selectedTypeId || loading}
+            >
+              {editingMenuiserie ? (
+                <>
+                  <Check className="h-4 w-4 mr-2" />
+                  Mettre à jour
+                </>
+              ) : (
+                <>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Ajouter
+                </>
+              )}
+            </Button>
           </div>
         </div>
-      </div>
-      
-      <div className="flex justify-end">
-        <Button 
-          onClick={handleAddMenuiserie} 
-          className="w-auto"
-          disabled={!selectedTypeId || loading}
-        >
-          {editingMenuiserie ? (
-            <>
-              <Check className="h-4 w-4 mr-2" />
-              Mettre à jour
-            </>
-          ) : (
-            <>
-              <Plus className="h-4 w-4 mr-2" />
-              Ajouter
-            </>
-          )}
-        </Button>
       </div>
     </div>
   );
