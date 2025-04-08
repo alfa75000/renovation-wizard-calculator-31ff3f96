@@ -75,6 +75,7 @@ import { surfacesReference } from "@/contexts/TravauxTypesContext";
 import { surfacesMenuiseries } from "@/types";
 
 const Parametres = () => {
+  
   const { state: stateMenuiseriesTypes, dispatch: dispatchMenuiseriesTypes } = useMenuiseriesTypes();
   const { typesMenuiseries } = stateMenuiseriesTypes;
   
@@ -181,10 +182,17 @@ const Parametres = () => {
       setIsLoadingMenuiseries(true);
       try {
         const data = await fetchMenuiserieTypes();
-        setMenuiserieTypes(data);
+        
+        if (Array.isArray(data)) {
+          setMenuiserieTypes(data);
+        } else {
+          console.error("fetchMenuiserieTypes n'a pas retourné un tableau:", data);
+          setMenuiserieTypes([]); 
+        }
       } catch (error) {
         console.error("Erreur lors du chargement des types de menuiseries:", error);
         toast.error("Impossible de charger les types de menuiseries");
+        setMenuiserieTypes([]); 
       } finally {
         setIsLoadingMenuiseries(false);
       }
@@ -430,18 +438,13 @@ const Parametres = () => {
     setTypeMenuiserieFormOpen(true);
   };
 
-  const handleEditTypeMenuiserie = (type: TypeMenuiserie) => {
-    setEditingTypeMenuiserie(type);
-    setTypeMenuiserieFormOpen(true);
-  };
-
   const handleEditMenuiserieType = (type: MenuiserieType) => {
     const typeMenuiserie: TypeMenuiserie = {
       id: type.id,
       nom: type.name,
       largeur: type.largeur,
       hauteur: type.hauteur,
-      surfaceReference: type.surface_impactee,
+      surfaceReference: type.surface_impactee.toLowerCase(),
       impactePlinthe: type.impacte_plinthe,
       description: ''
     };
@@ -461,12 +464,24 @@ const Parametres = () => {
         const success = await deleteMenuiserieType(typeMenuiserieToDelete);
         
         if (success) {
+          
           const updatedTypes = await fetchMenuiserieTypes();
-          setMenuiserieTypes(updatedTypes);
-          toast.success("Type de menuiserie supprimé avec succès");
+          
+          if (Array.isArray(updatedTypes)) {
+            setMenuiserieTypes(updatedTypes);
+            toast.success("Type de menuiserie supprimé avec succès");
+          } else {
+            console.error("fetchMenuiserieTypes après suppression n'a pas retourné un tableau:", updatedTypes);
+            
+            setMenuiserieTypes(prevTypes => 
+              prevTypes.filter(type => type.id !== typeMenuiserieToDelete)
+            );
+            toast.success("Type de menuiserie supprimé avec succès");
+          }
         }
       } catch (error) {
         console.error("Erreur lors de la suppression:", error);
+        toast.error("Une erreur est survenue lors de la suppression");
       } finally {
         setIsLoadingMenuiseries(false);
         setConfirmDeleteMenuiserieOpen(false);
@@ -487,19 +502,33 @@ const Parametres = () => {
         impacte_plinthe: typeData.impactePlinthe
       };
       
+      let success = false;
+      
       if (editingTypeMenuiserie) {
-        await updateMenuiserieType(editingTypeMenuiserie.id, supabaseData);
+        const updatedType = await updateMenuiserieType(editingTypeMenuiserie.id, supabaseData);
+        success = updatedType !== null;
       } else {
-        await createMenuiserieType(supabaseData);
+        const newType = await createMenuiserieType(supabaseData);
+        success = newType !== null;
       }
       
-      const updatedTypes = await fetchMenuiserieTypes();
-      setMenuiserieTypes(updatedTypes);
-      
-      toast.success(editingTypeMenuiserie 
-        ? "Type de menuiserie mis à jour avec succès" 
-        : "Type de menuiserie ajouté avec succès"
-      );
+      if (success) {
+        
+        const updatedTypes = await fetchMenuiserieTypes();
+        
+        if (Array.isArray(updatedTypes)) {
+          setMenuiserieTypes(updatedTypes);
+        } else {
+          console.error("fetchMenuiserieTypes après ajout/modif n'a pas retourné un tableau:", updatedTypes);
+          
+          toast.warning("La liste n'a pas pu être actualisée, veuillez rafraîchir la page");
+        }
+        
+        toast.success(editingTypeMenuiserie 
+          ? "Type de menuiserie mis à jour avec succès" 
+          : "Type de menuiserie ajouté avec succès"
+        );
+      }
     } catch (error) {
       console.error("Erreur lors de l'opération:", error);
       toast.error("Une erreur est survenue");
@@ -596,6 +625,7 @@ const Parametres = () => {
       title="Paramètres"
       subtitle="Gérez les types de travaux, de menuiseries, les clients et leurs paramètres"
     >
+      
       {showDiagnostic && (
         <div className="mb-6">
           <div className="flex justify-between items-center mb-2">
@@ -621,6 +651,7 @@ const Parametres = () => {
           <TabsTrigger value="menuiseries" className="flex-1">Types de Menuiseries</TabsTrigger>
           <TabsTrigger value="clients" className="flex-1">Fiches Clients</TabsTrigger>
         </TabsList>
+        
         
         <TabsContent value="travaux" className="mt-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -891,152 +922,4 @@ const Parametres = () => {
                   <DoorOpen className="h-5 w-5" />
                   Types de Menuiseries
                 </span>
-                <Button variant="outline" size="sm" onClick={handleAddTypeMenuiserie}>
-                  <Plus className="h-4 w-4 mr-1" />
-                  Ajouter un type
-                </Button>
-              </CardTitle>
-              <CardDescription>
-                Gérez les types de menuiseries disponibles pour votre projet
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoadingMenuiseries ? (
-                <div className="flex justify-center py-8">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                </div>
-              ) : menuiserieTypes.length > 0 ? (
-                <div className="rounded-md border">
-                  <div className="grid grid-cols-12 bg-gray-100 p-3 rounded-t-md font-medium text-sm">
-                    <div className="col-span-3">Nom</div>
-                    <div className="col-span-2">Dimensions</div>
-                    <div className="col-span-3">Surface impactée</div>
-                    <div className="col-span-2">Impact plinthes</div>
-                    <div className="col-span-2 text-right">Actions</div>
-                  </div>
-                  <div className="divide-y">
-                    {menuiserieTypes.map((type) => (
-                      <div key={type.id} className="grid grid-cols-12 p-3 items-center hover:bg-gray-50">
-                        <div className="col-span-3 font-medium">
-                          <div className="truncate">{type.name}</div>
-                        </div>
-                        <div className="col-span-2">
-                          {type.largeur} × {type.hauteur} cm
-                        </div>
-                        <div className="col-span-3">
-                          {getSurfaceImpacteeLabel(type.surface_impactee)}
-                        </div>
-                        <div className="col-span-2">
-                          <Badge variant={type.impacte_plinthe ? "default" : "outline"}>
-                            {type.impacte_plinthe ? "Oui" : "Non"}
-                          </Badge>
-                        </div>
-                        <div className="col-span-2 flex justify-end gap-1">
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleEditMenuiserieType(type)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleDeleteTypeMenuiserie(type.id)}
-                          >
-                            <Trash className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <Alert>
-                  <AlertDescription>
-                    Aucun type de menuiserie défini. Utilisez le bouton "Ajouter un type" pour en créer un.
-                  </AlertDescription>
-                </Alert>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="clients" className="mt-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card className="shadow-md lg:col-span-1">
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span>Fiches Clients</span>
-                  <Button variant="outline" size="sm" onClick={handleAddClient} disabled={loading}>
-                    {loading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
-                    Ajouter
-                  </Button>
-                </CardTitle>
-                <CardDescription>
-                  Gérez les informations des clients de votre entreprise
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {loading ? (
-                    <div className="flex justify-center py-4">
-                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                    </div>
-                  ) : (
-                    <>
-                      {clients.map((client) => (
-                        <div 
-                          key={client.id}
-                          className={`flex items-center justify-between p-2 rounded-md cursor-pointer ${selectedClientId === client.id ? 'bg-blue-100' : 'hover:bg-gray-100'}`}
-                          onClick={() => setSelectedClientId(client.id)}
-                        >
-                          <div className="flex items-center gap-2">
-                            <Users className="h-5 w-5 text-gray-500" />
-                            <span>{client.name || client.first_name}</span>
-                          </div>
-                          <div className="flex gap-1">
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleEditClient(client);
-                              }}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteClient(client.id);
-                              }}
-                            >
-                              <Trash className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                      
-                      {clients.length === 0 && (
-                        <Alert>
-                          <AlertDescription>
-                            Aucun client défini. Utilisez le bouton "Ajouter" pour créer un nouveau client.
-                          </AlertDescription>
-                        </Alert>
-                      )}
-                    </>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-      </Tabs>
-    </Layout>
-  );
-};
-
-export default Parametres;
+                <Button variant="outline"
