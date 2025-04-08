@@ -1,17 +1,22 @@
 
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import { AutresSurfacesState, TypeAutreSurface } from '@/types';
+import { AutresSurfacesState, TypeAutreSurface, RoomCustomItem } from '@/types';
 
 // Actions possibles
 type AutresSurfacesAction =
   | { type: 'ADD_TYPE'; payload: TypeAutreSurface }
   | { type: 'UPDATE_TYPE'; payload: { id: string; type: TypeAutreSurface } }
   | { type: 'DELETE_TYPE'; payload: string }
-  | { type: 'LOAD_TYPES'; payload: TypeAutreSurface[] };
+  | { type: 'LOAD_TYPES'; payload: TypeAutreSurface[] }
+  | { type: 'ADD_ITEM'; payload: RoomCustomItem }
+  | { type: 'UPDATE_ITEM'; payload: { id: string; item: RoomCustomItem } }
+  | { type: 'DELETE_ITEM'; payload: string }
+  | { type: 'LOAD_ITEMS'; payload: RoomCustomItem[] };
 
 // État initial
 const initialState: AutresSurfacesState = {
   typesAutresSurfaces: [],
+  roomCustomItems: []
 };
 
 // Créer le contexte
@@ -52,6 +57,32 @@ function autresSurfacesReducer(state: AutresSurfacesState, action: AutresSurface
         typesAutresSurfaces: action.payload,
       };
     
+    case 'ADD_ITEM':
+      return {
+        ...state,
+        roomCustomItems: [...state.roomCustomItems, action.payload],
+      };
+    
+    case 'UPDATE_ITEM': {
+      const { id, item } = action.payload;
+      return {
+        ...state,
+        roomCustomItems: state.roomCustomItems.map((i) => (i.id === id ? item : i)),
+      };
+    }
+    
+    case 'DELETE_ITEM':
+      return {
+        ...state,
+        roomCustomItems: state.roomCustomItems.filter((item) => item.id !== action.payload),
+      };
+    
+    case 'LOAD_ITEMS':
+      return {
+        ...state,
+        roomCustomItems: action.payload,
+      };
+    
     default:
       return state;
   }
@@ -62,44 +93,48 @@ export const AutresSurfacesProvider: React.FC<{ children: React.ReactNode }> = (
   // Récupérer les données depuis localStorage au démarrage
   const [state, dispatch] = useReducer(autresSurfacesReducer, initialState, () => {
     try {
-      const savedState = localStorage.getItem('typesAutresSurfaces');
-      if (savedState) {
-        return { typesAutresSurfaces: JSON.parse(savedState) };
+      const savedTypesState = localStorage.getItem('typesAutresSurfaces');
+      const savedItemsState = localStorage.getItem('roomCustomItems');
+      
+      const types = savedTypesState ? JSON.parse(savedTypesState) : [];
+      const items = savedItemsState ? JSON.parse(savedItemsState) : [];
+      
+      // Si aucune donnée n'est trouvée, initialiser avec des exemples
+      if (types.length === 0) {
+        const defaultTypes: TypeAutreSurface[] = [
+          {
+            id: '1',
+            nom: 'Niche murale',
+            description: 'Niche décorative dans un mur',
+            surfaceImpacteeParDefaut: 'mur',
+            estDeduction: true,
+          },
+          {
+            id: '2',
+            nom: 'Cheminée',
+            description: 'Cheminée avec habillage',
+            surfaceImpacteeParDefaut: 'mur',
+            estDeduction: false,
+          },
+          {
+            id: '3',
+            nom: 'Trappe d\'accès',
+            description: 'Trappe d\'accès aux combles ou vide sanitaire',
+            surfaceImpacteeParDefaut: 'plafond',
+            estDeduction: true,
+          },
+          {
+            id: '4',
+            nom: 'Surface non traitée',
+            description: 'Surface à exclure du calcul',
+            surfaceImpacteeParDefaut: 'sol',
+            estDeduction: true,
+          },
+        ];
+        return { typesAutresSurfaces: defaultTypes, roomCustomItems: [] };
       }
 
-      // Si aucune donnée n'est trouvée, initialiser avec des exemples
-      const defaultTypes: TypeAutreSurface[] = [
-        {
-          id: '1',
-          nom: 'Niche murale',
-          description: 'Niche décorative dans un mur',
-          surfaceImpacteeParDefaut: 'mur',
-          estDeduction: true,
-        },
-        {
-          id: '2',
-          nom: 'Cheminée',
-          description: 'Cheminée avec habillage',
-          surfaceImpacteeParDefaut: 'mur',
-          estDeduction: false,
-        },
-        {
-          id: '3',
-          nom: 'Trappe d\'accès',
-          description: 'Trappe d\'accès aux combles ou vide sanitaire',
-          surfaceImpacteeParDefaut: 'plafond',
-          estDeduction: true,
-        },
-        {
-          id: '4',
-          nom: 'Surface non traitée',
-          description: 'Surface à exclure du calcul',
-          surfaceImpacteeParDefaut: 'sol',
-          estDeduction: true,
-        },
-      ];
-
-      return { typesAutresSurfaces: defaultTypes };
+      return { typesAutresSurfaces: types, roomCustomItems: items };
     } catch (error) {
       console.error('Erreur lors du chargement des types de surfaces:', error);
       return initialState;
@@ -110,8 +145,9 @@ export const AutresSurfacesProvider: React.FC<{ children: React.ReactNode }> = (
   useEffect(() => {
     try {
       localStorage.setItem('typesAutresSurfaces', JSON.stringify(state.typesAutresSurfaces));
+      localStorage.setItem('roomCustomItems', JSON.stringify(state.roomCustomItems));
     } catch (error) {
-      console.error('Erreur lors de la sauvegarde des types de surfaces:', error);
+      console.error('Erreur lors de la sauvegarde des données des surfaces:', error);
     }
   }, [state]);
 

@@ -89,7 +89,7 @@ import {
 
 import { useMenuiseriesTypes, surfacesReference as menuiserieSurfacesReference } from "@/contexts/MenuiseriesTypesContext";
 import { useClients, typesClients } from "@/contexts/ClientsContext";
-import { TypeMenuiserie, TypeAutreSurface } from "@/types";
+import { TypeMenuiserie, TypeAutreSurface, Client } from "@/types";
 import { surfacesReference } from "@/contexts/TravauxTypesContext";
 import { surfacesMenuiseries } from "@/types";
 

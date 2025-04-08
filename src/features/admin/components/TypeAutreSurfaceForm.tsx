@@ -23,7 +23,6 @@ interface TypeAutreSurfaceFormProps {
 }
 
 const TypeAutreSurfaceForm: React.FC<TypeAutreSurfaceFormProps> = ({
-  isOpen,
   onClose,
   typeToEdit,
   onSubmit
@@ -54,7 +53,7 @@ const TypeAutreSurfaceForm: React.FC<TypeAutreSurfaceFormProps> = ({
         estDeduction: false
       });
     }
-  }, [typeToEdit, isOpen]);
+  }, [typeToEdit]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -75,7 +74,7 @@ const TypeAutreSurfaceForm: React.FC<TypeAutreSurfaceFormProps> = ({
   };
 
   return (
-    <DialogContent className="sm:max-w-[550px]">
+    <>
       <DialogHeader>
         <DialogTitle>{typeToEdit ? 'Modifier le type d\'autre surface' : 'Ajouter un type d\'autre surface'}</DialogTitle>
         <DialogDescription>
@@ -145,7 +144,7 @@ const TypeAutreSurfaceForm: React.FC<TypeAutreSurfaceFormProps> = ({
           </Button>
         </DialogFooter>
       </form>
-    </DialogContent>
+    </>
   );
 };
 

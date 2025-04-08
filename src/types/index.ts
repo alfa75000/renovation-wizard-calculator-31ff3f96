@@ -88,13 +88,13 @@ export interface RoomCustomItem {
   name: string;
   largeur: number;
   hauteur: number;
-  surfaceImpactee: "mur" | "plafond" | "sol" | "aucune";
-  estDeduction: boolean; // correspond à adjustment_type
+  surfaceImpactee: 'mur' | 'plafond' | 'sol' | 'aucune';
+  estDeduction: boolean;
   impactePlinthe: boolean;
   quantity: number;
   description: string;
-  sourceTypeId?: string; // Référence à l'autre surface type utilisé comme modèle (optionnel)
-  surface?: number; // Calculé (largeur * hauteur * quantity)
+  sourceTypeId?: string;
+  surface: number; // calculé: largeur * hauteur * quantity / 10000 (en m²)
 }
 
 // Types pour les menuiseries
@@ -113,7 +113,7 @@ export interface TypeAutreSurface {
   id: string;
   nom: string;
   description: string;
-  surfaceImpacteeParDefaut: "mur" | "plafond" | "sol";
+  surfaceImpacteeParDefaut: 'mur' | 'plafond' | 'sol' | 'aucune';
   estDeduction: boolean;
 }
 

@@ -1,4 +1,3 @@
-
 export type WorkType = {
   id: string;
   created_at: string;
@@ -26,7 +25,7 @@ export type Service = {
   supply_price: number;
   group_id: string;
   surface_impactee: SurfaceImpactee;
-  unit?: string; // Pour compatibilité avec le code existant
+  unit?: string; // Pour compatibilité avec le code existant;
 };
 
 export type MenuiserieType = {
