@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Layout } from "@/components/Layout";
 import { 
@@ -18,7 +17,7 @@ import {
   Hammer,
   Wrench,
   SquarePen,
-  Link as LinkIcon,
+  LinkIcon,
   DoorOpen,
   Users,
   User,
@@ -62,7 +61,12 @@ import {
   deleteService
 } from "@/services/travauxService";
 
-import { fetchMenuiserieTypes } from "@/services/menuiseriesService";
+import { 
+  fetchMenuiserieTypes,
+  createMenuiserieType,
+  updateMenuiserieType,
+  deleteMenuiserieType
+} from "@/services/menuiseriesService";
 
 import { useMenuiseriesTypes, surfacesReference as menuiserieSurfacesReference } from "@/contexts/MenuiseriesTypesContext";
 import { Client, useClients, typesClients } from "@/contexts/ClientsContext";
@@ -431,9 +435,7 @@ const Parametres = () => {
     setTypeMenuiserieFormOpen(true);
   };
 
-  // Fonction adaptée pour gérer le type MenuiserieType
   const handleEditMenuiserieType = (type: MenuiserieType) => {
-    // Conversion de MenuiserieType vers TypeMenuiserie
     const typeMenuiserie: TypeMenuiserie = {
       id: type.id,
       nom: type.name,
@@ -452,28 +454,60 @@ const Parametres = () => {
     setConfirmDeleteMenuiserieOpen(true);
   };
 
-  const confirmTypeMenuiserieDelete = () => {
+  const confirmTypeMenuiserieDelete = async () => {
     if (typeMenuiserieToDelete) {
-      dispatchMenuiseriesTypes({ type: 'DELETE_TYPE', payload: typeMenuiserieToDelete });
-      setConfirmDeleteMenuiserieOpen(false);
-      setTypeMenuiserieToDelete(null);
-      toast.success("Type de menuiserie supprimé avec succès");
+      setIsLoadingMenuiseries(true);
+      try {
+        const success = await deleteMenuiserieType(typeMenuiserieToDelete);
+        
+        if (success) {
+          const updatedTypes = await fetchMenuiserieTypes();
+          setMenuiserieTypes(updatedTypes);
+          toast.success("Type de menuiserie supprimé avec succès");
+        }
+      } catch (error) {
+        console.error("Erreur lors de la suppression:", error);
+      } finally {
+        setIsLoadingMenuiseries(false);
+        setConfirmDeleteMenuiserieOpen(false);
+        setTypeMenuiserieToDelete(null);
+      }
     }
   };
 
-  const handleSubmitTypeMenuiserie = (typeData: TypeMenuiserie) => {
-    if (editingTypeMenuiserie) {
-      dispatchMenuiseriesTypes({
-        type: 'UPDATE_TYPE',
-        payload: { id: editingTypeMenuiserie.id, type: typeData }
-      });
-      toast.success("Type de menuiserie mis à jour avec succès");
-    } else {
-      dispatchMenuiseriesTypes({ type: 'ADD_TYPE', payload: typeData });
-      toast.success("Type de menuiserie ajouté avec succès");
+  const handleSubmitTypeMenuiserie = async (typeData: TypeMenuiserie) => {
+    setIsLoadingMenuiseries(true);
+    
+    try {
+      const supabaseData = {
+        name: typeData.nom,
+        hauteur: typeData.hauteur,
+        largeur: typeData.largeur,
+        surface_impactee: typeData.surfaceReference,
+        impacte_plinthe: typeData.impactePlinthe
+      };
+      
+      if (editingTypeMenuiserie) {
+        await updateMenuiserieType(editingTypeMenuiserie.id, supabaseData);
+      } else {
+        await createMenuiserieType(supabaseData);
+      }
+      
+      const updatedTypes = await fetchMenuiserieTypes();
+      setMenuiserieTypes(updatedTypes);
+      
+      toast.success(editingTypeMenuiserie 
+        ? "Type de menuiserie mis à jour avec succès" 
+        : "Type de menuiserie ajouté avec succès"
+      );
+    } catch (error) {
+      console.error("Erreur lors de l'opération:", error);
+      toast.error("Une erreur est survenue");
+    } finally {
+      setIsLoadingMenuiseries(false);
+      setTypeMenuiserieFormOpen(false);
+      setEditingTypeMenuiserie(null);
     }
-    setTypeMenuiserieFormOpen(false);
-    setEditingTypeMenuiserie(null);
   };
 
   const getSurfaceMenuiserieLabel = (id?: string) => {
