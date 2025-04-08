@@ -191,9 +191,7 @@ const Parametres = () => {
     const loadMenuiserieTypes = async () => {
       setIsLoadingMenuiseries(true);
       try {
-        const result = await fetchMenuiserieTypes();
-        
-        const data = result && result.data ? result.data : [];
+        const data = await fetchMenuiserieTypes();
         
         if (Array.isArray(data)) {
           setMenuiserieTypes(data);
@@ -477,8 +475,7 @@ const Parametres = () => {
         
         if (success) {
           
-          const updatedResult = await fetchMenuiserieTypes();
-          const updatedTypes = updatedResult && updatedResult.data ? updatedResult.data : [];
+          const updatedTypes = await fetchMenuiserieTypes();
           
           if (Array.isArray(updatedTypes)) {
             setMenuiserieTypes(updatedTypes);
@@ -528,8 +525,7 @@ const Parametres = () => {
       
       if (success) {
         
-        const updatedResult = await fetchMenuiserieTypes();
-        const updatedTypes = updatedResult && updatedResult.data ? updatedResult.data : [];
+        const updatedTypes = await fetchMenuiserieTypes();
         
         if (Array.isArray(updatedTypes)) {
           setMenuiserieTypes(updatedTypes);
@@ -934,8 +930,8 @@ const Parametres = () => {
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <span>Types de Menuiseries</span>
-                <Button variant="outline" size="sm" onClick={handleAddTypeMenuiserie} disabled={isLoadingMenuiseries}>
-                  {isLoadingMenuiseries ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
+                <Button variant="outline" size="sm" onClick={handleAddTypeMenuiserie} disabled={loading}>
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
                   Ajouter
                 </Button>
               </CardTitle>

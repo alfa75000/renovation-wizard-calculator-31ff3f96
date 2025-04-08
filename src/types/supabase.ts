@@ -1,3 +1,4 @@
+
 export type WorkType = {
   id: string;
   created_at: string;
@@ -34,7 +35,6 @@ export type MenuiserieType = {
   hauteur: number;
   surface_impactee: SurfaceImpactee;
   impacte_plinthe: boolean;
-  description?: string | null;
 };
 
 export type RoomMenuiserie = {
