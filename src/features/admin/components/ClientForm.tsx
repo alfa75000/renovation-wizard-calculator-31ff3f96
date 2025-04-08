@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   DialogFooter
@@ -21,6 +20,8 @@ interface ClientFormProps {
   clientToEdit?: Client | null;
 }
 
+const DEFAULT_CLIENT_TYPE_ID = '4b3375f8-af78-455f-be8c-1d506df4f753';
+
 const ClientForm: React.FC<ClientFormProps> = ({
   clientId,
   onClose,
@@ -41,35 +42,36 @@ const ClientForm: React.FC<ClientFormProps> = ({
     email: '',
     tel1: '',
     tel2: '',
-    typeClient: 'particulier',
+    typeClient: DEFAULT_CLIENT_TYPE_ID,
     autreInfo: '',
     infosComplementaires: ''
   });
   
-  // État pour le dialogue d'alerte de confirmation
   const [confirmClose, setConfirmClose] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // Initialiser le formulaire avec les données du client à éditer
   useEffect(() => {
-    // Cas 1: nous avons un clientToEdit directement passé en prop
     if (clientToEdit) {
-      setFormData(clientToEdit);
+      setFormData({
+        ...clientToEdit,
+        typeClient: clientToEdit.typeClient || DEFAULT_CLIENT_TYPE_ID
+      });
       return;
     }
     
-    // Cas 2: nous avons un clientId, nous cherchons le client dans le state
     if (clientId) {
       const client = state.clients.find(c => c.id === clientId);
       if (client) {
-        setFormData(client);
+        setFormData({
+          ...client,
+          typeClient: client.typeClient || DEFAULT_CLIENT_TYPE_ID
+        });
         return;
       }
     }
     
-    // Cas 3: nouveau client
     setFormData({
-      id: '', // ID vide pour les nouveaux clients
+      id: '',
       nom: '',
       prenom: '',
       adresse: '',
@@ -79,7 +81,7 @@ const ClientForm: React.FC<ClientFormProps> = ({
       email: '',
       tel1: '',
       tel2: '',
-      typeClient: 'particulier',
+      typeClient: DEFAULT_CLIENT_TYPE_ID,
       autreInfo: '',
       infosComplementaires: ''
     });
@@ -98,26 +100,23 @@ const ClientForm: React.FC<ClientFormProps> = ({
     e.preventDefault();
     
     if (submitting || isSubmitting || isLoading) {
-      return; // Éviter les soumissions multiples
+      return;
     }
     
     setSubmitting(true);
     
-    // S'assurer que tel1 est synchronisé avec telephone pour la compatibilité
     const updatedFormData = {
       ...formData,
       tel1: formData.tel1 || formData.telephone,
       telephone: formData.telephone || formData.tel1,
+      typeClient: formData.typeClient || DEFAULT_CLIENT_TYPE_ID
     };
     
     try {
       if (onSubmit) {
-        // Si nous avons une fonction onSubmit personnalisée, nous l'utilisons
         await onSubmit(updatedFormData);
       } else {
-        // Sinon, nous utilisons le dispatch du contexte
         if (clientId || clientToEdit) {
-          // Mise à jour d'un client existant
           const id = clientId || (clientToEdit ? clientToEdit.id : '');
           if (id) {
             await dispatch({
@@ -126,7 +125,6 @@ const ClientForm: React.FC<ClientFormProps> = ({
             });
           }
         } else {
-          // Ajout d'un nouveau client
           await dispatch({ 
             type: 'ADD_CLIENT', 
             payload: updatedFormData 
@@ -136,24 +134,19 @@ const ClientForm: React.FC<ClientFormProps> = ({
       onClose();
     } catch (error) {
       console.error("Erreur lors de la soumission du formulaire:", error);
-      // L'erreur est déjà gérée dans le contexte
     } finally {
       setSubmitting(false);
     }
   };
-  
-  // Gérer la demande de fermeture
+
   const handleCloseRequest = () => {
-    // Si le formulaire contient des données, montrer la confirmation
     if (formData.nom || formData.prenom || formData.adresse || formData.tel1 || formData.email) {
       setConfirmClose(true);
     } else {
-      // Si formulaire vide, fermer directement
       onClose();
     }
   };
-  
-  // Confirmer la fermeture
+
   const confirmCloseDialog = () => {
     setConfirmClose(false);
     onClose();
@@ -263,7 +256,7 @@ const ClientForm: React.FC<ClientFormProps> = ({
         <div className="space-y-2">
           <Label htmlFor="typeClient">Type de client</Label>
           <Select 
-            value={formData.typeClient} 
+            value={formData.typeClient || DEFAULT_CLIENT_TYPE_ID} 
             onValueChange={handleTypeClientChange}
           >
             <SelectTrigger id="typeClient">
@@ -322,7 +315,6 @@ const ClientForm: React.FC<ClientFormProps> = ({
         </DialogFooter>
       </form>
       
-      {/* Dialogue de confirmation */}
       <AlertDialog open={confirmClose} onOpenChange={setConfirmClose}>
         <AlertDialogContent>
           <AlertDialogHeader>
