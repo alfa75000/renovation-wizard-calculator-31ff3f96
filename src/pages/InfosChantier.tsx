@@ -13,15 +13,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Calendar, PlusCircle, Save, Trash2 } from 'lucide-react';
+import { Calendar, PlusCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 const InfosChantier: React.FC = () => {
   const navigate = useNavigate();
   const { state: clientsState } = useClients();
-  const { state: projetState, sauvegarderProjet, chargerProjet, genererNomFichier, nouveauProjet, supprimerProjet } = useProjetChantier();
-  const { state: projectState, saveProjectDraft, saveCurrentProject } = useProject();
+  const { state: projetState, sauvegarderProjet, chargerProjet, genererNomFichier, nouveauProjet } = useProjetChantier();
+  const { state: projectState } = useProject();
   
   const [clientId, setClientId] = useState<string>('');
   const [nomProjet, setNomProjet] = useState<string>('');
@@ -31,7 +30,6 @@ const InfosChantier: React.FC = () => {
   const [infoComplementaire, setInfoComplementaire] = useState<string>('');
   const [dateDevis, setDateDevis] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [nomFichier, setNomFichier] = useState<string>('');
-  const [dialogProjetId, setDialogProjetId] = useState<string | null>(null);
   
   const clientSelectionne = clientsState.clients.find(c => c.id === clientId);
   
@@ -58,7 +56,7 @@ const InfosChantier: React.FC = () => {
     }
   }, [clientId, nomProjet, adresseChantier, clientsState.clients, genererNomFichier]);
   
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!clientId) {
       toast.error('Veuillez sélectionner un client');
       return;
@@ -70,7 +68,7 @@ const InfosChantier: React.FC = () => {
     }
     
     // Sauvegarder le projet
-    await sauvegarderProjet({
+    sauvegarderProjet({
       clientId,
       nomProjet,
       description: descriptionProjet,
@@ -82,24 +80,8 @@ const InfosChantier: React.FC = () => {
     toast.success('Projet sauvegardé avec succès');
   };
   
-  const handleSaveDraft = async () => {
-    try {
-      // Sauvegarder le brouillon
-      const success = await saveProjectDraft();
-      
-      if (success) {
-        toast.success('Brouillon sauvegardé avec succès');
-      } else {
-        toast.error('Erreur lors de la sauvegarde du brouillon');
-      }
-    } catch (error) {
-      console.error('Erreur lors de la sauvegarde du brouillon:', error);
-      toast.error('Erreur lors de la sauvegarde du brouillon');
-    }
-  };
-  
-  const handleChargerProjet = async (projetId: string) => {
-    await chargerProjet(projetId);
+  const handleChargerProjet = (projetId: string) => {
+    chargerProjet(projetId);
     toast.info('Projet chargé');
   };
   
@@ -115,11 +97,6 @@ const InfosChantier: React.FC = () => {
     setDateDevis(format(new Date(), 'yyyy-MM-dd'));
     setNomFichier('');
     toast.info('Nouveau projet initialisé');
-  };
-  
-  const handleDeleteProjet = async (projetId: string) => {
-    await supprimerProjet(projetId);
-    setDialogProjetId(null);
   };
   
   return (
@@ -250,25 +227,11 @@ const InfosChantier: React.FC = () => {
             
             <div className="pt-4 flex flex-wrap gap-4">
               <Button onClick={handleSave}>
-                Enregistrer le projet
+                Sauvegarder le projet
               </Button>
-              
-              <Button 
-                variant="secondary" 
-                onClick={handleSaveDraft}
-                className="flex items-center gap-2"
-              >
-                <Save className="h-4 w-4" />
-                Sauvegarder brouillon
-              </Button>
-              
-              <Button 
-                variant="outline" 
-                onClick={() => navigate('/travaux')}
-              >
+              <Button variant="outline" onClick={() => navigate('/travaux')}>
                 Aller aux travaux
               </Button>
-              
               <Button 
                 variant="secondary" 
                 onClick={handleNouveauProjet}
@@ -292,51 +255,24 @@ const InfosChantier: React.FC = () => {
                   return (
                     <div 
                       key={projet.id} 
-                      className={`p-3 border rounded-md relative cursor-pointer hover:bg-gray-50 transition-colors ${projetState.projetActif?.id === projet.id ? 'border-primary bg-primary/5' : 'border-gray-200'}`}
+                      className={`p-3 border rounded-md cursor-pointer hover:bg-gray-50 transition-colors ${projetState.projetActif?.id === projet.id ? 'border-primary bg-primary/5' : 'border-gray-200'}`}
+                      onClick={() => handleChargerProjet(projet.id)}
                     >
-                      <div onClick={() => handleChargerProjet(projet.id)}>
-                        <h3 className="font-medium">{projet.nomProjet || projet.nom}</h3>
-                        <p className="text-sm text-gray-500">
-                          Client: {client?.nom} {client?.prenom}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          {projet.dateModification ? format(new Date(projet.dateModification), 'dd/MM/yyyy', { locale: fr }) : "Date inconnue"}
-                        </p>
-                        {projet.projectData && (
-                          <div className="mt-1 text-xs text-green-600">
-                            <span className="inline-block px-2 py-1 bg-green-50 rounded-full">
-                              {projet.projectData.rooms?.length || 0} pièces | 
-                              {projet.projectData.travaux ? projet.projectData.travaux.length : 0} travaux
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                      
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button 
-                            variant="ghost" 
-                            size="icon"
-                            className="absolute top-2 right-2 h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
-                            onClick={() => setDialogProjetId(projet.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Supprimer le projet</DialogTitle>
-                            <DialogDescription>
-                              Êtes-vous sûr de vouloir supprimer le projet "{projet.nomProjet || projet.nom}" ?
-                              Cette action est irréversible.
-                            </DialogDescription>
-                          </DialogHeader>
-                          <DialogFooter>
-                            <Button variant="outline" onClick={() => setDialogProjetId(null)}>Annuler</Button>
-                            <Button variant="destructive" onClick={() => handleDeleteProjet(projet.id)}>Supprimer</Button>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
+                      <h3 className="font-medium">{projet.nomProjet || projet.nom}</h3>
+                      <p className="text-sm text-gray-500">
+                        Client: {client?.nom} {client?.prenom}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {projet.dateModification ? format(new Date(projet.dateModification), 'dd/MM/yyyy', { locale: fr }) : "Date inconnue"}
+                      </p>
+                      {projet.projectData && (
+                        <div className="mt-1 text-xs text-green-600">
+                          <span className="inline-block px-2 py-1 bg-green-50 rounded-full">
+                            {projet.projectData.rooms.length} pièces | 
+                            {projet.projectData.travaux ? projet.projectData.travaux.length : 0} travaux
+                          </span>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
