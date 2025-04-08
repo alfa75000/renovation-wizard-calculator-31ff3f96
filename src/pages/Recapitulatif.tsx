@@ -151,11 +151,6 @@ const Recapitulatif: React.FC = () => {
                           <tr key={travail.id} className="border-b">
                             <td className="px-3 py-2">
                               <div>{travail.typeTravauxLabel}: {travail.sousTypeLabel}</div>
-                              {travail.description && (
-                                <div className="text-xs text-gray-500 mt-1">
-                                  {travail.description}
-                                </div>
-                              )}
                               {travail.personnalisation && (
                                 <div className="text-xs text-gray-600 mt-1 italic">
                                   {travail.personnalisation}
