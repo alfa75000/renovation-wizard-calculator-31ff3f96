@@ -40,6 +40,16 @@ import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableFooter,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableCaption,
+} from "@/components/ui/table";
 
 import TypeMenuiserieForm from "@/features/admin/components/TypeMenuiserieForm";
 import ClientForm from "@/features/admin/components/ClientForm";
@@ -444,7 +454,7 @@ const Parametres = () => {
       nom: type.name,
       largeur: type.largeur,
       hauteur: type.hauteur,
-      surfaceReference: type.surface_impactee.toLowerCase(),
+      surfaceReference: type.surface_impactee,
       impactePlinthe: type.impacte_plinthe,
       description: type.description || ''
     };
@@ -942,11 +952,11 @@ const Parametres = () => {
                         <TableHeader>
                           <TableRow>
                             <TableHead className="w-1/6">Nom</TableHead>
-                            <TableHead className="w-1/6">Dimensions (cm)</TableHead>
-                            <TableHead className="w-1/12">Surface (m²)</TableHead>
-                            <TableHead className="w-1/6">Surface impactée</TableHead>
-                            <TableHead className="w-1/4">Description</TableHead>
-                            <TableHead className="w-1/12 text-right">Actions</TableHead>
+                            <TableHead className="w-1/8">Dimensions (cm)</TableHead>
+                            <TableHead className="w-1/10">Surface (m²)</TableHead>
+                            <TableHead className="w-1/8">Surface impactée</TableHead>
+                            <TableHead className="w-1/3">Description</TableHead>
+                            <TableHead className="w-1/10 text-right">Actions</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
