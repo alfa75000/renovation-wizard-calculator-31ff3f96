@@ -65,32 +65,43 @@ export const createClient = async (client: Client): Promise<Client | null> => {
       infos_complementaires: client.infosComplementaires
     };
     
-    const { data, error } = await supabase
+    // Correction: D'abord insérer, puis faire un select séparé si nécessaire
+    const { error } = await supabase
       .from('clients')
-      .insert(supabaseClient)
-      .select()
-      .single();
+      .insert(supabaseClient);
       
     if (error) {
       console.error('[clientsService] Erreur lors de la création du client:', error);
       throw error;
     }
     
+    // Récupérer le client nouvellement créé
+    const { data: newClient, error: fetchError } = await supabase
+      .from('clients')
+      .select('*')
+      .eq('id', client.id)
+      .single();
+    
+    if (fetchError) {
+      console.warn('[clientsService] Avertissement: Client créé mais impossible de le récupérer:', fetchError);
+      return client; // Retourner le client original car il a été créé avec succès
+    }
+    
     // Retourner le client créé au format Client
     return {
-      id: data.id,
-      nom: data.nom || '',
-      prenom: data.prenom || '',
-      adresse: data.adresse || '',
-      telephone: data.tel1 || '',
-      codePostal: data.code_postal || '',
-      ville: data.ville || '',
-      email: data.email || '',
-      tel1: data.tel1 || '',
-      tel2: data.tel2 || '',
-      typeClient: data.client_type_id || 'particulier',
-      autreInfo: data.autre_info || '',
-      infosComplementaires: data.infos_complementaires || '',
+      id: newClient.id,
+      nom: newClient.nom || '',
+      prenom: newClient.prenom || '',
+      adresse: newClient.adresse || '',
+      telephone: newClient.tel1 || '',
+      codePostal: newClient.code_postal || '',
+      ville: newClient.ville || '',
+      email: newClient.email || '',
+      tel1: newClient.tel1 || '',
+      tel2: newClient.tel2 || '',
+      typeClient: newClient.client_type_id || 'particulier',
+      autreInfo: newClient.autre_info || '',
+      infosComplementaires: newClient.infos_complementaires || '',
     };
   } catch (error) {
     console.error('[clientsService] Exception lors de la création du client:', error);
@@ -122,33 +133,48 @@ export const updateClient = async (id: string, client: Partial<Client>): Promise
     if (client.autreInfo !== undefined) supabaseClient.autre_info = client.autreInfo;
     if (client.infosComplementaires !== undefined) supabaseClient.infos_complementaires = client.infosComplementaires;
     
-    const { data, error } = await supabase
+    // Correction: Ne pas faire de select dans la même opération
+    const { error } = await supabase
       .from('clients')
       .update(supabaseClient)
-      .eq('id', id)
-      .select()
-      .single();
+      .eq('id', id);
       
     if (error) {
       console.error('[clientsService] Erreur lors de la mise à jour du client:', error);
       throw error;
     }
     
+    // Récupérer le client mis à jour
+    const { data: updatedClient, error: fetchError } = await supabase
+      .from('clients')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (fetchError) {
+      console.warn('[clientsService] Avertissement: Client mis à jour mais impossible de le récupérer:', fetchError);
+      // Retourner une version combinée du client
+      return {
+        id,
+        ...client as Client
+      };
+    }
+    
     // Retourner le client mis à jour au format Client
     return {
-      id: data.id,
-      nom: data.nom || '',
-      prenom: data.prenom || '',
-      adresse: data.adresse || '',
-      telephone: data.tel1 || '',
-      codePostal: data.code_postal || '',
-      ville: data.ville || '',
-      email: data.email || '',
-      tel1: data.tel1 || '',
-      tel2: data.tel2 || '',
-      typeClient: data.client_type_id || 'particulier',
-      autreInfo: data.autre_info || '',
-      infosComplementaires: data.infos_complementaires || '',
+      id: updatedClient.id,
+      nom: updatedClient.nom || '',
+      prenom: updatedClient.prenom || '',
+      adresse: updatedClient.adresse || '',
+      telephone: updatedClient.tel1 || '',
+      codePostal: updatedClient.code_postal || '',
+      ville: updatedClient.ville || '',
+      email: updatedClient.email || '',
+      tel1: updatedClient.tel1 || '',
+      tel2: updatedClient.tel2 || '',
+      typeClient: updatedClient.client_type_id || 'particulier',
+      autreInfo: updatedClient.autre_info || '',
+      infosComplementaires: updatedClient.infos_complementaires || '',
     };
   } catch (error) {
     console.error('[clientsService] Exception lors de la mise à jour du client:', error);
@@ -207,4 +233,3 @@ export const fetchClientTypes = async (): Promise<ClientType[]> => {
     return [];
   }
 };
-
