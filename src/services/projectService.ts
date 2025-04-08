@@ -1,7 +1,7 @@
 
 import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
-import { Project, Room, Travail, ProjectState } from '@/types';
+import { Room, Travail, ProjectState } from '@/types';
 
 /**
  * Récupère tous les projets depuis Supabase
@@ -690,17 +690,17 @@ export const updateProject = async (projectId: string, projectState: ProjectStat
     
     // Gérer les travaux
     // Récupérer tous les travaux existants du projet
-    const { data: existingRoomIds, error: existingRoomIdsError } = await supabase
+    const { data: projectRooms, error: projectRoomsError } = await supabase
       .from('rooms')
       .select('id')
       .eq('project_id', projectId);
     
-    if (existingRoomIdsError) {
-      console.error('Erreur lors de la récupération des IDs de pièces:', existingRoomIdsError);
-      throw existingRoomIdsError;
+    if (projectRoomsError) {
+      console.error('Erreur lors de la récupération des IDs de pièces:', projectRoomsError);
+      throw projectRoomsError;
     }
     
-    const roomIds = (existingRoomIds || []).map(room => room.id);
+    const roomIds = (projectRooms || []).map(room => room.id);
     
     if (roomIds.length > 0) {
       const { data: existingWorks, error: worksError } = await supabase
@@ -837,7 +837,7 @@ export const generateDefaultProjectName = () => {
 /**
  * Type pour l'objet Projet récupéré depuis Supabase
  */
-export interface Project {
+export type Project = {
   id: string;
   name: string;
   client_id: string | null;
@@ -853,5 +853,4 @@ export interface Project {
   ceiling_height: number;
   created_at: string;
   updated_at: string;
-}
-
+};

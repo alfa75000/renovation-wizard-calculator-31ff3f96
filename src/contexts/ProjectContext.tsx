@@ -1,5 +1,6 @@
+
 import React, { createContext, useContext, useReducer, useEffect, useState, useCallback } from 'react';
-import { ProjectState, Property, Room, Travail, ProjectAction, Project } from '@/types';
+import { ProjectState, Property, Room, Travail, ProjectAction } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'sonner';
 import { 
@@ -8,7 +9,8 @@ import {
   fetchProjectById, 
   fetchProjects, 
   deleteProject,
-  generateDefaultProjectName
+  generateDefaultProjectName,
+  Project
 } from '@/services/projectService';
 
 // État initial
@@ -178,7 +180,6 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setIsLoading(true);
       const projectsData = await fetchProjects();
       setProjects(projectsData);
-      return projectsData;
     } catch (error) {
       console.error('Erreur lors du chargement des projets:', error);
       toast.error('Impossible de charger la liste des projets');
