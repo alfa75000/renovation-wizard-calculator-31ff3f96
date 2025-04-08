@@ -930,8 +930,8 @@ const Parametres = () => {
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <span>Types de Menuiseries</span>
-                <Button variant="outline" size="sm" onClick={handleAddTypeMenuiserie} disabled={loading}>
-                  {loading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
+                <Button variant="outline" size="sm" onClick={handleAddTypeMenuiserie} disabled={isLoadingMenuiseries}>
+                  {isLoadingMenuiseries ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
                   Ajouter
                 </Button>
               </CardTitle>
