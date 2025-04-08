@@ -67,9 +67,9 @@ const ClientForm: React.FC<ClientFormProps> = ({
       }
     }
     
-    // Cas 3: nouveau client
+    // Cas 3: nouveau client - ne pas générer d'ID ici, laissons Supabase le faire
     setFormData({
-      id: uuidv4(),
+      id: '', // ID vide pour les nouveaux clients, sera généré par Supabase
       nom: '',
       prenom: '',
       adresse: '',
