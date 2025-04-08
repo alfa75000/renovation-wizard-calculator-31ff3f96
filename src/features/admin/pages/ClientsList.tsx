@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Layout } from '@/components/Layout';
 import { useClients } from '@/contexts/ClientsContext';
 import { Button } from '@/components/ui/button';
@@ -7,9 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Edit, Trash, Search } from 'lucide-react';
+import { Plus, Edit, Trash2, Search } from 'lucide-react';
 import ClientForm from '@/features/admin/components/ClientForm';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
 
 const ClientsList: React.FC = () => {
   const { state, dispatch, isLoading, clientTypes, getClientTypeName } = useClients();
@@ -18,6 +19,7 @@ const ClientsList: React.FC = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [clientToDelete, setClientToDelete] = useState<string | null>(null);
+  const [isProcessingDelete, setIsProcessingDelete] = useState(false);
 
   // Filtrer les clients en fonction du terme de recherche
   const filteredClients = state.clients.filter(client => {
@@ -40,11 +42,19 @@ const ClientsList: React.FC = () => {
     setIsDeleteDialogOpen(true);
   };
 
-  const confirmDeleteClient = () => {
-    if (clientToDelete) {
-      dispatch({ type: 'DELETE_CLIENT', payload: clientToDelete });
-      setIsDeleteDialogOpen(false);
-      setClientToDelete(null);
+  const confirmDeleteClient = async () => {
+    if (clientToDelete && !isProcessingDelete) {
+      setIsProcessingDelete(true);
+      try {
+        await dispatch({ type: 'DELETE_CLIENT', payload: clientToDelete });
+      } catch (error) {
+        console.error("Erreur lors de la suppression du client:", error);
+        // L'erreur est déjà gérée dans le contexte
+      } finally {
+        setIsDeleteDialogOpen(false);
+        setClientToDelete(null);
+        setIsProcessingDelete(false);
+      }
     }
   };
 
@@ -141,6 +151,7 @@ const ClientsList: React.FC = () => {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleEditClient(client.id)}
+                            disabled={isLoading}
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -154,8 +165,9 @@ const ClientsList: React.FC = () => {
                                 size="sm"
                                 className="text-red-500 hover:text-red-700 hover:bg-red-50"
                                 onClick={() => handleDeleteClient(client.id)}
+                                disabled={isLoading}
                               >
-                                <Trash className="h-4 w-4" />
+                                <Trash2 className="h-4 w-4" />
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
@@ -171,8 +183,9 @@ const ClientsList: React.FC = () => {
                                 <AlertDialogAction
                                   onClick={confirmDeleteClient}
                                   className="bg-red-500 hover:bg-red-600"
+                                  disabled={isProcessingDelete}
                                 >
-                                  Supprimer
+                                  {isProcessingDelete ? 'Suppression...' : 'Supprimer'}
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>

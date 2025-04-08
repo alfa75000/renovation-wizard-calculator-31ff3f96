@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Client, typesClients } from '@/types';
-import { v4 as uuidv4 } from 'uuid';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useClients } from '@/contexts/ClientsContext';
 
@@ -30,7 +29,7 @@ const ClientForm: React.FC<ClientFormProps> = ({
   isSubmitting = false,
   clientToEdit = null
 }) => {
-  const { state, dispatch, clientTypes } = useClients();
+  const { state, dispatch, clientTypes, isLoading } = useClients();
   const [formData, setFormData] = useState<Client>({
     id: '',
     nom: '',
@@ -49,6 +48,7 @@ const ClientForm: React.FC<ClientFormProps> = ({
   
   // État pour le dialogue d'alerte de confirmation
   const [confirmClose, setConfirmClose] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   // Initialiser le formulaire avec les données du client à éditer
   useEffect(() => {
@@ -67,9 +67,9 @@ const ClientForm: React.FC<ClientFormProps> = ({
       }
     }
     
-    // Cas 3: nouveau client - ne pas générer d'ID ici, laissons Supabase le faire
+    // Cas 3: nouveau client
     setFormData({
-      id: '', // ID vide pour les nouveaux clients, sera généré par Supabase
+      id: '', // ID vide pour les nouveaux clients
       nom: '',
       prenom: '',
       adresse: '',
@@ -94,8 +94,14 @@ const ClientForm: React.FC<ClientFormProps> = ({
     setFormData(prev => ({ ...prev, typeClient: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (submitting || isSubmitting || isLoading) {
+      return; // Éviter les soumissions multiples
+    }
+    
+    setSubmitting(true);
     
     // S'assurer que tel1 est synchronisé avec telephone pour la compatibilité
     const updatedFormData = {
@@ -104,28 +110,35 @@ const ClientForm: React.FC<ClientFormProps> = ({
       telephone: formData.telephone || formData.tel1,
     };
     
-    if (onSubmit) {
-      // Si nous avons une fonction onSubmit personnalisée, nous l'utilisons
-      onSubmit(updatedFormData);
-    } else {
-      // Sinon, nous utilisons le dispatch du contexte
-      if (clientId || clientToEdit) {
-        // Mise à jour d'un client existant
-        dispatch({
-          type: 'UPDATE_CLIENT',
-          payload: { 
-            id: clientId || (clientToEdit ? clientToEdit.id : ''), 
-            client: updatedFormData 
-          }
-        });
+    try {
+      if (onSubmit) {
+        // Si nous avons une fonction onSubmit personnalisée, nous l'utilisons
+        await onSubmit(updatedFormData);
       } else {
-        // Ajout d'un nouveau client
-        dispatch({ 
-          type: 'ADD_CLIENT', 
-          payload: updatedFormData 
-        });
+        // Sinon, nous utilisons le dispatch du contexte
+        if (clientId || clientToEdit) {
+          // Mise à jour d'un client existant
+          const id = clientId || (clientToEdit ? clientToEdit.id : '');
+          if (id) {
+            await dispatch({
+              type: 'UPDATE_CLIENT',
+              payload: { id, client: updatedFormData }
+            });
+          }
+        } else {
+          // Ajout d'un nouveau client
+          await dispatch({ 
+            type: 'ADD_CLIENT', 
+            payload: updatedFormData 
+          });
+        }
       }
       onClose();
+    } catch (error) {
+      console.error("Erreur lors de la soumission du formulaire:", error);
+      // L'erreur est déjà gérée dans le contexte
+    } finally {
+      setSubmitting(false);
     }
   };
   
@@ -292,11 +305,19 @@ const ClientForm: React.FC<ClientFormProps> = ({
         </div>
         
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={handleCloseRequest} disabled={isSubmitting}>
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={handleCloseRequest} 
+            disabled={isSubmitting || submitting || isLoading}
+          >
             Annuler
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Chargement...' : (clientId || clientToEdit) ? 'Mettre à jour' : 'Ajouter'}
+          <Button 
+            type="submit" 
+            disabled={isSubmitting || submitting || isLoading}
+          >
+            {isSubmitting || submitting || isLoading ? 'Chargement...' : (clientId || clientToEdit) ? 'Mettre à jour' : 'Ajouter'}
           </Button>
         </DialogFooter>
       </form>

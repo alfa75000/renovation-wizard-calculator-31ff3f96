@@ -118,31 +118,25 @@ export const ClientsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   
   // Intercepter les actions du dispatch pour synchroniser avec Supabase
   const handleDispatch = async (action: ClientsAction) => {
-    // D'abord, appliquer l'action au state local pour une UI réactive
-    // dispatch(action);
-    
-    // Ensuite, synchroniser avec Supabase
     try {
+      setIsLoading(true);
+      
       switch(action.type) {
         case 'ADD_CLIENT': {
-          setIsLoading(true);
           console.log('[ClientsContext] Ajout d\'un nouveau client', action.payload);
           const newClient = action.payload;
           const result = await createClient(newClient);
           
           if (!result) {
             toast.error('Erreur lors de la création du client');
-            // Ne pas mettre à jour le state local
           } else {
-            toast.success('Client ajouté avec succès');
-            // Mettre à jour le state local avec le client retourné par Supabase (qui contient l'ID généré)
             dispatch({ type: 'ADD_CLIENT', payload: result });
+            toast.success('Client ajouté avec succès');
           }
           break;
         }
         
         case 'UPDATE_CLIENT': {
-          setIsLoading(true);
           console.log('[ClientsContext] Mise à jour du client', action.payload);
           const { id, client } = action.payload;
           const result = await updateClient(id, client);
@@ -153,18 +147,13 @@ export const ClientsProvider: React.FC<{ children: React.ReactNode }> = ({ child
             const clients = await fetchClients();
             dispatch({ type: 'LOAD_CLIENTS', payload: clients });
           } else {
+            dispatch({ type: 'UPDATE_CLIENT', payload: { id, client: result } });
             toast.success('Client mis à jour avec succès');
-            // Appliquer la mise à jour au state local
-            dispatch({ 
-              type: 'UPDATE_CLIENT', 
-              payload: { id, client: result }
-            });
           }
           break;
         }
         
         case 'DELETE_CLIENT': {
-          setIsLoading(true);
           console.log('[ClientsContext] Suppression du client', action.payload);
           const id = action.payload;
           const result = await deleteClient(id);
@@ -175,22 +164,29 @@ export const ClientsProvider: React.FC<{ children: React.ReactNode }> = ({ child
             const clients = await fetchClients();
             dispatch({ type: 'LOAD_CLIENTS', payload: clients });
           } else {
-            toast.success('Client supprimé avec succès');
-            // Appliquer la suppression au state local
             dispatch({ type: 'DELETE_CLIENT', payload: id });
+            toast.success('Client supprimé avec succès');
           }
           break;
         }
         
         case 'LOAD_CLIENTS':
         case 'RESET_CLIENTS':
-          // Ces actions sont déjà appliquées au début de handleDispatch
+          // Ces actions sont directement appliquées au reducer
           dispatch(action);
           break;
       }
     } catch (error) {
       console.error('[ClientsContext] Erreur lors de la synchronisation avec Supabase:', error);
       toast.error('Erreur de synchronisation avec la base de données');
+      
+      // Recharger les clients en cas d'erreur pour avoir un état cohérent
+      try {
+        const clients = await fetchClients();
+        dispatch({ type: 'LOAD_CLIENTS', payload: clients });
+      } catch (e) {
+        console.error('[ClientsContext] Erreur lors du rechargement des clients:', e);
+      }
     } finally {
       setIsLoading(false);
     }
