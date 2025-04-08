@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useClients } from '@/contexts/ClientsContext';
-import { useProjetChantier } from '@/contexts/ProjetChantierContext';
 import { useProject } from '@/contexts/ProjectContext';
 import { Layout } from '@/components/Layout';
 import { Button } from '@/components/ui/button';
@@ -13,14 +12,24 @@ import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Calendar, PlusCircle } from 'lucide-react';
+import { Calendar, PlusCircle, Save, Trash } from 'lucide-react';
 import { toast } from 'sonner';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 const InfosChantier: React.FC = () => {
   const navigate = useNavigate();
   const { state: clientsState } = useClients();
-  const { state: projetState, sauvegarderProjet, chargerProjet, genererNomFichier, nouveauProjet } = useProjetChantier();
-  const { state: projectState } = useProject();
+  const { 
+    state: projectState, 
+    isLoading, 
+    projects, 
+    currentProjectId,
+    saveProject,
+    saveProjectAsDraft,
+    loadProject,
+    createNewProject,
+    deleteCurrentProject
+  } = useProject();
   
   const [clientId, setClientId] = useState<string>('');
   const [nomProjet, setNomProjet] = useState<string>('');
@@ -29,64 +38,69 @@ const InfosChantier: React.FC = () => {
   const [occupant, setOccupant] = useState<string>('');
   const [infoComplementaire, setInfoComplementaire] = useState<string>('');
   const [dateDevis, setDateDevis] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
-  const [nomFichier, setNomFichier] = useState<string>('');
   
   const clientSelectionne = clientsState.clients.find(c => c.id === clientId);
   
-  // Mise à jour du formulaire si un projet actif est chargé
+  // Si un projet est sélectionné, charger ses informations
   useEffect(() => {
-    if (projetState.projetActif) {
-      setClientId(projetState.projetActif.clientId);
-      setNomProjet(projetState.projetActif.nomProjet || '');
-      setDescriptionProjet(projetState.projetActif.description);
-      setAdresseChantier(projetState.projetActif.adresse);
-      setOccupant(projetState.projetActif.occupant || '');
-      setInfoComplementaire(projetState.projetActif.infoComplementaire || '');
-    }
-  }, [projetState.projetActif]);
-  
-  // Mise à jour du nom de fichier proposé
-  useEffect(() => {
-    if (clientId && nomProjet) {
-      const client = clientsState.clients.find(c => c.id === clientId);
-      if (client) {
-        const nom = client.nom || '';
-        setNomFichier(genererNomFichier({ nomProjet, adresse: adresseChantier }, nom));
+    if (currentProjectId) {
+      const currentProject = projects.find(p => p.id === currentProjectId);
+      if (currentProject) {
+        setClientId(currentProject.client_id || '');
+        setNomProjet(currentProject.name || '');
+        setDescriptionProjet(currentProject.description || '');
+        setAdresseChantier(currentProject.address || '');
+        setOccupant(currentProject.occupant || '');
       }
     }
-  }, [clientId, nomProjet, adresseChantier, clientsState.clients, genererNomFichier]);
+  }, [currentProjectId, projects]);
   
-  const handleSave = () => {
-    if (!clientId) {
-      toast.error('Veuillez sélectionner un client');
-      return;
-    }
-    
+  const handleSave = async () => {
     if (!nomProjet) {
-      toast.error('Veuillez saisir un intitulé de projet');
+      toast.error('Veuillez saisir un nom de projet');
       return;
     }
     
-    // Sauvegarder le projet
-    sauvegarderProjet({
-      clientId,
-      nomProjet,
-      description: descriptionProjet,
-      adresse: adresseChantier,
-      occupant,
-      infoComplementaire,
-    });
-    
-    toast.success('Projet sauvegardé avec succès');
+    try {
+      await saveProject(nomProjet);
+      
+      // Mettre à jour les informations du projet
+      const projectInfo = {
+        name: nomProjet,
+        clientId: clientId || null,
+        description: descriptionProjet,
+        address: adresseChantier,
+        occupant: occupant,
+        infoComplementaire: infoComplementaire
+      };
+      
+      await saveProject(nomProjet);
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde du projet:', error);
+      toast.error('Une erreur est survenue lors de la sauvegarde du projet');
+    }
   };
   
-  const handleChargerProjet = (projetId: string) => {
-    chargerProjet(projetId);
-    toast.info('Projet chargé');
+  const handleSaveDraft = async () => {
+    try {
+      await saveProjectAsDraft();
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde du brouillon:', error);
+      toast.error('Une erreur est survenue lors de la sauvegarde du brouillon');
+    }
+  };
+  
+  const handleChargerProjet = async (projetId: string) => {
+    try {
+      await loadProject(projetId);
+    } catch (error) {
+      console.error('Erreur lors du chargement du projet:', error);
+      toast.error('Une erreur est survenue lors du chargement du projet');
+    }
   };
   
   const handleNouveauProjet = () => {
-    nouveauProjet();
+    createNewProject();
     // Réinitialiser le formulaire
     setClientId('');
     setNomProjet('');
@@ -95,8 +109,22 @@ const InfosChantier: React.FC = () => {
     setOccupant('');
     setInfoComplementaire('');
     setDateDevis(format(new Date(), 'yyyy-MM-dd'));
-    setNomFichier('');
-    toast.info('Nouveau projet initialisé');
+  };
+  
+  const handleDeleteProject = async () => {
+    try {
+      await deleteCurrentProject();
+      // Réinitialiser le formulaire
+      setClientId('');
+      setNomProjet('');
+      setDescriptionProjet('');
+      setAdresseChantier('');
+      setOccupant('');
+      setInfoComplementaire('');
+    } catch (error) {
+      console.error('Erreur lors de la suppression du projet:', error);
+      toast.error('Une erreur est survenue lors de la suppression du projet');
+    }
   };
   
   return (
@@ -149,7 +177,7 @@ const InfosChantier: React.FC = () => {
             )}
             
             <div>
-              <Label htmlFor="nomProjet">Intitulé du projet</Label>
+              <Label htmlFor="nomProjet">Nom du projet</Label>
               <Input 
                 id="nomProjet" 
                 value={nomProjet} 
@@ -213,32 +241,74 @@ const InfosChantier: React.FC = () => {
               />
             </div>
             
-            {nomFichier && (
-              <div>
-                <Label htmlFor="nomFichier">Nom du fichier proposé</Label>
-                <Input 
-                  id="nomFichier" 
-                  value={nomFichier} 
-                  readOnly
-                  className="bg-gray-50"
-                />
-              </div>
-            )}
-            
             <div className="pt-4 flex flex-wrap gap-4">
-              <Button onClick={handleSave}>
-                Sauvegarder le projet
+              <Button 
+                onClick={handleSave} 
+                disabled={isLoading}
+                className="flex items-center gap-2"
+              >
+                <Save className="h-4 w-4" />
+                Enregistrer le projet
               </Button>
-              <Button variant="outline" onClick={() => navigate('/travaux')}>
-                Aller aux travaux
+              
+              <Button 
+                variant="outline" 
+                onClick={handleSaveDraft}
+                disabled={isLoading}
+                className="flex items-center gap-2"
+              >
+                <Save className="h-4 w-4" />
+                Sauvegarder brouillon
               </Button>
+              
               <Button 
                 variant="secondary" 
                 onClick={handleNouveauProjet}
+                disabled={isLoading}
                 className="flex items-center gap-2"
               >
                 <PlusCircle className="h-4 w-4" />
                 Nouveau projet
+              </Button>
+              
+              {currentProjectId && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button 
+                      variant="destructive" 
+                      disabled={isLoading}
+                      className="flex items-center gap-2"
+                    >
+                      <Trash className="h-4 w-4" />
+                      Supprimer projet
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Êtes-vous sûr de vouloir supprimer ce projet ?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Cette action est irréversible. Toutes les données du projet seront définitivement supprimées.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Annuler</AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={handleDeleteProject}
+                        className="bg-red-500 hover:bg-red-600"
+                      >
+                        Supprimer
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+              
+              <Button 
+                variant="outline" 
+                onClick={() => navigate('/travaux')}
+                className="ml-auto"
+              >
+                Aller aux travaux
               </Button>
             </div>
           </div>
@@ -248,28 +318,33 @@ const InfosChantier: React.FC = () => {
           <div className="bg-white p-6 rounded-lg shadow-md">
             <h2 className="text-xl font-semibold mb-4 border-b pb-2">Projets enregistrés</h2>
             
-            {projetState.projets.length > 0 ? (
+            {isLoading ? (
+              <div className="py-4 text-center text-gray-500">
+                Chargement des projets...
+              </div>
+            ) : projects.length > 0 ? (
               <div className="space-y-4">
-                {projetState.projets.map((projet) => {
-                  const client = clientsState.clients.find(c => c.id === projet.clientId);
+                {projects.map((projet) => {
+                  const client = clientsState.clients.find(c => c.id === projet.client_id);
                   return (
                     <div 
                       key={projet.id} 
-                      className={`p-3 border rounded-md cursor-pointer hover:bg-gray-50 transition-colors ${projetState.projetActif?.id === projet.id ? 'border-primary bg-primary/5' : 'border-gray-200'}`}
+                      className={`p-3 border rounded-md cursor-pointer hover:bg-gray-50 transition-colors ${currentProjectId === projet.id ? 'border-primary bg-primary/5' : 'border-gray-200'}`}
                       onClick={() => handleChargerProjet(projet.id)}
                     >
-                      <h3 className="font-medium">{projet.nomProjet || projet.nom}</h3>
+                      <h3 className="font-medium">{projet.name}</h3>
+                      {client && (
+                        <p className="text-sm text-gray-500">
+                          Client: {client.nom} {client.prenom}
+                        </p>
+                      )}
                       <p className="text-sm text-gray-500">
-                        Client: {client?.nom} {client?.prenom}
+                        {projet.updated_at ? format(new Date(projet.updated_at), 'dd/MM/yyyy', { locale: fr }) : format(new Date(projet.created_at), 'dd/MM/yyyy', { locale: fr })}
                       </p>
-                      <p className="text-sm text-gray-500">
-                        {projet.dateModification ? format(new Date(projet.dateModification), 'dd/MM/yyyy', { locale: fr }) : "Date inconnue"}
-                      </p>
-                      {projet.projectData && (
+                      {projectState.rooms.length > 0 && currentProjectId === projet.id && (
                         <div className="mt-1 text-xs text-green-600">
                           <span className="inline-block px-2 py-1 bg-green-50 rounded-full">
-                            {projet.projectData.rooms.length} pièces | 
-                            {projet.projectData.travaux ? projet.projectData.travaux.length : 0} travaux
+                            {projectState.rooms.length} pièces | {projectState.travaux.length} travaux
                           </span>
                         </div>
                       )}

@@ -138,6 +138,25 @@ export interface ProjetChantier {
   infoComplementaire?: string;
 }
 
+// Project Supabase
+export interface Project {
+  id: string;
+  name: string;
+  client_id: string | null;
+  description: string;
+  address: string;
+  postal_code: string;
+  city: string;
+  occupant: string;
+  property_type: string;
+  floors: number;
+  total_area: number;
+  rooms_count: number;
+  ceiling_height: number;
+  created_at: string;
+  updated_at: string;
+}
+
 // Types pour les travaux
 export interface TravauxType {
   id: string;
@@ -260,7 +279,9 @@ export type ProjectAction =
   | { type: 'LOAD_PROJECT'; payload: ProjectState }
   | { type: 'ADD_TRAVAIL'; payload: Travail }
   | { type: 'UPDATE_TRAVAIL'; payload: { id: string; travail: Travail } }
-  | { type: 'DELETE_TRAVAIL'; payload: string };
+  | { type: 'DELETE_TRAVAIL'; payload: string }
+  | { type: 'SAVE_PROJECT'; payload?: { projectId?: string } } // Nouvelle action pour sauvegarder dans Supabase
+  | { type: 'LOAD_PROJECT_FROM_SUPABASE'; payload: { projectId: string } }; // Nouvelle action pour charger depuis Supabase
 
 // Actions pour les types de travaux
 export type TravauxTypesAction =

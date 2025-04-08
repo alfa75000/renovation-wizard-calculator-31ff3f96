@@ -1,7 +1,15 @@
-
-import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import { ProjectState, Property, Room, Travail, ProjectAction } from '@/types';
+import React, { createContext, useContext, useReducer, useEffect, useState, useCallback } from 'react';
+import { ProjectState, Property, Room, Travail, ProjectAction, Project } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
+import { toast } from 'sonner';
+import { 
+  createProject, 
+  updateProject, 
+  fetchProjectById, 
+  fetchProjects, 
+  deleteProject,
+  generateDefaultProjectName
+} from '@/services/projectService';
 
 // État initial
 const initialState: ProjectState = {
@@ -20,9 +28,27 @@ const initialState: ProjectState = {
 const ProjectContext = createContext<{
   state: ProjectState;
   dispatch: React.Dispatch<ProjectAction>;
+  isLoading: boolean;
+  projects: Project[];
+  currentProjectId: string | null;
+  saveProject: (name?: string) => Promise<void>;
+  saveProjectAsDraft: () => Promise<void>;
+  loadProject: (projectId: string) => Promise<void>;
+  createNewProject: () => void;
+  deleteCurrentProject: () => Promise<void>;
+  refreshProjects: () => Promise<void>;
 }>({
   state: initialState,
   dispatch: () => null,
+  isLoading: false,
+  projects: [],
+  currentProjectId: null,
+  saveProject: async () => {},
+  saveProjectAsDraft: async () => {},
+  loadProject: async () => {},
+  createNewProject: () => {},
+  deleteCurrentProject: async () => {},
+  refreshProjects: async () => {},
 });
 
 // Fonction utilitaire pour générer un nom de pièce séquentiel
@@ -139,28 +165,182 @@ function projectReducer(state: ProjectState, action: ProjectAction): ProjectStat
 
 // Provider component
 export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Récupérer les données depuis localStorage au démarrage
-  const [state, dispatch] = useReducer(projectReducer, initialState, () => {
-    try {
-      const savedState = localStorage.getItem('projectState');
-      return savedState ? JSON.parse(savedState) : initialState;
-    } catch (error) {
-      console.error('Erreur lors du chargement de l\'état du projet:', error);
-      return initialState;
-    }
-  });
+  const [state, dispatch] = useReducer(projectReducer, initialState);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
+  const [autoSaveTimer, setAutoSaveTimer] = useState<NodeJS.Timeout | null>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
 
-  // Sauvegarder les données dans localStorage à chaque changement
-  useEffect(() => {
+  // Fonction pour récupérer la liste des projets depuis Supabase
+  const refreshProjects = useCallback(async () => {
     try {
-      localStorage.setItem('projectState', JSON.stringify(state));
+      setIsLoading(true);
+      const projectsData = await fetchProjects();
+      setProjects(projectsData);
+      return projectsData;
     } catch (error) {
-      console.error('Erreur lors de la sauvegarde de l\'état du projet:', error);
+      console.error('Erreur lors du chargement des projets:', error);
+      toast.error('Impossible de charger la liste des projets');
+    } finally {
+      setIsLoading(false);
     }
-  }, [state]);
+  }, []);
+
+  // Charger la liste des projets au démarrage
+  useEffect(() => {
+    refreshProjects();
+  }, [refreshProjects]);
+
+  // Détecter les changements dans l'état du projet
+  useEffect(() => {
+    if (currentProjectId) {
+      setHasUnsavedChanges(true);
+    }
+  }, [state, currentProjectId]);
+
+  // Configuration de la sauvegarde automatique
+  useEffect(() => {
+    if (hasUnsavedChanges && currentProjectId) {
+      // Nettoyer l'ancien timer si existant
+      if (autoSaveTimer) {
+        clearTimeout(autoSaveTimer);
+      }
+      
+      // Définir un nouveau timer pour sauvegarder après 10 minutes
+      const timer = setTimeout(() => {
+        saveProjectAsDraft();
+      }, 10 * 60 * 1000); // 10 minutes en millisecondes
+      
+      setAutoSaveTimer(timer);
+      
+      // Nettoyer le timer lors du démontage du composant
+      return () => {
+        if (autoSaveTimer) {
+          clearTimeout(autoSaveTimer);
+        }
+      };
+    }
+  }, [hasUnsavedChanges, currentProjectId]);
+
+  // Fonction pour créer un nouveau projet
+  const createNewProject = useCallback(() => {
+    dispatch({ type: 'RESET_PROJECT' });
+    setCurrentProjectId(null);
+    setHasUnsavedChanges(false);
+    toast.success('Nouveau projet créé');
+  }, []);
+
+  // Fonction pour sauvegarder le projet actuel
+  const saveProject = useCallback(async (name?: string) => {
+    try {
+      setIsLoading(true);
+      
+      // Préparer les informations du projet
+      const projectInfo = {
+        name: name || (currentProjectId ? projects.find(p => p.id === currentProjectId)?.name : generateDefaultProjectName()),
+      };
+      
+      if (currentProjectId) {
+        // Mettre à jour un projet existant
+        const result = await updateProject(currentProjectId, state, projectInfo);
+        toast.success('Projet mis à jour avec succès');
+      } else {
+        // Créer un nouveau projet
+        const result = await createProject(state, projectInfo);
+        setCurrentProjectId(result.id);
+        toast.success('Projet enregistré avec succès');
+      }
+      
+      setHasUnsavedChanges(false);
+      await refreshProjects();
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde du projet:', error);
+      toast.error('Erreur lors de la sauvegarde du projet');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [state, currentProjectId, projects, refreshProjects]);
+
+  // Fonction pour sauvegarder en tant que brouillon
+  const saveProjectAsDraft = useCallback(async () => {
+    if (hasUnsavedChanges) {
+      try {
+        await saveProject();
+        toast.success('Projet sauvegardé automatiquement');
+      } catch (error) {
+        console.error('Erreur lors de la sauvegarde automatique:', error);
+      }
+    }
+  }, [hasUnsavedChanges, saveProject]);
+
+  // Fonction pour charger un projet depuis Supabase
+  const loadProject = useCallback(async (projectId: string) => {
+    try {
+      setIsLoading(true);
+      
+      // Sauvegarder les changements non enregistrés du projet actuel si nécessaire
+      if (hasUnsavedChanges && currentProjectId) {
+        const shouldSave = window.confirm('Voulez-vous sauvegarder les modifications du projet actuel avant d\'en charger un nouveau ?');
+        if (shouldSave) {
+          await saveProject();
+        }
+      }
+      
+      const { projectData, projectState } = await fetchProjectById(projectId);
+      dispatch({ type: 'LOAD_PROJECT', payload: projectState });
+      setCurrentProjectId(projectId);
+      setHasUnsavedChanges(false);
+      
+      toast.success(`Projet "${projectData.name}" chargé avec succès`);
+    } catch (error) {
+      console.error('Erreur lors du chargement du projet:', error);
+      toast.error('Erreur lors du chargement du projet');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [hasUnsavedChanges, currentProjectId, saveProject]);
+
+  // Fonction pour supprimer le projet actuel
+  const deleteCurrentProject = useCallback(async () => {
+    if (!currentProjectId) {
+      toast.error('Aucun projet à supprimer');
+      return;
+    }
+    
+    try {
+      setIsLoading(true);
+      await deleteProject(currentProjectId);
+      
+      // Réinitialiser l'état après la suppression
+      dispatch({ type: 'RESET_PROJECT' });
+      setCurrentProjectId(null);
+      setHasUnsavedChanges(false);
+      
+      await refreshProjects();
+      toast.success('Projet supprimé avec succès');
+    } catch (error) {
+      console.error('Erreur lors de la suppression du projet:', error);
+      toast.error('Erreur lors de la suppression du projet');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [currentProjectId, refreshProjects]);
 
   return (
-    <ProjectContext.Provider value={{ state, dispatch }}>
+    <ProjectContext.Provider value={{ 
+      state, 
+      dispatch,
+      isLoading,
+      projects,
+      currentProjectId,
+      saveProject,
+      saveProjectAsDraft,
+      loadProject,
+      createNewProject,
+      deleteCurrentProject,
+      refreshProjects
+    }}>
       {children}
     </ProjectContext.Provider>
   );
