@@ -1,221 +1,107 @@
 
 import React, { useState } from 'react';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Check, Plus } from 'lucide-react';
-import { Menuiserie } from '@/types';
-import { useMenuiseriesTypes } from '@/contexts/MenuiseriesTypesContext';
+import { MenuiserieType } from '@/types/supabase';
+import MenuiserieTypeSelect from '@/features/travaux/components/MenuiserieTypeSelect';
+import { toast } from 'sonner';
 
 interface MenuiserieFormProps {
-  onAddMenuiserie: (menuiserie: Omit<Menuiserie, 'id' | 'surface'>, quantity: number) => void;
-  editingMenuiserie?: Omit<Menuiserie, 'id' | 'surface'> | null;
-  onCancelEdit?: () => void;
+  onAddMenuiserie: (menuiserie: any, quantity: number) => void;
 }
 
-const MenuiserieForm: React.FC<MenuiserieFormProps> = ({ 
-  onAddMenuiserie, 
-  editingMenuiserie = null,
-  onCancelEdit
-}) => {
-  const { state: menuiseriesState } = useMenuiseriesTypes();
-  const [newMenuiserie, setNewMenuiserie] = useState<Omit<Menuiserie, 'id' | 'surface'>>({
-    type: "",
-    name: "",
-    largeur: 0,
-    hauteur: 0,
-    quantity: 1,
-    surfaceImpactee: "mur"
-  });
-
-  const [quantity, setQuantity] = useState(1);
-
-  // Détecter le type de surface impactée par défaut
-  const getDefaultSurfaceImpactee = (type: string): "mur" | "plafond" | "sol" => {
-    const lowerType = type.toLowerCase();
-    if (
-      lowerType.includes('toit') || 
-      lowerType.includes('velux') || 
-      lowerType.includes('vélux') || 
-      lowerType.includes('plafond')
-    ) {
-      return "plafond";
-    } else if (
-      lowerType.includes('trappe') || 
-      lowerType.includes('sol')
-    ) {
-      return "sol";
-    }
-    return "mur";
+const MenuiserieForm: React.FC<MenuiserieFormProps> = ({ onAddMenuiserie }) => {
+  const [selectedType, setSelectedType] = useState<MenuiserieType | null>(null);
+  const [selectedTypeId, setSelectedTypeId] = useState<string>('');
+  const [quantity, setQuantity] = useState<number>(1);
+  const [isAdding, setIsAdding] = useState<boolean>(false);
+  
+  const handleTypeSelected = (id: string, name: string, menuiserieType: MenuiserieType) => {
+    console.log("Type de menuiserie sélectionné:", menuiserieType);
+    setSelectedTypeId(id);
+    setSelectedType(menuiserieType);
   };
-
-  const handleMenuiserieTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const typeId = e.target.value;
-    const selectedType = menuiseriesState.typesMenuiseries.find(type => type.id === typeId);
-    
-    if (selectedType) {
-      const surfaceImpactee = getDefaultSurfaceImpactee(selectedType.nom);
-      setNewMenuiserie((prev) => ({ 
-        ...prev, 
-        type: selectedType.nom,
-        largeur: selectedType.largeur,
-        hauteur: selectedType.hauteur,
-        impactePlinthe: selectedType.impactePlinthe,
-        surfaceImpactee
-      }));
-    }
-  };
-
-  const handleSurfaceImpacteeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value as "mur" | "plafond" | "sol";
-    setNewMenuiserie(prev => ({
-      ...prev,
-      surfaceImpactee: value
-    }));
-  };
-
-  const handleMenuiserieChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    
-    if (name === "largeur" || name === "hauteur") {
-      setNewMenuiserie((prev) => ({ 
-        ...prev, 
-        [name]: parseFloat(value) || 0 
-      }));
-    } else if (name === "quantity") {
-      setQuantity(parseInt(value) || 1);
-    } else {
-      setNewMenuiserie((prev) => ({ ...prev, [name]: value }));
-    }
-  };
-
+  
   const handleAddMenuiserie = () => {
-    if (!newMenuiserie.type) {
-      alert("Veuillez sélectionner un type de menuiserie");
+    if (!selectedType) {
+      toast.error("Veuillez sélectionner un type de menuiserie");
       return;
     }
     
-    onAddMenuiserie(newMenuiserie, quantity);
+    const newMenuiserie = {
+      id: `${selectedTypeId}-${Date.now()}`,
+      typeId: selectedTypeId,
+      nom: selectedType.name,
+      typeName: selectedType.name,
+      quantity: quantity,
+      hauteur: selectedType.hauteur,
+      largeur: selectedType.largeur,
+      surfaceReference: mapSurfaceImpactee(selectedType.surface_impactee),
+      impactePlinthe: selectedType.impacte_plinthe
+    };
     
-    // Réinitialiser le formulaire mais conserver le type
-    setNewMenuiserie(prev => ({
-      ...prev,
-      name: "",
-      quantity: 1
-    }));
+    onAddMenuiserie(newMenuiserie, quantity);
+    resetForm();
+  };
+  
+  // Fonction de mapping de surface_impactee vers surfaceReference
+  const mapSurfaceImpactee = (surface: string): string => {
+    switch (surface) {
+      case 'Mur': return 'SurfaceNetteMurs';
+      case 'Plafond': return 'SurfaceNettePlafond';
+      case 'Sol': return 'SurfaceNetteSol';
+      default: return 'SurfaceNetteMurs'; // Par défaut
+    }
+  };
+  
+  const resetForm = () => {
+    setSelectedTypeId('');
+    setSelectedType(null);
     setQuantity(1);
   };
-
+  
   return (
-    <div className="mb-6">
-      <h3 className="text-lg font-medium mb-3">Menuiseries</h3>
+    <div>
+      <h4 className="font-medium mb-2">Ajouter des menuiseries</h4>
       
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-        <div className="md:col-span-2">
+      <div className="space-y-3">
+        <div>
           <Label htmlFor="menuiserieType">Type de menuiserie</Label>
-          <select
-            id="menuiserieType"
-            name="type"
-            value={newMenuiserie.type ? menuiseriesState.typesMenuiseries.find(t => t.nom === newMenuiserie.type)?.id || "" : ""}
-            onChange={handleMenuiserieTypeChange}
-            className="w-full p-2 border rounded mt-1"
-          >
-            <option value="">Sélectionner un type</option>
-            {menuiseriesState.typesMenuiseries.map((type) => (
-              <option key={type.id} value={type.id}>
-                {type.nom} ({type.largeur}×{type.hauteur} cm)
-              </option>
-            ))}
-          </select>
-        </div>
-        
-        <div className="md:col-span-2">
-          <Label htmlFor="menuiserieImpact">Surface impactée</Label>
-          <select
-            id="menuiserieImpact"
-            name="surfaceImpactee"
-            value={newMenuiserie.surfaceImpactee || 'mur'}
-            onChange={handleSurfaceImpacteeChange}
-            className="w-full p-2 border rounded mt-1"
-          >
-            <option value="mur">Mur</option>
-            <option value="plafond">Plafond</option>
-            <option value="sol">Sol</option>
-          </select>
-        </div>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
-        <div>
-          <Label htmlFor="menuiserieName">Nom (optionnel)</Label>
-          <Input
-            id="menuiserieName"
-            name="name"
-            value={newMenuiserie.name || ''}
-            onChange={handleMenuiserieChange}
-            placeholder="Ex: Porte d'entrée"
-            className="mt-1"
+          <MenuiserieTypeSelect
+            value={selectedTypeId}
+            onChange={handleTypeSelected}
+            className="w-full mt-1"
           />
         </div>
         
         <div>
-          <Label htmlFor="menuiserieLargeur">Largeur (cm)</Label>
+          <Label htmlFor="quantity">Quantité</Label>
           <Input
-            id="menuiserieLargeur"
-            name="largeur"
-            type="number"
-            min="0"
-            value={newMenuiserie.largeur || ''}
-            onChange={handleMenuiserieChange}
-            className="mt-1"
-          />
-        </div>
-        
-        <div>
-          <Label htmlFor="menuiserieHauteur">Hauteur (cm)</Label>
-          <Input
-            id="menuiserieHauteur"
-            name="hauteur"
-            type="number"
-            min="0"
-            value={newMenuiserie.hauteur || ''}
-            onChange={handleMenuiserieChange}
-            className="mt-1"
-          />
-        </div>
-        
-        <div>
-          <Label htmlFor="menuiserieQuantity">Quantité</Label>
-          <Input
-            id="menuiserieQuantity"
-            name="quantity"
+            id="quantity"
             type="number"
             min="1"
             value={quantity}
-            onChange={handleMenuiserieChange}
+            onChange={(e) => setQuantity(Number(e.target.value))}
             className="mt-1"
           />
         </div>
         
-        <div className="flex items-end">
-          <Button 
-            onClick={handleAddMenuiserie} 
-            className="w-full"
-            disabled={!newMenuiserie.type}
-          >
-            {editingMenuiserie ? (
-              <>
-                <Check className="h-4 w-4 mr-2" />
-                Mettre à jour
-              </>
-            ) : (
-              <>
-                <Plus className="h-4 w-4 mr-2" />
-                Ajouter
-              </>
-            )}
-          </Button>
-        </div>
+        {selectedType && (
+          <div className="text-sm text-gray-600 border-l-2 border-gray-200 pl-3 py-1 mt-2">
+            <p>Dimensions: {selectedType.largeur} x {selectedType.hauteur} cm</p>
+            <p>Surface impactée: {selectedType.surface_impactee}</p>
+            <p>Impacte plinthes: {selectedType.impacte_plinthe ? 'Oui' : 'Non'}</p>
+          </div>
+        )}
+        
+        <Button 
+          onClick={handleAddMenuiserie} 
+          className="w-full mt-3"
+          disabled={!selectedTypeId}
+        >
+          Ajouter à la pièce
+        </Button>
       </div>
     </div>
   );

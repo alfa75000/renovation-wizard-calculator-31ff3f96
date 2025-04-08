@@ -127,3 +127,77 @@ export const deleteMenuiserieType = async (id: string): Promise<boolean> => {
     return false;
   }
 };
+
+// Sauvegarder l'association entre une pièce et un type de menuiserie (avec quantité)
+export const saveRoomMenuiserie = async (roomId: string, menuiserieTypeId: string, quantity: number): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('room_menuiseries')
+      .insert([
+        {
+          room_id: roomId,
+          menuiserie_type_id: menuiserieTypeId,
+          quantity: quantity
+        }
+      ]);
+    
+    if (error) {
+      console.error('Erreur lors de la sauvegarde de la menuiserie pour la pièce:', error);
+      toast.error('Erreur lors de la sauvegarde de la menuiserie');
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Exception lors de la sauvegarde de la menuiserie pour la pièce:', error);
+    toast.error('Erreur lors de la sauvegarde de la menuiserie');
+    return false;
+  }
+};
+
+// Récupérer toutes les menuiseries d'une pièce
+export const fetchRoomMenuiseries = async (roomId: string): Promise<any[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('room_menuiseries')
+      .select(`
+        *,
+        menuiserie_type:menuiserie_type_id(*)
+      `)
+      .eq('room_id', roomId);
+    
+    if (error) {
+      console.error('Erreur lors de la récupération des menuiseries de la pièce:', error);
+      toast.error('Erreur lors de la récupération des menuiseries');
+      return [];
+    }
+    
+    return data || [];
+  } catch (error) {
+    console.error('Exception lors de la récupération des menuiseries de la pièce:', error);
+    toast.error('Erreur lors de la récupération des menuiseries');
+    return [];
+  }
+};
+
+// Supprimer une menuiserie d'une pièce
+export const deleteRoomMenuiserie = async (id: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('room_menuiseries')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error('Erreur lors de la suppression de la menuiserie de la pièce:', error);
+      toast.error('Erreur lors de la suppression de la menuiserie');
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Exception lors de la suppression de la menuiserie de la pièce:', error);
+    toast.error('Erreur lors de la suppression de la menuiserie');
+    return false;
+  }
+};
