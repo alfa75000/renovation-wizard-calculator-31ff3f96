@@ -1,302 +1,364 @@
 
 import React, { useState, useEffect } from 'react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Check, Plus } from 'lucide-react';
-import { AutreSurface, TypeAutreSurface } from '@/types';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel } from "@/components/ui/form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import { toast } from "sonner";
+import { PlusCircle, X } from 'lucide-react';
 import { arrondir2Decimales } from '@/lib/utils';
 
+// Définissez le schéma de validation Zod pour le formulaire
+const autreSurfaceSchema = z.object({
+  name: z.string().min(1, "Le nom est requis"),
+  largeur: z.coerce.number().min(0.01, "La largeur doit être supérieure à 0"),
+  hauteur: z.coerce.number().min(0.01, "La hauteur doit être supérieure à 0"),
+  surface_impactee: z.enum(["mur", "plafond", "sol", "aucune"], {
+    required_error: "Veuillez sélectionner une surface impactée",
+  }),
+  adjustment_type: z.enum(["ajouter", "deduire"], {
+    required_error: "Veuillez sélectionner un type d'ajustement",
+  }),
+  impacte_plinthe: z.boolean().default(false),
+  quantity: z.coerce.number().min(1, "La quantité doit être au moins 1"),
+  description: z.string().optional(),
+  type_id: z.string().optional(),
+});
+
+type AutreSurfaceFormValues = z.infer<typeof autreSurfaceSchema>;
+
 interface AutreSurfaceFormProps {
-  onAddAutreSurface: (autreSurface: Omit<AutreSurface, 'id' | 'surface'>) => void;
-  editingSurface: string | null;
-  currentSurface: Omit<AutreSurface, 'id' | 'surface'> | null;
-  onCancelEdit?: () => void;
-  typesAutresSurfaces: TypeAutreSurface[];
+  roomId: string;
+  onSubmit: (data: any) => void;
+  onCancel: () => void;
+  itemToEdit?: any;
 }
 
 const AutreSurfaceForm: React.FC<AutreSurfaceFormProps> = ({
-  onAddAutreSurface,
-  editingSurface,
-  currentSurface,
-  onCancelEdit,
-  typesAutresSurfaces
+  roomId,
+  onSubmit,
+  onCancel,
+  itemToEdit
 }) => {
-  const [surface, setSurface] = useState<Omit<AutreSurface, 'id' | 'surface'>>({
-    type: "",
-    name: "",
-    designation: "",
-    largeur: 1,
-    hauteur: 1,
-    quantity: 1,
-    surfaceImpactee: "mur",
-    estDeduction: false
-  });
+  const [loading, setLoading] = useState(false);
+  const [typesAutresSurfaces, setTypesAutresSurfaces] = useState<any[]>([]);
   
-  const [surfaceCalculee, setSurfaceCalculee] = useState(0);
+  // Initialiser le formulaire avec React Hook Form
+  const form = useForm<AutreSurfaceFormValues>({
+    resolver: zodResolver(autreSurfaceSchema),
+    defaultValues: {
+      name: itemToEdit?.name || "",
+      largeur: itemToEdit?.largeur || 0.5,
+      hauteur: itemToEdit?.hauteur || 0.5,
+      surface_impactee: itemToEdit?.surface_impactee || "mur",
+      adjustment_type: itemToEdit?.adjustment_type || "deduire",
+      impacte_plinthe: itemToEdit?.impacte_plinthe || false,
+      quantity: itemToEdit?.quantity || 1,
+      description: itemToEdit?.description || "",
+      type_id: itemToEdit?.type_id || undefined,
+    },
+  });
 
-  // Charger la surface à éditer
+  // Surveiller les changements de largeur et hauteur pour calculer la surface
+  const largeur = form.watch("largeur");
+  const hauteur = form.watch("hauteur");
+  const quantity = form.watch("quantity");
+  const [surface, setSurface] = useState<number>(0);
+
+  // À chaque changement de largeur ou hauteur, recalculer la surface
   useEffect(() => {
-    if (editingSurface && currentSurface) {
-      setSurface(currentSurface);
-      setSurfaceCalculee(currentSurface.largeur * currentSurface.hauteur);
+    if (largeur && hauteur) {
+      const surfaceCalculee = arrondir2Decimales(largeur * hauteur * quantity);
+      setSurface(surfaceCalculee);
     } else {
-      resetForm();
+      setSurface(0);
     }
-  }, [editingSurface, currentSurface]);
+  }, [largeur, hauteur, quantity]);
 
-  // Calcul de la surface
+  // Charger les types d'autres surfaces depuis l'API
   useEffect(() => {
-    const surfaceM2 = arrondir2Decimales(surface.largeur * surface.hauteur);
-    setSurfaceCalculee(surfaceM2);
-  }, [surface.largeur, surface.hauteur]);
+    const fetchTypesAutresSurfaces = async () => {
+      try {
+        // Cette fonction sera implémentée plus tard pour charger depuis Supabase
+        // Pour l'instant, utilisons des données simulées
+        const types = [
+          { id: '1', nom: 'Trémie', description: 'Ouverture dans un plancher', surfaceImpacteeParDefaut: 'sol', estDeduction: true },
+          { id: '2', nom: 'Poteau', description: 'Élément vertical porteur', surfaceImpacteeParDefaut: 'mur', estDeduction: false },
+          { id: '3', nom: 'Niche', description: 'Renfoncement dans un mur', surfaceImpacteeParDefaut: 'mur', estDeduction: true },
+          { id: '4', nom: 'Poutres apparentes', description: 'Élément horizontal porteur visible', surfaceImpacteeParDefaut: 'plafond', estDeduction: false },
+        ];
+        setTypesAutresSurfaces(types);
+      } catch (error) {
+        console.error("Erreur lors du chargement des types d'autres surfaces:", error);
+        toast.error("Impossible de charger les types d'autres surfaces");
+      }
+    };
 
-  const handleTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const typeId = e.target.value;
-    if (!typeId) {
-      resetForm();
-      return;
-    }
-    
+    fetchTypesAutresSurfaces();
+  }, []);
+
+  // Fonction pour gérer la sélection d'un type d'autre surface
+  const handleTypeSelection = (typeId: string) => {
     const selectedType = typesAutresSurfaces.find(type => type.id === typeId);
     if (selectedType) {
-      setSurface(prev => ({
-        ...prev,
-        type: selectedType.nom,
-        designation: selectedType.nom,
-        name: selectedType.nom,
-        surfaceImpactee: selectedType.surfaceImpacteeParDefaut,
-        estDeduction: selectedType.estDeduction
-      }));
+      form.setValue("name", selectedType.nom);
+      form.setValue("surface_impactee", selectedType.surfaceImpacteeParDefaut);
+      form.setValue("adjustment_type", selectedType.estDeduction ? "deduire" : "ajouter");
+      form.setValue("type_id", typeId);
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type, checked } = e.target as HTMLInputElement;
-    
-    if (name === 'largeur' || name === 'hauteur' || name === 'quantity') {
-      setSurface(prev => ({
-        ...prev,
-        [name]: type === 'number' ? parseFloat(value) || 0 : value
-      }));
-    } else if (name === 'estDeduction') {
-      setSurface(prev => ({
-        ...prev,
-        estDeduction: checked
-      }));
-    } else if (name === 'surfaceImpactee') {
-      setSurface(prev => ({
-        ...prev,
-        surfaceImpactee: value as 'mur' | 'plafond' | 'sol'
-      }));
-    } else {
-      setSurface(prev => ({
-        ...prev,
-        [name]: value
-      }));
+  // Fonction pour soumettre le formulaire
+  const handleFormSubmit = (values: AutreSurfaceFormValues) => {
+    setLoading(true);
+    try {
+      // Préparer les données à envoyer
+      const autreSurfaceData = {
+        ...values,
+        room_id: roomId,
+        surface: surface,
+        // Ces champs seraient générés côté serveur dans une implémentation réelle
+        id: itemToEdit?.id || `temp-${Date.now()}`,
+        created_at: new Date().toISOString(),
+      };
+      
+      onSubmit(autreSurfaceData);
+    } catch (error) {
+      console.error("Erreur lors de la soumission du formulaire:", error);
+      toast.error("Une erreur est survenue lors de l'ajout de la surface personnalisée");
+    } finally {
+      setLoading(false);
     }
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!surface.type) {
-      alert("Veuillez sélectionner un type de surface");
-      return;
-    }
-    
-    if (surface.largeur <= 0 || surface.hauteur <= 0) {
-      alert("Les dimensions doivent être supérieures à zéro");
-      return;
-    }
-    
-    onAddAutreSurface(surface);
-    resetForm();
-  };
-
-  const resetForm = () => {
-    setSurface({
-      type: "",
-      name: "",
-      designation: "",
-      largeur: 1,
-      hauteur: 1,
-      quantity: 1,
-      surfaceImpactee: "mur",
-      estDeduction: false
-    });
-    setSurfaceCalculee(0);
-  };
-
-  const handleCancel = () => {
-    if (onCancelEdit) onCancelEdit();
-    resetForm();
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <Label htmlFor="typeSurface">Type de surface</Label>
-        <select
-          id="typeSurface"
-          name="type"
-          value={typesAutresSurfaces.find(t => t.nom === surface.type)?.id || ""}
-          onChange={handleTypeChange}
-          className="w-full p-2 border rounded mt-1"
-        >
-          <option value="">Sélectionner un type</option>
-          {typesAutresSurfaces.map((type) => (
-            <option key={type.id} value={type.id}>
-              {type.nom} ({type.estDeduction ? 'Déduction' : 'Ajout'})
-            </option>
-          ))}
-        </select>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="name">Nom (optionnel)</Label>
-          <Input
-            id="name"
-            name="name"
-            value={surface.name || ''}
-            onChange={handleChange}
-            placeholder="Ex: Niche salon"
-            className="mt-1"
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
+        {/* Sélection d'un type pré-défini (optionnel) */}
+        <div className="space-y-2">
+          <Label>Type de surface (optionnel)</Label>
+          <Select onValueChange={handleTypeSelection}>
+            <SelectTrigger>
+              <SelectValue placeholder="Sélectionner un type prédéfini" />
+            </SelectTrigger>
+            <SelectContent>
+              {typesAutresSurfaces.map(type => (
+                <SelectItem key={type.id} value={type.id}>
+                  {type.nom} - {type.description}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-sm text-gray-500">
+            Sélectionnez un type pour pré-remplir les champs ou personnalisez manuellement
+          </p>
+        </div>
+
+        {/* Nom */}
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Nom</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="ex: Trémie, Poteau, Niche..." />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+
+        {/* Dimensions (largeur, hauteur) */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <FormField
+            control={form.control}
+            name="largeur"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Largeur (m)</FormLabel>
+                <FormControl>
+                  <Input 
+                    {...field} 
+                    type="number" 
+                    step="0.01" 
+                    min="0"
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="hauteur"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Hauteur (m)</FormLabel>
+                <FormControl>
+                  <Input 
+                    {...field} 
+                    type="number" 
+                    step="0.01" 
+                    min="0"
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="quantity"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Quantité</FormLabel>
+                <FormControl>
+                  <Input 
+                    {...field} 
+                    type="number" 
+                    min="1" 
+                    step="1"
+                  />
+                </FormControl>
+              </FormItem>
+            )}
           />
         </div>
-        
-        <div>
-          <Label htmlFor="designation">Désignation</Label>
-          <Input
-            id="designation"
-            name="designation"
-            value={surface.designation || ''}
-            onChange={handleChange}
-            placeholder="Description"
-            className="mt-1"
-          />
-        </div>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div>
-          <Label htmlFor="surfaceImpactee">Surface impactée</Label>
-          <select
-            id="surfaceImpactee"
-            name="surfaceImpactee"
-            value={surface.surfaceImpactee}
-            onChange={handleChange}
-            className="w-full p-2 border rounded mt-1"
-          >
-            <option value="mur">Mur</option>
-            <option value="plafond">Plafond</option>
-            <option value="sol">Sol</option>
-          </select>
-        </div>
-        
-        <div>
-          <Label htmlFor="estDeduction">Type d'opération</Label>
-          <div className="flex items-center mt-2">
-            <input
-              id="estDeduction"
-              name="estDeduction"
-              type="checkbox"
-              checked={surface.estDeduction}
-              onChange={handleChange}
-              className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-            />
-            <label htmlFor="estDeduction" className="ml-2 block text-sm text-gray-900">
-              {surface.estDeduction ? 'Déduction' : 'Ajout'} de surface
-            </label>
+
+        {/* Surface calculée (lecture seule) */}
+        <div className="bg-gray-50 p-3 rounded-md">
+          <Label>Surface calculée:</Label>
+          <div className="text-lg font-semibold mt-1">
+            {surface} m² ({largeur} m × {hauteur} m × {quantity})
           </div>
         </div>
-        
-        <div>
-          <Label htmlFor="quantity">Quantité</Label>
-          <Input
-            id="quantity"
-            name="quantity"
-            type="number"
-            min="1"
-            value={surface.quantity || 1}
-            onChange={handleChange}
-            className="mt-1"
-          />
-        </div>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div>
-          <Label htmlFor="largeur">Largeur (m)</Label>
-          <Input
-            id="largeur"
-            name="largeur"
-            type="number"
-            min="0.01"
-            step="0.01"
-            value={surface.largeur || ''}
-            onChange={handleChange}
-            className="mt-1"
-          />
-        </div>
-        
-        <div>
-          <Label htmlFor="hauteur">Hauteur (m)</Label>
-          <Input
-            id="hauteur"
-            name="hauteur"
-            type="number"
-            min="0.01"
-            step="0.01"
-            value={surface.hauteur || ''}
-            onChange={handleChange}
-            className="mt-1"
-          />
-        </div>
-        
-        <div>
-          <Label htmlFor="surfaceCalculee">Surface calculée (m²)</Label>
-          <Input
-            id="surfaceCalculee"
-            name="surfaceCalculee"
-            type="number"
-            value={surfaceCalculee.toFixed(2)}
-            readOnly
-            className="mt-1 bg-gray-100"
-          />
-        </div>
-      </div>
-      
-      <div className="flex justify-end space-x-2">
-        {editingSurface && (
+
+        {/* Type d'ajustement (ajouter/déduire) */}
+        <FormField
+          control={form.control}
+          name="adjustment_type"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Type d'ajustement</FormLabel>
+              <div className="flex flex-col space-y-2">
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input 
+                    type="radio" 
+                    checked={field.value === "ajouter"} 
+                    onChange={() => field.onChange("ajouter")}
+                    className="h-4 w-4 text-blue-600"
+                  />
+                  <span>Ajouter à la surface</span>
+                </label>
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input 
+                    type="radio" 
+                    checked={field.value === "deduire"} 
+                    onChange={() => field.onChange("deduire")}
+                    className="h-4 w-4 text-blue-600"
+                  />
+                  <span>Déduire de la surface</span>
+                </label>
+              </div>
+              <FormDescription>
+                Définit si cette surface doit être ajoutée ou déduite du calcul total
+              </FormDescription>
+            </FormItem>
+          )}
+        />
+
+        {/* Surface impactée */}
+        <FormField
+          control={form.control}
+          name="surface_impactee"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Surface impactée</FormLabel>
+              <Select
+                value={field.value}
+                onValueChange={field.onChange}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner la surface impactée" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="mur">Mur</SelectItem>
+                  <SelectItem value="plafond">Plafond</SelectItem>
+                  <SelectItem value="sol">Sol</SelectItem>
+                  <SelectItem value="aucune">Aucune</SelectItem>
+                </SelectContent>
+              </Select>
+            </FormItem>
+          )}
+        />
+
+        {/* Impact sur les plinthes */}
+        <FormField
+          control={form.control}
+          name="impacte_plinthe"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-2 border border-gray-200 rounded-md">
+              <FormControl>
+                <Checkbox
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <div className="space-y-1 leading-none">
+                <FormLabel>Impacte les plinthes</FormLabel>
+                <FormDescription>
+                  Cochez si cet élément modifie le calcul des plinthes
+                </FormDescription>
+              </div>
+            </FormItem>
+          )}
+        />
+
+        {/* Description */}
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Description (optionnel)</FormLabel>
+              <FormControl>
+                <Textarea 
+                  {...field} 
+                  placeholder="Description ou notes supplémentaires..." 
+                  rows={3}
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+
+        {/* Boutons d'action */}
+        <div className="flex justify-end space-x-2 pt-4">
           <Button 
             type="button" 
             variant="outline" 
-            onClick={handleCancel}
+            onClick={onCancel}
+            disabled={loading}
           >
+            <X className="mr-2 h-4 w-4" />
             Annuler
           </Button>
-        )}
-        
-        <Button 
-          type="submit" 
-          disabled={!surface.type || surface.largeur <= 0 || surface.hauteur <= 0}
-        >
-          {editingSurface ? (
-            <>
-              <Check className="h-4 w-4 mr-2" />
-              Mettre à jour
-            </>
-          ) : (
-            <>
-              <Plus className="h-4 w-4 mr-2" />
-              Ajouter
-            </>
-          )}
-        </Button>
-      </div>
-    </form>
+          <Button 
+            type="submit" 
+            disabled={loading}
+          >
+            <PlusCircle className="mr-2 h-4 w-4" />
+            {itemToEdit ? "Mettre à jour" : "Ajouter"}
+          </Button>
+        </div>
+      </form>
+    </Form>
   );
 };
 

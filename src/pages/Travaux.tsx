@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { ChevronRight, PlusCircle, ArrowLeft, ArrowRight, Paintbrush } from "lucide-react";
+import { ChevronRight, PlusCircle, ArrowLeft, ArrowRight, Paintbrush, Square } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,8 +11,9 @@ import { Room, Travail } from "@/types";
 import { toast } from "sonner";
 import TravailForm from "@/features/travaux/components/TravailForm";
 import TravailCard from "@/features/travaux/components/TravailCard";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
+import AutreSurfaceForm from "@/features/renovation/components/AutreSurfaceForm";
 
-// Composant pour la sélection des pièces
 interface PieceSelectProps {
   pieces: Room[];
   selectedPieceId: string | null;
@@ -49,39 +49,33 @@ const PieceSelect: React.FC<PieceSelectProps> = ({
 };
 
 const Travaux: React.FC = () => {
-  // Context et hooks
   const { state: projectState } = useProject();
   const { rooms } = projectState;
   const { getTravauxForPiece, addTravail, deleteTravail } = useTravaux();
 
-  // États
   const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [travailAModifier, setTravailAModifier] = useState<Travail | null>(null);
+  const [isAutreSurfaceDrawerOpen, setIsAutreSurfaceDrawerOpen] = useState(false);
 
-  // Sélectionner la première pièce au chargement s'il y en a
   useEffect(() => {
     if (!selectedRoom && rooms.length > 0) {
       setSelectedRoom(rooms[0].id);
     }
     
-    // Si la pièce actuelle n'existe plus
     if (selectedRoom && !rooms.find(room => room.id === selectedRoom)) {
       setSelectedRoom(rooms.length > 0 ? rooms[0].id : null);
     }
   }, [rooms, selectedRoom]);
 
-  // Informations sur la pièce sélectionnée
   const selectedRoomInfo = selectedRoom 
     ? rooms.find(room => room.id === selectedRoom)
     : null;
 
-  // Travaux pour la pièce sélectionnée
   const travauxForSelectedRoom = selectedRoom 
     ? getTravauxForPiece(selectedRoom)
     : [];
 
-  // Ouvrir le tiroir pour ajouter un nouveau travail
   const handleAddTravail = () => {
     if (!selectedRoom) {
       toast.error("Veuillez d'abord sélectionner une pièce pour ajouter des travaux.");
@@ -91,25 +85,28 @@ const Travaux: React.FC = () => {
     setIsDrawerOpen(true);
   };
 
-  // Éditer un travail existant
+  const handleAddAutreSurface = () => {
+    if (!selectedRoom) {
+      toast.error("Veuillez d'abord sélectionner une pièce pour ajouter une surface personnalisée.");
+      return;
+    }
+    setIsAutreSurfaceDrawerOpen(true);
+  };
+
   const handleEditTravail = (travail: Travail) => {
     setTravailAModifier(travail);
     setIsDrawerOpen(true);
   };
 
-  // Soumettre un nouveau travail
   const handleSubmitTravail = (travailData: Omit<Travail, 'id'>) => {
     if (!selectedRoom) return;
     
     if (travailAModifier) {
-      // Mise à jour d'un travail existant
-      // Note: cette fonctionnalité n'est pas encore implémentée
       toast.info("La modification de travaux n'est pas encore implémentée");
       setIsDrawerOpen(false);
       return;
     }
     
-    // Ajout d'un nouveau travail
     addTravail({
       ...travailData,
       pieceId: selectedRoom,
@@ -119,10 +116,15 @@ const Travaux: React.FC = () => {
     toast.success("Le travail a été ajouté avec succès.");
   };
 
-  // Supprimer un travail
   const handleDeleteTravail = (travailId: string) => {
     deleteTravail(travailId);
     toast.success("Le travail a été supprimé avec succès.");
+  };
+
+  const handleAutreSurfaceSubmit = (autreSurfaceData: any) => {
+    console.log("Données d'autre surface soumises:", autreSurfaceData);
+    toast.success("Surface personnalisée ajoutée avec succès");
+    setIsAutreSurfaceDrawerOpen(false);
   };
 
   return (
@@ -131,7 +133,6 @@ const Travaux: React.FC = () => {
       subtitle="Sélectionnez une pièce et ajoutez les travaux à effectuer"
     >
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Sélection de pièce */}
         <Card className="order-2 lg:order-1">
           <CardHeader>
             <CardTitle>Pièces</CardTitle>
@@ -148,7 +149,6 @@ const Travaux: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Liste des travaux */}
         <Card className="lg:col-span-2 order-1 lg:order-2">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
@@ -167,14 +167,26 @@ const Travaux: React.FC = () => {
               </CardDescription>
             </div>
             
-            <Button 
-              onClick={handleAddTravail}
-              disabled={!selectedRoom}
-              className="ml-auto"
-            >
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Ajouter un travail
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button 
+                variant="outline"
+                onClick={handleAddAutreSurface}
+                disabled={!selectedRoom}
+                className="flex items-center gap-2"
+              >
+                <Square className="h-4 w-4" />
+                Ajouter Autre Surface
+              </Button>
+              
+              <Button 
+                onClick={handleAddTravail}
+                disabled={!selectedRoom}
+                className="flex items-center gap-2"
+              >
+                <PlusCircle className="h-4 w-4" />
+                Ajouter un travail
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             {travauxForSelectedRoom.length > 0 ? (
@@ -197,14 +209,25 @@ const Travaux: React.FC = () => {
                   }
                 </p>
                 {selectedRoom && (
-                  <Button 
-                    variant="outline" 
-                    className="flex items-center gap-2"
-                    onClick={handleAddTravail}
-                  >
-                    <PlusCircle className="h-4 w-4" />
-                    Ajouter des travaux
-                  </Button>
+                  <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                    <Button 
+                      variant="outline" 
+                      className="flex items-center gap-2"
+                      onClick={handleAddAutreSurface}
+                    >
+                      <Square className="h-4 w-4" />
+                      Ajouter Autre Surface
+                    </Button>
+                    
+                    <Button 
+                      variant="outline" 
+                      className="flex items-center gap-2"
+                      onClick={handleAddTravail}
+                    >
+                      <PlusCircle className="h-4 w-4" />
+                      Ajouter des travaux
+                    </Button>
+                  </div>
                 )}
               </div>
             )}
@@ -228,7 +251,6 @@ const Travaux: React.FC = () => {
         </Button>
       </div>
 
-      {/* Tiroir pour ajouter/modifier un travail */}
       <Sheet open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
         <SheetContent className="w-full sm:max-w-md overflow-y-auto">
           <SheetHeader>
@@ -246,6 +268,21 @@ const Travaux: React.FC = () => {
           </div>
         </SheetContent>
       </Sheet>
+
+      <Drawer open={isAutreSurfaceDrawerOpen} onOpenChange={setIsAutreSurfaceDrawerOpen}>
+        <DrawerContent className="max-h-[85vh]">
+          <DrawerHeader className="text-left">
+            <DrawerTitle>Ajouter une surface personnalisée</DrawerTitle>
+          </DrawerHeader>
+          <div className="px-4 pb-8 pt-2 overflow-y-auto">
+            <AutreSurfaceForm 
+              roomId={selectedRoom || ''}
+              onSubmit={handleAutreSurfaceSubmit}
+              onCancel={() => setIsAutreSurfaceDrawerOpen(false)}
+            />
+          </div>
+        </DrawerContent>
+      </Drawer>
     </Layout>
   );
 };
