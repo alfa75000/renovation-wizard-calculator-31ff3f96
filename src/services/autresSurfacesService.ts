@@ -17,10 +17,10 @@ export const getAutresSurfacesTypes = async (): Promise<TypeAutreSurface[]> => {
   // Mapper les données Supabase vers notre type d'application
   const typesAutresSurfaces: TypeAutreSurface[] = data.map(item => ({
     id: item.id,
-    nom: item.nom,
+    nom: item.name,
     description: item.description,
-    surfaceImpacteeParDefaut: item.surface_impactee_par_defaut,
-    estDeduction: item.est_deduction,
+    surfaceImpacteeParDefaut: item.surface_impactee.toLowerCase(),
+    estDeduction: item.adjustment_type === 'Déduire',
   }));
 
   return typesAutresSurfaces;
@@ -48,8 +48,8 @@ export const getAutresSurfacesForRoom = async (roomId: string): Promise<AutreSur
     hauteur: item.hauteur,
     surface: item.surface,
     quantity: item.quantity || 1,
-    surfaceImpactee: item.surface_impactee,
-    estDeduction: item.adjustment_type === 'deduire'
+    surfaceImpactee: item.surface_impactee.toLowerCase(),
+    estDeduction: item.adjustment_type === 'Déduire'
   }));
 
   return autresSurfaces;
@@ -73,7 +73,7 @@ export const addAutreSurfaceToRoom = async (
     surface: surfaceValue,
     quantity: surface.quantity || 1,
     surface_impactee: surface.surfaceImpactee,
-    adjustment_type: surface.estDeduction ? 'deduire' : 'ajouter',
+    adjustment_type: surface.estDeduction ? 'Déduire' : 'Ajouter',
     impacte_plinthe: surface.estDeduction ? false : true,
     description: surface.designation || '',
     created_at: new Date().toISOString()
@@ -100,8 +100,8 @@ export const addAutreSurfaceToRoom = async (
     hauteur: data.hauteur,
     surface: data.surface,
     quantity: data.quantity || 1,
-    surfaceImpactee: data.surface_impactee,
-    estDeduction: data.adjustment_type === 'deduire'
+    surfaceImpactee: data.surface_impactee.toLowerCase(),
+    estDeduction: data.adjustment_type === 'Déduire'
   };
 };
 
@@ -135,7 +135,7 @@ export const updateAutreSurface = async (
 
   // Convertir estDeduction en adjustment_type si présent
   if (changes.estDeduction !== undefined) {
-    updates.adjustment_type = changes.estDeduction ? 'deduire' : 'ajouter';
+    updates.adjustment_type = changes.estDeduction ? 'Déduire' : 'Ajouter';
     delete updates.estDeduction;
   }
 
@@ -167,8 +167,8 @@ export const updateAutreSurface = async (
     hauteur: data.hauteur,
     surface: data.surface,
     quantity: data.quantity || 1,
-    surfaceImpactee: data.surface_impactee,
-    estDeduction: data.adjustment_type === 'deduire'
+    surfaceImpactee: data.surface_impactee.toLowerCase(),
+    estDeduction: data.adjustment_type === 'Déduire'
   };
 };
 

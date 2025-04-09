@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Edit, Trash2, Plus, AlertCircle } from 'lucide-react';
 import { AutreSurface } from '@/types';
@@ -7,7 +7,6 @@ import AutreSurfaceForm from '@/features/renovation/components/AutreSurfaceForm'
 import { useAutresSurfacesWithSupabase } from '@/hooks/useAutresSurfacesWithSupabase';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Loader } from '@/components/ui/loader';
-import { toast } from 'sonner';
 
 interface AutresSurfacesListProps {
   roomId: string;

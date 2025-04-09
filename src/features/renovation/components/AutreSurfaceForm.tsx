@@ -66,13 +66,13 @@ const AutreSurfaceForm: React.FC<AutreSurfaceFormProps> = ({
   const handleCancel = onCancelEdit || onCancel;
   
   // Déterminer les valeurs initiales en fonction des props disponibles
-  const initialValues = {
+  const initialValues: AutreSurfaceFormValues = {
     name: (currentSurface?.name || itemToEdit?.name) || "",
     largeur: (currentSurface?.largeur || itemToEdit?.largeur) || 0.5,
     hauteur: (currentSurface?.hauteur || itemToEdit?.hauteur) || 0.5,
-    surface_impactee: (currentSurface?.surfaceImpactee || itemToEdit?.surface_impactee) || "mur",
-    adjustment_type: currentSurface?.estDeduction || itemToEdit?.estDeduction ? "deduire" : "ajouter",
-    impacte_plinthe: (currentSurface?.impactePlinthe || itemToEdit?.impacte_plinthe) || false,
+    surface_impactee: (currentSurface?.surfaceImpactee || itemToEdit?.surface_impactee || "mur") as "mur" | "plafond" | "sol" | "aucune",
+    adjustment_type: (currentSurface?.estDeduction || itemToEdit?.estDeduction) ? "deduire" : "ajouter",
+    impacte_plinthe: Boolean(currentSurface?.impactePlinthe || itemToEdit?.impacte_plinthe || false),
     quantity: (currentSurface?.quantity || itemToEdit?.quantity) || 1,
     description: (currentSurface?.designation || itemToEdit?.description) || "",
     type_id: (currentSurface?.type || itemToEdit?.type_id) || undefined,
@@ -105,7 +105,7 @@ const AutreSurfaceForm: React.FC<AutreSurfaceFormProps> = ({
     const selectedType = typesAutresSurfaces.find(type => type.id === typeId);
     if (selectedType) {
       form.setValue("name", selectedType.nom);
-      form.setValue("surface_impactee", selectedType.surfaceImpacteeParDefaut);
+      form.setValue("surface_impactee", selectedType.surfaceImpacteeParDefaut as "mur" | "plafond" | "sol" | "aucune");
       form.setValue("adjustment_type", selectedType.estDeduction ? "deduire" : "ajouter");
       form.setValue("type_id", typeId);
     }
