@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 
 // Ces valeurs sont celles que vous avez fournies
@@ -24,7 +23,7 @@ export const getDatabaseInfo = async () => {
       'client_types',
       'menuiseries_types',
       'rooms',
-      'room_custom_items', // Changé de room_custom_surfaces à room_custom_items
+      'room_custom_items',
       'projects'
     ];
     
@@ -210,6 +209,8 @@ CREATE TABLE public.projects (
   name text NOT NULL,
   client_id uuid REFERENCES public.clients(id),
   description text,
+  address text,
+  occupant text,
   property_type text DEFAULT 'Appartement',
   floors integer DEFAULT 1,
   total_area numeric DEFAULT 0,
@@ -219,8 +220,8 @@ CREATE TABLE public.projects (
 );
 
 `;
-    } else if (tableDefinitions.projects) {
-      console.log("Structure existante de la table projects:", tableDefinitions.projects);
+    } else if (tableDefinitions['projects']) {
+      console.log("Structure existante de la table projects:", tableDefinitions['projects']);
     }
     
     // SQL pour rooms si manquant
@@ -265,8 +266,8 @@ CREATE TABLE public.rooms (
 );
 
 `;
-    } else if (tableDefinitions.rooms) {
-      console.log("Structure existante de la table rooms:", tableDefinitions.rooms);
+    } else if (tableDefinitions['rooms']) {
+      console.log("Structure existante de la table rooms:", tableDefinitions['rooms']);
     }
     
     // SQL pour room_works si manquant
@@ -297,8 +298,8 @@ CREATE TABLE public.room_works (
 );
 
 `;
-    } else if (tableDefinitions.room_works) {
-      console.log("Structure existante de la table room_works:", tableDefinitions.room_works);
+    } else if (tableDefinitions['room_works']) {
+      console.log("Structure existante de la table room_works:", tableDefinitions['room_works']);
     }
     
     // SQL pour room_menuiseries si manquant
@@ -321,8 +322,8 @@ CREATE TABLE public.room_menuiseries (
 );
 
 `;
-    } else if (tableDefinitions.room_menuiseries) {
-      console.log("Structure existante de la table room_menuiseries:", tableDefinitions.room_menuiseries);
+    } else if (tableDefinitions['room_menuiseries']) {
+      console.log("Structure existante de la table room_menuiseries:", tableDefinitions['room_menuiseries']);
     }
     
     // SQL pour room_custom_items si manquant
@@ -349,8 +350,8 @@ CREATE TABLE public.room_custom_items (
 );
 
 `;
-    } else if (tableDefinitions.room_custom_items) {
-      console.log("Structure existante de la table room_custom_items:", tableDefinitions.room_custom_items);
+    } else if (tableDefinitions['room_custom_items']) {
+      console.log("Structure existante de la table room_custom_items:", tableDefinitions['room_custom_items']);
     }
     
     return {

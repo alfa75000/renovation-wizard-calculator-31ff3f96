@@ -6,6 +6,7 @@ import { Loader2, AlertCircle, CheckCircle2, ChevronDown, ChevronRight, Database
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './ui/dialog';
+import { toast } from 'sonner';
 
 const SupabaseStatus = () => {
   const [status, setStatus] = useState<{
@@ -329,12 +330,12 @@ const SupabaseStatus = () => {
                       <h3 className="font-medium mb-2">{tableName}</h3>
                       {Array.isArray(columns) ? (
                         <ul className="list-disc list-inside text-sm">
-                          {columns.map(col => (
+                          {columns.map((col: any) => (
                             <li key={`${tableName}-${col}`}>{col}</li>
                           ))}
                         </ul>
                       ) : (
-                        <p className="text-sm text-gray-500">{columns}</p>
+                        <p className="text-sm text-gray-500">{String(columns)}</p>
                       )}
                     </div>
                   ))}

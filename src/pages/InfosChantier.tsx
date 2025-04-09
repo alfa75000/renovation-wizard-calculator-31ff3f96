@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useClients } from '@/contexts/ClientsContext';
@@ -66,15 +65,6 @@ const InfosChantier: React.FC = () => {
     
     try {
       // Mettre à jour les informations du projet
-      const projectInfo = {
-        name: nomProjet,
-        clientId: clientId || null,
-        description: descriptionProjet,
-        address: adresseChantier,
-        occupant: occupant,
-        infoComplementaire: infoComplementaire
-      };
-      
       await saveProject(nomProjet);
     } catch (error) {
       console.error('Erreur lors de la sauvegarde du projet:', error);
