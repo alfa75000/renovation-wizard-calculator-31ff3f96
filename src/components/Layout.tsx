@@ -3,7 +3,7 @@ import React, { ReactNode, useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from './ui/button';
 import { useProject } from '@/contexts/ProjectContext';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from './ui/dialog';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from './ui/sheet';
 import { FilePlus2, FolderOpen, Save, SaveAll } from 'lucide-react';
 import { useProjetChantier } from '@/contexts/ProjetChantierContext';
@@ -66,7 +66,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, title, subtitle }) => 
   }, [clientId, projectDescription, projectDate]);
   
   // Gérer la création d'un nouveau projet
-  const handleCreateNewProject = () => {
+  const handleCreateNewProject = async () => {
     if (!clientId) {
       toast.error("Veuillez sélectionner un client");
       return;
@@ -77,19 +77,30 @@ export const Layout: React.FC<LayoutProps> = ({ children, title, subtitle }) => 
       return;
     }
     
-    // Créer un nouveau projet
-    createNewProject();
-    
-    // Enregistrer avec les informations
-    saveProject(projectName)
-      .then(() => {
-        setNewProjectDialogOpen(false);
-        toast.success("Nouveau projet créé avec succès");
-      })
-      .catch(error => {
-        console.error("Erreur lors de la création du projet:", error);
-        toast.error("Erreur lors de la création du projet");
-      });
+    try {
+      // Créer un nouveau projet vide
+      await createNewProject();
+      
+      // Préparer les informations du projet
+      const projectInfo = {
+        name: projectName,
+        clientId: clientId,
+        description: projectDescription,
+        address: '',
+        postalCode: '',
+        city: '',
+        occupant: ''
+      };
+      
+      // Enregistrer le projet avec les informations
+      await saveProject(projectName, projectInfo);
+      
+      setNewProjectDialogOpen(false);
+      toast.success("Nouveau projet créé avec succès");
+    } catch (error) {
+      console.error("Erreur lors de la création du projet:", error);
+      toast.error("Erreur lors de la création du projet");
+    }
   };
   
   // Gérer l'ouverture d'un projet existant
@@ -117,7 +128,18 @@ export const Layout: React.FC<LayoutProps> = ({ children, title, subtitle }) => 
       return;
     }
     
-    saveProject(projectName)
+    // Préparer les informations du projet
+    const projectInfo = {
+      name: projectName,
+      clientId: clientId,
+      description: projectDescription,
+      address: '',
+      postalCode: '',
+      city: '',
+      occupant: ''
+    };
+    
+    saveProject(projectName, projectInfo)
       .then(() => {
         setSaveAsDialogOpen(false);
         toast.success("Projet enregistré avec succès");
@@ -214,6 +236,9 @@ export const Layout: React.FC<LayoutProps> = ({ children, title, subtitle }) => 
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Nouveau Projet</DialogTitle>
+            <DialogDescription>
+              Créez un nouveau projet en sélectionnant un client et en ajoutant une description.
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
@@ -298,6 +323,9 @@ export const Layout: React.FC<LayoutProps> = ({ children, title, subtitle }) => 
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Enregistrer Sous</DialogTitle>
+            <DialogDescription>
+              Sauvegardez votre projet actuel sous un nouveau nom.
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
