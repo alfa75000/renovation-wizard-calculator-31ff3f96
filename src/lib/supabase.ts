@@ -24,7 +24,7 @@ export const getDatabaseInfo = async () => {
       'client_types',
       'menuiseries_types',
       'rooms',
-      'room_custom_surfaces',
+      'room_custom_items', // Changé de room_custom_surfaces à room_custom_items
       'projects'
     ];
     
