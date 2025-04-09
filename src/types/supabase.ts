@@ -69,3 +69,4 @@ export type ClientType = {
   created_at: string;
   name: string;
 };
+
