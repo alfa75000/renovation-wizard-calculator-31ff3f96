@@ -79,6 +79,8 @@ export interface AutreSurface {
   quantity: number;
   surfaceImpactee: "mur" | "plafond" | "sol";
   estDeduction: boolean;
+  impactePlinthe: boolean;
+  description: string;
 }
 
 // Types pour les menuiseries
@@ -97,8 +99,11 @@ export interface TypeAutreSurface {
   id: string;
   nom: string;
   description: string;
+  largeur: number;
+  hauteur: number;
   surfaceImpacteeParDefaut: "mur" | "plafond" | "sol";
   estDeduction: boolean;
+  impactePlinthe: boolean;
 }
 
 // Client
