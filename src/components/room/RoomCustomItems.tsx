@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { PlusCircle, Edit, Trash2, AlertCircle, ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
-import { AutreSurfaceForm } from '@/features/renovation/components/AutreSurfaceForm';
+import AutreSurfaceForm from '@/features/renovation/components/AutreSurfaceForm';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2 } from 'lucide-react';
 
@@ -215,7 +215,7 @@ const RoomCustomItems: React.FC<RoomCustomItemsProps> = ({ roomId }) => {
                           Déduction
                         </Badge>
                       ) : (
-                        <Badge variant="success" className="ml-2 bg-green-600">
+                        <Badge variant="secondary" className="ml-2 bg-green-600 hover:bg-green-700">
                           <ArrowUpCircle className="h-3 w-3 mr-1" />
                           Ajout
                         </Badge>

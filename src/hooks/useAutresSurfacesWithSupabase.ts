@@ -168,18 +168,31 @@ export const useAutresSurfacesWithSupabase = (roomId?: string) => {
       setLoading(true);
       
       // Convertir au format RoomCustomItem
-      const updateData: Partial<Omit<RoomCustomItem, 'id' | 'created_at'>> = {
-        ...changes,
-        surface_impactee: changes.surfaceImpactee === 'mur' ? 'Mur' : 
-                         changes.surfaceImpactee === 'plafond' ? 'Plafond' : 
-                         changes.surfaceImpactee === 'sol' ? 'Sol' : undefined,
-        adjustment_type: changes.estDeduction !== undefined ? 
-                        (changes.estDeduction ? 'Déduire' : 'Ajouter') : undefined,
-      };
+      const updateData: Partial<Omit<RoomCustomItem, 'id' | 'created_at'>> = {};
       
-      // Supprimer les propriétés non utilisées dans RoomCustomItem
-      if ('surfaceImpactee' in changes) delete updateData.surfaceImpactee;
-      if ('estDeduction' in changes) delete updateData.estDeduction;
+      // Copier les champs standards qui ont le même nom
+      if (changes.name !== undefined) updateData.name = changes.name;
+      if (changes.designation !== undefined) updateData.designation = changes.designation;
+      if (changes.largeur !== undefined) updateData.largeur = changes.largeur;
+      if (changes.hauteur !== undefined) updateData.hauteur = changes.hauteur;
+      if (changes.quantity !== undefined) updateData.quantity = changes.quantity;
+      if (changes.description !== undefined) updateData.description = changes.description;
+      if (changes.type !== undefined) updateData.type = changes.type;
+      
+      // Convertir spécifiquement les champs qui ont un nom différent
+      if (changes.surfaceImpactee !== undefined) {
+        updateData.surface_impactee = changes.surfaceImpactee === 'mur' ? 'Mur' : 
+                                     changes.surfaceImpactee === 'plafond' ? 'Plafond' : 
+                                     changes.surfaceImpactee === 'sol' ? 'Sol' : 'Aucune';
+      }
+      
+      if (changes.estDeduction !== undefined) {
+        updateData.adjustment_type = changes.estDeduction ? 'Déduire' : 'Ajouter';
+      }
+      
+      if (changes.impactePlinthe !== undefined) {
+        updateData.impacte_plinthe = changes.impactePlinthe;
+      }
       
       const updatedItem = await updateCustomItem(id, updateData);
       
