@@ -24,7 +24,8 @@ export const useAutresSurfacesWithSupabase = (roomId?: string) => {
     addCustomItem,
     updateCustomItem,
     deleteCustomItem,
-    fetchCustomItemTypes
+    fetchCustomItemTypes,
+    syncLocalSurfacesToSupabase
   } = useRoomCustomItemsWithSupabase(roomId);
 
   // Convertir les customItems en autresSurfaces pour compatibilité
@@ -227,6 +228,25 @@ export const useAutresSurfacesWithSupabase = (roomId?: string) => {
     }
   };
 
+  // Synchroniser des surfaces locales avec Supabase
+  const synchronizeLocalSurfaces = async (roomId: string, localSurfaces: AutreSurface[]): Promise<boolean> => {
+    if (!roomId) {
+      console.error("Impossible de synchroniser sans ID de pièce");
+      return false;
+    }
+    
+    try {
+      setLoading(true);
+      return await syncLocalSurfacesToSupabase(roomId, localSurfaces);
+    } catch (err) {
+      console.error("Erreur lors de la synchronisation des surfaces:", err);
+      toast.error("Erreur lors de la synchronisation des surfaces");
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     autresSurfaces,
     typesAutresSurfaces,
@@ -234,6 +254,7 @@ export const useAutresSurfacesWithSupabase = (roomId?: string) => {
     error,
     addAutreSurface,
     updateAutreSurfaceItem,
-    deleteAutreSurfaceItem
+    deleteAutreSurfaceItem,
+    synchronizeLocalSurfaces  // Nouvelle fonction
   };
 };

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -6,12 +7,12 @@ import { Room } from '@/types';
 import { useCalculSurfaces } from '@/hooks/useCalculSurfaces';
 import { Check, Plus } from 'lucide-react';
 import MenuiseriesList from './MenuiseriesList';
-import AutresSurfacesListWithSupabase from './AutresSurfacesListWithSupabase';
 import { useMenuiseries } from '@/hooks/useMenuiseries';
 import { useAutresSurfaces } from '@/hooks/useAutresSurfaces';
 import MenuiserieForm from './MenuiserieForm';
 import { Separator } from '@/components/ui/separator';
 import { useProject } from '@/contexts/ProjectContext';
+import RoomCustomItems from './RoomCustomItems';
 
 interface RoomFormProps {
   onAddRoom: (room: Omit<Room, 'id'>) => void;
@@ -343,15 +344,14 @@ const RoomForm: React.FC<RoomFormProps> = ({ onAddRoom, editingRoom, roomTypes }
       
       <Separator className="my-6" />
       
-      {editingRoom ? (
-        <AutresSurfacesListWithSupabase 
-          roomId={editingRoom.id} 
-        />
-      ) : (
-        <div className="bg-gray-100 p-4 rounded-md text-center text-gray-500">
-          <p>Les surfaces personnalisées pourront être ajoutées après la création de la pièce</p>
-        </div>
-      )}
+      {/* Remplacer AutresSurfacesListWithSupabase par un nouveau composant qui gère les surfaces localement */}
+      <RoomCustomItems 
+        isLocalMode={true}
+        autresSurfaces={autresSurfaces}
+        onAddAutreSurface={addAutreSurface}
+        onUpdateAutreSurface={updateAutreSurface}
+        onDeleteAutreSurface={deleteAutreSurface}
+      />
 
       <div className="flex justify-end mt-6">
         <Button 

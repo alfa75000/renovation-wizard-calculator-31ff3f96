@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { RoomCustomItem, SurfaceImpactee } from '@/types/supabase';
+import { AutreSurface } from '@/types';
 import { toast } from 'sonner';
 import { isValidUUID } from '@/lib/utils';
 import { v4 as uuidv4 } from 'uuid';
@@ -37,7 +38,11 @@ export const useRoomCustomItemsWithSupabase = (roomId?: string) => {
   // Charger les éléments personnalisés pour une pièce spécifique
   useEffect(() => {
     const loadCustomItems = async () => {
-      if (!roomId) return;
+      if (!roomId) {
+        // Si pas de roomId, on ne charge rien
+        setCustomItems([]);
+        return;
+      }
       
       try {
         setLoading(true);
@@ -213,6 +218,89 @@ export const useRoomCustomItemsWithSupabase = (roomId?: string) => {
     }
   };
 
+  // Synchroniser les surfaces d'un objet AutreSurface[] avec Supabase
+  const syncLocalSurfacesToSupabase = async (
+    roomId: string,
+    localSurfaces: AutreSurface[]
+  ): Promise<boolean> => {
+    if (!roomId) {
+      toast.error('Aucune pièce sélectionnée pour la synchronisation');
+      return false;
+    }
+
+    try {
+      setLoading(true);
+      
+      // Obtenir l'UUID correspondant pour Supabase
+      const supabaseRoomId = getOrCreateUUID(roomId);
+      
+      // Supprimer d'abord toutes les surfaces existantes pour cette pièce
+      const { error: deleteError } = await supabase
+        .from('room_custom_items')
+        .delete()
+        .eq('room_id', supabaseRoomId);
+      
+      if (deleteError) {
+        console.error('Erreur lors de la suppression des surfaces existantes:', deleteError);
+        toast.error('Impossible de synchroniser les surfaces');
+        return false;
+      }
+      
+      // Si aucune surface locale, on a terminé
+      if (!localSurfaces || localSurfaces.length === 0) {
+        return true;
+      }
+      
+      // Convertir les surfaces locales au format Supabase
+      const supabaseSurfaces = localSurfaces.map(item => ({
+        room_id: supabaseRoomId,
+        type: item.type,
+        name: item.name,
+        designation: item.designation,
+        largeur: item.largeur,
+        hauteur: item.hauteur,
+        surface: item.surface,
+        quantity: item.quantity || 1,
+        surface_impactee: item.surfaceImpactee === 'mur' ? 'Mur' : 
+                      item.surfaceImpactee === 'plafond' ? 'Plafond' : 
+                      item.surfaceImpactee === 'sol' ? 'Sol' : 'Aucune',
+        adjustment_type: item.estDeduction ? 'Déduire' : 'Ajouter',
+        impacte_plinthe: item.impactePlinthe,
+        description: item.description || null
+      }));
+      
+      // Insérer les nouvelles surfaces
+      const { error: insertError } = await supabase
+        .from('room_custom_items')
+        .insert(supabaseSurfaces);
+      
+      if (insertError) {
+        console.error('Erreur lors de l\'insertion des nouvelles surfaces:', insertError);
+        toast.error('Impossible de synchroniser toutes les surfaces');
+        return false;
+      }
+      
+      // Rafraîchir les données
+      const { data, error } = await supabase
+        .from('room_custom_items')
+        .select('*')
+        .eq('room_id', supabaseRoomId);
+      
+      if (!error && data) {
+        setCustomItems(data);
+      }
+      
+      return true;
+      
+    } catch (err) {
+      console.error('Exception lors de la synchronisation des surfaces:', err);
+      toast.error('Une erreur inattendue s\'est produite');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     customItems,
     loading,
@@ -220,6 +308,7 @@ export const useRoomCustomItemsWithSupabase = (roomId?: string) => {
     addCustomItem,
     updateCustomItem,
     deleteCustomItem,
-    fetchCustomItemTypes
+    fetchCustomItemTypes,
+    syncLocalSurfacesToSupabase  // Nouvelle fonction pour synchroniser
   };
 };
