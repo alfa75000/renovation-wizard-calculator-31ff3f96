@@ -9,6 +9,7 @@ import {
   deleteAutreSurface 
 } from '@/services/autresSurfacesService';
 import { toast } from 'sonner';
+import { isValidUUID } from '@/lib/utils';
 
 export const useAutresSurfacesWithSupabase = (roomId?: string) => {
   const [autresSurfaces, setAutresSurfaces] = useState<AutreSurface[]>([]);
@@ -40,6 +41,13 @@ export const useAutresSurfacesWithSupabase = (roomId?: string) => {
     const loadAutresSurfaces = async () => {
       if (!roomId) return;
       
+      // Vérifier si l'ID de pièce est un UUID valide
+      if (!isValidUUID(roomId)) {
+        console.warn(`ID de pièce invalide (pas un UUID): ${roomId}. Les données ne seront pas chargées.`);
+        setAutresSurfaces([]);
+        return;
+      }
+      
       try {
         setLoading(true);
         const surfaces = await getAutresSurfacesForRoom(roomId);
@@ -63,6 +71,12 @@ export const useAutresSurfacesWithSupabase = (roomId?: string) => {
   ): Promise<AutreSurface[]> => {
     if (!roomId) {
       toast.error('Aucune pièce sélectionnée');
+      return [];
+    }
+
+    // Vérifier si l'ID de pièce est un UUID valide
+    if (!isValidUUID(roomId)) {
+      toast.error('ID de pièce invalide. Impossible d\'ajouter une surface.');
       return [];
     }
 
@@ -97,6 +111,11 @@ export const useAutresSurfacesWithSupabase = (roomId?: string) => {
     id: string, 
     changes: Partial<Omit<AutreSurface, 'id' | 'surface'>>
   ): Promise<AutreSurface | null> => {
+    if (!isValidUUID(id)) {
+      toast.error('ID de surface invalide. Impossible de mettre à jour.');
+      return null;
+    }
+
     try {
       setLoading(true);
       
@@ -121,6 +140,11 @@ export const useAutresSurfacesWithSupabase = (roomId?: string) => {
 
   // Supprimer une autre surface
   const deleteAutreSurfaceItem = async (id: string): Promise<void> => {
+    if (!isValidUUID(id)) {
+      toast.error('ID de surface invalide. Impossible de supprimer.');
+      return;
+    }
+
     try {
       setLoading(true);
       
@@ -149,3 +173,4 @@ export const useAutresSurfacesWithSupabase = (roomId?: string) => {
     deleteAutreSurfaceItem
   };
 };
+

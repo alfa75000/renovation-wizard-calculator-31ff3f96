@@ -1,4 +1,3 @@
-
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -76,4 +75,13 @@ export function estNombrePositif(valeur: string | number): boolean {
 // Convertir une surface en m² à partir des dimensions en cm
 export function convertirDimensionsEnSurface(largeur: number, hauteur: number): number {
   return arrondir2Decimales((largeur / 100) * (hauteur / 100));
+}
+
+/**
+ * Vérifie si une chaîne est un UUID valide au format v4 
+ */
+export function isValidUUID(str: string): boolean {
+  // Format UUID v4: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx où x est n'importe quel caractère hexadécimal et y est 8, 9, A ou B
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str);
 }
