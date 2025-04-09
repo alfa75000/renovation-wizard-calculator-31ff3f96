@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Layout } from "@/components/Layout";
 import { 
@@ -17,6 +18,15 @@ import {
   Hammer,
   Wrench,
   SquarePen,
+  Home, 
+  Droplet, 
+  Power, 
+  Pipette, 
+  Cpu, 
+  CircuitBoard,
+  Flame,
+  Cable,
+  Building,
   LinkIcon,
   DoorOpen,
   Users,
@@ -83,6 +93,205 @@ import { Client, useClients, typesClients } from "@/contexts/ClientsContext";
 import { TypeMenuiserie } from "@/types";
 import { surfacesReference } from "@/contexts/TravauxTypesContext";
 import { surfacesMenuiseries } from "@/types";
+
+// Composant pour le formulaire de groupe de services
+const ServiceGroupForm = ({ open, onClose, group, onSubmit }) => {
+  const [name, setName] = useState(group ? group.name : "");
+
+  useEffect(() => {
+    if (group) {
+      setName(group.name);
+    } else {
+      setName("");
+    }
+  }, [group]);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubmit(name);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>{group ? "Modifier le groupe" : "Ajouter un groupe"}</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit}>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="text-right">Nom</Label>
+              <Input
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="col-span-3"
+                required
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onClose(false)}>Annuler</Button>
+            <Button type="submit">{group ? "Mettre à jour" : "Ajouter"}</Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+// Composant pour le formulaire de type de travaux
+const WorkTypeForm = ({ open, onClose, workType, onSubmit }) => {
+  const [name, setName] = useState(workType ? workType.name : "");
+
+  useEffect(() => {
+    if (workType) {
+      setName(workType.name);
+    } else {
+      setName("");
+    }
+  }, [workType]);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubmit(name);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>{workType ? "Modifier le type de travaux" : "Ajouter un type de travaux"}</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit}>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="text-right">Nom</Label>
+              <Input
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="col-span-3"
+                required
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onClose(false)}>Annuler</Button>
+            <Button type="submit">{workType ? "Mettre à jour" : "Ajouter"}</Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+// Composant pour le formulaire de service
+const ServiceForm = ({ open, onClose, service, onSubmit }) => {
+  const [formData, setFormData] = useState({
+    name: service ? service.name : "",
+    description: service ? service.description || "" : "",
+    labor_price: service ? service.labor_price : 0,
+    supply_price: service ? service.supply_price : 0
+  });
+
+  useEffect(() => {
+    if (service) {
+      setFormData({
+        name: service.name,
+        description: service.description || "",
+        labor_price: service.labor_price,
+        supply_price: service.supply_price
+      });
+    } else {
+      setFormData({
+        name: "",
+        description: "",
+        labor_price: 0,
+        supply_price: 0
+      });
+    }
+  }, [service]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: name.includes("price") ? parseFloat(value) || 0 : value
+    }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubmit(formData);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>{service ? "Modifier le service" : "Ajouter un service"}</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit}>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="text-right">Nom</Label>
+              <Input
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                className="col-span-3"
+                required
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="description" className="text-right">Description</Label>
+              <Textarea
+                id="description"
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                className="col-span-3"
+                rows={3}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="labor_price" className="text-right">Main d'œuvre (€)</Label>
+              <Input
+                id="labor_price"
+                name="labor_price"
+                type="number"
+                step="0.01"
+                value={formData.labor_price}
+                onChange={handleChange}
+                className="col-span-3"
+                required
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="supply_price" className="text-right">Fournitures (€)</Label>
+              <Input
+                id="supply_price"
+                name="supply_price"
+                type="number"
+                step="0.01"
+                value={formData.supply_price}
+                onChange={handleChange}
+                className="col-span-3"
+                required
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onClose(false)}>Annuler</Button>
+            <Button type="submit">{service ? "Mettre à jour" : "Ajouter"}</Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 const Parametres = () => {
   
@@ -788,8 +997,11 @@ const Parametres = () => {
                                     <Button 
                                       variant="ghost" 
                                       size="sm"
-                                      onClick={() => handleAddService()}
-                                      disabled={selectedGroupId !== group.id || isLoadingServices}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleAddService();
+                                      }}
+                                      disabled={isLoadingServices}
                                     >
                                       <Plus className="h-4 w-4" />
                                     </Button>
@@ -864,14 +1076,20 @@ const Parametres = () => {
                                                     <Button 
                                                       variant="ghost" 
                                                       size="sm"
-                                                      onClick={() => handleEditService(service)}
+                                                      onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleEditService(service);
+                                                      }}
                                                     >
                                                       <Edit className="h-4 w-4" />
                                                     </Button>
                                                     <Button 
                                                       variant="ghost" 
                                                       size="sm"
-                                                      onClick={() => handleDeleteService(service.id)}
+                                                      onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleDeleteService(service.id);
+                                                      }}
                                                     >
                                                       <Trash className="h-4 w-4" />
                                                     </Button>
@@ -1087,6 +1305,73 @@ const Parametres = () => {
         </TabsContent>
       </Tabs>
 
+      {/* Composants de formulaires et de dialogues de confirmation */}
+      <WorkTypeForm
+        open={workTypeFormOpen}
+        onClose={() => setWorkTypeFormOpen(false)}
+        workType={editingWorkType}
+        onSubmit={handleSubmitWorkType}
+      />
+
+      <ServiceGroupForm
+        open={serviceGroupFormOpen}
+        onClose={() => setServiceGroupFormOpen(false)}
+        group={editingServiceGroup}
+        onSubmit={handleSubmitServiceGroup}
+      />
+
+      <ServiceForm
+        open={serviceFormOpen}
+        onClose={() => setServiceFormOpen(false)}
+        service={editingService}
+        onSubmit={handleSubmitService}
+      />
+
+      <Dialog open={confirmDeleteWorkTypeOpen} onOpenChange={setConfirmDeleteWorkTypeOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Confirmer la suppression</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir supprimer ce type de travaux ? Cette action ne peut pas être annulée.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDeleteWorkTypeOpen(false)}>Annuler</Button>
+            <Button variant="destructive" onClick={confirmWorkTypeDelete}>Supprimer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={confirmDeleteGroupOpen} onOpenChange={setConfirmDeleteGroupOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Confirmer la suppression</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir supprimer ce groupe ? Cette action ne peut pas être annulée.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDeleteGroupOpen(false)}>Annuler</Button>
+            <Button variant="destructive" onClick={confirmServiceGroupDelete}>Supprimer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={confirmDeleteServiceOpen} onOpenChange={setConfirmDeleteServiceOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Confirmer la suppression</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir supprimer ce service ? Cette action ne peut pas être annulée.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDeleteServiceOpen(false)}>Annuler</Button>
+            <Button variant="destructive" onClick={confirmServiceDelete}>Supprimer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <TypeMenuiserieForm
         isOpen={typeMenuiserieFormOpen}
         onClose={() => setTypeMenuiserieFormOpen(false)}
@@ -1146,3 +1431,4 @@ const Parametres = () => {
 };
 
 export default Parametres;
+
