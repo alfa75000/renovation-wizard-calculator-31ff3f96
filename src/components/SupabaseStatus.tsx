@@ -1,10 +1,11 @@
 
 import React, { useEffect, useState } from 'react';
-import { checkSupabaseConnection, SUPABASE_URL } from '@/lib/supabase';
+import { checkSupabaseConnection, getDatabaseInfo, SUPABASE_URL } from '@/lib/supabase';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Loader2, AlertCircle, CheckCircle2, ChevronDown, ChevronRight } from 'lucide-react';
+import { Loader2, AlertCircle, CheckCircle2, ChevronDown, ChevronRight, Database } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const SupabaseStatus = () => {
   const [status, setStatus] = useState<{
@@ -13,7 +14,7 @@ const SupabaseStatus = () => {
     error?: string;
     details?: any;
     data?: any;
-    tables?: any;
+    dbInfo?: any;
     tableStructures?: {
       work_types: string[] | string;
       service_groups: string[] | string;
@@ -25,6 +26,8 @@ const SupabaseStatus = () => {
   });
 
   const [showDetails, setShowDetails] = useState(false);
+  const [dbStructure, setDbStructure] = useState<any>(null);
+  const [loadingDbInfo, setLoadingDbInfo] = useState(false);
 
   const checkConnection = async () => {
     setStatus(prev => ({ ...prev, checking: true }));
@@ -35,9 +38,21 @@ const SupabaseStatus = () => {
       error: result.error,
       details: result.error ? result.details : undefined,
       data: result.data,
-      tables: result.tables,
+      dbInfo: result.dbInfo,
       tableStructures: result.tableStructures
     });
+  };
+
+  const fetchDatabaseStructure = async () => {
+    setLoadingDbInfo(true);
+    try {
+      const info = await getDatabaseInfo();
+      setDbStructure(info);
+    } catch (error) {
+      console.error("Erreur lors de la récupération de la structure de la base de données:", error);
+    } finally {
+      setLoadingDbInfo(false);
+    }
   };
 
   useEffect(() => {
@@ -70,9 +85,67 @@ const SupabaseStatus = () => {
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <div className="mt-2 space-y-3">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={fetchDatabaseStructure} 
+                    disabled={loadingDbInfo}
+                    className="mb-2"
+                  >
+                    {loadingDbInfo ? (
+                      <>
+                        <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                        Chargement...
+                      </>
+                    ) : (
+                      <>
+                        <Database className="h-3 w-3 mr-1" />
+                        Vérifier la structure de la base de données
+                      </>
+                    )}
+                  </Button>
+                  
+                  {dbStructure && (
+                    <div className="bg-white/80 p-2 rounded text-xs">
+                      <p className="font-medium">Structure de la base de données :</p>
+                      {dbStructure.error ? (
+                        <p className="text-red-600">Erreur : {dbStructure.error}</p>
+                      ) : (
+                        <Tabs defaultValue="tables">
+                          <TabsList className="mb-2">
+                            <TabsTrigger value="tables">Tables</TabsTrigger>
+                            <TabsTrigger value="raw">JSON brut</TabsTrigger>
+                          </TabsList>
+                          <TabsContent value="tables">
+                            {dbStructure.tables?.map((table: any) => (
+                              <div key={table.name} className="mb-2 p-1 bg-gray-50 rounded">
+                                <p className="font-medium">{table.name}</p>
+                                <ul className="ml-2 mt-1">
+                                  {table.columns?.map((col: any) => (
+                                    <li key={`${table.name}-${col.name || col}`}>
+                                      {col.name || col}: {col.type || 'type inconnu'}
+                                    </li>
+                                  ))}
+                                </ul>
+                                {table.error && (
+                                  <p className="text-amber-600 text-xs mt-1">Remarque: {table.error}</p>
+                                )}
+                              </div>
+                            ))}
+                          </TabsContent>
+                          <TabsContent value="raw">
+                            <pre className="overflow-auto mt-1 text-xs max-h-64">
+                              {JSON.stringify(dbStructure, null, 2)}
+                            </pre>
+                          </TabsContent>
+                        </Tabs>
+                      )}
+                    </div>
+                  )}
+                  
                   {status.tableStructures && (
                     <div>
-                      <p className="text-xs font-medium mb-1">Structure des tables:</p>
+                      <p className="text-xs font-medium mb-1">Structure des tables principales:</p>
                       <div className="space-y-2">
                         <div className="bg-white/80 p-2 rounded text-xs">
                           <p className="font-medium">work_types:</p>

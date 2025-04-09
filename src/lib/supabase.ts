@@ -8,6 +8,63 @@ export const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 // Initialisation du client Supabase
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+/**
+ * Récupère les informations sur les tables de la base de données
+ */
+export const getDatabaseInfo = async () => {
+  try {
+    console.log("Récupération des informations sur la base de données...");
+    
+    // Requête SQL pour obtenir les tables et leurs colonnes
+    const { data: tablesInfo, error: tablesError } = await supabase
+      .from('pg_tables')
+      .select('*')
+      .eq('schemaname', 'public');
+    
+    if (tablesError) {
+      console.error('Erreur lors de la récupération des tables:', tablesError);
+      return { error: tablesError.message };
+    }
+    
+    // Récupérer les informations sur les colonnes pour chaque table
+    const tablesData = [];
+    
+    for (const table of tablesInfo || []) {
+      const tableName = table.tablename;
+      
+      // Exécuter une requête SQL via la fonctionnalité RPC pour obtenir les infos sur les colonnes
+      const { data: columnsData, error: columnsError } = await supabase.rpc('get_table_info', { 
+        table_name: tableName 
+      });
+      
+      if (columnsError) {
+        console.warn(`Erreur lors de la récupération des colonnes pour ${tableName}:`, columnsError);
+        // Utiliser une méthode alternative pour obtenir au moins quelques informations
+        const { data: sampleData } = await supabase
+          .from(tableName)
+          .select('*')
+          .limit(1);
+        
+        tablesData.push({
+          name: tableName,
+          columns: sampleData ? Object.keys(sampleData[0] || {}).map(name => ({ name })) : [],
+          error: columnsError.message
+        });
+      } else {
+        tablesData.push({
+          name: tableName,
+          columns: columnsData
+        });
+      }
+    }
+    
+    return { tables: tablesData };
+  } catch (error) {
+    console.error('Exception lors de la récupération des informations de la base de données:', error);
+    return { error: "Exception inattendue" };
+  }
+};
+
 // Fonction utilitaire pour vérifier la connexion
 export const checkSupabaseConnection = async () => {
   try {
@@ -31,16 +88,12 @@ export const checkSupabaseConnection = async () => {
       };
     }
 
-    // Vérifier les tables disponibles
-    let tablesData = null;
-    let tablesError = null;
-    
+    // Récupérer les infos de la base de données sans utiliser list_tables
+    let dbInfo = null;
     try {
-      const result = await supabase.rpc('list_tables');
-      tablesData = result.data;
-      tablesError = result.error;
-    } catch (err) {
-      tablesError = { message: "La fonction list_tables n'existe pas" };
+      dbInfo = await getDatabaseInfo();
+    } catch (e) {
+      console.warn("Impossible de récupérer les informations complètes de la base de données:", e);
     }
     
     // Récupérer les structures des tables principales
@@ -68,7 +121,7 @@ export const checkSupabaseConnection = async () => {
     return {
       connected: true,
       data,
-      tables: tablesData || "Non disponible",
+      dbInfo: dbInfo || "Non disponible",
       tableStructures: {
         work_types: workTypesColumns ? Object.keys(workTypesColumns[0] || {}) : "Pas de données",
         service_groups: serviceGroupsColumns ? Object.keys(serviceGroupsColumns[0] || {}) : "Pas de données",
