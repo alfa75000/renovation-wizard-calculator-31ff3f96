@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
-import { RoomCustomItem, SurfaceImpactee } from '@/types/supabase';
+import { supabase } from '@/integrations/supabase/client';
+import { RoomCustomItem, SurfaceImpactee, AdjustmentType } from '@/types/supabase';
 import { AutreSurface } from '@/types';
 import { toast } from 'sonner';
 import { isValidUUID } from '@/lib/utils';
@@ -261,9 +261,7 @@ export const useRoomCustomItemsWithSupabase = (roomId?: string) => {
         hauteur: item.hauteur,
         surface: item.surface,
         quantity: item.quantity || 1,
-        surface_impactee: item.surfaceImpactee === 'mur' ? 'Mur' : 
-                      item.surfaceImpactee === 'plafond' ? 'Plafond' : 
-                      item.surfaceImpactee === 'sol' ? 'Sol' : 'Aucune',
+        surface_impactee: convertSurfaceImpacteeToEnum(item.surfaceImpactee),
         adjustment_type: item.estDeduction ? 'Déduire' : 'Ajouter',
         impacte_plinthe: item.impactePlinthe,
         description: item.description || null
@@ -301,6 +299,20 @@ export const useRoomCustomItemsWithSupabase = (roomId?: string) => {
     }
   };
 
+  // Fonction utilitaire pour convertir les valeurs de surfaceImpactee en format enum
+  const convertSurfaceImpacteeToEnum = (value: string): SurfaceImpactee => {
+    switch (value.toLowerCase()) {
+      case 'mur':
+        return 'Mur';
+      case 'plafond':
+        return 'Plafond';
+      case 'sol':
+        return 'Sol';
+      default:
+        return 'Aucune';
+    }
+  };
+
   return {
     customItems,
     loading,
@@ -309,6 +321,6 @@ export const useRoomCustomItemsWithSupabase = (roomId?: string) => {
     updateCustomItem,
     deleteCustomItem,
     fetchCustomItemTypes,
-    syncLocalSurfacesToSupabase  // Nouvelle fonction pour synchroniser
+    syncLocalSurfacesToSupabase
   };
 };

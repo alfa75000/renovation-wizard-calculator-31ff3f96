@@ -1,12 +1,10 @@
 
-import { createClient } from '@supabase/supabase-js';
+// IMPORTANT: Ce fichier est maintenu pour la compatibilité avec le code existant
+// Pour les nouveaux développements, utilisez import { supabase } from '@/integrations/supabase/client'
+import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from '@/integrations/supabase/client';
 
-// Ces valeurs sont celles que vous avez fournies
-export const SUPABASE_URL = 'https://gofmlbehbkccqmktsvvb.supabase.co';
-export const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdvZm1sYmVoYmtjY3Fta3RzdnZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwMzkwNTIsImV4cCI6MjA1OTYxNTA1Mn0.rR80Q8b2WMeZuDsrobagnVp58b-Fl0XzCOTwn4f-2Ag';
-
-// Initialisation du client Supabase
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Exporter tout ce qui était déjà exporté pour maintenir la compatibilité
+export { supabase, SUPABASE_URL, SUPABASE_ANON_KEY };
 
 /**
  * Récupère les informations sur les tables de la base de données
@@ -24,7 +22,7 @@ export const getDatabaseInfo = async () => {
       'client_types',
       'menuiseries_types',
       'rooms',
-      'room_custom_items', // Changé de room_custom_surfaces à room_custom_items
+      'room_custom_items',
       'projects'
     ];
     

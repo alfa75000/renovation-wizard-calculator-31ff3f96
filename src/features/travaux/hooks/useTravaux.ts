@@ -2,7 +2,7 @@
 import { useProject } from '@/contexts/ProjectContext';
 import { Travail } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 
 export const useTravaux = () => {
   const { state, dispatch } = useProject();
