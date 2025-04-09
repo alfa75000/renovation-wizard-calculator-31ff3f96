@@ -1,4 +1,3 @@
-
 import React, { ReactNode, useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from './ui/button';
@@ -89,7 +88,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, title, subtitle }) => 
       };
       
       // Enregistrer le projet avec les informations
-      // Utiliser un seul argument qui est le projectInfo
       await saveProject(projectInfo);
       
       setNewProjectDialogOpen(false);

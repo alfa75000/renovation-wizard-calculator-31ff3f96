@@ -1,11 +1,11 @@
-
 import React, { useEffect, useState } from 'react';
-import { checkSupabaseConnection, getDatabaseInfo, SUPABASE_URL } from '@/lib/supabase';
+import { checkSupabaseConnection, getDatabaseInfo, SUPABASE_URL, checkAndGenerateRequiredTablesSQL } from '@/lib/supabase';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Loader2, AlertCircle, CheckCircle2, ChevronDown, ChevronRight, Database } from 'lucide-react';
+import { Loader2, AlertCircle, CheckCircle2, ChevronDown, ChevronRight, Database, Table, FileCode } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './ui/dialog';
 
 const SupabaseStatus = () => {
   const [status, setStatus] = useState<{
@@ -28,6 +28,11 @@ const SupabaseStatus = () => {
   const [showDetails, setShowDetails] = useState(false);
   const [dbStructure, setDbStructure] = useState<any>(null);
   const [loadingDbInfo, setLoadingDbInfo] = useState(false);
+  const [showSqlDialog, setShowSqlDialog] = useState(false);
+  const [sqlScript, setSqlScript] = useState('');
+  const [missingTables, setMissingTables] = useState<string[]>([]);
+  const [tableDefinitions, setTableDefinitions] = useState<any>(null);
+  const [loadingTableCheck, setLoadingTableCheck] = useState(false);
 
   const checkConnection = async () => {
     setStatus(prev => ({ ...prev, checking: true }));
@@ -55,6 +60,24 @@ const SupabaseStatus = () => {
     }
   };
 
+  const checkRequiredTables = async () => {
+    setLoadingTableCheck(true);
+    try {
+      const result = await checkAndGenerateRequiredTablesSQL();
+      setMissingTables(result.missingTables || []);
+      setTableDefinitions(result.tableDefinitions || {});
+      setSqlScript(result.sqlScript || '');
+      
+      if (result.missingTables && result.missingTables.length > 0) {
+        setShowSqlDialog(true);
+      }
+    } catch (error) {
+      console.error("Erreur lors de la vérification des tables requises:", error);
+    } finally {
+      setLoadingTableCheck(false);
+    }
+  };
+
   useEffect(() => {
     checkConnection();
   }, []);
@@ -75,6 +98,48 @@ const SupabaseStatus = () => {
           <AlertTitle className="text-green-800">Connecté à Supabase</AlertTitle>
           <AlertDescription className="text-green-700">
             <div>La connexion à {SUPABASE_URL} est établie.</div>
+            
+            <div className="mt-2 flex flex-wrap gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={fetchDatabaseStructure} 
+                disabled={loadingDbInfo}
+                className="flex items-center"
+              >
+                {loadingDbInfo ? (
+                  <>
+                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                    Chargement...
+                  </>
+                ) : (
+                  <>
+                    <Database className="h-3 w-3 mr-1" />
+                    Vérifier la structure de la DB
+                  </>
+                )}
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={checkRequiredTables} 
+                disabled={loadingTableCheck}
+                className="flex items-center"
+              >
+                {loadingTableCheck ? (
+                  <>
+                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                    Vérification...
+                  </>
+                ) : (
+                  <>
+                    <Table className="h-3 w-3 mr-1" />
+                    Vérifier les tables requises
+                  </>
+                )}
+              </Button>
+            </div>
             
             <Collapsible open={showDetails} onOpenChange={setShowDetails} className="mt-2">
               <CollapsibleTrigger asChild>
@@ -217,6 +282,74 @@ const SupabaseStatus = () => {
           </AlertDescription>
         </Alert>
       )}
+      
+      <Dialog open={showSqlDialog} onOpenChange={setShowSqlDialog}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Script SQL pour créer les tables manquantes</DialogTitle>
+            <DialogDescription>
+              Les tables suivantes sont manquantes: {missingTables.join(', ')}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Tabs defaultValue="sql" className="mt-4">
+            <TabsList>
+              <TabsTrigger value="sql">Script SQL</TabsTrigger>
+              <TabsTrigger value="existing">Tables existantes</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="sql" className="mt-2">
+              {sqlScript ? (
+                <div className="relative">
+                  <pre className="bg-gray-100 p-4 rounded text-sm overflow-x-auto">
+                    {sqlScript}
+                  </pre>
+                  <Button 
+                    size="sm" 
+                    className="absolute top-2 right-2 flex items-center gap-1"
+                    onClick={() => {
+                      navigator.clipboard.writeText(sqlScript);
+                      toast.success('Script SQL copié dans le presse-papier');
+                    }}
+                  >
+                    <FileCode className="h-3 w-3" />
+                    Copier
+                  </Button>
+                </div>
+              ) : (
+                <p className="text-gray-500 italic">Toutes les tables requises sont présentes.</p>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="existing" className="mt-2">
+              {tableDefinitions && Object.keys(tableDefinitions).length > 0 ? (
+                <div className="space-y-4">
+                  {Object.entries(tableDefinitions).map(([tableName, columns]) => (
+                    <div key={tableName} className="border rounded p-3">
+                      <h3 className="font-medium mb-2">{tableName}</h3>
+                      {Array.isArray(columns) ? (
+                        <ul className="list-disc list-inside text-sm">
+                          {columns.map(col => (
+                            <li key={`${tableName}-${col}`}>{col}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-sm text-gray-500">{columns}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 italic">Aucune information disponible sur les tables existantes.</p>
+              )}
+            </TabsContent>
+          </Tabs>
+          
+          <DialogFooter className="mt-4">
+            <Button onClick={() => setShowSqlDialog(false)}>Fermer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

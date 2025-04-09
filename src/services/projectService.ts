@@ -235,9 +235,9 @@ export const createProject = async (projectState: ProjectState, projectInfo: any
       console.log('Colonnes disponibles dans la table projects:', columns && columns.length > 0 ? Object.keys(columns[0]) : 'Aucune donnée');
     }
     
-    // Créer le projet avec seulement les champs valides selon le schéma
-    // Nous évitons d'utiliser les champs address, postal_code, city qui semblent ne pas exister
-    console.log('Création du projet avec les données adaptées:', {
+    // Créer un objet d'insertion avec seulement les champs confirmés
+    // Note: Nous allons enlever les champs comme address qui causent des erreurs
+    const insertData = {
       name: projectName,
       client_id: projectInfo.clientId || null,
       description: projectInfo.description || '',
@@ -246,20 +246,13 @@ export const createProject = async (projectState: ProjectState, projectInfo: any
       total_area: totalArea,
       rooms_count: roomsCount,
       ceiling_height: ceilingHeight
-    });
+    };
+    
+    console.log('Création du projet avec les données:', insertData);
     
     const { data: projectData, error: projectError } = await supabase
       .from('projects')
-      .insert({
-        name: projectName,
-        client_id: projectInfo.clientId || null,
-        description: projectInfo.description || '',
-        property_type: propertyType,
-        floors: floors,
-        total_area: totalArea,
-        rooms_count: roomsCount,
-        ceiling_height: ceilingHeight
-      })
+      .insert(insertData)
       .select()
       .single();
     
@@ -309,8 +302,8 @@ export const createProject = async (projectState: ProjectState, projectInfo: any
             surface_brute_murs: room.surfaceBruteMurs || 0,
             surface_menuiseries: room.surfaceMenuiseries || 0,
             total_menuiserie_surface: room.totalMenuiserieSurface || 0,
-            lineaire_brut: room.lineaireBrut || 0,
-            lineaire_net: room.lineaireNet || 0
+            lineaire_brut: room.lineaireBrut || null,
+            lineaire_net: room.lineaireNet || null
           })
           .select()
           .single();
@@ -351,7 +344,7 @@ export const createProject = async (projectState: ProjectState, projectInfo: any
         if (room.autresSurfaces && room.autresSurfaces.length > 0) {
           for (const surface of room.autresSurfaces) {
             const { error: surfaceError } = await supabase
-              .from('room_custom_items')  // Utiliser room_custom_items au lieu de room_custom_surfaces
+              .from('room_custom_items')
               .insert({
                 room_id: roomId,
                 type: surface.type || '',
@@ -428,20 +421,38 @@ export const createProject = async (projectState: ProjectState, projectInfo: any
  */
 export const updateProject = async (projectId: string, projectState: ProjectState, projectInfo: any = {}) => {
   try {
-    // Mettre à jour le projet
+    // Récupérer d'abord les colonnes disponibles pour le debugging
+    const { data: columns, error: columnsError } = await supabase
+      .from('projects')
+      .select()
+      .eq('id', projectId)
+      .single();
+    
+    if (columnsError) {
+      console.error('Erreur lors de la récupération des colonnes de la table projects:', columnsError);
+    } else {
+      // Afficher les colonnes disponibles pour debugging
+      console.log('Colonnes disponibles dans la table projects pour mise à jour:', columns ? Object.keys(columns) : 'Aucune donnée');
+    }
+    
+    // Créer un objet de mise à jour avec seulement les champs confirmés
+    const updateData = {
+      name: projectInfo.name,
+      client_id: projectInfo.clientId || null,
+      description: projectInfo.description || '',
+      property_type: projectState.property.type,
+      floors: projectState.property.floors,
+      total_area: projectState.property.totalArea,
+      rooms_count: projectState.property.rooms,
+      ceiling_height: projectState.property.ceilingHeight,
+      updated_at: new Date().toISOString()
+    };
+    
+    console.log('Mise à jour du projet avec les données:', updateData);
+    
     const { error: projectError } = await supabase
       .from('projects')
-      .update({
-        name: projectInfo.name,
-        client_id: projectInfo.clientId || null,
-        description: projectInfo.description || '',
-        property_type: projectState.property.type,
-        floors: projectState.property.floors,
-        total_area: projectState.property.totalArea,
-        rooms_count: projectState.property.rooms,
-        ceiling_height: projectState.property.ceilingHeight,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', projectId);
     
     if (projectError) {
@@ -775,3 +786,110 @@ export const updateProject = async (projectId: string, projectState: ProjectStat
             .update({
               type_travaux_id: travail.typeTravauxId,
               type_travaux_label: travail.typeTravauxLabel,
+
+/**
+ * Supprime un projet existant dans Supabase
+ */
+export const deleteProject = async (projectId: string) => {
+  try {
+    // Récupérer les pièces pour supprimer en cascade
+    const { data: rooms, error: roomsError } = await supabase
+      .from('rooms')
+      .select('id')
+      .eq('project_id', projectId);
+    
+    if (roomsError) {
+      console.error('Erreur lors de la récupération des pièces du projet:', roomsError);
+      throw roomsError;
+    }
+    
+    const roomIds = (rooms || []).map(room => room.id);
+    
+    // Supprimer les travaux associés aux pièces
+    if (roomIds.length > 0) {
+      const { error: worksError } = await supabase
+        .from('room_works')
+        .delete()
+        .in('room_id', roomIds);
+      
+      if (worksError) {
+        console.error('Erreur lors de la suppression des travaux:', worksError);
+        throw worksError;
+      }
+      
+      // Supprimer les menuiseries associées aux pièces
+      const { error: menuiseriesError } = await supabase
+        .from('room_menuiseries')
+        .delete()
+        .in('room_id', roomIds);
+      
+      if (menuiseriesError) {
+        console.error('Erreur lors de la suppression des menuiseries:', menuiseriesError);
+        throw menuiseriesError;
+      }
+      
+      // Supprimer les surfaces personnalisées associées aux pièces
+      const { error: surfacesError } = await supabase
+        .from('room_custom_items')
+        .delete()
+        .in('room_id', roomIds);
+      
+      if (surfacesError) {
+        console.error('Erreur lors de la suppression des surfaces personnalisées:', surfacesError);
+        throw surfacesError;
+      }
+    }
+    
+    // Supprimer les pièces
+    if (roomIds.length > 0) {
+      const { error: deleteRoomsError } = await supabase
+        .from('rooms')
+        .delete()
+        .in('id', roomIds);
+      
+      if (deleteRoomsError) {
+        console.error('Erreur lors de la suppression des pièces:', deleteRoomsError);
+        throw deleteRoomsError;
+      }
+    }
+    
+    // Supprimer le projet
+    const { error: deleteProjectError } = await supabase
+      .from('projects')
+      .delete()
+      .eq('id', projectId);
+    
+    if (deleteProjectError) {
+      console.error('Erreur lors de la suppression du projet:', deleteProjectError);
+      throw deleteProjectError;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Exception lors de la suppression du projet:', error);
+    throw error;
+  }
+};
+
+/**
+ * Génère un nom par défaut pour un nouveau projet
+ */
+export const generateDefaultProjectName = () => {
+  const now = new Date();
+  return `Nouveau projet ${format(now, 'dd/MM/yyyy')}`;
+};
+
+// Type pour représenter un projet dans Supabase
+export type Project = {
+  id: string;
+  created_at: string;
+  updated_at?: string;
+  name: string;
+  client_id: string | null;
+  description?: string;
+  property_type?: string;
+  floors?: number;
+  total_area?: number;
+  rooms_count?: number;
+  ceiling_height?: number;
+};
