@@ -62,7 +62,9 @@ const AutresSurfacesList: React.FC<AutresSurfacesListProps> = ({ roomId }) => {
       hauteur: surface.hauteur,
       quantity: surface.quantity,
       surfaceImpactee: surface.surfaceImpactee,
-      estDeduction: surface.estDeduction
+      estDeduction: surface.estDeduction,
+      impactePlinthe: surface.impactePlinthe,
+      description: surface.description
     };
   };
   
