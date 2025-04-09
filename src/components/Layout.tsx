@@ -85,15 +85,12 @@ export const Layout: React.FC<LayoutProps> = ({ children, title, subtitle }) => 
       const projectInfo = {
         name: projectName,
         clientId: clientId,
-        description: projectDescription,
-        address: '',
-        postalCode: '',
-        city: '',
-        occupant: ''
+        description: projectDescription
       };
       
       // Enregistrer le projet avec les informations
-      await saveProject(projectName, projectInfo);
+      // Utiliser un seul argument qui est le projectInfo
+      await saveProject(projectInfo);
       
       setNewProjectDialogOpen(false);
       toast.success("Nouveau projet créé avec succès");
@@ -132,14 +129,11 @@ export const Layout: React.FC<LayoutProps> = ({ children, title, subtitle }) => 
     const projectInfo = {
       name: projectName,
       clientId: clientId,
-      description: projectDescription,
-      address: '',
-      postalCode: '',
-      city: '',
-      occupant: ''
+      description: projectDescription
     };
     
-    saveProject(projectName, projectInfo)
+    // Utiliser un seul argument qui est le projectInfo
+    saveProject(projectInfo)
       .then(() => {
         setSaveAsDialogOpen(false);
         toast.success("Projet enregistré avec succès");

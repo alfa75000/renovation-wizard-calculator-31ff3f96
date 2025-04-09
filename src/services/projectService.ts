@@ -222,15 +222,25 @@ export const createProject = async (projectState: ProjectState, projectInfo: any
     const roomsCount = projectState.property.rooms || 0;
     const ceilingHeight = projectState.property.ceilingHeight || 2.5;
     
-    // Créer le projet avec des données valides
-    console.log('Création du projet avec les données:', {
+    // Récupération des tables disponibles pour debug
+    const { data: columns, error: columnsError } = await supabase
+      .from('projects')
+      .select()
+      .limit(1);
+    
+    if (columnsError) {
+      console.error('Erreur lors de la récupération des colonnes de la table projects:', columnsError);
+    } else {
+      // Afficher les colonnes disponibles pour debugging
+      console.log('Colonnes disponibles dans la table projects:', columns && columns.length > 0 ? Object.keys(columns[0]) : 'Aucune donnée');
+    }
+    
+    // Créer le projet avec seulement les champs valides selon le schéma
+    // Nous évitons d'utiliser les champs address, postal_code, city qui semblent ne pas exister
+    console.log('Création du projet avec les données adaptées:', {
       name: projectName,
       client_id: projectInfo.clientId || null,
       description: projectInfo.description || '',
-      address: projectInfo.address || '',
-      postal_code: projectInfo.postalCode || '',
-      city: projectInfo.city || '',
-      occupant: projectInfo.occupant || '',
       property_type: propertyType,
       floors: floors,
       total_area: totalArea,
@@ -244,10 +254,6 @@ export const createProject = async (projectState: ProjectState, projectInfo: any
         name: projectName,
         client_id: projectInfo.clientId || null,
         description: projectInfo.description || '',
-        address: projectInfo.address || '',
-        postal_code: projectInfo.postalCode || '',
-        city: projectInfo.city || '',
-        occupant: projectInfo.occupant || '',
         property_type: propertyType,
         floors: floors,
         total_area: totalArea,
@@ -327,13 +333,10 @@ export const createProject = async (projectState: ProjectState, projectInfo: any
               .from('room_menuiseries')
               .insert({
                 room_id: roomId,
-                menuiserie_type_id: null, // À adapter selon la structure réelle
-                type: menuiserie.type || '',
-                name: menuiserie.name || '',
+                menuiserie_type_id: menuiserie.id || null,
                 largeur: menuiserie.largeur || 0,
                 hauteur: menuiserie.hauteur || 0,
                 quantity: menuiserie.quantity || 1,
-                surface: menuiserie.surface || 0,
                 surface_impactee: menuiserie.surfaceImpactee || 'mur'
               });
             
@@ -348,7 +351,7 @@ export const createProject = async (projectState: ProjectState, projectInfo: any
         if (room.autresSurfaces && room.autresSurfaces.length > 0) {
           for (const surface of room.autresSurfaces) {
             const { error: surfaceError } = await supabase
-              .from('room_custom_items')
+              .from('room_custom_items')  // Utiliser room_custom_items au lieu de room_custom_surfaces
               .insert({
                 room_id: roomId,
                 type: surface.type || '',
@@ -359,7 +362,9 @@ export const createProject = async (projectState: ProjectState, projectInfo: any
                 surface: surface.surface || 0,
                 quantity: surface.quantity || 1,
                 surface_impactee: surface.surfaceImpactee || 'mur',
-                est_deduction: surface.estDeduction || false
+                adjustment_type: surface.estDeduction ? 'Déduire' : 'Ajouter',
+                impacte_plinthe: surface.impactePlinthe || false,
+                description: surface.description || null
               });
             
             if (surfaceError) {
@@ -430,10 +435,6 @@ export const updateProject = async (projectId: string, projectState: ProjectStat
         name: projectInfo.name,
         client_id: projectInfo.clientId || null,
         description: projectInfo.description || '',
-        address: projectInfo.address || '',
-        postal_code: projectInfo.postalCode || '',
-        city: projectInfo.city || '',
-        occupant: projectInfo.occupant || '',
         property_type: projectState.property.type,
         floors: projectState.property.floors,
         total_area: projectState.property.totalArea,
@@ -774,118 +775,3 @@ export const updateProject = async (projectId: string, projectState: ProjectStat
             .update({
               type_travaux_id: travail.typeTravauxId,
               type_travaux_label: travail.typeTravauxLabel,
-              sous_type_id: travail.sousTypeId,
-              sous_type_label: travail.sousTypeLabel,
-              menuiserie_id: travail.menuiserieId || null,
-              description: travail.description,
-              quantite: travail.quantite,
-              unite: travail.unite,
-              prix_fournitures: travail.prixFournitures,
-              prix_main_oeuvre: travail.prixMainOeuvre,
-              taux_tva: travail.tauxTVA,
-              commentaire: travail.commentaire || '',
-              personnalisation: travail.personnalisation || '',
-              type_travaux: travail.typeTravaux || '',
-              sous_type: travail.sousType || '',
-              surface_impactee: travail.surfaceImpactee || ''
-            })
-            .eq('id', travail.id);
-          
-          if (updateWorkError) {
-            console.error('Erreur lors de la mise à jour du travail:', updateWorkError);
-            throw updateWorkError;
-          }
-        } else {
-          // Créer un nouveau travail
-          const { error: createWorkError } = await supabase
-            .from('room_works')
-            .insert({
-              id: travail.id, // Conserver l'ID existant
-              room_id: travail.pieceId,
-              type_travaux_id: travail.typeTravauxId,
-              type_travaux_label: travail.typeTravauxLabel,
-              sous_type_id: travail.sousTypeId,
-              sous_type_label: travail.sousTypeLabel,
-              menuiserie_id: travail.menuiserieId || null,
-              description: travail.description,
-              quantite: travail.quantite,
-              unite: travail.unite,
-              prix_fournitures: travail.prixFournitures,
-              prix_main_oeuvre: travail.prixMainOeuvre,
-              taux_tva: travail.tauxTVA,
-              commentaire: travail.commentaire || '',
-              personnalisation: travail.personnalisation || '',
-              type_travaux: travail.typeTravaux || '',
-              sous_type: travail.sousType || '',
-              surface_impactee: travail.surfaceImpactee || ''
-            });
-          
-          if (createWorkError) {
-            console.error('Erreur lors de la création du travail:', createWorkError);
-            throw createWorkError;
-          }
-        }
-      }
-    }
-    
-    return {
-      id: projectId,
-      name: projectInfo.name
-    };
-  } catch (error) {
-    console.error('Exception lors de la mise à jour du projet:', error);
-    throw error;
-  }
-};
-
-/**
- * Supprime un projet et toutes ses données associées
- */
-export const deleteProject = async (projectId: string) => {
-  try {
-    // Supprimer le projet (les contraintes de clé étrangère devraient supprimer les données associées)
-    const { error } = await supabase
-      .from('projects')
-      .delete()
-      .eq('id', projectId);
-    
-    if (error) {
-      console.error('Erreur lors de la suppression du projet:', error);
-      throw error;
-    }
-    
-    return { success: true };
-  } catch (error) {
-    console.error('Exception lors de la suppression du projet:', error);
-    throw error;
-  }
-};
-
-/**
- * Génère un nom par défaut pour un nouveau projet
- */
-export const generateDefaultProjectName = () => {
-  const now = new Date();
-  return `Projet sans nom - ${format(now, 'yyyy-MM-dd HH:mm')}`;
-};
-
-/**
- * Type pour l'objet Projet récupéré depuis Supabase
- */
-export type Project = {
-  id: string;
-  name: string;
-  client_id: string | null;
-  description: string;
-  address: string;
-  postal_code: string;
-  city: string;
-  occupant: string;
-  property_type: string;
-  floors: number;
-  total_area: number;
-  rooms_count: number;
-  ceiling_height: number;
-  created_at: string;
-  updated_at: string;
-};
