@@ -19,12 +19,13 @@ export const useRoomCustomItemsWithSupabase = (roomId?: string) => {
     const loadCustomItems = async () => {
       if (!roomId) return;
       
-      // Vérifier si l'ID de pièce est un UUID valide
-      if (!isValidUUID(roomId)) {
-        console.warn(`ID de pièce invalide (pas un UUID): ${roomId}. Les données ne seront pas chargées.`);
-        setCustomItems([]);
-        return;
-      }
+      // Vérifier si l'ID de pièce est un UUID valide pour Supabase
+      // On désactive cette vérification stricte car nos IDs locaux peuvent ne pas être des UUIDs
+      // if (!isValidUUID(roomId)) {
+      //   console.warn(`ID de pièce non conforme au format UUID: ${roomId}. Les données ne seront pas chargées.`);
+      //   setCustomItems([]);
+      //   return;
+      // }
       
       try {
         setLoading(true);
@@ -62,11 +63,11 @@ export const useRoomCustomItemsWithSupabase = (roomId?: string) => {
       return null;
     }
 
-    // Vérifier si l'ID de pièce est un UUID valide
-    if (!isValidUUID(roomId)) {
-      toast.error('ID de pièce invalide. Impossible d\'ajouter un élément.');
-      return null;
-    }
+    // On désactive cette vérification stricte car nos IDs locaux peuvent ne pas être des UUIDs
+    // if (!isValidUUID(roomId)) {
+    //   toast.error('ID de pièce invalide. Impossible d\'ajouter un élément.');
+    //   return null;
+    // }
 
     try {
       setLoading(true);
@@ -108,10 +109,11 @@ export const useRoomCustomItemsWithSupabase = (roomId?: string) => {
     id: string, 
     changes: Partial<Omit<RoomCustomItem, 'id' | 'created_at'>>
   ): Promise<RoomCustomItem | null> => {
-    if (!isValidUUID(id)) {
-      toast.error('ID d\'élément invalide. Impossible de mettre à jour.');
-      return null;
-    }
+    // On désactive la vérification stricte pour les UUID
+    // if (!isValidUUID(id)) {
+    //   toast.error('ID d\'élément invalide. Impossible de mettre à jour.');
+    //   return null;
+    // }
 
     try {
       setLoading(true);
@@ -148,10 +150,11 @@ export const useRoomCustomItemsWithSupabase = (roomId?: string) => {
 
   // Supprimer un élément personnalisé
   const deleteCustomItem = async (id: string): Promise<boolean> => {
-    if (!isValidUUID(id)) {
-      toast.error('ID d\'élément invalide. Impossible de supprimer.');
-      return false;
-    }
+    // On désactive la vérification stricte pour les UUID
+    // if (!isValidUUID(id)) {
+    //   toast.error('ID d\'élément invalide. Impossible de supprimer.');
+    //   return false;
+    // }
 
     try {
       setLoading(true);

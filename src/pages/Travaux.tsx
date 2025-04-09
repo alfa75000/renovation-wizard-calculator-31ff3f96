@@ -12,7 +12,6 @@ import { Room, Travail } from "@/types";
 import { toast } from "sonner";
 import TravailForm from "@/features/travaux/components/TravailForm";
 import TravailCard from "@/features/travaux/components/TravailCard";
-import AutresSurfacesList from "@/components/room/AutresSurfacesList";
 
 interface PieceSelectProps {
   pieces: Room[];
@@ -164,8 +163,7 @@ const Travaux: React.FC = () => {
             </div>
           </CardHeader>
           <CardContent>
-            {/* Section Autres Surfaces pour la pièce sélectionnée */}
-            {selectedRoom && <AutresSurfacesList roomId={selectedRoom} />}
+            {/* Suppression du composant AutresSurfacesList */}
             
             <h3 className="text-lg font-medium mb-3">Travaux</h3>
             {travauxForSelectedRoom.length > 0 ? (
