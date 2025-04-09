@@ -98,7 +98,8 @@ const RoomCustomItems: React.FC<RoomCustomItemsProps> = ({ roomId }) => {
     };
   };
 
-  if (error) {
+  // Ne pas afficher d'erreur si nous n'avons pas encore d'ID de pièce
+  if (error && roomId) {
     return (
       <Alert variant="destructive" className="mt-4">
         <AlertCircle className="h-4 w-4" />
@@ -112,7 +113,7 @@ const RoomCustomItems: React.FC<RoomCustomItemsProps> = ({ roomId }) => {
     <div className="mt-4 space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium">Surfaces personnalisées</h3>
-        {!showAddForm && !editingItemId && (
+        {roomId && !showAddForm && !editingItemId && (
           <Button
             onClick={() => setShowAddForm(true)}
             variant="outline"
@@ -131,7 +132,13 @@ const RoomCustomItems: React.FC<RoomCustomItemsProps> = ({ roomId }) => {
         </div>
       )}
 
-      {!loading && !customItems.length && !showAddForm && (
+      {!roomId && (
+        <div className="py-8 text-center text-gray-500">
+          <p>Les surfaces personnalisées pourront être ajoutées après la création de la pièce</p>
+        </div>
+      )}
+
+      {roomId && !loading && !customItems.length && !showAddForm && (
         <div className="py-8 text-center text-gray-500">
           <p>Aucune surface personnalisée ajoutée</p>
           <p className="text-sm">
@@ -141,7 +148,7 @@ const RoomCustomItems: React.FC<RoomCustomItemsProps> = ({ roomId }) => {
         </div>
       )}
 
-      {showAddForm && (
+      {showAddForm && roomId && (
         <Card className="border-blue-200 bg-blue-50">
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Ajouter une surface personnalisée</CardTitle>

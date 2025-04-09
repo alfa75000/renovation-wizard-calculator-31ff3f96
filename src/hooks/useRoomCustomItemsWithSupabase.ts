@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { RoomCustomItem, SurfaceImpactee } from '@/types/supabase';
 import { toast } from 'sonner';
 import { isValidUUID } from '@/lib/utils';
+import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Hook pour gérer les éléments personnalisés d'une pièce (autres surfaces)
@@ -13,26 +14,42 @@ export const useRoomCustomItemsWithSupabase = (roomId?: string) => {
   const [customItems, setCustomItems] = useState<RoomCustomItem[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  // Mapper pour stocker la correspondance entre les IDs locaux et les UUIDs
+  const [localIdToUUIDMap, setLocalIdToUUIDMap] = useState<Record<string, string>>({});
+
+  // Fonction pour obtenir ou générer un UUID basé sur un ID local
+  const getOrCreateUUID = (localId: string): string => {
+    if (isValidUUID(localId)) return localId;
+    
+    if (localIdToUUIDMap[localId]) {
+      return localIdToUUIDMap[localId];
+    }
+    
+    const newUUID = uuidv4();
+    setLocalIdToUUIDMap(prev => ({
+      ...prev,
+      [localId]: newUUID
+    }));
+    
+    return newUUID;
+  };
 
   // Charger les éléments personnalisés pour une pièce spécifique
   useEffect(() => {
     const loadCustomItems = async () => {
       if (!roomId) return;
       
-      // Vérifier si l'ID de pièce est un UUID valide pour Supabase
-      // On désactive cette vérification stricte car nos IDs locaux peuvent ne pas être des UUIDs
-      // if (!isValidUUID(roomId)) {
-      //   console.warn(`ID de pièce non conforme au format UUID: ${roomId}. Les données ne seront pas chargées.`);
-      //   setCustomItems([]);
-      //   return;
-      // }
-      
       try {
         setLoading(true);
+        setError(null);
+        
+        // Obtenir l'UUID correspondant pour Supabase
+        const supabaseRoomId = getOrCreateUUID(roomId);
+        
         const { data, error } = await supabase
           .from('room_custom_items')
           .select('*')
-          .eq('room_id', roomId);
+          .eq('room_id', supabaseRoomId);
 
         if (error) {
           console.error(`Erreur lors du chargement des éléments personnalisés pour la pièce ${roomId}:`, error);
@@ -63,18 +80,15 @@ export const useRoomCustomItemsWithSupabase = (roomId?: string) => {
       return null;
     }
 
-    // On désactive cette vérification stricte car nos IDs locaux peuvent ne pas être des UUIDs
-    // if (!isValidUUID(roomId)) {
-    //   toast.error('ID de pièce invalide. Impossible d\'ajouter un élément.');
-    //   return null;
-    // }
-
     try {
       setLoading(true);
       
+      // Obtenir l'UUID correspondant pour Supabase
+      const supabaseRoomId = getOrCreateUUID(roomId);
+      
       const newItem = {
         ...item,
-        room_id: roomId
+        room_id: supabaseRoomId
       };
       
       const { data, error } = await supabase
@@ -109,12 +123,6 @@ export const useRoomCustomItemsWithSupabase = (roomId?: string) => {
     id: string, 
     changes: Partial<Omit<RoomCustomItem, 'id' | 'created_at'>>
   ): Promise<RoomCustomItem | null> => {
-    // On désactive la vérification stricte pour les UUID
-    // if (!isValidUUID(id)) {
-    //   toast.error('ID d\'élément invalide. Impossible de mettre à jour.');
-    //   return null;
-    // }
-
     try {
       setLoading(true);
       
@@ -150,12 +158,6 @@ export const useRoomCustomItemsWithSupabase = (roomId?: string) => {
 
   // Supprimer un élément personnalisé
   const deleteCustomItem = async (id: string): Promise<boolean> => {
-    // On désactive la vérification stricte pour les UUID
-    // if (!isValidUUID(id)) {
-    //   toast.error('ID d\'élément invalide. Impossible de supprimer.');
-    //   return false;
-    // }
-
     try {
       setLoading(true);
       

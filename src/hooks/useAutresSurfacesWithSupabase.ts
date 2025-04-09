@@ -93,12 +93,6 @@ export const useAutresSurfacesWithSupabase = (roomId?: string) => {
       return [];
     }
 
-    // On désactive cette vérification stricte car nos IDs locaux peuvent ne pas être des UUIDs
-    // if (!isValidUUID(roomId)) {
-    //   toast.error('ID de pièce invalide. Impossible d\'ajouter une surface.');
-    //   return [];
-    // }
-
     try {
       setLoading(true);
       
@@ -160,12 +154,6 @@ export const useAutresSurfacesWithSupabase = (roomId?: string) => {
     id: string, 
     changes: Partial<Omit<AutreSurface, 'id' | 'surface'>>
   ): Promise<AutreSurface | null> => {
-    // On désactive cette vérification stricte car nos IDs locaux peuvent ne pas être des UUIDs
-    // if (!isValidUUID(id)) {
-    //   toast.error('ID de surface invalide. Impossible de mettre à jour.');
-    //   return null;
-    // }
-
     try {
       setLoading(true);
       
@@ -228,12 +216,6 @@ export const useAutresSurfacesWithSupabase = (roomId?: string) => {
 
   // Supprimer une autre surface
   const deleteAutreSurfaceItem = async (id: string): Promise<void> => {
-    // On désactive cette vérification stricte car nos IDs locaux peuvent ne pas être des UUIDs
-    // if (!isValidUUID(id)) {
-    //   toast.error('ID de surface invalide. Impossible de supprimer.');
-    //   return;
-    // }
-
     try {
       setLoading(true);
       await deleteCustomItem(id);
