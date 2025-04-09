@@ -1,6 +1,7 @@
 
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { AutresSurfacesState, TypeAutreSurface } from '@/types';
+import { getAutresSurfacesTypes } from '@/services/autresSurfacesService';
 
 // Actions possibles
 type AutresSurfacesAction =
@@ -59,61 +60,21 @@ function autresSurfacesReducer(state: AutresSurfacesState, action: AutresSurface
 
 // Provider component
 export const AutresSurfacesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Récupérer les données depuis localStorage au démarrage
-  const [state, dispatch] = useReducer(autresSurfacesReducer, initialState, () => {
-    try {
-      const savedState = localStorage.getItem('typesAutresSurfaces');
-      if (savedState) {
-        return { typesAutresSurfaces: JSON.parse(savedState) };
-      }
+  const [state, dispatch] = useReducer(autresSurfacesReducer, initialState);
 
-      // Si aucune donnée n'est trouvée, initialiser avec des exemples
-      const defaultTypes: TypeAutreSurface[] = [
-        {
-          id: '1',
-          nom: 'Niche murale',
-          description: 'Niche décorative dans un mur',
-          surfaceImpacteeParDefaut: 'mur',
-          estDeduction: true,
-        },
-        {
-          id: '2',
-          nom: 'Cheminée',
-          description: 'Cheminée avec habillage',
-          surfaceImpacteeParDefaut: 'mur',
-          estDeduction: false,
-        },
-        {
-          id: '3',
-          nom: 'Trappe d\'accès',
-          description: 'Trappe d\'accès aux combles ou vide sanitaire',
-          surfaceImpacteeParDefaut: 'plafond',
-          estDeduction: true,
-        },
-        {
-          id: '4',
-          nom: 'Surface non traitée',
-          description: 'Surface à exclure du calcul',
-          surfaceImpacteeParDefaut: 'sol',
-          estDeduction: true,
-        },
-      ];
-
-      return { typesAutresSurfaces: defaultTypes };
-    } catch (error) {
-      console.error('Erreur lors du chargement des types de surfaces:', error);
-      return initialState;
-    }
-  });
-
-  // Sauvegarder les données dans localStorage à chaque changement
+  // Charger les types d'autres surfaces depuis Supabase au démarrage
   useEffect(() => {
-    try {
-      localStorage.setItem('typesAutresSurfaces', JSON.stringify(state.typesAutresSurfaces));
-    } catch (error) {
-      console.error('Erreur lors de la sauvegarde des types de surfaces:', error);
-    }
-  }, [state]);
+    const loadTypesFromSupabase = async () => {
+      try {
+        const types = await getAutresSurfacesTypes();
+        dispatch({ type: 'LOAD_TYPES', payload: types });
+      } catch (error) {
+        console.error('Erreur lors du chargement des types depuis Supabase:', error);
+      }
+    };
+
+    loadTypesFromSupabase();
+  }, []);
 
   return (
     <AutresSurfacesContext.Provider value={{ state, dispatch }}>

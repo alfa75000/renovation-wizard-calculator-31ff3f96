@@ -74,7 +74,7 @@ const AutreSurfaceForm: React.FC<AutreSurfaceFormProps> = ({
     adjustment_type: (currentSurface?.estDeduction || itemToEdit?.estDeduction) ? "deduire" : "ajouter",
     impacte_plinthe: Boolean(currentSurface?.impactePlinthe || itemToEdit?.impacte_plinthe || false),
     quantity: (currentSurface?.quantity || itemToEdit?.quantity) || 1,
-    description: (currentSurface?.designation || itemToEdit?.description) || "",
+    description: (currentSurface?.description || itemToEdit?.description) || "",
     type_id: (currentSurface?.type || itemToEdit?.type_id) || undefined,
   };
 
@@ -105,8 +105,12 @@ const AutreSurfaceForm: React.FC<AutreSurfaceFormProps> = ({
     const selectedType = typesAutresSurfaces.find(type => type.id === typeId);
     if (selectedType) {
       form.setValue("name", selectedType.nom);
+      form.setValue("largeur", selectedType.largeur || 0.5);
+      form.setValue("hauteur", selectedType.hauteur || 0.5);
+      form.setValue("description", selectedType.description || '');
       form.setValue("surface_impactee", selectedType.surfaceImpacteeParDefaut as "mur" | "plafond" | "sol" | "aucune");
       form.setValue("adjustment_type", selectedType.estDeduction ? "deduire" : "ajouter");
+      form.setValue("impacte_plinthe", selectedType.impactePlinthe || false);
       form.setValue("type_id", typeId);
     }
   };
@@ -124,6 +128,8 @@ const AutreSurfaceForm: React.FC<AutreSurfaceFormProps> = ({
         estDeduction: values.adjustment_type === 'deduire',
         // Convertir surface_impactee en surfaceImpactee pour notre modèle
         surfaceImpactee: values.surface_impactee,
+        // Convertir impacte_plinthe en impactePlinthe pour notre modèle
+        impactePlinthe: values.impacte_plinthe,
         // Ces champs seraient générés côté serveur dans une implémentation réelle
         id: (editingSurface || itemToEdit?.id) || `temp-${Date.now()}`,
       };

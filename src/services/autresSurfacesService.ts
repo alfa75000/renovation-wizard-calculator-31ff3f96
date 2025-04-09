@@ -18,9 +18,12 @@ export const getAutresSurfacesTypes = async (): Promise<TypeAutreSurface[]> => {
   const typesAutresSurfaces: TypeAutreSurface[] = data.map(item => ({
     id: item.id,
     nom: item.name,
-    description: item.description,
+    description: item.description || '',
+    largeur: item.largeur || 0,
+    hauteur: item.hauteur || 0,
     surfaceImpacteeParDefaut: item.surface_impactee.toLowerCase(),
     estDeduction: item.adjustment_type === 'Déduire',
+    impactePlinthe: item.impacte_plinthe || false
   }));
 
   return typesAutresSurfaces;
@@ -49,7 +52,9 @@ export const getAutresSurfacesForRoom = async (roomId: string): Promise<AutreSur
     surface: item.surface,
     quantity: item.quantity || 1,
     surfaceImpactee: item.surface_impactee.toLowerCase(),
-    estDeduction: item.adjustment_type === 'Déduire'
+    estDeduction: item.adjustment_type === 'Déduire',
+    impactePlinthe: item.impacte_plinthe || false,
+    description: item.description || ''
   }));
 
   return autresSurfaces;
@@ -74,8 +79,8 @@ export const addAutreSurfaceToRoom = async (
     quantity: surface.quantity || 1,
     surface_impactee: surface.surfaceImpactee,
     adjustment_type: surface.estDeduction ? 'Déduire' : 'Ajouter',
-    impacte_plinthe: surface.estDeduction ? false : true,
-    description: surface.designation || '',
+    impacte_plinthe: surface.impactePlinthe || false,
+    description: surface.description || '',
     created_at: new Date().toISOString()
   };
 
@@ -101,7 +106,9 @@ export const addAutreSurfaceToRoom = async (
     surface: data.surface,
     quantity: data.quantity || 1,
     surfaceImpactee: data.surface_impactee.toLowerCase(),
-    estDeduction: data.adjustment_type === 'Déduire'
+    estDeduction: data.adjustment_type === 'Déduire',
+    impactePlinthe: data.impacte_plinthe || false,
+    description: data.description || ''
   };
 };
 
@@ -145,6 +152,12 @@ export const updateAutreSurface = async (
     delete updates.surfaceImpactee;
   }
 
+  // Convertir impactePlinthe en impacte_plinthe si présent
+  if (changes.impactePlinthe !== undefined) {
+    updates.impacte_plinthe = changes.impactePlinthe;
+    delete updates.impactePlinthe;
+  }
+
   const { data, error } = await supabase
     .from('room_custom_items')
     .update(updates)
@@ -168,7 +181,9 @@ export const updateAutreSurface = async (
     surface: data.surface,
     quantity: data.quantity || 1,
     surfaceImpactee: data.surface_impactee.toLowerCase(),
-    estDeduction: data.adjustment_type === 'Déduire'
+    estDeduction: data.adjustment_type === 'Déduire',
+    impactePlinthe: data.impacte_plinthe || false,
+    description: data.description || ''
   };
 };
 

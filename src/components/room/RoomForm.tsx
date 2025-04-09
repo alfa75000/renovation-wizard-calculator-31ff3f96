@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -72,7 +71,6 @@ const RoomForm: React.FC<RoomFormProps> = ({ onAddRoom, editingRoom, roomTypes }
     lineaireNet: 0
   });
 
-  // Chargement de la pièce à éditer
   useEffect(() => {
     if (editingRoom) {
       setNewRoom(editingRoom);
@@ -83,7 +81,6 @@ const RoomForm: React.FC<RoomFormProps> = ({ onAddRoom, editingRoom, roomTypes }
     }
   }, [editingRoom]);
 
-  // Mise à jour des surfaces calculées
   useEffect(() => {
     if (newRoom.length && newRoom.width && newRoom.height) {
       const roomWithMenuiseries = {
@@ -113,11 +110,9 @@ const RoomForm: React.FC<RoomFormProps> = ({ onAddRoom, editingRoom, roomTypes }
     }
   };
 
-  // Générer un nom de pièce séquentiel en utilisant les pièces existantes dans le projet
   const generateRoomName = (type: string, customName: string = ""): string => {
     if (editingRoom) return editingRoom.name;
     
-    // Compter les pièces du même type dans l'état actuel du projet (pas aléatoire)
     const sameTypeRooms = projectState.rooms.filter(room => room.type === type);
     let maxNumber = 0;
     
@@ -349,10 +344,7 @@ const RoomForm: React.FC<RoomFormProps> = ({ onAddRoom, editingRoom, roomTypes }
       <Separator className="my-6" />
       
       <AutresSurfacesList 
-        autresSurfaces={autresSurfaces} 
-        onEdit={updateAutreSurface} 
-        onDelete={deleteAutreSurface} 
-        onAdd={addAutreSurface} 
+        roomId={editingRoom?.id || 'temp-id'} 
       />
 
       <div className="flex justify-end mt-6">
