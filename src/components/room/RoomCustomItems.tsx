@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useRoomCustomItemsWithSupabase } from '@/hooks/useRoomCustomItemsWithSupabase';
 import { RoomCustomItem } from '@/types/supabase';
@@ -16,7 +15,6 @@ import { useAutresSurfaces as useAutresSurfacesContext } from '@/contexts/Autres
 
 interface RoomCustomItemsProps {
   roomId?: string;
-  // Nouvelles props pour le mode local
   isLocalMode?: boolean;
   autresSurfaces?: AutreSurface[];
   onAddAutreSurface?: (surface: Omit<AutreSurface, 'id' | 'surface'>, quantity?: number) => AutreSurface[];
@@ -32,7 +30,6 @@ const RoomCustomItems: React.FC<RoomCustomItemsProps> = ({
   onUpdateAutreSurface,
   onDeleteAutreSurface
 }) => {
-  // Utiliser Supabase uniquement si on n'est pas en mode local
   const {
     customItems,
     loading,
@@ -52,10 +49,8 @@ const RoomCustomItems: React.FC<RoomCustomItemsProps> = ({
   useEffect(() => {
     const loadTypes = async () => {
       if (isLocalMode) {
-        // Utiliser les types d'autres surfaces du contexte
         setTypesAutresSurfaces(autresSurfacesState.typesAutresSurfaces);
       } else {
-        // Utiliser les types d'autres surfaces de Supabase
         const types = await fetchCustomItemTypes();
         setTypesAutresSurfaces(types.map(type => ({
           id: type.id,
@@ -75,7 +70,6 @@ const RoomCustomItems: React.FC<RoomCustomItemsProps> = ({
 
   const handleSubmit = async (data: any) => {
     if (isLocalMode && onAddAutreSurface && !editingItemId) {
-      // Mode local - ajout
       const newSurface: Omit<AutreSurface, 'id' | 'surface'> = {
         type: data.type || data.type_id,
         name: data.name,
@@ -93,7 +87,6 @@ const RoomCustomItems: React.FC<RoomCustomItemsProps> = ({
       setShowAddForm(false);
     }
     else if (isLocalMode && onUpdateAutreSurface && editingItemId) {
-      // Mode local - mise à jour
       const updatedSurface: Partial<Omit<AutreSurface, 'id' | 'surface'>> = {
         type: data.type || data.type_id,
         name: data.name,
@@ -111,7 +104,6 @@ const RoomCustomItems: React.FC<RoomCustomItemsProps> = ({
       setEditingItemId(null);
     }
     else {
-      // Mode Supabase
       const newItem: Omit<RoomCustomItem, 'id' | 'created_at'> = {
         room_id: roomId || '',
         type: data.type_id || 'custom',
@@ -156,7 +148,6 @@ const RoomCustomItems: React.FC<RoomCustomItemsProps> = ({
     setEditingItemId(null);
   };
 
-  // Fonction pour obtenir les items à afficher (en mode local ou Supabase)
   const getItemsToDisplay = (): (RoomCustomItem | AutreSurface)[] => {
     if (isLocalMode) {
       return autresSurfaces;
@@ -167,7 +158,6 @@ const RoomCustomItems: React.FC<RoomCustomItemsProps> = ({
 
   const getFormattedItem = (item: RoomCustomItem | AutreSurface) => {
     if ('surface_impactee' in item) {
-      // C'est un RoomCustomItem
       return {
         name: item.name,
         type: item.type,
@@ -183,7 +173,6 @@ const RoomCustomItems: React.FC<RoomCustomItemsProps> = ({
         id: item.id
       };
     } else {
-      // C'est une AutreSurface
       return {
         name: item.name,
         type: item.type,
@@ -201,7 +190,6 @@ const RoomCustomItems: React.FC<RoomCustomItemsProps> = ({
     }
   };
 
-  // Fonction pour déterminer si un item est une déduction
   const isItemDeduction = (item: RoomCustomItem | AutreSurface): boolean => {
     if ('adjustment_type' in item) {
       return item.adjustment_type === 'Déduire';
@@ -210,7 +198,6 @@ const RoomCustomItems: React.FC<RoomCustomItemsProps> = ({
     }
   };
 
-  // Fonction pour obtenir la surface impactée
   const getItemSurfaceImpactee = (item: RoomCustomItem | AutreSurface): string => {
     if ('surface_impactee' in item) {
       return item.surface_impactee;
@@ -219,7 +206,6 @@ const RoomCustomItems: React.FC<RoomCustomItemsProps> = ({
     }
   };
 
-  // Ne pas afficher d'erreur si nous n'avons pas encore d'ID de pièce et qu'on n'est pas en mode local
   if (error && roomId && !isLocalMode) {
     return (
       <Alert variant="destructive" className="mt-4">
@@ -333,7 +319,7 @@ const RoomCustomItems: React.FC<RoomCustomItemsProps> = ({
                       )}
                     </CardTitle>
                     <CardDescription>
-                      {('designation' in item) ? item.designation : item.name} - Surface impactée: {getItemSurfaceImpactee(item)}
+                      {('designation' in item && item.designation) || item.name} - Surface impactée: {getItemSurfaceImpactee(item)}
                     </CardDescription>
                   </div>
                   <div className="flex gap-1">
