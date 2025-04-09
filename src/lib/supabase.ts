@@ -15,46 +15,55 @@ export const getDatabaseInfo = async () => {
   try {
     console.log("Récupération des informations sur la base de données...");
     
-    // Requête SQL pour obtenir les tables et leurs colonnes
-    const { data: tablesInfo, error: tablesError } = await supabase
-      .from('pg_tables')
-      .select('*')
-      .eq('schemaname', 'public');
+    // Liste des tables principales que nous souhaitons explorer
+    const mainTables = [
+      'work_types',
+      'service_groups',
+      'services',
+      'clients',
+      'client_types',
+      'menuiseries_types',
+      'rooms',
+      'room_custom_surfaces',
+      'projects'
+    ];
     
-    if (tablesError) {
-      console.error('Erreur lors de la récupération des tables:', tablesError);
-      return { error: tablesError.message };
-    }
-    
-    // Récupérer les informations sur les colonnes pour chaque table
     const tablesData = [];
     
-    for (const table of tablesInfo || []) {
-      const tableName = table.tablename;
-      
-      // Exécuter une requête SQL via la fonctionnalité RPC pour obtenir les infos sur les colonnes
-      const { data: columnsData, error: columnsError } = await supabase.rpc('get_table_info', { 
-        table_name: tableName 
-      });
-      
-      if (columnsError) {
-        console.warn(`Erreur lors de la récupération des colonnes pour ${tableName}:`, columnsError);
-        // Utiliser une méthode alternative pour obtenir au moins quelques informations
-        const { data: sampleData } = await supabase
+    for (const tableName of mainTables) {
+      try {
+        // Récupérer un échantillon de données pour déterminer la structure de la table
+        const { data: sampleData, error } = await supabase
           .from(tableName)
           .select('*')
           .limit(1);
         
-        tablesData.push({
-          name: tableName,
-          columns: sampleData ? Object.keys(sampleData[0] || {}).map(name => ({ name })) : [],
-          error: columnsError.message
-        });
-      } else {
-        tablesData.push({
-          name: tableName,
-          columns: columnsData
-        });
+        if (error) {
+          console.warn(`La table ${tableName} n'existe pas ou n'est pas accessible:`, error);
+          continue;
+        }
+        
+        if (sampleData && sampleData.length > 0) {
+          // Extraire les colonnes à partir de l'échantillon
+          const columns = Object.keys(sampleData[0]).map(name => ({ 
+            name, 
+            type: typeof sampleData[0][name]
+          }));
+          
+          tablesData.push({
+            name: tableName,
+            columns
+          });
+        } else {
+          // Table existe mais est vide
+          tablesData.push({
+            name: tableName,
+            columns: [],
+            note: "Table vide"
+          });
+        }
+      } catch (tableError) {
+        console.error(`Erreur lors de l'analyse de la table ${tableName}:`, tableError);
       }
     }
     
@@ -88,7 +97,7 @@ export const checkSupabaseConnection = async () => {
       };
     }
 
-    // Récupérer les infos de la base de données sans utiliser list_tables
+    // Récupérer les infos de la base de données
     let dbInfo = null;
     try {
       dbInfo = await getDatabaseInfo();
