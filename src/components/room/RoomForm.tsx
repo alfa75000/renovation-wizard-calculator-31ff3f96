@@ -6,7 +6,7 @@ import { Room } from '@/types';
 import { useCalculSurfaces } from '@/hooks/useCalculSurfaces';
 import { Check, Plus } from 'lucide-react';
 import MenuiseriesList from './MenuiseriesList';
-import AutresSurfacesList from './AutresSurfacesList';
+import AutresSurfacesListWithSupabase from './AutresSurfacesListWithSupabase';
 import { useMenuiseries } from '@/hooks/useMenuiseries';
 import { useAutresSurfaces } from '@/hooks/useAutresSurfaces';
 import MenuiserieForm from './MenuiserieForm';
@@ -21,7 +21,7 @@ interface RoomFormProps {
 
 const RoomForm: React.FC<RoomFormProps> = ({ onAddRoom, editingRoom, roomTypes }) => {
   const { calculerToutesSurfaces } = useCalculSurfaces();
-  const { state: projectState } = useProject(); // Accès à l'état du projet pour le nommage correct
+  const { state: projectState } = useProject();
   const { 
     menuiseries, 
     setMenuiseries,
@@ -343,9 +343,15 @@ const RoomForm: React.FC<RoomFormProps> = ({ onAddRoom, editingRoom, roomTypes }
       
       <Separator className="my-6" />
       
-      <AutresSurfacesList 
-        roomId={editingRoom?.id || 'temp-id'} 
-      />
+      {editingRoom ? (
+        <AutresSurfacesListWithSupabase 
+          roomId={editingRoom.id} 
+        />
+      ) : (
+        <div className="bg-gray-100 p-4 rounded-md text-center text-gray-500">
+          <p>Les surfaces personnalisées pourront être ajoutées après la création de la pièce</p>
+        </div>
+      )}
 
       <div className="flex justify-end mt-6">
         <Button 
