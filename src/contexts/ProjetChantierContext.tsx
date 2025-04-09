@@ -5,7 +5,7 @@ import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useProject } from './ProjectContext';
 import { v4 as uuidv4 } from 'uuid';
 import { format } from 'date-fns';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 
 // État initial
 const initialState: ProjetChantierState = {
@@ -21,6 +21,7 @@ const ProjetChantierContext = createContext<{
   chargerProjet: (projetId: string) => void;
   genererNomFichier: (projet: Partial<ProjetChantier>, nomClient?: string) => string;
   nouveauProjet: () => void;
+  hasUnsavedChanges: boolean;
 }>({
   state: initialState,
   dispatch: () => null,
@@ -28,6 +29,7 @@ const ProjetChantierContext = createContext<{
   chargerProjet: () => null,
   genererNomFichier: () => '',
   nouveauProjet: () => null,
+  hasUnsavedChanges: false,
 });
 
 // Reducer pour gérer les actions
@@ -128,7 +130,8 @@ function projetChantierReducer(state: ProjetChantierState, action: ProjetChantie
 // Provider component
 export const ProjetChantierProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [savedProjets, setSavedProjets] = useLocalStorage<ProjetChantier[]>('projetsChantier', []);
-  const { state: projectState } = useProject();
+  const { state: projectState, hasUnsavedChanges: projectUnsavedChanges } = useProject();
+  const [hasInternalChanges, setHasInternalChanges] = React.useState(false);
   
   // Initialiser le state avec les données sauvegardées
   const [state, dispatch] = useReducer(projetChantierReducer, {
@@ -141,6 +144,9 @@ export const ProjetChantierProvider: React.FC<{ children: React.ReactNode }> = (
     if (Array.isArray(state.projets)) {
       console.log("Sauvegarde des projets:", state.projets.length);
       setSavedProjets(state.projets);
+      
+      // Réinitialiser le flag de modifications
+      setHasInternalChanges(false);
     } else {
       console.error("state.projets n'est pas un tableau lors de la sauvegarde:", state.projets);
       setSavedProjets([]);
@@ -162,13 +168,14 @@ export const ProjetChantierProvider: React.FC<{ children: React.ReactNode }> = (
               ...state.projetActif,
               ...projetData,
               dateModification,
-              projectData: projectState,
+              projectData: JSON.parse(JSON.stringify(projectState)),
             },
           },
         });
-        toast({
-          title: "Projet mis à jour",
+        setHasInternalChanges(false);
+        toast.success("Projet mis à jour", {
           description: "Le projet a été mis à jour avec succès",
+          duration: 3000,
         });
       } else {
         // Création d'un nouveau projet
@@ -193,17 +200,16 @@ export const ProjetChantierProvider: React.FC<{ children: React.ReactNode }> = (
           type: 'ADD_PROJET',
           payload: newProjet,
         });
-        toast({
-          title: "Projet créé",
+        setHasInternalChanges(false);
+        toast.success("Projet créé", {
           description: "Le nouveau projet a été créé avec succès",
+          duration: 3000,
         });
       }
     } catch (error) {
       console.error("Erreur lors de la sauvegarde du projet:", error);
-      toast({
-        title: "Erreur",
+      toast.error("Erreur", {
         description: "Une erreur est survenue lors de la sauvegarde du projet",
-        variant: "destructive",
       });
     }
   };
@@ -215,12 +221,11 @@ export const ProjetChantierProvider: React.FC<{ children: React.ReactNode }> = (
         type: 'SET_PROJET_ACTIF',
         payload: projetId,
       });
+      setHasInternalChanges(true);
     } catch (error) {
       console.error("Erreur lors du chargement du projet:", error);
-      toast({
-        title: "Erreur",
+      toast.error("Erreur", {
         description: "Une erreur est survenue lors du chargement du projet",
-        variant: "destructive",
       });
     }
   };
@@ -241,15 +246,17 @@ export const ProjetChantierProvider: React.FC<{ children: React.ReactNode }> = (
         type: 'SET_PROJET_ACTIF',
         payload: null,
       });
+      setHasInternalChanges(false);
     } catch (error) {
       console.error("Erreur lors de l'initialisation d'un nouveau projet:", error);
-      toast({
-        title: "Erreur",
+      toast.error("Erreur", {
         description: "Une erreur est survenue lors de l'initialisation d'un nouveau projet",
-        variant: "destructive",
       });
     }
   };
+
+  // Détecter les modifications non enregistrées
+  const hasUnsavedChanges = projectUnsavedChanges || hasInternalChanges;
 
   return (
     <ProjetChantierContext.Provider value={{ 
@@ -259,6 +266,7 @@ export const ProjetChantierProvider: React.FC<{ children: React.ReactNode }> = (
       chargerProjet, 
       genererNomFichier,
       nouveauProjet,
+      hasUnsavedChanges,
     }}>
       {children}
     </ProjetChantierContext.Provider>

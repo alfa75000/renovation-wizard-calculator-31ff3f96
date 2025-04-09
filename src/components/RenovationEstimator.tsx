@@ -1,20 +1,30 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Home, RefreshCw, Save } from "lucide-react";
+import { Home, RefreshCw, Save, FileCheck } from "lucide-react";
 import { formaterQuantite } from "@/lib/utils";
 import { useProject } from "@/contexts/ProjectContext";
 import { Room } from "@/types";
 import RoomForm from "./room/RoomForm";
 import RoomsList from "./room/RoomsList";
+import { Badge } from "@/components/ui/badge";
 
 const RenovationEstimator: React.FC = () => {
-  const { state, dispatch, saveProjectAsDraft, createNewProject, isLoading } = useProject();
+  const { 
+    state, 
+    dispatch, 
+    saveProjectAsDraft, 
+    createNewProject, 
+    isLoading, 
+    isSaving,
+    hasUnsavedChanges 
+  } = useProject();
+  
   const { property, rooms } = state;
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
   
@@ -106,15 +116,25 @@ const RenovationEstimator: React.FC = () => {
             <Home className="h-5 w-5 mr-2" />
             <h2 className="text-xl font-semibold">Type de bien à rénover</h2>
             
-            <div className="flex gap-2 ml-auto">
+            <div className="flex items-center ml-auto gap-2">
+              {hasUnsavedChanges && (
+                <Badge variant="outline" className="mr-2 text-amber-500 border-amber-500">
+                  Modifications non enregistrées
+                </Badge>
+              )}
+              
               <Button 
                 variant="outline" 
                 size="sm" 
                 onClick={handleSaveDraft}
-                disabled={isLoading}
+                disabled={isLoading || isSaving || !hasUnsavedChanges}
                 className="flex items-center gap-1"
               >
-                <Save className="h-4 w-4" />
+                {isSaving ? (
+                  <span className="animate-spin mr-2">◌</span>
+                ) : (
+                  <FileCheck className="h-4 w-4" />
+                )}
                 Sauvegarder
               </Button>
               
@@ -243,6 +263,18 @@ const RenovationEstimator: React.FC = () => {
                 <span className="font-medium">Surface totale des pièces : </span>
                 <span className="text-xl font-bold">{formaterQuantite(calculateTotalArea())} m²</span>
               </div>
+              
+              {hasUnsavedChanges && (
+                <Button 
+                  size="sm" 
+                  onClick={handleSaveDraft} 
+                  disabled={isSaving}
+                  className="flex items-center gap-1"
+                >
+                  <Save className="h-4 w-4" />
+                  Sauvegarder les modifications
+                </Button>
+              )}
             </div>
           )}
         </CardContent>

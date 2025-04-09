@@ -12,9 +12,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Calendar, PlusCircle, Save, Trash } from 'lucide-react';
+import { Calendar, PlusCircle, Save, Trash, FileCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
 
 const InfosChantier: React.FC = () => {
   const navigate = useNavigate();
@@ -22,8 +23,10 @@ const InfosChantier: React.FC = () => {
   const { 
     state: projectState, 
     isLoading, 
+    isSaving,
     projects, 
     currentProjectId,
+    hasUnsavedChanges,
     saveProject,
     saveProjectAsDraft,
     loadProject,
@@ -62,8 +65,6 @@ const InfosChantier: React.FC = () => {
     }
     
     try {
-      await saveProject(nomProjet);
-      
       // Mettre à jour les informations du projet
       const projectInfo = {
         name: nomProjet,
@@ -134,7 +135,14 @@ const InfosChantier: React.FC = () => {
     >
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div className="md:col-span-2 bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-xl font-semibold mb-4 border-b pb-2">Informations du projet</h2>
+          <div className="flex items-center justify-between mb-4 border-b pb-2">
+            <h2 className="text-xl font-semibold">Informations du projet</h2>
+            {hasUnsavedChanges && (
+              <Badge variant="outline" className="ml-2 text-amber-500 border-amber-500">
+                Modifications non enregistrées
+              </Badge>
+            )}
+          </div>
           
           <div className="space-y-6">
             <div>
@@ -244,20 +252,20 @@ const InfosChantier: React.FC = () => {
             <div className="pt-4 flex flex-wrap gap-4">
               <Button 
                 onClick={handleSave} 
-                disabled={isLoading}
+                disabled={isLoading || isSaving}
                 className="flex items-center gap-2"
               >
                 <Save className="h-4 w-4" />
-                Enregistrer le projet
+                {isSaving ? 'Enregistrement...' : 'Enregistrer le projet'}
               </Button>
               
               <Button 
                 variant="outline" 
                 onClick={handleSaveDraft}
-                disabled={isLoading}
+                disabled={isLoading || isSaving || !hasUnsavedChanges}
                 className="flex items-center gap-2"
               >
-                <Save className="h-4 w-4" />
+                <FileCheck className="h-4 w-4" />
                 Sauvegarder brouillon
               </Button>
               
@@ -366,6 +374,12 @@ const InfosChantier: React.FC = () => {
                 <p><span className="font-semibold">Type de propriété:</span> {projectState.property.type}</p>
                 <p><span className="font-semibold">Surface totale:</span> {projectState.property.totalArea} m²</p>
                 <p><span className="font-semibold">Nombre de travaux:</span> {projectState.travaux.length}</p>
+                
+                {hasUnsavedChanges && (
+                  <div className="mt-4 p-2 bg-amber-50 border border-amber-200 rounded-md text-sm text-amber-600">
+                    Ce projet contient des modifications non enregistrées
+                  </div>
+                )}
               </div>
             ) : (
               <Alert className="bg-amber-50 border-amber-200">

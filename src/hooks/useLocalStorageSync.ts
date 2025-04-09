@@ -2,8 +2,8 @@
 import { useState, useEffect } from 'react';
 
 /**
- * @deprecated Ce hook est déprécié et sera supprimé dans une version future.
- * Utilisez les services Supabase à la place pour la persistance des données.
+ * @deprecated Ce hook est déprécié et ne devrait plus être utilisé.
+ * Utilisez directement les services Supabase pour la synchronisation et la persistance des données.
  */
 export function useLocalStorageSync<T>(
   key: string,
@@ -15,7 +15,9 @@ export function useLocalStorageSync<T>(
   } = {}
 ): [T, (value: T | ((prevState: T) => T)) => void, () => void, () => void] {
   console.warn(
-    `[DEPRECATED] useLocalStorageSync est déprécié. Utilisez les services Supabase à la place. Clé: ${key}`
+    `[DEPRECATED] useLocalStorageSync est déprécié et ne devrait plus être utilisé. 
+     Clé: ${key}. 
+     Utilisez le contexte ProjectContext qui gère la persistance avec Supabase.`
   );
   
   // Options par défaut
