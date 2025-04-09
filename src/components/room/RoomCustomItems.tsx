@@ -12,7 +12,7 @@ import AutreSurfaceForm from '@/features/renovation/components/AutreSurfaceForm'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2 } from 'lucide-react';
 import { useAutresSurfaces } from '@/hooks/useAutresSurfaces';
-import { useContext } from '@/contexts/AutresSurfacesContext';
+import { useAutresSurfaces as useAutresSurfacesContext } from '@/contexts/AutresSurfacesContext';
 
 interface RoomCustomItemsProps {
   roomId?: string;
@@ -43,7 +43,7 @@ const RoomCustomItems: React.FC<RoomCustomItemsProps> = ({
     fetchCustomItemTypes
   } = useRoomCustomItemsWithSupabase(isLocalMode ? undefined : roomId);
 
-  const { state: autresSurfacesState } = useContext();
+  const { state: autresSurfacesState } = useAutresSurfacesContext();
   
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
@@ -71,7 +71,7 @@ const RoomCustomItems: React.FC<RoomCustomItemsProps> = ({
     };
     
     loadTypes();
-  }, [isLocalMode]);
+  }, [isLocalMode, autresSurfacesState]);
 
   const handleSubmit = async (data: any) => {
     if (isLocalMode && onAddAutreSurface && !editingItemId) {
@@ -119,7 +119,7 @@ const RoomCustomItems: React.FC<RoomCustomItemsProps> = ({
         designation: data.designation || data.name,
         largeur: data.largeur,
         hauteur: data.hauteur,
-        surface: data.surface,
+        surface: data.largeur * data.hauteur,
         quantity: data.quantity,
         surface_impactee: data.surfaceImpactee || data.surface_impactee,
         adjustment_type: data.estDeduction || data.adjustment_type === 'deduire' ? 'Déduire' : 'Ajouter',
@@ -234,7 +234,7 @@ const RoomCustomItems: React.FC<RoomCustomItemsProps> = ({
     <div className="mt-4 space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium">Surfaces personnalisées</h3>
-        {(roomId || isLocalMode) && !showAddForm && !editingItemId && (
+        {(!roomId && isLocalMode || roomId) && !showAddForm && !editingItemId && (
           <Button
             onClick={() => setShowAddForm(true)}
             variant="outline"
@@ -333,7 +333,7 @@ const RoomCustomItems: React.FC<RoomCustomItemsProps> = ({
                       )}
                     </CardTitle>
                     <CardDescription>
-                      {item.designation || item.name} - Surface impactée: {getItemSurfaceImpactee(item)}
+                      {('designation' in item) ? item.designation : item.name} - Surface impactée: {getItemSurfaceImpactee(item)}
                     </CardDescription>
                   </div>
                   <div className="flex gap-1">
@@ -361,11 +361,11 @@ const RoomCustomItems: React.FC<RoomCustomItemsProps> = ({
                     <span className="font-medium">Impacte plinthes:</span> {'impacte_plinthe' in item ? (item.impacte_plinthe ? 'Oui' : 'Non') : (item.impactePlinthe ? 'Oui' : 'Non')}
                   </div>
                 </div>
-                {(('description' in item && item.description) || ('description' in item && item.description)) && (
+                {('description' in item && item.description) && (
                   <>
                     <Separator className="my-2" />
                     <div className="text-sm">
-                      <span className="font-medium">Description:</span> {'description' in item ? item.description : item.description}
+                      <span className="font-medium">Description:</span> {item.description}
                     </div>
                   </>
                 )}
