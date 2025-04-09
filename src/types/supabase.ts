@@ -70,3 +70,20 @@ export type ClientType = {
   name: string;
 };
 
+// Nouveau type pour la table room_custom_items
+export type RoomCustomItem = {
+  id: string;
+  created_at: string;
+  room_id: string;
+  type: string;
+  name: string;
+  designation: string | null;
+  largeur: number;
+  hauteur: number;
+  surface: number;
+  quantity: number;
+  surface_impactee: SurfaceImpactee;
+  adjustment_type: 'Ajouter' | 'Déduire';
+  impacte_plinthe: boolean;
+  description: string | null;
+};
