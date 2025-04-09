@@ -1,35 +1,38 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Edit, Trash2, Plus } from 'lucide-react';
+import { Edit, Trash2, Plus, AlertCircle } from 'lucide-react';
 import { AutreSurface } from '@/types';
 import AutreSurfaceForm from '@/features/renovation/components/AutreSurfaceForm';
-import { useAutresSurfaces } from '@/contexts/AutresSurfacesContext';
+import { useAutresSurfacesWithSupabase } from '@/hooks/useAutresSurfacesWithSupabase';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Loader } from '@/components/ui/loader';
+import { toast } from 'sonner';
 
 interface AutresSurfacesListProps {
-  autresSurfaces: AutreSurface[];
-  onEdit: (id: string, surface: Partial<Omit<AutreSurface, 'id' | 'surface'>>) => AutreSurface | null;
-  onDelete: (id: string) => void;
-  onAdd: (surface: Omit<AutreSurface, 'id' | 'surface'>, quantity: number) => AutreSurface[];
+  roomId: string;
 }
 
-const AutresSurfacesList: React.FC<AutresSurfacesListProps> = ({ 
-  autresSurfaces, 
-  onEdit, 
-  onDelete,
-  onAdd
-}) => {
-  const { state: autresSurfacesState } = useAutresSurfaces();
+const AutresSurfacesList: React.FC<AutresSurfacesListProps> = ({ roomId }) => {
+  const { 
+    autresSurfaces, 
+    typesAutresSurfaces, 
+    loading, 
+    error,
+    addAutreSurface, 
+    updateAutreSurfaceItem, 
+    deleteAutreSurfaceItem 
+  } = useAutresSurfacesWithSupabase(roomId);
+  
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [editingSurfaceId, setEditingSurfaceId] = useState<string | null>(null);
   
-  const handleAddAutreSurface = (autreSurface: Omit<AutreSurface, 'id' | 'surface'>) => {
+  const handleAddAutreSurface = async (autreSurface: Omit<AutreSurface, 'id' | 'surface'>) => {
     if (editingSurfaceId) {
-      onEdit(editingSurfaceId, autreSurface);
+      await updateAutreSurfaceItem(editingSurfaceId, autreSurface);
       setEditingSurfaceId(null);
     } else {
-      onAdd(autreSurface, autreSurface.quantity || 1);
+      await addAutreSurface(autreSurface, autreSurface.quantity || 1);
     }
     
     setIsDrawerOpen(false);
@@ -38,6 +41,12 @@ const AutresSurfacesList: React.FC<AutresSurfacesListProps> = ({
   const handleEditAutreSurface = (id: string) => {
     setEditingSurfaceId(id);
     setIsDrawerOpen(true);
+  };
+  
+  const handleDeleteAutreSurface = async (id: string) => {
+    if (confirm('Êtes-vous sûr de vouloir supprimer cette surface ?')) {
+      await deleteAutreSurfaceItem(id);
+    }
   };
   
   const getCurrentAutreSurface = (): Omit<AutreSurface, 'id' | 'surface'> | null => {
@@ -69,13 +78,30 @@ const AutresSurfacesList: React.FC<AutresSurfacesListProps> = ({
           }}
           variant="outline"
           size="sm"
+          disabled={loading}
         >
           <Plus className="h-4 w-4 mr-2" />
           Ajouter une surface
         </Button>
       </div>
       
-      {autresSurfaces.length > 0 ? (
+      {loading && (
+        <div className="flex justify-center py-8">
+          <Loader className="w-8 h-8 text-primary" />
+        </div>
+      )}
+      
+      {error && (
+        <div className="bg-red-50 p-4 rounded-md flex items-start">
+          <AlertCircle className="h-5 w-5 text-red-500 mt-0.5 mr-2 flex-shrink-0" />
+          <div>
+            <p className="text-red-700 font-medium">Erreur</p>
+            <p className="text-red-600 text-sm">{error}</p>
+          </div>
+        </div>
+      )}
+      
+      {!loading && !error && autresSurfaces.length > 0 ? (
         <div className="mt-4 border rounded-md overflow-hidden">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -116,7 +142,7 @@ const AutresSurfacesList: React.FC<AutresSurfacesListProps> = ({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => onDelete(item.id)}
+                      onClick={() => handleDeleteAutreSurface(item.id)}
                       className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -129,9 +155,11 @@ const AutresSurfacesList: React.FC<AutresSurfacesListProps> = ({
           </table>
         </div>
       ) : (
-        <div className="text-center py-6 border rounded-md bg-gray-50">
-          <p className="text-gray-500">Aucune surface supplémentaire ajoutée</p>
-        </div>
+        !loading && !error && (
+          <div className="text-center py-6 border rounded-md bg-gray-50">
+            <p className="text-gray-500">Aucune surface supplémentaire ajoutée</p>
+          </div>
+        )
       )}
       
       <Sheet open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
@@ -144,11 +172,13 @@ const AutresSurfacesList: React.FC<AutresSurfacesListProps> = ({
           
           <div className="py-4">
             <AutreSurfaceForm 
-              onAddAutreSurface={handleAddAutreSurface}
-              editingSurface={editingSurfaceId}
+              roomId={roomId}
+              onSubmit={handleAddAutreSurface}
+              onCancel={() => setIsDrawerOpen(false)}
               currentSurface={getCurrentAutreSurface()}
+              typesAutresSurfaces={typesAutresSurfaces}
+              editingSurface={editingSurfaceId}
               onCancelEdit={() => setEditingSurfaceId(null)}
-              typesAutresSurfaces={autresSurfacesState.typesAutresSurfaces}
             />
           </div>
         </SheetContent>

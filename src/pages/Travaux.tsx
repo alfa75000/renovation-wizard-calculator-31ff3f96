@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronRight, PlusCircle, ArrowLeft, ArrowRight, Paintbrush, Square } from "lucide-react";
@@ -11,8 +12,7 @@ import { Room, Travail } from "@/types";
 import { toast } from "sonner";
 import TravailForm from "@/features/travaux/components/TravailForm";
 import TravailCard from "@/features/travaux/components/TravailCard";
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
-import AutreSurfaceForm from "@/features/renovation/components/AutreSurfaceForm";
+import AutresSurfacesList from "@/components/room/AutresSurfacesList";
 
 interface PieceSelectProps {
   pieces: Room[];
@@ -56,7 +56,6 @@ const Travaux: React.FC = () => {
   const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [travailAModifier, setTravailAModifier] = useState<Travail | null>(null);
-  const [isAutreSurfaceDrawerOpen, setIsAutreSurfaceDrawerOpen] = useState(false);
 
   useEffect(() => {
     if (!selectedRoom && rooms.length > 0) {
@@ -85,14 +84,6 @@ const Travaux: React.FC = () => {
     setIsDrawerOpen(true);
   };
 
-  const handleAddAutreSurface = () => {
-    if (!selectedRoom) {
-      toast.error("Veuillez d'abord sélectionner une pièce pour ajouter une surface personnalisée.");
-      return;
-    }
-    setIsAutreSurfaceDrawerOpen(true);
-  };
-
   const handleEditTravail = (travail: Travail) => {
     setTravailAModifier(travail);
     setIsDrawerOpen(true);
@@ -119,12 +110,6 @@ const Travaux: React.FC = () => {
   const handleDeleteTravail = (travailId: string) => {
     deleteTravail(travailId);
     toast.success("Le travail a été supprimé avec succès.");
-  };
-
-  const handleAutreSurfaceSubmit = (autreSurfaceData: any) => {
-    console.log("Données d'autre surface soumises:", autreSurfaceData);
-    toast.success("Surface personnalisée ajoutée avec succès");
-    setIsAutreSurfaceDrawerOpen(false);
   };
 
   return (
@@ -169,16 +154,6 @@ const Travaux: React.FC = () => {
             
             <div className="flex flex-col sm:flex-row gap-2">
               <Button 
-                variant="outline"
-                onClick={handleAddAutreSurface}
-                disabled={!selectedRoom}
-                className="flex items-center gap-2"
-              >
-                <Square className="h-4 w-4" />
-                Ajouter Autre Surface
-              </Button>
-              
-              <Button 
                 onClick={handleAddTravail}
                 disabled={!selectedRoom}
                 className="flex items-center gap-2"
@@ -189,6 +164,10 @@ const Travaux: React.FC = () => {
             </div>
           </CardHeader>
           <CardContent>
+            {/* Section Autres Surfaces pour la pièce sélectionnée */}
+            {selectedRoom && <AutresSurfacesList roomId={selectedRoom} />}
+            
+            <h3 className="text-lg font-medium mb-3">Travaux</h3>
             {travauxForSelectedRoom.length > 0 ? (
               <div className="space-y-4">
                 {travauxForSelectedRoom.map(travail => (
@@ -201,7 +180,7 @@ const Travaux: React.FC = () => {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-6">
+              <div className="text-center py-6 border rounded-md bg-gray-50">
                 <p className="text-gray-500 mb-4">
                   {selectedRoom 
                     ? "Aucun travail n'a été ajouté pour cette pièce."
@@ -209,25 +188,14 @@ const Travaux: React.FC = () => {
                   }
                 </p>
                 {selectedRoom && (
-                  <div className="flex flex-col sm:flex-row gap-2 justify-center">
-                    <Button 
-                      variant="outline" 
-                      className="flex items-center gap-2"
-                      onClick={handleAddAutreSurface}
-                    >
-                      <Square className="h-4 w-4" />
-                      Ajouter Autre Surface
-                    </Button>
-                    
-                    <Button 
-                      variant="outline" 
-                      className="flex items-center gap-2"
-                      onClick={handleAddTravail}
-                    >
-                      <PlusCircle className="h-4 w-4" />
-                      Ajouter des travaux
-                    </Button>
-                  </div>
+                  <Button 
+                    variant="outline" 
+                    className="flex items-center gap-2"
+                    onClick={handleAddTravail}
+                  >
+                    <PlusCircle className="h-4 w-4" />
+                    Ajouter des travaux
+                  </Button>
                 )}
               </div>
             )}
@@ -268,21 +236,6 @@ const Travaux: React.FC = () => {
           </div>
         </SheetContent>
       </Sheet>
-
-      <Drawer open={isAutreSurfaceDrawerOpen} onOpenChange={setIsAutreSurfaceDrawerOpen}>
-        <DrawerContent className="max-h-[85vh]">
-          <DrawerHeader className="text-left">
-            <DrawerTitle>Ajouter une surface personnalisée</DrawerTitle>
-          </DrawerHeader>
-          <div className="px-4 pb-8 pt-2 overflow-y-auto">
-            <AutreSurfaceForm 
-              roomId={selectedRoom || ''}
-              onSubmit={handleAutreSurfaceSubmit}
-              onCancel={() => setIsAutreSurfaceDrawerOpen(false)}
-            />
-          </div>
-        </DrawerContent>
-      </Drawer>
     </Layout>
   );
 };

@@ -13,6 +13,7 @@ import * as z from "zod";
 import { toast } from "sonner";
 import { PlusCircle, X } from 'lucide-react';
 import { arrondir2Decimales } from '@/lib/utils';
+import { TypeAutreSurface } from '@/types';
 
 // Définissez le schéma de validation Zod pour le formulaire
 const autreSurfaceSchema = z.object({
@@ -33,36 +34,54 @@ const autreSurfaceSchema = z.object({
 
 type AutreSurfaceFormValues = z.infer<typeof autreSurfaceSchema>;
 
+// Définir les propriétés attendues par le composant
 interface AutreSurfaceFormProps {
-  roomId: string;
+  roomId?: string;
   onSubmit: (data: any) => void;
-  onCancel: () => void;
+  onCancel?: () => void;
   itemToEdit?: any;
+  onCancelEdit?: () => void;
+  editingSurface?: string | null;
+  currentSurface?: any;
+  typesAutresSurfaces?: TypeAutreSurface[];
+  // Pour la rétrocompatibilité avec l'interface précédente
+  onAddAutreSurface?: (data: any) => void;
 }
 
 const AutreSurfaceForm: React.FC<AutreSurfaceFormProps> = ({
   roomId,
   onSubmit,
   onCancel,
-  itemToEdit
+  itemToEdit,
+  onCancelEdit,
+  editingSurface,
+  currentSurface,
+  typesAutresSurfaces = [],
+  onAddAutreSurface
 }) => {
   const [loading, setLoading] = useState(false);
-  const [typesAutresSurfaces, setTypesAutresSurfaces] = useState<any[]>([]);
   
+  // Utiliser l'API appropriée en fonction de quelle props est fournie
+  const handleSubmit = onAddAutreSurface || onSubmit;
+  const handleCancel = onCancelEdit || onCancel;
+  
+  // Déterminer les valeurs initiales en fonction des props disponibles
+  const initialValues = {
+    name: (currentSurface?.name || itemToEdit?.name) || "",
+    largeur: (currentSurface?.largeur || itemToEdit?.largeur) || 0.5,
+    hauteur: (currentSurface?.hauteur || itemToEdit?.hauteur) || 0.5,
+    surface_impactee: (currentSurface?.surfaceImpactee || itemToEdit?.surface_impactee) || "mur",
+    adjustment_type: currentSurface?.estDeduction || itemToEdit?.estDeduction ? "deduire" : "ajouter",
+    impacte_plinthe: (currentSurface?.impactePlinthe || itemToEdit?.impacte_plinthe) || false,
+    quantity: (currentSurface?.quantity || itemToEdit?.quantity) || 1,
+    description: (currentSurface?.designation || itemToEdit?.description) || "",
+    type_id: (currentSurface?.type || itemToEdit?.type_id) || undefined,
+  };
+
   // Initialiser le formulaire avec React Hook Form
   const form = useForm<AutreSurfaceFormValues>({
     resolver: zodResolver(autreSurfaceSchema),
-    defaultValues: {
-      name: itemToEdit?.name || "",
-      largeur: itemToEdit?.largeur || 0.5,
-      hauteur: itemToEdit?.hauteur || 0.5,
-      surface_impactee: itemToEdit?.surface_impactee || "mur",
-      adjustment_type: itemToEdit?.adjustment_type || "deduire",
-      impacte_plinthe: itemToEdit?.impacte_plinthe || false,
-      quantity: itemToEdit?.quantity || 1,
-      description: itemToEdit?.description || "",
-      type_id: itemToEdit?.type_id || undefined,
-    },
+    defaultValues: initialValues
   });
 
   // Surveiller les changements de largeur et hauteur pour calculer la surface
@@ -80,28 +99,6 @@ const AutreSurfaceForm: React.FC<AutreSurfaceFormProps> = ({
       setSurface(0);
     }
   }, [largeur, hauteur, quantity]);
-
-  // Charger les types d'autres surfaces depuis l'API
-  useEffect(() => {
-    const fetchTypesAutresSurfaces = async () => {
-      try {
-        // Cette fonction sera implémentée plus tard pour charger depuis Supabase
-        // Pour l'instant, utilisons des données simulées
-        const types = [
-          { id: '1', nom: 'Trémie', description: 'Ouverture dans un plancher', surfaceImpacteeParDefaut: 'sol', estDeduction: true },
-          { id: '2', nom: 'Poteau', description: 'Élément vertical porteur', surfaceImpacteeParDefaut: 'mur', estDeduction: false },
-          { id: '3', nom: 'Niche', description: 'Renfoncement dans un mur', surfaceImpacteeParDefaut: 'mur', estDeduction: true },
-          { id: '4', nom: 'Poutres apparentes', description: 'Élément horizontal porteur visible', surfaceImpacteeParDefaut: 'plafond', estDeduction: false },
-        ];
-        setTypesAutresSurfaces(types);
-      } catch (error) {
-        console.error("Erreur lors du chargement des types d'autres surfaces:", error);
-        toast.error("Impossible de charger les types d'autres surfaces");
-      }
-    };
-
-    fetchTypesAutresSurfaces();
-  }, []);
 
   // Fonction pour gérer la sélection d'un type d'autre surface
   const handleTypeSelection = (typeId: string) => {
@@ -123,12 +120,15 @@ const AutreSurfaceForm: React.FC<AutreSurfaceFormProps> = ({
         ...values,
         room_id: roomId,
         surface: surface,
+        // Convertir adjustment_type en estDeduction pour notre modèle
+        estDeduction: values.adjustment_type === 'deduire',
+        // Convertir surface_impactee en surfaceImpactee pour notre modèle
+        surfaceImpactee: values.surface_impactee,
         // Ces champs seraient générés côté serveur dans une implémentation réelle
-        id: itemToEdit?.id || `temp-${Date.now()}`,
-        created_at: new Date().toISOString(),
+        id: (editingSurface || itemToEdit?.id) || `temp-${Date.now()}`,
       };
       
-      onSubmit(autreSurfaceData);
+      handleSubmit(autreSurfaceData);
     } catch (error) {
       console.error("Erreur lors de la soumission du formulaire:", error);
       toast.error("Une erreur est survenue lors de l'ajout de la surface personnalisée");
@@ -343,7 +343,7 @@ const AutreSurfaceForm: React.FC<AutreSurfaceFormProps> = ({
           <Button 
             type="button" 
             variant="outline" 
-            onClick={onCancel}
+            onClick={handleCancel}
             disabled={loading}
           >
             <X className="mr-2 h-4 w-4" />
@@ -354,7 +354,7 @@ const AutreSurfaceForm: React.FC<AutreSurfaceFormProps> = ({
             disabled={loading}
           >
             <PlusCircle className="mr-2 h-4 w-4" />
-            {itemToEdit ? "Mettre à jour" : "Ajouter"}
+            {(editingSurface || itemToEdit) ? "Mettre à jour" : "Ajouter"}
           </Button>
         </div>
       </form>
