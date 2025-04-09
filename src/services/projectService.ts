@@ -103,7 +103,7 @@ export const fetchProjectById = async (projectId: string) => {
       
       // Récupérer les surfaces personnalisées
       const { data: surfacesData, error: surfacesError } = await supabase
-        .from('room_custom_items')
+        .from('room_custom_surfaces')
         .select('*')
         .eq('room_id', room.id);
       
@@ -211,48 +211,23 @@ export const createProject = async (projectState: ProjectState, projectInfo: any
     // Générer un nom par défaut si non fourni
     const projectName = projectInfo.name || generateDefaultProjectName();
     
-    // Vérifier que les champs requis sont présents
-    if (!projectName) {
-      throw new Error('Le nom du projet est requis');
-    }
-    
-    // S'assurer que les propriétés ont des valeurs valides
-    const propertyType = projectState.property.type || 'Appartement';
-    const floors = projectState.property.floors || 1;
-    const totalArea = projectState.property.totalArea || 0;
-    const roomsCount = projectState.property.rooms || 0;
-    const ceilingHeight = projectState.property.ceilingHeight || 2.5;
-    
-    // Récupération des tables disponibles pour debug
-    const { data: columns, error: columnsError } = await supabase
-      .from('projects')
-      .select()
-      .limit(1);
-    
-    if (columnsError) {
-      console.error('Erreur lors de la récupération des colonnes de la table projects:', columnsError);
-    } else {
-      // Afficher les colonnes disponibles pour debugging
-      console.log('Colonnes disponibles dans la table projects:', columns && columns.length > 0 ? Object.keys(columns[0]) : 'Aucune donnée');
-    }
-    
-    // Créer un objet d'insertion avec seulement les champs confirmés
-    const insertData = {
-      name: projectName,
-      client_id: projectInfo.clientId || null,
-      description: projectInfo.description || '',
-      property_type: propertyType,
-      floors: floors,
-      total_area: totalArea,
-      rooms_count: roomsCount,
-      ceiling_height: ceilingHeight
-    };
-    
-    console.log('Création du projet avec les données:', insertData);
-    
+    // Créer le projet
     const { data: projectData, error: projectError } = await supabase
       .from('projects')
-      .insert(insertData)
+      .insert({
+        name: projectName,
+        client_id: projectInfo.clientId || null,
+        description: projectInfo.description || '',
+        address: projectInfo.address || '',
+        postal_code: projectInfo.postalCode || '',
+        city: projectInfo.city || '',
+        occupant: projectInfo.occupant || '',
+        property_type: projectState.property.type,
+        floors: projectState.property.floors,
+        total_area: projectState.property.totalArea,
+        rooms_count: projectState.property.rooms,
+        ceiling_height: projectState.property.ceilingHeight
+      })
       .select()
       .single();
     
@@ -267,142 +242,134 @@ export const createProject = async (projectState: ProjectState, projectInfo: any
     
     const projectId = projectData.id;
     
-    // Créer les pièces (uniquement s'il y en a)
-    if (projectState.rooms && projectState.rooms.length > 0) {
-      for (const room of projectState.rooms) {
-        const { data: roomData, error: roomError } = await supabase
-          .from('rooms')
-          .insert({
-            project_id: projectId,
-            name: room.name || '',
-            custom_name: room.customName || null,
-            type: room.type || '',
-            width: room.width || 0,
-            length: room.length || 0,
-            height: room.height || 0,
-            surface: room.surface || 0,
-            plinth_height: room.plinthHeight || 0,
-            type_sol: room.typeSol || null,
-            type_mur: room.typeMur || null,
-            wall_surface_raw: room.wallSurfaceRaw || 0,
-            total_plinth_length: room.totalPlinthLength || 0,
-            total_plinth_surface: room.totalPlinthSurface || 0,
-            menuiseries_murs_surface: room.menuiseriesMursSurface || 0,
-            menuiseries_plafond_surface: room.menuiseriesPlafondSurface || 0,
-            menuiseries_sol_surface: room.menuiseriesSolSurface || 0,
-            autres_surfaces_murs: room.autresSurfacesMurs || 0,
-            autres_surfaces_plafond: room.autresSurfacesPlafond || 0,
-            autres_surfaces_sol: room.autresSurfacesSol || 0,
-            net_wall_surface: room.netWallSurface || 0,
-            surface_nette_murs: room.surfaceNetteMurs || 0,
-            surface_nette_sol: room.surfaceNetteSol || 0,
-            surface_nette_plafond: room.surfaceNettePlafond || 0,
-            surface_brute_sol: room.surfaceBruteSol || 0,
-            surface_brute_plafond: room.surfaceBrutePlafond || 0,
-            surface_brute_murs: room.surfaceBruteMurs || 0,
-            surface_menuiseries: room.surfaceMenuiseries || 0,
-            total_menuiserie_surface: room.totalMenuiserieSurface || 0,
-            lineaire_brut: room.lineaireBrut || null,
-            lineaire_net: room.lineaireNet || null
-          })
-          .select()
-          .single();
-        
-        if (roomError) {
-          console.error('Erreur lors de la création de la pièce:', roomError);
-          throw roomError;
-        }
-        
-        if (!roomData) {
-          throw new Error('Erreur: Aucune donnée retournée après la création de la pièce');
-        }
-        
-        const roomId = roomData.id;
-        
-        // Créer les menuiseries pour cette pièce (si présentes)
-        if (room.menuiseries && room.menuiseries.length > 0) {
-          for (const menuiserie of room.menuiseries) {
-            const { error: menuiserieError } = await supabase
-              .from('room_menuiseries')
-              .insert({
-                room_id: roomId,
-                menuiserie_type_id: menuiserie.id || null,
-                largeur: menuiserie.largeur || 0,
-                hauteur: menuiserie.hauteur || 0,
-                quantity: menuiserie.quantity || 1,
-                surface_impactee: menuiserie.surfaceImpactee || 'mur'
-              });
-            
-            if (menuiserieError) {
-              console.error('Erreur lors de la création de la menuiserie:', menuiserieError);
-              throw menuiserieError;
-            }
+    // Créer les pièces
+    for (const room of projectState.rooms) {
+      const { data: roomData, error: roomError } = await supabase
+        .from('rooms')
+        .insert({
+          project_id: projectId,
+          name: room.name,
+          custom_name: room.customName || null,
+          type: room.type,
+          width: room.width,
+          length: room.length,
+          height: room.height,
+          surface: room.surface,
+          plinth_height: room.plinthHeight,
+          type_sol: room.typeSol || null,
+          type_mur: room.typeMur || null,
+          wall_surface_raw: room.wallSurfaceRaw,
+          total_plinth_length: room.totalPlinthLength,
+          total_plinth_surface: room.totalPlinthSurface,
+          menuiseries_murs_surface: room.menuiseriesMursSurface,
+          menuiseries_plafond_surface: room.menuiseriesPlafondSurface,
+          menuiseries_sol_surface: room.menuiseriesSolSurface,
+          autres_surfaces_murs: room.autresSurfacesMurs,
+          autres_surfaces_plafond: room.autresSurfacesPlafond,
+          autres_surfaces_sol: room.autresSurfacesSol,
+          net_wall_surface: room.netWallSurface,
+          surface_nette_murs: room.surfaceNetteMurs,
+          surface_nette_sol: room.surfaceNetteSol,
+          surface_nette_plafond: room.surfaceNettePlafond,
+          surface_brute_sol: room.surfaceBruteSol,
+          surface_brute_plafond: room.surfaceBrutePlafond,
+          surface_brute_murs: room.surfaceBruteMurs,
+          surface_menuiseries: room.surfaceMenuiseries,
+          total_menuiserie_surface: room.totalMenuiserieSurface,
+          lineaire_brut: room.lineaireBrut || null,
+          lineaire_net: room.lineaireNet || null
+        })
+        .select()
+        .single();
+      
+      if (roomError) {
+        console.error('Erreur lors de la création de la pièce:', roomError);
+        throw roomError;
+      }
+      
+      if (!roomData) {
+        throw new Error('Erreur: Aucune donnée retournée après la création de la pièce');
+      }
+      
+      const roomId = roomData.id;
+      
+      // Créer les menuiseries pour cette pièce
+      if (room.menuiseries && room.menuiseries.length > 0) {
+        for (const menuiserie of room.menuiseries) {
+          const { error: menuiserieError } = await supabase
+            .from('room_menuiseries')
+            .insert({
+              room_id: roomId,
+              menuiserie_type_id: null, // À adapter selon la structure réelle
+              type: menuiserie.type,
+              name: menuiserie.name,
+              largeur: menuiserie.largeur,
+              hauteur: menuiserie.hauteur,
+              quantity: menuiserie.quantity,
+              surface: menuiserie.surface,
+              surface_impactee: menuiserie.surfaceImpactee
+            });
+          
+          if (menuiserieError) {
+            console.error('Erreur lors de la création de la menuiserie:', menuiserieError);
+            throw menuiserieError;
           }
         }
-        
-        // Créer les autres surfaces pour cette pièce (si présentes)
-        if (room.autresSurfaces && room.autresSurfaces.length > 0) {
-          for (const surface of room.autresSurfaces) {
-            const { error: surfaceError } = await supabase
-              .from('room_custom_items')
-              .insert({
-                room_id: roomId,
-                type: surface.type || '',
-                name: surface.name || '',
-                designation: surface.designation || '',
-                largeur: surface.largeur || 0,
-                hauteur: surface.hauteur || 0,
-                surface: surface.surface || 0,
-                quantity: surface.quantity || 1,
-                surface_impactee: surface.surfaceImpactee || 'mur',
-                adjustment_type: surface.estDeduction ? 'Déduire' : 'Ajouter',
-                impacte_plinthe: surface.impactePlinthe || false,
-                description: surface.description || null
-              });
-            
-            if (surfaceError) {
-              console.error('Erreur lors de la création de la surface personnalisée:', surfaceError);
-              throw surfaceError;
-            }
+      }
+      
+      // Créer les autres surfaces pour cette pièce
+      if (room.autresSurfaces && room.autresSurfaces.length > 0) {
+        for (const surface of room.autresSurfaces) {
+          const { error: surfaceError } = await supabase
+            .from('room_custom_surfaces')
+            .insert({
+              room_id: roomId,
+              type: surface.type,
+              name: surface.name,
+              designation: surface.designation,
+              largeur: surface.largeur,
+              hauteur: surface.hauteur,
+              surface: surface.surface,
+              quantity: surface.quantity,
+              surface_impactee: surface.surfaceImpactee,
+              est_deduction: surface.estDeduction
+            });
+          
+          if (surfaceError) {
+            console.error('Erreur lors de la création de la surface personnalisée:', surfaceError);
+            throw surfaceError;
           }
         }
       }
     }
     
-    // Créer les travaux (si présents)
-    if (projectState.travaux && projectState.travaux.length > 0) {
-      for (const travail of projectState.travaux) {
-        if (!travail.pieceId) {
-          console.warn('Travail sans pièce associée, ignoré:', travail);
-          continue;
-        }
-        
-        const { error: travailError } = await supabase
-          .from('room_works')
-          .insert({
-            room_id: travail.pieceId,
-            type_travaux_id: travail.typeTravauxId || '',
-            type_travaux_label: travail.typeTravauxLabel || '',
-            sous_type_id: travail.sousTypeId || '',
-            sous_type_label: travail.sousTypeLabel || '',
-            menuiserie_id: travail.menuiserieId || null,
-            description: travail.description || '',
-            quantite: travail.quantite || 0,
-            unite: travail.unite || '',
-            prix_fournitures: travail.prixFournitures || 0,
-            prix_main_oeuvre: travail.prixMainOeuvre || 0,
-            taux_tva: travail.tauxTVA || 20,
-            commentaire: travail.commentaire || '',
-            personnalisation: travail.personnalisation || '',
-            type_travaux: travail.typeTravaux || '',
-            sous_type: travail.sousType || '',
-            surface_impactee: travail.surfaceImpactee || ''
-          });
-        
-        if (travailError) {
-          console.error('Erreur lors de la création du travail:', travailError);
-          throw travailError;
-        }
+    // Créer les travaux
+    for (const travail of projectState.travaux) {
+      const { error: travailError } = await supabase
+        .from('room_works')
+        .insert({
+          room_id: travail.pieceId,
+          type_travaux_id: travail.typeTravauxId,
+          type_travaux_label: travail.typeTravauxLabel,
+          sous_type_id: travail.sousTypeId,
+          sous_type_label: travail.sousTypeLabel,
+          menuiserie_id: travail.menuiserieId || null,
+          description: travail.description,
+          quantite: travail.quantite,
+          unite: travail.unite,
+          prix_fournitures: travail.prixFournitures,
+          prix_main_oeuvre: travail.prixMainOeuvre,
+          taux_tva: travail.tauxTVA,
+          commentaire: travail.commentaire || '',
+          personnalisation: travail.personnalisation || '',
+          type_travaux: travail.typeTravaux || '',
+          sous_type: travail.sousType || '',
+          surface_impactee: travail.surfaceImpactee || ''
+        });
+      
+      if (travailError) {
+        console.error('Erreur lors de la création du travail:', travailError);
+        throw travailError;
       }
     }
     
@@ -421,38 +388,24 @@ export const createProject = async (projectState: ProjectState, projectInfo: any
  */
 export const updateProject = async (projectId: string, projectState: ProjectState, projectInfo: any = {}) => {
   try {
-    // Récupérer d'abord les colonnes disponibles pour le debugging
-    const { data: columns, error: columnsError } = await supabase
-      .from('projects')
-      .select()
-      .eq('id', projectId)
-      .single();
-    
-    if (columnsError) {
-      console.error('Erreur lors de la récupération des colonnes de la table projects:', columnsError);
-    } else {
-      // Afficher les colonnes disponibles pour debugging
-      console.log('Colonnes disponibles dans la table projects pour mise à jour:', columns ? Object.keys(columns) : 'Aucune donnée');
-    }
-    
-    // Créer un objet de mise à jour avec seulement les champs confirmés
-    const updateData = {
-      name: projectInfo.name,
-      client_id: projectInfo.clientId || null,
-      description: projectInfo.description || '',
-      property_type: projectState.property.type,
-      floors: projectState.property.floors,
-      total_area: projectState.property.totalArea,
-      rooms_count: projectState.property.rooms,
-      ceiling_height: projectState.property.ceilingHeight,
-      updated_at: new Date().toISOString()
-    };
-    
-    console.log('Mise à jour du projet avec les données:', updateData);
-    
+    // Mettre à jour le projet
     const { error: projectError } = await supabase
       .from('projects')
-      .update(updateData)
+      .update({
+        name: projectInfo.name,
+        client_id: projectInfo.clientId || null,
+        description: projectInfo.description || '',
+        address: projectInfo.address || '',
+        postal_code: projectInfo.postalCode || '',
+        city: projectInfo.city || '',
+        occupant: projectInfo.occupant || '',
+        property_type: projectState.property.type,
+        floors: projectState.property.floors,
+        total_area: projectState.property.totalArea,
+        rooms_count: projectState.property.rooms,
+        ceiling_height: projectState.property.ceilingHeight,
+        updated_at: new Date().toISOString()
+      })
       .eq('id', projectId);
     
     if (projectError) {
@@ -659,7 +612,7 @@ export const updateProject = async (projectId: string, projectState: ProjectStat
       if (room.autresSurfaces && room.autresSurfaces.length > 0) {
         // Récupérer les surfaces existantes
         const { data: existingSurfaces, error: surfacesError } = await supabase
-          .from('room_custom_items')
+          .from('room_custom_surfaces')
           .select('id')
           .eq('room_id', room.id);
         
@@ -675,7 +628,7 @@ export const updateProject = async (projectId: string, projectState: ProjectStat
         const surfacesToDelete = existingSurfaceIds.filter(id => !newSurfaceIds.includes(id));
         if (surfacesToDelete.length > 0) {
           const { error: deleteSurfacesError } = await supabase
-            .from('room_custom_items')
+            .from('room_custom_surfaces')
             .delete()
             .in('id', surfacesToDelete);
           
@@ -690,7 +643,7 @@ export const updateProject = async (projectId: string, projectState: ProjectStat
           if (existingSurfaceIds.includes(surface.id)) {
             // Mettre à jour la surface existante
             const { error: updateSurfaceError } = await supabase
-              .from('room_custom_items')
+              .from('room_custom_surfaces')
               .update({
                 type: surface.type,
                 name: surface.name,
@@ -711,7 +664,7 @@ export const updateProject = async (projectId: string, projectState: ProjectStat
           } else {
             // Créer une nouvelle surface
             const { error: createSurfaceError } = await supabase
-              .from('room_custom_items')
+              .from('room_custom_surfaces')
               .insert({
                 room_id: room.id,
                 id: surface.id, // Conserver l'ID existant
@@ -788,18 +741,18 @@ export const updateProject = async (projectId: string, projectState: ProjectStat
               type_travaux_label: travail.typeTravauxLabel,
               sous_type_id: travail.sousTypeId,
               sous_type_label: travail.sousTypeLabel,
-              menuiserie_id: travail.menuiserieId,
+              menuiserie_id: travail.menuiserieId || null,
               description: travail.description,
               quantite: travail.quantite,
               unite: travail.unite,
               prix_fournitures: travail.prixFournitures,
               prix_main_oeuvre: travail.prixMainOeuvre,
               taux_tva: travail.tauxTVA,
-              commentaire: travail.commentaire,
-              personnalisation: travail.personnalisation,
-              type_travaux: travail.typeTravaux,
-              sous_type: travail.sousType,
-              surface_impactee: travail.surfaceImpactee
+              commentaire: travail.commentaire || '',
+              personnalisation: travail.personnalisation || '',
+              type_travaux: travail.typeTravaux || '',
+              sous_type: travail.sousType || '',
+              surface_impactee: travail.surfaceImpactee || ''
             })
             .eq('id', travail.id);
           
@@ -818,18 +771,18 @@ export const updateProject = async (projectId: string, projectState: ProjectStat
               type_travaux_label: travail.typeTravauxLabel,
               sous_type_id: travail.sousTypeId,
               sous_type_label: travail.sousTypeLabel,
-              menuiserie_id: travail.menuiserieId,
+              menuiserie_id: travail.menuiserieId || null,
               description: travail.description,
               quantite: travail.quantite,
               unite: travail.unite,
               prix_fournitures: travail.prixFournitures,
               prix_main_oeuvre: travail.prixMainOeuvre,
               taux_tva: travail.tauxTVA,
-              commentaire: travail.commentaire,
-              personnalisation: travail.personnalisation,
-              type_travaux: travail.typeTravaux,
-              sous_type: travail.sousType,
-              surface_impactee: travail.surfaceImpactee
+              commentaire: travail.commentaire || '',
+              personnalisation: travail.personnalisation || '',
+              type_travaux: travail.typeTravaux || '',
+              sous_type: travail.sousType || '',
+              surface_impactee: travail.surfaceImpactee || ''
             });
           
           if (createWorkError) {
@@ -845,89 +798,28 @@ export const updateProject = async (projectId: string, projectState: ProjectStat
       name: projectInfo.name
     };
   } catch (error) {
-    console.error('Exception lors de la mise à jour du projet complet:', error);
+    console.error('Exception lors de la mise à jour du projet:', error);
     throw error;
   }
 };
 
 /**
- * Supprime un projet existant dans Supabase
+ * Supprime un projet et toutes ses données associées
  */
 export const deleteProject = async (projectId: string) => {
   try {
-    // Récupérer les pièces pour supprimer en cascade
-    const { data: rooms, error: roomsError } = await supabase
-      .from('rooms')
-      .select('id')
-      .eq('project_id', projectId);
-    
-    if (roomsError) {
-      console.error('Erreur lors de la récupération des pièces du projet:', roomsError);
-      throw roomsError;
-    }
-    
-    const roomIds = (rooms || []).map(room => room.id);
-    
-    // Supprimer les travaux associés aux pièces
-    if (roomIds.length > 0) {
-      const { error: worksError } = await supabase
-        .from('room_works')
-        .delete()
-        .in('room_id', roomIds);
-      
-      if (worksError) {
-        console.error('Erreur lors de la suppression des travaux:', worksError);
-        throw worksError;
-      }
-      
-      // Supprimer les menuiseries associées aux pièces
-      const { error: menuiseriesError } = await supabase
-        .from('room_menuiseries')
-        .delete()
-        .in('room_id', roomIds);
-      
-      if (menuiseriesError) {
-        console.error('Erreur lors de la suppression des menuiseries:', menuiseriesError);
-        throw menuiseriesError;
-      }
-      
-      // Supprimer les surfaces personnalisées associées aux pièces
-      const { error: surfacesError } = await supabase
-        .from('room_custom_items')
-        .delete()
-        .in('room_id', roomIds);
-      
-      if (surfacesError) {
-        console.error('Erreur lors de la suppression des surfaces personnalisées:', surfacesError);
-        throw surfacesError;
-      }
-    }
-    
-    // Supprimer les pièces
-    if (roomIds.length > 0) {
-      const { error: deleteRoomsError } = await supabase
-        .from('rooms')
-        .delete()
-        .in('id', roomIds);
-      
-      if (deleteRoomsError) {
-        console.error('Erreur lors de la suppression des pièces:', deleteRoomsError);
-        throw deleteRoomsError;
-      }
-    }
-    
-    // Supprimer le projet
-    const { error: deleteProjectError } = await supabase
+    // Supprimer le projet (les contraintes de clé étrangère devraient supprimer les données associées)
+    const { error } = await supabase
       .from('projects')
       .delete()
       .eq('id', projectId);
     
-    if (deleteProjectError) {
-      console.error('Erreur lors de la suppression du projet:', deleteProjectError);
-      throw deleteProjectError;
+    if (error) {
+      console.error('Erreur lors de la suppression du projet:', error);
+      throw error;
     }
     
-    return true;
+    return { success: true };
   } catch (error) {
     console.error('Exception lors de la suppression du projet:', error);
     throw error;
@@ -939,21 +831,26 @@ export const deleteProject = async (projectId: string) => {
  */
 export const generateDefaultProjectName = () => {
   const now = new Date();
-  return `Nouveau projet ${format(now, 'dd/MM/yyyy')}`;
+  return `Projet sans nom - ${format(now, 'yyyy-MM-dd HH:mm')}`;
 };
 
-// Type pour représenter un projet dans Supabase
+/**
+ * Type pour l'objet Projet récupéré depuis Supabase
+ */
 export type Project = {
   id: string;
-  created_at: string;
-  updated_at?: string;
   name: string;
   client_id: string | null;
-  description?: string;
-  property_type?: string;
-  floors?: number;
-  total_area?: number;
-  rooms_count?: number;
-  ceiling_height?: number;
+  description: string;
+  address: string;
+  postal_code: string;
+  city: string;
+  occupant: string;
+  property_type: string;
+  floors: number;
+  total_area: number;
+  rooms_count: number;
+  ceiling_height: number;
+  created_at: string;
+  updated_at: string;
 };
-
