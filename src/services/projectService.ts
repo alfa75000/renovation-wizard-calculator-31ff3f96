@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
 import { Room, Travail, ProjectState } from '@/types';
@@ -236,7 +237,6 @@ export const createProject = async (projectState: ProjectState, projectInfo: any
     }
     
     // Créer un objet d'insertion avec seulement les champs confirmés
-    // Note: Nous allons enlever les champs comme address qui causent des erreurs
     const insertData = {
       name: projectName,
       client_id: projectInfo.clientId || null,
@@ -786,6 +786,69 @@ export const updateProject = async (projectId: string, projectState: ProjectStat
             .update({
               type_travaux_id: travail.typeTravauxId,
               type_travaux_label: travail.typeTravauxLabel,
+              sous_type_id: travail.sousTypeId,
+              sous_type_label: travail.sousTypeLabel,
+              menuiserie_id: travail.menuiserieId,
+              description: travail.description,
+              quantite: travail.quantite,
+              unite: travail.unite,
+              prix_fournitures: travail.prixFournitures,
+              prix_main_oeuvre: travail.prixMainOeuvre,
+              taux_tva: travail.tauxTVA,
+              commentaire: travail.commentaire,
+              personnalisation: travail.personnalisation,
+              type_travaux: travail.typeTravaux,
+              sous_type: travail.sousType,
+              surface_impactee: travail.surfaceImpactee
+            })
+            .eq('id', travail.id);
+          
+          if (updateWorkError) {
+            console.error('Erreur lors de la mise à jour du travail:', updateWorkError);
+            throw updateWorkError;
+          }
+        } else {
+          // Créer un nouveau travail
+          const { error: createWorkError } = await supabase
+            .from('room_works')
+            .insert({
+              id: travail.id, // Conserver l'ID existant
+              room_id: travail.pieceId,
+              type_travaux_id: travail.typeTravauxId,
+              type_travaux_label: travail.typeTravauxLabel,
+              sous_type_id: travail.sousTypeId,
+              sous_type_label: travail.sousTypeLabel,
+              menuiserie_id: travail.menuiserieId,
+              description: travail.description,
+              quantite: travail.quantite,
+              unite: travail.unite,
+              prix_fournitures: travail.prixFournitures,
+              prix_main_oeuvre: travail.prixMainOeuvre,
+              taux_tva: travail.tauxTVA,
+              commentaire: travail.commentaire,
+              personnalisation: travail.personnalisation,
+              type_travaux: travail.typeTravaux,
+              sous_type: travail.sousType,
+              surface_impactee: travail.surfaceImpactee
+            });
+          
+          if (createWorkError) {
+            console.error('Erreur lors de la création du travail:', createWorkError);
+            throw createWorkError;
+          }
+        }
+      }
+    }
+    
+    return {
+      id: projectId,
+      name: projectInfo.name
+    };
+  } catch (error) {
+    console.error('Exception lors de la mise à jour du projet complet:', error);
+    throw error;
+  }
+};
 
 /**
  * Supprime un projet existant dans Supabase
@@ -893,3 +956,4 @@ export type Project = {
   rooms_count?: number;
   ceiling_height?: number;
 };
+
