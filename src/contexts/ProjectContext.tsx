@@ -16,7 +16,6 @@ type ProjectContextType = {
   isSaving: boolean;
   projects: Project[];
   currentProjectId: string | null;
-  projectName: string;
   hasUnsavedChanges: boolean;
   saveProject: (name?: string) => Promise<void>;
   saveProjectAsDraft: () => Promise<void>;
@@ -40,17 +39,6 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // S'assurer que l'état initial est correctement défini
   const [state, dispatch] = useReducer(projectReducer, initialProjectState);
   
-  // État local pour le nom du projet
-  const [projectName, setProjectName] = React.useState<string>("Projet sans titre");
-  
-  // Intercepter les actions pour mettre à jour le nom du projet
-  const enhancedDispatch = (action: ProjectAction) => {
-    if (action.type === 'UPDATE_PROJECT_NAME' && typeof action.payload === 'string') {
-      setProjectName(action.payload);
-    }
-    dispatch(action);
-  };
-  
   // Utiliser les hooks spécialisés
   const {
     isLoading,
@@ -68,13 +56,10 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const { hasUnsavedChanges, updateSavedState, resetSavedState } = useSaveLoadWarning(state);
 
   // Hook pour la gestion des pièces - passer state et dispatch en arguments
-  const roomsManager = useRooms(state, enhancedDispatch);
+  const roomsManager = useRooms(state, dispatch);
   
   // Fonction améliorée de sauvegarde avec suivi d'état
   const enhancedSaveProject = async (name?: string) => {
-    if (name) {
-      setProjectName(name);
-    }
     await saveProject(name);
     updateSavedState();
   };
@@ -91,34 +76,21 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // Étendre la fonction de création d'un nouveau projet pour réinitialiser l'état sauvegardé
   const enhancedCreateNewProject = () => {
     createNewProject();
-    setProjectName("Projet sans titre");
     resetSavedState(initialProjectState);
   };
 
-  // Mettre à jour le nom du projet quand un projet est chargé
-  React.useEffect(() => {
-    if (currentProjectId) {
-      const currentProject = projects.find(p => p.id === currentProjectId);
-      if (currentProject && currentProject.name) {
-        setProjectName(currentProject.name);
-      }
-    }
-  }, [currentProjectId, projects]);
-
   // Afficher l'état pour le débogage
   console.log("State in ProjectContext:", state);
-  console.log("ProjectName in ProjectContext:", projectName);
   console.log("RoomsManager dans ProjectContext:", roomsManager);
 
   return (
     <ProjectContext.Provider value={{ 
       state, 
-      dispatch: enhancedDispatch,
+      dispatch,
       isLoading,
       isSaving,
       projects,
       currentProjectId,
-      projectName,
       hasUnsavedChanges,
       saveProject: enhancedSaveProject,
       saveProjectAsDraft,

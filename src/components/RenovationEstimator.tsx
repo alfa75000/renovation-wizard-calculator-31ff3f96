@@ -1,13 +1,10 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { toast } from "sonner";
 import { useProject } from "@/contexts/ProjectContext";
 import { Room } from "@/types";
 import PropertyCard from "@/features/property/components/PropertyCard";
 import RoomsCard from "@/features/property/components/RoomsCard";
-import { useProjectInitOnFirstRoom } from "@/features/project/hooks/useProjectInitOnFirstRoom";
-import { findDefaultClientId } from "@/services/devisService";
-import { generateDevisNumber } from "@/services/projectService";
 
 const RenovationEstimator: React.FC = () => {
   const { 
@@ -20,32 +17,6 @@ const RenovationEstimator: React.FC = () => {
   const { property, rooms } = state;
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
   
-  // Variables d'état pour les informations du projet
-  // Ces variables seront synchronisées via le hook useProjectInitOnFirstRoom
-  const [clientId, setClientId] = useState<string>('');
-  const [devisNumber, setDevisNumber] = useState<string>('');
-  const [descriptionProjet, setDescriptionProjet] = useState<string>('');
-  
-  // Utiliser le hook pour initialiser les informations du projet lors de l'ajout de la première pièce
-  const { isFirstRoom, setIsFirstRoom } = useProjectInitOnFirstRoom(
-    clientId,
-    setClientId,
-    devisNumber,
-    setDevisNumber,
-    descriptionProjet,
-    setDescriptionProjet
-  );
-
-  // Nettoyer sessionStorage au chargement du composant pour permettre l'initialisation
-  // C'est important pour un nouveau projet
-  useEffect(() => {
-    if (rooms.length === 0) {
-      sessionStorage.removeItem('project_initialized');
-      sessionStorage.removeItem('project_init_toast_shown');
-      setIsFirstRoom(true);
-    }
-  }, [rooms.length, setIsFirstRoom]);
-
   const roomTypes = ["Salon", "Chambre", "Cuisine", "Salle de bain", "Toilettes", "Bureau", "Entrée", "Couloir", "Autre"];
 
   const handlePropertyChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -62,7 +33,7 @@ const RenovationEstimator: React.FC = () => {
     });
   };
 
-  const handleAddRoom = async (room: Omit<Room, "id">) => {
+  const handleAddRoom = (room: Omit<Room, "id">) => {
     if (editingRoomId) {
       dispatch({
         type: 'UPDATE_ROOM',
