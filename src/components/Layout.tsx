@@ -8,14 +8,15 @@ import { Navigation } from './layout/Navigation';
 import { NewProjectDialog } from './layout/NewProjectDialog';
 import { SaveAsDialog } from './layout/SaveAsDialog';
 import { OpenProjectSheet } from './layout/OpenProjectSheet';
+import { LayoutProps } from './Layout.d';
 
-interface LayoutProps {
-  children: ReactNode;
-  title?: string;
-  subtitle?: string;
-}
-
-export const Layout: React.FC<LayoutProps> = ({ children, title, subtitle }) => {
+export const Layout: React.FC<LayoutProps> = ({ 
+  children, 
+  title, 
+  subtitle,
+  actions,
+  currentProjectName // Use the prop that's now defined in LayoutProps
+}) => {
   const { 
     currentProjectId, 
     saveProject, 
@@ -51,6 +52,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, title, subtitle }) => 
         onOpenProject={() => setOpenProjectSheetOpen(true)}
         onSaveProject={handleSaveProject}
         onSaveAsProject={() => setSaveAsDialogOpen(true)}
+        projectDisplayName={currentProjectName} // Pass the currentProjectName to ProjectBar
       />
       
       <TitleHeader title={title} subtitle={subtitle} />
