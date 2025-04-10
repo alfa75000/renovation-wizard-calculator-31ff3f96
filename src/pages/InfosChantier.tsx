@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useClients } from '@/contexts/ClientsContext';
 import { useProject } from '@/contexts/ProjectContext';
@@ -61,7 +62,7 @@ const InfosChantier: React.FC = () => {
   }, [currentProjectId, projects]);
   
   useEffect(() => {
-    if (clientSelectionne && descriptionProjet) {
+    if (clientSelectionne && (descriptionProjet || devisNumber)) {
       const clientName = `${clientSelectionne.nom} ${clientSelectionne.prenom || ''}`.trim();
       let newName = '';
       
@@ -114,8 +115,8 @@ const InfosChantier: React.FC = () => {
     }
     
     try {
-      // Logique de sauvegarde temporairement désactivée
-      // await saveProject();
+      // Sauvegarder avec le nom du projet mis à jour
+      await saveProject(nomProjet);
       toast.success('Projet enregistré avec succès');
     } catch (error) {
       console.error('Erreur lors de l\'enregistrement du projet:', error);
