@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -14,6 +13,7 @@ import { ClientDetails } from './ClientDetails';
 import { toast } from 'sonner';
 import { generateDevisNumber } from '@/services/projectService';
 import { getDefaultClient } from '@/services/clientService';
+import { Client } from '@/types';
 
 interface ProjectFormProps {
   clientId: string;
@@ -66,27 +66,44 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
   const { state: clientsState, dispatch: clientsDispatch } = useClients();
   const [isGeneratingDevisNumber, setIsGeneratingDevisNumber] = useState<boolean>(false);
   
-  // Auto-generate project name when client, devis number, or description changes
+  useEffect(() => {
+    const ensureClientExists = async () => {
+      if (clientsState.clients.length === 0) {
+        try {
+          const defaultClient = await getDefaultClient();
+          
+          if (!clientsState.clients.some(c => c.id === defaultClient.id)) {
+            clientsDispatch({ 
+              type: 'ADD_CLIENT', 
+              payload: defaultClient 
+            });
+            console.log('Client par défaut ajouté à l\'état local:', defaultClient.nom);
+          }
+        } catch (error) {
+          console.error('Erreur lors de la vérification du client par défaut:', error);
+        }
+      }
+    };
+    
+    ensureClientExists();
+  }, [clientsState.clients.length, clientsDispatch]);
+  
   useEffect(() => {
     generateProjectName();
-  }, [clientId, devisNumber, descriptionProjet]);
+  }, [clientId, devisNumber, descriptionProjet, clientsState.clients]);
   
-  // Function to generate project name based on available data
   const generateProjectName = () => {
     let newName = '';
     
-    // Get client info if client is selected
     const client = clientsState.clients.find(c => c.id === clientId);
     const clientName = client ? `${client.nom} ${client.prenom || ''}`.trim() : 'Client à définir';
     
-    // Add devis number if available
     if (devisNumber) {
       newName = `Devis n° ${devisNumber} - ${clientName}`;
     } else {
       newName = clientName;
     }
     
-    // Add description if available, or use default
     const desc = descriptionProjet || 'Projet en cours';
     newName += desc.length > 40 
       ? ` - ${desc.substring(0, 40)}...` 
@@ -110,13 +127,11 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
   };
   
   const handleSaveProject = async () => {
-    // If no client is selected, get or create a default client
     if (!clientId) {
       try {
         const defaultClient = await getDefaultClient();
         setClientId(defaultClient.id);
         
-        // Ensure client exists in local state
         if (!clientsState.clients.some(c => c.id === defaultClient.id)) {
           clientsDispatch({ 
             type: 'ADD_CLIENT', 
@@ -132,7 +147,6 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
       }
     }
     
-    // If no devis number, generate one
     if (!devisNumber) {
       try {
         const newDevisNumber = await generateDevisNumber();
@@ -142,12 +156,10 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
       }
     }
     
-    // Use default description if none provided
     if (!descriptionProjet) {
       setDescriptionProjet('Projet en cours');
     }
     
-    // Call the original save function
     onSaveProject();
   };
   

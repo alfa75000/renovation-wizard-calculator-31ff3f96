@@ -9,6 +9,7 @@ import { ProjectSummary } from '@/features/chantier/components/ProjectSummary';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { getDefaultClient } from '@/services/clientService';
 
 const InfosChantier: React.FC = () => {
   const { 
@@ -30,6 +31,25 @@ const InfosChantier: React.FC = () => {
   const [infoComplementaire, setInfoComplementaire] = useState<string>('');
   const [dateDevis, setDateDevis] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [devisNumber, setDevisNumber] = useState<string>('');
+  
+  // Chargement du client par défaut si nécessaire
+  useEffect(() => {
+    const loadDefaultClientIfNeeded = async () => {
+      if (!clientId && currentProjectId) {
+        try {
+          const defaultClient = await getDefaultClient();
+          if (defaultClient && defaultClient.id) {
+            setClientId(defaultClient.id);
+            console.log('Client par défaut chargé:', defaultClient.nom);
+          }
+        } catch (error) {
+          console.error('Erreur lors du chargement du client par défaut:', error);
+        }
+      }
+    };
+    
+    loadDefaultClientIfNeeded();
+  }, [clientId, currentProjectId]);
   
   useEffect(() => {
     if (currentProjectId) {
@@ -74,6 +94,19 @@ const InfosChantier: React.FC = () => {
   
   const handleSaveProject = async () => {
     try {
+      // Si aucun client n'est sélectionné, utiliser le client par défaut
+      if (!clientId) {
+        try {
+          const defaultClient = await getDefaultClient();
+          setClientId(defaultClient.id);
+          toast.info('Client par défaut utilisé pour le projet');
+        } catch (error) {
+          console.error('Erreur lors de la récupération du client par défaut:', error);
+          toast.error('Erreur lors de la récupération du client par défaut');
+          return;
+        }
+      }
+      
       // Logique de sauvegarde désactivée temporairement
       // await saveProject();
       toast.success('Projet enregistré avec succès');
