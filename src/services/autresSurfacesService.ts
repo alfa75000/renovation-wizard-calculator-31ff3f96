@@ -1,21 +1,7 @@
 
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { TypeAutreSurface, AutreSurface } from '@/types';
-import { SurfaceImpactee, AdjustmentType } from '@/types/supabase';
 import { v4 as uuidv4 } from 'uuid';
-
-// Fonction utilitaire pour convertir surface_impactee
-const convertToSupabaseSurfaceImpactee = (surfaceImpactee: string): SurfaceImpactee => {
-  if (surfaceImpactee === 'mur') return 'Mur';
-  if (surfaceImpactee === 'plafond') return 'Plafond';
-  if (surfaceImpactee === 'sol') return 'Sol';
-  return 'Aucune';
-};
-
-// Fonction utilitaire pour convertir adjustment_type
-const convertToSupabaseAdjustmentType = (estDeduction: boolean): AdjustmentType => {
-  return estDeduction ? 'Déduire' : 'Ajouter';
-};
 
 // Récupérer tous les types d'autres surfaces
 export const getAutresSurfacesTypes = async (): Promise<TypeAutreSurface[]> => {
@@ -35,7 +21,7 @@ export const getAutresSurfacesTypes = async (): Promise<TypeAutreSurface[]> => {
     description: item.description || '',
     largeur: item.largeur || 0,
     hauteur: item.hauteur || 0,
-    surfaceImpacteeParDefaut: item.surface_impactee.toLowerCase() as "mur" | "plafond" | "sol",
+    surfaceImpacteeParDefaut: item.surface_impactee.toLowerCase(),
     estDeduction: item.adjustment_type === 'Déduire',
     impactePlinthe: item.impacte_plinthe || false
   }));
@@ -58,14 +44,14 @@ export const getAutresSurfacesForRoom = async (roomId: string): Promise<AutreSur
   // Mapper les données Supabase vers notre type d'application
   const autresSurfaces: AutreSurface[] = data.map(item => ({
     id: item.id,
-    type: 'autre', // Champ type n'existe pas dans room_custom_items
+    type: item.type,
     name: item.name,
-    designation: item.name, // Champ designation n'existe pas dans room_custom_items
+    designation: item.designation || item.name,
     largeur: item.largeur,
     hauteur: item.hauteur,
-    surface: item.largeur * item.hauteur, // Calcul de la surface
+    surface: item.surface,
     quantity: item.quantity || 1,
-    surfaceImpactee: item.surface_impactee.toLowerCase() as "mur" | "plafond" | "sol",
+    surfaceImpactee: item.surface_impactee.toLowerCase(),
     estDeduction: item.adjustment_type === 'Déduire',
     impactePlinthe: item.impacte_plinthe || false,
     description: item.description || ''
@@ -81,18 +67,21 @@ export const addAutreSurfaceToRoom = async (
 ): Promise<AutreSurface> => {
   const surfaceValue = surface.largeur * surface.hauteur;
   
-  // Conversion pour Supabase
   const newItem = {
+    id: uuidv4(),
     room_id: roomId,
+    type: surface.type,
     name: surface.name,
-    hauteur: surface.hauteur,
+    designation: surface.designation || surface.name,
     largeur: surface.largeur,
+    hauteur: surface.hauteur,
+    surface: surfaceValue,
     quantity: surface.quantity || 1,
-    surface_impactee: convertToSupabaseSurfaceImpactee(surface.surfaceImpactee),
-    adjustment_type: convertToSupabaseAdjustmentType(surface.estDeduction),
+    surface_impactee: surface.surfaceImpactee,
+    adjustment_type: surface.estDeduction ? 'Déduire' : 'Ajouter',
     impacte_plinthe: surface.impactePlinthe || false,
-    description: surface.description || null,
-    updated_at: new Date().toISOString() // Ajout du champ manquant
+    description: surface.description || '',
+    created_at: new Date().toISOString()
   };
 
   const { data, error } = await supabase
@@ -109,14 +98,14 @@ export const addAutreSurfaceToRoom = async (
   // Mapper le résultat vers notre type d'application
   return {
     id: data.id,
-    type: 'autre', // Champ type n'existe pas dans room_custom_items
+    type: data.type,
     name: data.name,
-    designation: data.name, // Champ designation n'existe pas dans room_custom_items
+    designation: data.designation || data.name,
     largeur: data.largeur,
     hauteur: data.hauteur,
-    surface: data.largeur * data.hauteur, // Calcul de la surface
+    surface: data.surface,
     quantity: data.quantity || 1,
-    surfaceImpactee: data.surface_impactee.toLowerCase() as "mur" | "plafond" | "sol",
+    surfaceImpactee: data.surface_impactee.toLowerCase(),
     estDeduction: data.adjustment_type === 'Déduire',
     impactePlinthe: data.impacte_plinthe || false,
     description: data.description || ''
@@ -143,30 +132,30 @@ export const updateAutreSurface = async (
   // Calculer la nouvelle surface si les dimensions changent
   const largeur = changes.largeur !== undefined ? changes.largeur : existingItem.largeur;
   const hauteur = changes.hauteur !== undefined ? changes.hauteur : existingItem.hauteur;
+  const surface = largeur * hauteur;
 
   // Préparer les mises à jour
   const updates: any = {
-    updated_at: new Date().toISOString() // Mettre à jour le timestamp
+    ...changes,
+    surface: surface
   };
-  
-  // Copier les champs qui ont le même nom
-  if (changes.name !== undefined) updates.name = changes.name;
-  if (changes.largeur !== undefined) updates.largeur = changes.largeur;
-  if (changes.hauteur !== undefined) updates.hauteur = changes.hauteur;
-  if (changes.quantity !== undefined) updates.quantity = changes.quantity;
-  if (changes.description !== undefined) updates.description = changes.description;
 
-  // Convertir les champs qui nécessitent une transformation
-  if (changes.surfaceImpactee !== undefined) {
-    updates.surface_impactee = convertToSupabaseSurfaceImpactee(changes.surfaceImpactee);
-  }
-  
+  // Convertir estDeduction en adjustment_type si présent
   if (changes.estDeduction !== undefined) {
-    updates.adjustment_type = convertToSupabaseAdjustmentType(changes.estDeduction);
+    updates.adjustment_type = changes.estDeduction ? 'Déduire' : 'Ajouter';
+    delete updates.estDeduction;
   }
-  
+
+  // Convertir surfaceImpactee en surface_impactee si présent
+  if (changes.surfaceImpactee !== undefined) {
+    updates.surface_impactee = changes.surfaceImpactee;
+    delete updates.surfaceImpactee;
+  }
+
+  // Convertir impactePlinthe en impacte_plinthe si présent
   if (changes.impactePlinthe !== undefined) {
     updates.impacte_plinthe = changes.impactePlinthe;
+    delete updates.impactePlinthe;
   }
 
   const { data, error } = await supabase
@@ -184,14 +173,14 @@ export const updateAutreSurface = async (
   // Mapper le résultat vers notre type d'application
   return {
     id: data.id,
-    type: 'autre', // Champ type n'existe pas dans room_custom_items
+    type: data.type,
     name: data.name,
-    designation: data.name, // Champ designation n'existe pas dans room_custom_items
+    designation: data.designation || data.name,
     largeur: data.largeur,
     hauteur: data.hauteur,
-    surface: data.largeur * data.hauteur, // Calcul de la surface
+    surface: data.surface,
     quantity: data.quantity || 1,
-    surfaceImpactee: data.surface_impactee.toLowerCase() as "mur" | "plafond" | "sol",
+    surfaceImpactee: data.surface_impactee.toLowerCase(),
     estDeduction: data.adjustment_type === 'Déduire',
     impactePlinthe: data.impacte_plinthe || false,
     description: data.description || ''
