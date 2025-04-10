@@ -1,4 +1,5 @@
-import { supabase } from '@/lib/supabase';
+
+import { supabase } from '@/integrations/supabase/client';
 import { MenuiserieType } from '@/types/supabase';
 import { toast } from 'sonner';
 

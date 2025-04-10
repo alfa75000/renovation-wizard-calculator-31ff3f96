@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { RoomCustomItem, SurfaceImpactee } from '@/types/supabase';
 import { AutreSurface } from '@/types';
 import { toast } from 'sonner';
