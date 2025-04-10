@@ -1,10 +1,4 @@
-import {
-  Box,
-  Container,
-  CssBaseline,
-  ThemeProvider,
-  createTheme,
-} from "@mui/material";
+
 import React, { useState } from "react";
 import { Outlet } from "react-router-dom";
 import Header from "./Header";
@@ -28,9 +22,7 @@ import { toast } from "sonner";
 const Layout: React.FC = () => {
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [projectName, setProjectName] = useState("");
-  const { saveProjectAsDraft, state } = useProject();
-
-  const theme = createTheme();
+  const { saveProjectAsDraft } = useProject();
 
   const handleProjectNameChange = (
     e: React.ChangeEvent<HTMLInputElement>
@@ -45,20 +37,11 @@ const Layout: React.FC = () => {
   };
 
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          minHeight: "100vh",
-        }}
-      >
-        <Header />
-        <Container component="main" sx={{ mb: 4 }}>
-          <Outlet />
-        </Container>
-      </Box>
+    <div className="flex flex-col min-h-screen">
+      <Header />
+      <main className="container mx-auto px-4 mb-6 flex-grow">
+        <Outlet />
+      </main>
 
       <AlertDialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
         <AlertDialogTrigger asChild>
@@ -88,7 +71,7 @@ const Layout: React.FC = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </ThemeProvider>
+    </div>
   );
 };
 
