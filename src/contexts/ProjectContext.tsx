@@ -176,10 +176,9 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
-  const [autoSaveTimer, setAutoSaveTimer] = useState<NodeJS.Timeout | null>(null);
+  // Suppression des états liés à la sauvegarde automatique
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
-  const [lastSaveTime, setLastSaveTime] = useState<Date | null>(null);
-
+  
   // Fonction pour récupérer la liste des projets depuis Supabase
   const refreshProjects = useCallback(async () => {
     try {
@@ -199,56 +198,15 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     refreshProjects();
   }, [refreshProjects]);
 
-  // Détecter les changements dans l'état du projet
-  useEffect(() => {
-    if (currentProjectId && lastSaveTime) {
-      const now = new Date();
-      const timeSinceLastSave = now.getTime() - lastSaveTime.getTime();
-      
-      // Marquer comme non sauvegardé seulement si le dernier enregistrement date de plus de 1 seconde
-      // Cela évite de marquer comme "non sauvegardé" juste après avoir sauvegardé
-      if (timeSinceLastSave > 1000) {
-        setHasUnsavedChanges(true);
-      }
-    } else if (currentProjectId) {
-      setHasUnsavedChanges(true);
-    }
-  }, [state, currentProjectId, lastSaveTime]);
-
-  // Configuration de la sauvegarde automatique
-  useEffect(() => {
-    if (hasUnsavedChanges && currentProjectId) {
-      // Nettoyer l'ancien timer si existant
-      if (autoSaveTimer) {
-        clearTimeout(autoSaveTimer);
-      }
-      
-      // Définir un nouveau timer pour sauvegarder après 10 minutes
-      const timer = setTimeout(() => {
-        saveProjectAsDraft();
-        toast.info('Sauvegarde automatique effectuée', {
-          duration: 3000,
-          position: 'bottom-right'
-        });
-      }, 10 * 60 * 1000); // 10 minutes en millisecondes
-      
-      setAutoSaveTimer(timer);
-      
-      // Nettoyer le timer lors du démontage du composant
-      return () => {
-        if (autoSaveTimer) {
-          clearTimeout(autoSaveTimer);
-        }
-      };
-    }
-  }, [hasUnsavedChanges, currentProjectId]);
+  // Suppression des effets liés à la détection des changements
+  
+  // Suppression des effets liés à la sauvegarde automatique
 
   // Fonction pour créer un nouveau projet
   const createNewProject = useCallback(() => {
     dispatch({ type: 'RESET_PROJECT' });
     setCurrentProjectId(null);
     setHasUnsavedChanges(false);
-    setLastSaveTime(null);
     toast.success('Nouveau projet créé');
   }, []);
 
@@ -275,7 +233,6 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
       
       setHasUnsavedChanges(false);
-      setLastSaveTime(new Date());
       await refreshProjects();
     } catch (error) {
       console.error('Erreur lors de la sauvegarde du projet:', error);
@@ -285,40 +242,25 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, [state, currentProjectId, projects, refreshProjects]);
 
-  // Fonction pour sauvegarder en tant que brouillon
+  // Fonction pour sauvegarder en tant que brouillon (simplifiée)
   const saveProjectAsDraft = useCallback(async () => {
-    if (hasUnsavedChanges) {
-      try {
-        setIsSaving(true);
-        await saveProject();
-        setLastSaveTime(new Date());
-      } catch (error) {
-        console.error('Erreur lors de la sauvegarde automatique:', error);
-        toast.error('Erreur lors de la sauvegarde automatique');
-      } finally {
-        setIsSaving(false);
-      }
+    try {
+      await saveProject();
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde automatique:', error);
+      toast.error('Erreur lors de la sauvegarde automatique');
     }
-  }, [hasUnsavedChanges, saveProject]);
+  }, [saveProject]);
 
   // Fonction pour charger un projet depuis Supabase
   const loadProject = useCallback(async (projectId: string) => {
     try {
       setIsLoading(true);
       
-      // Sauvegarder les changements non enregistrés du projet actuel si nécessaire
-      if (hasUnsavedChanges && currentProjectId) {
-        const shouldSave = window.confirm('Voulez-vous sauvegarder les modifications du projet actuel avant d\'en charger un nouveau ?');
-        if (shouldSave) {
-          await saveProject();
-        }
-      }
-      
       const { projectData, projectState } = await fetchProjectById(projectId);
       dispatch({ type: 'LOAD_PROJECT', payload: projectState });
       setCurrentProjectId(projectId);
       setHasUnsavedChanges(false);
-      setLastSaveTime(new Date());
       
       toast.success(`Projet "${projectData.name}" chargé avec succès`);
     } catch (error) {
@@ -327,7 +269,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     } finally {
       setIsLoading(false);
     }
-  }, [hasUnsavedChanges, currentProjectId, saveProject]);
+  }, []);
 
   // Fonction pour supprimer le projet actuel
   const deleteCurrentProject = useCallback(async () => {
@@ -344,7 +286,6 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       dispatch({ type: 'RESET_PROJECT' });
       setCurrentProjectId(null);
       setHasUnsavedChanges(false);
-      setLastSaveTime(null);
       
       await refreshProjects();
       toast.success('Projet supprimé avec succès');
@@ -356,21 +297,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, [currentProjectId, refreshProjects]);
 
-  // Avant de quitter la page, vérifier s'il y a des changements non enregistrés
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (hasUnsavedChanges) {
-        const message = 'Vous avez des modifications non enregistrées. Êtes-vous sûr de vouloir quitter?';
-        e.returnValue = message;
-        return message;
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
-  }, [hasUnsavedChanges]);
+  // Suppression de l'effet de confirmation avant de quitter la page
 
   return (
     <ProjectContext.Provider value={{ 
