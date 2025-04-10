@@ -3,16 +3,18 @@ import React, { useState } from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Wand } from 'lucide-react';
+import { Wand, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ProjectNameFieldProps {
   nomProjet: string;
-  onGenerateProjectName: () => void;
+  setNomProjet: (nom: string) => void;
+  onGenerateProjectName: () => Promise<void>;
 }
 
 export const ProjectNameField: React.FC<ProjectNameFieldProps> = ({
   nomProjet,
+  setNomProjet,
   onGenerateProjectName
 }) => {
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
@@ -29,16 +31,20 @@ export const ProjectNameField: React.FC<ProjectNameFieldProps> = ({
       setIsGenerating(false);
     }
   };
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNomProjet(e.target.value);
+  };
   
   return (
     <div>
-      <Label htmlFor="nomProjet">Nom du projet (généré automatiquement)</Label>
+      <Label htmlFor="nomProjet">Nom du projet</Label>
       <div className="flex gap-2">
         <Input 
           id="nomProjet" 
-          value={nomProjet} 
-          readOnly
-          className="bg-gray-50 flex-1"
+          value={nomProjet}
+          onChange={handleNameChange}
+          className="flex-1"
           placeholder="Se génère automatiquement à l'ajout de la première pièce"
         />
         <Button 
@@ -49,7 +55,11 @@ export const ProjectNameField: React.FC<ProjectNameFieldProps> = ({
           disabled={isGenerating}
           title="Générer automatiquement le nom du projet"
         >
-          <Wand className={`h-4 w-4 ${isGenerating ? 'animate-spin' : ''}`} />
+          {isGenerating ? (
+            <RefreshCw className="h-4 w-4 animate-spin" />
+          ) : (
+            <Wand className="h-4 w-4" />
+          )}
         </Button>
       </div>
     </div>

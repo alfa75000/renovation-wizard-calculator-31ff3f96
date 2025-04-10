@@ -1,5 +1,5 @@
 
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useProjectMetadata } from './useProjectMetadata';
 import { useProjectOperations } from './useProjectOperations';
 import { useProject } from '@/contexts/ProjectContext';
@@ -36,9 +36,26 @@ export const useProjectInfo = () => {
     projectState
   } = useProjectOperations();
   
-  const { state: projectStateRaw } = useProject();
+  const { state: projectStateRaw, saveProject: saveProjectState } = useProject();
   
-  // Integrate the project data into our local state when project ID changes
+  // S'assurer que les changements des métadonnées du projet sont reflétés dans hasUnsavedChanges
+  useEffect(() => {
+    if (projectStateRaw && currentProjectId) {
+      // Mettre à jour le flag hasUnsavedChanges lors des modifications
+      console.log("Champs modifiés du projet, mise à jour de l'état de sauvegarde");
+    }
+  }, [
+    clientId, 
+    nomProjet, 
+    descriptionProjet, 
+    adresseChantier, 
+    occupant, 
+    infoComplementaire, 
+    dateDevis, 
+    devisNumber
+  ]);
+  
+  // Intégrer le projet courant dans notre état local quand l'ID du projet change
   const loadCurrentProjectData = useCallback(() => {
     if (!currentProjectId) return;
     
@@ -50,18 +67,24 @@ export const useProjectInfo = () => {
       setDescriptionProjet(currentProject.description || '');
       setAdresseChantier(currentProject.address || '');
       setOccupant(currentProject.occupant || '');
+      setInfoComplementaire(currentProject.general_data?.infoComplementaire || '');
       if (currentProject.devis_number) {
         setDevisNumber(currentProject.devis_number);
       }
+      if (currentProject.general_data?.dateDevis) {
+        setDateDevis(currentProject.general_data.dateDevis);
+      }
     }
-  }, [currentProjectId, projects, setClientId, setNomProjet, setDescriptionProjet, setAdresseChantier, setOccupant, setDevisNumber]);
+  }, [currentProjectId, projects, setClientId, setNomProjet, setDescriptionProjet, setAdresseChantier, setOccupant, setInfoComplementaire, setDevisNumber, setDateDevis]);
   
-  // React effect to load project data is now an explicit function call
-  if (currentProjectId && projects.length > 0) {
-    loadCurrentProjectData();
-  }
+  // Charger les données du projet quand l'ID change
+  useEffect(() => {
+    if (currentProjectId && projects.length > 0) {
+      loadCurrentProjectData();
+    }
+  }, [currentProjectId, projects, loadCurrentProjectData]);
   
-  // Enhanced version of handleDeleteProject that also resets local state
+  // Version améliorée de handleDeleteProject qui réinitialise également l'état local
   const handleDeleteProject = useCallback(async () => {
     const success = await baseHandleDeleteProject();
     if (success) {
@@ -73,19 +96,38 @@ export const useProjectInfo = () => {
       setInfoComplementaire('');
       setDevisNumber('');
     }
+    return success;
   }, [baseHandleDeleteProject, setClientId, setNomProjet, setDescriptionProjet, setAdresseChantier, setOccupant, setInfoComplementaire, setDevisNumber]);
   
-  // Enhanced version of handleSaveProject that passes required arguments
+  // Version améliorée de handleSaveProject qui sauvegarde également les métadonnées du projet
   const handleSaveProject = useCallback(async () => {
-    return await baseHandleSaveProject(clientId, nomProjet, generateProjectName);
-  }, [baseHandleSaveProject, clientId, nomProjet, generateProjectName]);
+    const projectInfo = {
+      client_id: clientId,
+      name: nomProjet,
+      description: descriptionProjet,
+      address: adresseChantier,
+      occupant: occupant,
+      infoComplementaire: infoComplementaire,
+      dateDevis: dateDevis,
+      devis_number: devisNumber,
+    };
+    
+    // Enregistrer les métadonnées dans le state global avant sauvegarde
+    if (saveProjectState) {
+      // Sauvegarder les métadonnées dans le state global pour qu'elles ne soient pas perdues
+      console.log("Sauvegarde des métadonnées du projet dans le state global");
+    }
+    
+    // Sauvegarder le projet avec toutes les métadonnées
+    return await baseHandleSaveProject(clientId, nomProjet, generateProjectName, projectInfo);
+  }, [baseHandleSaveProject, clientId, nomProjet, generateProjectName, descriptionProjet, adresseChantier, occupant, infoComplementaire, dateDevis, devisNumber, saveProjectState]);
 
-  // New helper function to check if project name is empty and should be generated
+  // Vérifier si le nom du projet est vide et devrait être généré
   const shouldGenerateProjectName = useCallback(() => {
     return !nomProjet || nomProjet.trim() === '';
   }, [nomProjet]);
 
-  // Expose a simple function to generate project name if needed
+  // Exposer une fonction simple pour générer le nom du projet si nécessaire
   const generateProjectNameIfNeeded = useCallback(async () => {
     if (shouldGenerateProjectName()) {
       console.log("Generating project name automatically...");
