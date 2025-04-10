@@ -1,13 +1,10 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { toast } from "sonner";
 import { useProject } from "@/contexts/ProjectContext";
 import { Room } from "@/types";
 import PropertyCard from "@/features/property/components/PropertyCard";
 import RoomsCard from "@/features/property/components/RoomsCard";
-import { useProjectInitOnFirstRoom } from "@/features/project/hooks/useProjectInitOnFirstRoom";
-import { findDefaultClientId } from "@/services/devisService";
-import { generateDevisNumber } from "@/services/projectService";
 
 const RenovationEstimator: React.FC = () => {
   const { 
@@ -20,21 +17,6 @@ const RenovationEstimator: React.FC = () => {
   const { property, rooms } = state;
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
   
-  // Dummy state vars for useProjectInitOnFirstRoom that will be synchronized via context
-  const [clientId, setClientId] = useState<string>('');
-  const [devisNumber, setDevisNumber] = useState<string>('');
-  const [descriptionProjet, setDescriptionProjet] = useState<string>('');
-  
-  // Use the hook to initialize project data when first room is added
-  const { isFirstRoom } = useProjectInitOnFirstRoom(
-    clientId,
-    setClientId,
-    devisNumber,
-    setDevisNumber,
-    descriptionProjet,
-    setDescriptionProjet
-  );
-
   const roomTypes = ["Salon", "Chambre", "Cuisine", "Salle de bain", "Toilettes", "Bureau", "Entrée", "Couloir", "Autre"];
 
   const handlePropertyChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -51,7 +33,7 @@ const RenovationEstimator: React.FC = () => {
     });
   };
 
-  const handleAddRoom = async (room: Omit<Room, "id">) => {
+  const handleAddRoom = (room: Omit<Room, "id">) => {
     if (editingRoomId) {
       dispatch({
         type: 'UPDATE_ROOM',

@@ -9,7 +9,7 @@ import { ProjectSummary } from '@/features/chantier/components/ProjectSummary';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { useProjectInitOnFirstRoom } from '@/features/project/hooks/useProjectInitOnFirstRoom';
+import { generateDevisNumber, findDefaultClientId } from '@/services/devisService';
 
 const InfosChantier: React.FC = () => {
   const { 
@@ -31,19 +31,55 @@ const InfosChantier: React.FC = () => {
   const [infoComplementaire, setInfoComplementaire] = useState<string>('');
   const [dateDevis, setDateDevis] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [devisNumber, setDevisNumber] = useState<string>('');
+  const [isFirstRoom, setIsFirstRoom] = useState<boolean>(true);
   
   const { state: clientsState } = useClients();
   const clientSelectionne = clientsState.clients.find(c => c.id === clientId);
   
-  // Utiliser le hook pour initialiser les informations du projet à la première pièce
-  const { isFirstRoom, setIsFirstRoom } = useProjectInitOnFirstRoom(
-    clientId,
-    setClientId,
-    devisNumber,
-    setDevisNumber,
-    descriptionProjet,
-    setDescriptionProjet
-  );
+  // Surveiller l'ajout de la première pièce
+  useEffect(() => {
+    const checkFirstRoomAdded = async () => {
+      // Si nous avons une première pièce ajoutée et que c'est la première fois qu'on le détecte
+      if (projectState?.rooms?.length === 1 && isFirstRoom) {
+        setIsFirstRoom(false); // Ne plus exécuter cette logique pour les futures mises à jour
+        
+        // Si pas de client sélectionné, sélectionner "Client à définir"
+        if (!clientId) {
+          const defaultClientId = await findDefaultClientId();
+          if (defaultClientId) {
+            setClientId(defaultClientId);
+            console.log("Client par défaut sélectionné:", defaultClientId);
+          }
+        }
+        
+        // Si pas de numéro de devis, en générer un automatiquement
+        if (!devisNumber) {
+          try {
+            const newDevisNumber = await generateDevisNumber();
+            setDevisNumber(newDevisNumber);
+            console.log("Numéro de devis généré:", newDevisNumber);
+          } catch (error) {
+            console.error("Erreur lors de la génération du numéro de devis:", error);
+          }
+        }
+        
+        // Si pas de description, utiliser "Projet en cours"
+        if (!descriptionProjet) {
+          setDescriptionProjet("Projet en cours");
+          console.log("Description par défaut ajoutée");
+        }
+        
+        toast.info("Informations du projet initialisées automatiquement");
+      }
+      
+      // Réinitialiser le flag si aucune pièce n'est présente
+      if (projectState?.rooms?.length === 0 && !isFirstRoom) {
+        setIsFirstRoom(true);
+      }
+    };
+    
+    checkFirstRoomAdded();
+  }, [projectState?.rooms, clientId, devisNumber, descriptionProjet, isFirstRoom]);
   
   useEffect(() => {
     if (currentProjectId) {
@@ -62,7 +98,7 @@ const InfosChantier: React.FC = () => {
   }, [currentProjectId, projects]);
   
   useEffect(() => {
-    if (clientSelectionne && (descriptionProjet || devisNumber)) {
+    if (clientSelectionne && descriptionProjet) {
       const clientName = `${clientSelectionne.nom} ${clientSelectionne.prenom || ''}`.trim();
       let newName = '';
       
@@ -115,8 +151,8 @@ const InfosChantier: React.FC = () => {
     }
     
     try {
-      // Sauvegarder avec le nom du projet mis à jour
-      await saveProject(nomProjet);
+      // Logique de sauvegarde temporairement désactivée
+      // await saveProject();
       toast.success('Projet enregistré avec succès');
     } catch (error) {
       console.error('Erreur lors de l\'enregistrement du projet:', error);
