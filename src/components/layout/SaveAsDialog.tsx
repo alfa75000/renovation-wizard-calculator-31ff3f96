@@ -24,35 +24,36 @@ export const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
   onSaveProject
 }) => {
   const { state: clientsState } = useClients();
-  const { currentProjectId, projects } = useProject();
+  const { state, currentProjectId, projects } = useProject();
   
-  const [clientId, setClientId] = useState<string>('');
-  const [projectName, setProjectName] = useState<string>('');
-  const [projectDescription, setProjectDescription] = useState<string>('');
-  const [projectDate, setProjectDate] = useState<string>('');
-  const [devisNumber, setDevisNumber] = useState<string>('');
+  // Initialiser les états locaux avec les valeurs du contexte global
+  const [clientId, setClientId] = useState<string>(state.metadata.clientId || '');
+  const [projectName, setProjectName] = useState<string>(state.metadata.nomProjet || '');
+  const [projectDescription, setProjectDescription] = useState<string>(state.metadata.descriptionProjet || '');
+  const [projectDate, setProjectDate] = useState<string>(state.metadata.dateDevis || '');
+  const [devisNumber, setDevisNumber] = useState<string>(state.metadata.devisNumber || '');
   const [isGeneratingDevisNumber, setIsGeneratingDevisNumber] = useState<boolean>(false);
   
+  // Synchroniser les champs avec les données du projet courant dès l'ouverture du modal
   useEffect(() => {
-    const today = new Date();
-    const formattedDate = today.toISOString().split('T')[0];
-    setProjectDate(formattedDate);
-  }, []);
-  
-  useEffect(() => {
-    if (currentProjectId) {
-      const currentProject = projects.find(p => p.id === currentProjectId);
-      if (currentProject) {
-        setClientId(currentProject.client_id || '');
-        setProjectName(currentProject.name || '');
-        setProjectDescription(currentProject.description || '');
-        if (currentProject.devis_number) {
-          setDevisNumber(currentProject.devis_number);
-        }
+    if (open) {
+      setClientId(state.metadata.clientId || '');
+      setProjectDescription(state.metadata.descriptionProjet || '');
+      setProjectName(state.metadata.nomProjet || '');
+      setDevisNumber(state.metadata.devisNumber || '');
+      
+      // Utiliser la date du projet si elle existe, sinon la date du jour
+      if (state.metadata.dateDevis) {
+        setProjectDate(state.metadata.dateDevis);
+      } else {
+        const today = new Date();
+        const formattedDate = today.toISOString().split('T')[0];
+        setProjectDate(formattedDate);
       }
     }
-  }, [currentProjectId, projects, open]);
+  }, [open, state.metadata]);
   
+  // Générer le nom du projet automatiquement quand le client ou la description change
   useEffect(() => {
     if (clientId && (devisNumber || projectDescription)) {
       const client = clientsState.clients.find(c => c.id === clientId);
@@ -106,6 +107,23 @@ export const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
     } finally {
       setIsGeneratingDevisNumber(false);
     }
+  };
+  
+  // Fonction pour préparer les données du projet à sauvegarder
+  const handleSaveProject = () => {
+    const projectData = {
+      client_id: clientId,
+      name: projectName,
+      description: projectDescription,
+      general_data: {
+        dateDevis: projectDate,
+      },
+      devis_number: devisNumber,
+    };
+    
+    // Mettre à jour le contexte global avec les nouvelles valeurs
+    onSaveProject();
+    onOpenChange(false);
   };
   
   return (
@@ -205,7 +223,7 @@ export const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Annuler
           </Button>
-          <Button onClick={onSaveProject}>Enregistrer</Button>
+          <Button onClick={handleSaveProject}>Enregistrer</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
