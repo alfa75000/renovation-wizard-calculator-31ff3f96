@@ -4,16 +4,18 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { generateDevisNumber } from '@/services/devisService';
 import { useClients } from '@/contexts/ClientsContext';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
 
 export const useProjectMetadata = () => {
-  const [clientId, setClientId] = useState<string>('');
-  const [nomProjet, setNomProjet] = useState<string>('');
-  const [descriptionProjet, setDescriptionProjet] = useState<string>('');
-  const [adresseChantier, setAdresseChantier] = useState<string>('');
-  const [occupant, setOccupant] = useState<string>('');
-  const [infoComplementaire, setInfoComplementaire] = useState<string>('');
-  const [dateDevis, setDateDevis] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
-  const [devisNumber, setDevisNumber] = useState<string>('');
+  // Utiliser useLocalStorage pour persister les données entre les navigations
+  const [clientId, setClientId] = useLocalStorage<string>('project_client_id', '');
+  const [nomProjet, setNomProjet] = useLocalStorage<string>('project_nom', '');
+  const [descriptionProjet, setDescriptionProjet] = useLocalStorage<string>('project_description', '');
+  const [adresseChantier, setAdresseChantier] = useLocalStorage<string>('project_adresse', '');
+  const [occupant, setOccupant] = useLocalStorage<string>('project_occupant', '');
+  const [infoComplementaire, setInfoComplementaire] = useLocalStorage<string>('project_info_complementaire', '');
+  const [dateDevis, setDateDevis] = useLocalStorage<string>('project_date_devis', format(new Date(), 'yyyy-MM-dd'));
+  const [devisNumber, setDevisNumber] = useLocalStorage<string>('project_devis_number', '');
   
   const { state: clientsState } = useClients();
 
@@ -98,7 +100,7 @@ export const useProjectMetadata = () => {
     
     console.log("Nouveau nom de projet généré:", newName);
     setNomProjet(newName);
-  }, [clientId, devisNumber, descriptionProjet, clientsState.clients, getDefaultClientId]);
+  }, [clientId, devisNumber, descriptionProjet, clientsState.clients, getDefaultClientId, setClientId, setDevisNumber, setDescriptionProjet, setNomProjet]);
 
   return {
     clientId,
