@@ -49,6 +49,10 @@ export interface Project {
   updated_at: string;
 }
 
+// On importe Room et Travail pour éviter les erreurs de référence circulaire
+import { Room } from './room';
+import { Travail } from './travaux';
+
 // États du contexte
 export interface ProjectState {
   property: Property;
@@ -83,6 +87,3 @@ export type ProjetChantierAction =
   | { type: 'SET_PROJET_ACTIF'; payload: string | null }
   | { type: 'LOAD_PROJETS'; payload: ProjetChantier[] }
   | { type: 'RESET_PROJETS' };
-
-// On importe Room et Travail pour éviter les erreurs de référence circulaire
-import { Room, Travail } from './index';
