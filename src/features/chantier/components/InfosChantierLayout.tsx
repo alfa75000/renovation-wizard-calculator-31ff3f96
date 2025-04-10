@@ -29,6 +29,8 @@ interface InfosChantierLayoutProps {
   isLoading: boolean;
   hasUnsavedChanges: boolean;
   onGenerateProjectName: () => void;
+  generateProjectNameIfNeeded: () => Promise<boolean>;
+  shouldGenerateProjectName: () => boolean;
   onSaveProject: () => void;
   onDeleteProject: () => void;
   onSelectProject: (projectId: string) => void;
@@ -57,6 +59,8 @@ export const InfosChantierLayout: React.FC<InfosChantierLayoutProps> = ({
   isLoading,
   hasUnsavedChanges,
   onGenerateProjectName,
+  generateProjectNameIfNeeded,
+  shouldGenerateProjectName,
   onSaveProject,
   onDeleteProject,
   onSelectProject
