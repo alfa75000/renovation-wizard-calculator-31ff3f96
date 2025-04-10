@@ -9,12 +9,16 @@ interface GlobalTotalsProps {
   travaux: Travail[];
   showCard?: boolean;
   title?: string;
+  className?: string;
+  showCount?: boolean;
 }
 
 const GlobalTotals: React.FC<GlobalTotalsProps> = ({ 
   travaux, 
   showCard = true,
-  title = "Total global des travaux" 
+  title = "Total global des travaux",
+  className = "",
+  showCount = true
 }) => {
   if (travaux.length === 0) return null;
   
@@ -32,14 +36,16 @@ const GlobalTotals: React.FC<GlobalTotalsProps> = ({
   
   if (showCard) {
     return (
-      <Card className="mt-8 shadow-sm">
+      <Card className={`mt-8 shadow-sm ${className}`}>
         <CardHeader className="pb-2">
           <CardTitle className="text-xl font-medium text-primary">{title}</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-sm text-muted-foreground mb-4">
-            Résumé des totaux pour {travaux.length} travaux
-          </div>
+          {showCount && (
+            <div className="text-sm text-muted-foreground mb-4">
+              Résumé des totaux pour {travaux.length} travaux
+            </div>
+          )}
           <TotauxContent />
         </CardContent>
       </Card>
@@ -47,7 +53,7 @@ const GlobalTotals: React.FC<GlobalTotalsProps> = ({
   }
   
   return (
-    <div className="mt-8 border-t-2 border-gray-200 pt-4">
+    <div className={`mt-8 border-t-2 border-gray-200 pt-4 ${className}`}>
       <TotauxContent />
     </div>
   );

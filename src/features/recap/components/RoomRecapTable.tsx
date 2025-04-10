@@ -15,15 +15,20 @@ import {
 interface RoomRecapTableProps {
   room: Room;
   travaux: Travail[];
+  className?: string;
 }
 
-const RoomRecapTable: React.FC<RoomRecapTableProps> = ({ room, travaux }) => {
+const RoomRecapTable: React.FC<RoomRecapTableProps> = ({ 
+  room, 
+  travaux,
+  className = ""
+}) => {
   if (travaux.length === 0) {
     return null;
   }
 
   return (
-    <div className="mb-8">
+    <div className={`mb-8 ${className}`}>
       <h3 className="text-lg font-semibold mb-2 border-b pb-2">
         {room.name} ({room.surface.toFixed(2)} m²)
       </h3>
