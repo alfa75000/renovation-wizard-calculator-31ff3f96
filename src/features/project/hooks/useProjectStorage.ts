@@ -66,8 +66,6 @@ export const useProjectStorage = () => {
         ...additionalInfo
       };
       
-      console.log("Sauvegarde du projet avec le nom:", projectInfo.name);
-      
       if (currentProjectId) {
         // Mettre à jour un projet existant
         await updateProject(currentProjectId, state, projectInfo);
