@@ -149,7 +149,17 @@ export const loadFullProjectData = async (projectId: string, projectData: any) =
         ceilingHeight: projectData.ceiling_height || 2.5
       },
       rooms,
-      travaux
+      travaux,
+      metadata: {
+        clientId: projectData.client_id || '',
+        nomProjet: projectData.name || '',
+        descriptionProjet: projectData.description || '',
+        adresseChantier: projectData.address || '',
+        occupant: projectData.occupant || '',
+        infoComplementaire: projectData.general_data?.infoComplementaire || '',
+        dateDevis: projectData.general_data?.dateDevis || new Date().toISOString().split('T')[0],
+        devisNumber: projectData.devis_number || ''
+      }
     };
     
     return {
