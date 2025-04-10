@@ -1,292 +1,355 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { MenuiserieType } from '@/types/supabase';
+import { TypeMenuiserie, Menuiserie } from '@/types';
+import { MenuiserieType, SurfaceImpactee } from '@/types/supabase';
+import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'sonner';
 
+// Fonction de conversion entre "mur" et "Mur" pour le type surface_impactee
+const convertToSupabaseSurfaceImpactee = (value: string): SurfaceImpactee => {
+  if (value.toLowerCase() === 'mur') return 'Mur';
+  if (value.toLowerCase() === 'plafond') return 'Plafond';
+  if (value.toLowerCase() === 'sol') return 'Sol';
+  return 'Aucune';
+};
+
 // Récupérer tous les types de menuiseries
-export const fetchMenuiserieTypes = async (): Promise<MenuiserieType[]> => {
+export const getTypesMenuiseries = async (): Promise<TypeMenuiserie[]> => {
   try {
-    console.log("Récupération des types de menuiseries");
+    console.log('Récupération des types de menuiseries');
     
     const { data, error } = await supabase
       .from('menuiseries_types')
-      .select('*')
-      .order('name', { ascending: true });
-    
-    console.log("Résultat de la requête menuiseries_types:", { 
-      data, 
-      error, 
-      dataLength: data?.length || 0
-    });
+      .select('*');
     
     if (error) {
       console.error('Erreur lors de la récupération des types de menuiseries:', error);
-      toast.error('Erreur lors de la récupération des types de menuiseries');
-      return [];
+      throw error;
     }
     
-    return data || [];
+    console.log('Résultat de la requête menuiseries_types:', { data, error });
+    
+    // Convertir les données Supabase vers notre modèle local
+    const typesMenuiseries: TypeMenuiserie[] = (data || []).map(item => ({
+      id: item.id,
+      nom: item.name,
+      description: item.description || '',
+      hauteur: item.hauteur,
+      largeur: item.largeur,
+      surfaceReference: item.surface_impactee.toLowerCase(),
+      impactePlinthe: item.impacte_plinthe || false
+    }));
+    
+    return typesMenuiseries;
   } catch (error) {
     console.error('Exception lors de la récupération des types de menuiseries:', error);
-    toast.error('Erreur lors de la récupération des types de menuiseries');
-    return [];
+    throw error;
   }
 };
 
-// Créer un type de menuiserie
-export const createMenuiserieType = async (data: {
-  name: string;
-  hauteur: number;
-  largeur: number;
-  surface_impactee: string; // Doit être une des valeurs de l'enum: 'Mur', 'Plafond', 'Sol', 'Aucune'
-  impacte_plinthe: boolean;
-  description?: string;
-}) => {
+// Récupérer un type de menuiserie par son ID
+export const getTypeMenuiserieById = async (id: string): Promise<TypeMenuiserie | null> => {
   try {
-    console.log("Création d'un type de menuiserie:", data);
-    
-    // Vérification des valeurs requises
-    if (!data.name || !data.hauteur || !data.largeur || !data.surface_impactee) {
-      console.error("Données incomplètes pour la création du type de menuiserie:", data);
-      toast.error("Données incomplètes pour la création du type de menuiserie");
-      return null;
-    }
-    
-    // Validation de surface_impactee
-    if (!['Mur', 'Plafond', 'Sol', 'Aucune'].includes(data.surface_impactee)) {
-      console.error("Valeur invalide pour surface_impactee:", data.surface_impactee);
-      toast.error("Type de surface impactée invalide");
-      return null;
-    }
-    
-    const { data: newType, error } = await supabase
+    const { data, error } = await supabase
       .from('menuiseries_types')
-      .insert(data)
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error) {
+      console.error(`Erreur lors de la récupération du type de menuiserie ${id}:`, error);
+      return null;
+    }
+    
+    if (!data) return null;
+    
+    return {
+      id: data.id,
+      nom: data.name,
+      description: data.description || '',
+      hauteur: data.hauteur,
+      largeur: data.largeur,
+      surfaceReference: data.surface_impactee.toLowerCase(),
+      impactePlinthe: data.impacte_plinthe || false
+    };
+  } catch (error) {
+    console.error(`Exception lors de la récupération du type de menuiserie ${id}:`, error);
+    return null;
+  }
+};
+
+// Ajouter un type de menuiserie
+export const addTypeMenuiserie = async (type: Omit<TypeMenuiserie, 'id'>): Promise<TypeMenuiserie | null> => {
+  try {
+    // Convertir notre modèle local vers le format Supabase
+    const supabaseData = {
+      name: type.nom,
+      hauteur: type.hauteur,
+      largeur: type.largeur,
+      surface_impactee: convertToSupabaseSurfaceImpactee(type.surfaceReference),
+      impacte_plinthe: type.impactePlinthe,
+      description: type.description || null
+    };
+    
+    const { data, error } = await supabase
+      .from('menuiseries_types')
+      .insert(supabaseData)
       .select()
       .single();
     
     if (error) {
-      console.error("Erreur lors de la création du type de menuiserie:", error);
-      toast.error("Erreur lors de la création du type de menuiserie");
+      console.error('Erreur lors de l\'ajout du type de menuiserie:', error);
+      toast.error('Erreur lors de l\'ajout du type de menuiserie');
       return null;
     }
     
-    toast.success("Type de menuiserie créé avec succès");
-    return newType;
+    // Convertir le résultat Supabase vers notre modèle local
+    return {
+      id: data.id,
+      nom: data.name,
+      description: data.description || '',
+      hauteur: data.hauteur,
+      largeur: data.largeur,
+      surfaceReference: data.surface_impactee.toLowerCase(),
+      impactePlinthe: data.impacte_plinthe || false
+    };
   } catch (error) {
-    console.error("Exception lors de la création du type de menuiserie:", error);
-    toast.error("Erreur lors de la création du type de menuiserie");
+    console.error('Exception lors de l\'ajout du type de menuiserie:', error);
+    toast.error('Erreur lors de l\'ajout du type de menuiserie');
     return null;
   }
 };
 
 // Mettre à jour un type de menuiserie
-export const updateMenuiserieType = async (id: string, data: {
-  name?: string;
-  hauteur?: number;
-  largeur?: number;
-  surface_impactee?: string; // Doit être une des valeurs de l'enum: 'Mur', 'Plafond', 'Sol', 'Aucune'
-  impacte_plinthe?: boolean;
-  description?: string;
-}) => {
+export const updateTypeMenuiserie = async (id: string, changes: Partial<Omit<TypeMenuiserie, 'id'>>): Promise<TypeMenuiserie | null> => {
   try {
-    console.log("Mise à jour du type de menuiserie:", { id, data });
+    // Convertir notre modèle local vers le format Supabase
+    const supabaseData: any = {};
     
-    // Validation de surface_impactee si présente
-    if (data.surface_impactee && !['Mur', 'Plafond', 'Sol', 'Aucune'].includes(data.surface_impactee)) {
-      console.error("Valeur invalide pour surface_impactee:", data.surface_impactee);
-      toast.error("Type de surface impactée invalide");
-      return null;
-    }
+    if (changes.nom !== undefined) supabaseData.name = changes.nom;
+    if (changes.hauteur !== undefined) supabaseData.hauteur = changes.hauteur;
+    if (changes.largeur !== undefined) supabaseData.largeur = changes.largeur;
+    if (changes.surfaceReference !== undefined) supabaseData.surface_impactee = convertToSupabaseSurfaceImpactee(changes.surfaceReference);
+    if (changes.impactePlinthe !== undefined) supabaseData.impacte_plinthe = changes.impactePlinthe;
+    if (changes.description !== undefined) supabaseData.description = changes.description || null;
     
-    const { data: updatedType, error } = await supabase
+    const { data, error } = await supabase
       .from('menuiseries_types')
-      .update(data)
+      .update(supabaseData)
       .eq('id', id)
       .select()
       .single();
     
     if (error) {
-      console.error("Erreur lors de la mise à jour du type de menuiserie:", error);
-      toast.error("Erreur lors de la mise à jour du type de menuiserie");
+      console.error(`Erreur lors de la mise à jour du type de menuiserie ${id}:`, error);
+      toast.error('Erreur lors de la mise à jour du type de menuiserie');
       return null;
     }
     
-    toast.success("Type de menuiserie mis à jour avec succès");
-    return updatedType;
+    // Convertir le résultat Supabase vers notre modèle local
+    return {
+      id: data.id,
+      nom: data.name,
+      description: data.description || '',
+      hauteur: data.hauteur,
+      largeur: data.largeur,
+      surfaceReference: data.surface_impactee.toLowerCase(),
+      impactePlinthe: data.impacte_plinthe || false
+    };
   } catch (error) {
-    console.error("Exception lors de la mise à jour du type de menuiserie:", error);
-    toast.error("Erreur lors de la mise à jour du type de menuiserie");
+    console.error(`Exception lors de la mise à jour du type de menuiserie ${id}:`, error);
+    toast.error('Erreur lors de la mise à jour du type de menuiserie');
     return null;
   }
 };
 
 // Supprimer un type de menuiserie
-export const deleteMenuiserieType = async (id: string) => {
+export const deleteTypeMenuiserie = async (id: string): Promise<boolean> => {
   try {
-    console.log("Suppression du type de menuiserie:", id);
-    
     const { error } = await supabase
       .from('menuiseries_types')
       .delete()
       .eq('id', id);
     
     if (error) {
-      console.error("Erreur lors de la suppression du type de menuiserie:", error);
-      toast.error("Erreur lors de la suppression du type de menuiserie");
+      console.error(`Erreur lors de la suppression du type de menuiserie ${id}:`, error);
+      toast.error('Erreur lors de la suppression du type de menuiserie');
       return false;
     }
     
-    toast.success("Type de menuiserie supprimé avec succès");
+    toast.success('Type de menuiserie supprimé avec succès');
     return true;
   } catch (error) {
-    console.error("Exception lors de la suppression du type de menuiserie:", error);
-    toast.error("Erreur lors de la suppression du type de menuiserie");
+    console.error(`Exception lors de la suppression du type de menuiserie ${id}:`, error);
+    toast.error('Erreur lors de la suppression du type de menuiserie');
     return false;
   }
 };
 
-// Créer une menuiserie pour une pièce
-export const createRoomMenuiserie = async (roomMenuiserie: {
-  room_id: string;
-  menuiserie_type_id: string;
-  quantity: number;
-  largeur?: number;
-  hauteur?: number;
-  surface_impactee?: string;
-}) => {
+// Récupérer les menuiseries pour une pièce
+export const getMenuiseriesForRoom = async (roomId: string): Promise<Menuiserie[]> => {
   try {
-    console.log("Création d'une menuiserie pour une pièce:", roomMenuiserie);
-    
-    // Vérification que l'ID du type est bien présent
-    if (!roomMenuiserie.menuiserie_type_id) {
-      console.error("Erreur: menuiserie_type_id manquant");
-      toast.error("Erreur: Aucun type de menuiserie sélectionné");
-      return null;
-    }
-    
-    // Validation de surface_impactee si présente
-    if (roomMenuiserie.surface_impactee && 
-        !['Mur', 'Plafond', 'Sol', 'Aucune', 'mur', 'plafond', 'sol'].includes(roomMenuiserie.surface_impactee)) {
-      console.error("Valeur invalide pour surface_impactee:", roomMenuiserie.surface_impactee);
-      
-      // Conversion des valeurs frontend vers les valeurs Supabase si nécessaire
-      if (roomMenuiserie.surface_impactee === 'mur') {
-        roomMenuiserie.surface_impactee = 'Mur';
-      } else if (roomMenuiserie.surface_impactee === 'plafond') {
-        roomMenuiserie.surface_impactee = 'Plafond';
-      } else if (roomMenuiserie.surface_impactee === 'sol') {
-        roomMenuiserie.surface_impactee = 'Sol';
-      } else {
-        toast.error("Type de surface impactée invalide");
-        return null;
-      }
-    }
-    
     const { data, error } = await supabase
       .from('room_menuiseries')
-      .insert(roomMenuiserie)
-      .select()
-      .single();
-    
-    if (error) {
-      console.error('Erreur lors de la création de la menuiserie pour la pièce:', error);
-      toast.error('Erreur lors de l\'ajout de la menuiserie');
-      return null;
-    }
-    
-    toast.success('Menuiserie ajoutée avec succès');
-    return data;
-  } catch (error) {
-    console.error('Exception lors de la création de la menuiserie pour la pièce:', error);
-    toast.error('Erreur lors de l\'ajout de la menuiserie');
-    return null;
-  }
-};
-
-// Récupérer les menuiseries d'une pièce
-export const fetchRoomMenuiseries = async (roomId: string) => {
-  try {
-    console.log("Récupération des menuiseries de la pièce:", roomId);
-    
-    const { data, error } = await supabase
-      .from('room_menuiseries')
-      .select(`
-        *,
-        menuiserie_type:menuiserie_type_id(*)
-      `)
+      .select('*, menuiserie_type:menuiserie_type_id(*)')
       .eq('room_id', roomId);
     
     if (error) {
-      console.error('Erreur lors de la récupération des menuiseries de la pièce:', error);
-      toast.error('Erreur lors de la récupération des menuiseries');
+      console.error(`Erreur lors de la récupération des menuiseries pour la pièce ${roomId}:`, error);
       return [];
     }
     
-    return data || [];
+    // Convertir les données Supabase vers notre modèle local
+    const menuiseries: Menuiserie[] = (data || []).map(item => {
+      const menuiserie_type = item.menuiserie_type as MenuiserieType;
+      return {
+        id: item.id,
+        type: menuiserie_type ? menuiserie_type.name : 'Inconnu',
+        name: menuiserie_type ? menuiserie_type.name : 'Inconnu',
+        largeur: item.width_override || (menuiserie_type ? menuiserie_type.largeur : 0),
+        hauteur: item.height_override || (menuiserie_type ? menuiserie_type.hauteur : 0),
+        quantity: item.quantity || 1,
+        surface: ((item.width_override || (menuiserie_type ? menuiserie_type.largeur : 0)) * 
+                 (item.height_override || (menuiserie_type ? menuiserie_type.hauteur : 0))) / 10000,
+        surfaceImpactee: (menuiserie_type ? menuiserie_type.surface_impactee : 'Mur').toLowerCase() as "mur" | "plafond" | "sol",
+        impactePlinthe: menuiserie_type ? menuiserie_type.impacte_plinthe : false
+      };
+    });
+    
+    return menuiseries;
   } catch (error) {
-    console.error('Exception lors de la récupération des menuiseries de la pièce:', error);
-    toast.error('Erreur lors de la récupération des menuiseries');
+    console.error(`Exception lors de la récupération des menuiseries pour la pièce ${roomId}:`, error);
     return [];
   }
 };
 
-// Supprimer une menuiserie d'une pièce
-export const deleteRoomMenuiserie = async (menuiserieId: string) => {
+// Ajouter une menuiserie à une pièce
+export const addMenuiserieToRoom = async (roomId: string, typeId: string, quantity: number = 1, overrides?: { largeur?: number, hauteur?: number }): Promise<Menuiserie | null> => {
   try {
-    console.log("Suppression de la menuiserie:", menuiserieId);
+    // D'abord, récupérer les informations sur le type de menuiserie
+    const { data: typeData, error: typeError } = await supabase
+      .from('menuiseries_types')
+      .select('*')
+      .eq('id', typeId)
+      .single();
     
-    const { error } = await supabase
-      .from('room_menuiseries')
-      .delete()
-      .eq('id', menuiserieId);
-    
-    if (error) {
-      console.error('Erreur lors de la suppression de la menuiserie:', error);
-      toast.error('Erreur lors de la suppression de la menuiserie');
-      return false;
+    if (typeError || !typeData) {
+      console.error(`Erreur lors de la récupération du type de menuiserie ${typeId}:`, typeError);
+      return null;
     }
     
-    toast.success('Menuiserie supprimée avec succès');
-    return true;
-  } catch (error) {
-    console.error('Exception lors de la suppression de la menuiserie:', error);
-    toast.error('Erreur lors de la suppression de la menuiserie');
-    return false;
-  }
-};
-
-// Mise à jour d'une menuiserie d'une pièce
-export const updateRoomMenuiserie = async (
-  menuiserieId: string, 
-  updates: {
-    quantity?: number;
-    largeur?: number;
-    hauteur?: number;
-    surface_impactee?: string;
-  }
-) => {
-  try {
-    console.log("Mise à jour de la menuiserie:", { menuiserieId, updates });
-    
+    // Créer l'entrée dans room_menuiseries
     const { data, error } = await supabase
       .from('room_menuiseries')
-      .update(updates)
-      .eq('id', menuiserieId)
+      .insert({
+        room_id: roomId,
+        menuiserie_type_id: typeId,
+        quantity: quantity,
+        width_override: overrides?.largeur || null,
+        height_override: overrides?.hauteur || null,
+        updated_at: new Date().toISOString()
+      })
       .select()
       .single();
     
     if (error) {
-      console.error('Erreur lors de la mise à jour de la menuiserie:', error);
-      toast.error('Erreur lors de la mise à jour de la menuiserie');
+      console.error('Erreur lors de l\'ajout de la menuiserie:', error);
       return null;
     }
     
-    toast.success('Menuiserie mise à jour avec succès');
-    return data;
+    // Convertir le résultat en notre modèle local
+    return {
+      id: data.id,
+      type: typeData.name,
+      name: typeData.name,
+      largeur: overrides?.largeur || typeData.largeur,
+      hauteur: overrides?.hauteur || typeData.hauteur,
+      quantity: data.quantity,
+      surface: ((overrides?.largeur || typeData.largeur) * (overrides?.hauteur || typeData.hauteur)) / 10000,
+      surfaceImpactee: typeData.surface_impactee.toLowerCase() as "mur" | "plafond" | "sol",
+      impactePlinthe: typeData.impacte_plinthe
+    };
   } catch (error) {
-    console.error('Exception lors de la mise à jour de la menuiserie:', error);
-    toast.error('Erreur lors de la mise à jour de la menuiserie');
+    console.error('Exception lors de l\'ajout de la menuiserie:', error);
     return null;
+  }
+};
+
+// Mettre à jour une menuiserie
+export const updateMenuiserie = async (id: string, changes: Partial<Omit<Menuiserie, 'id'>>): Promise<Menuiserie | null> => {
+  try {
+    // Récupérer d'abord les données actuelles
+    const { data: currentData, error: getError } = await supabase
+      .from('room_menuiseries')
+      .select('*, menuiserie_type:menuiserie_type_id(*)')
+      .eq('id', id)
+      .single();
+    
+    if (getError || !currentData) {
+      console.error(`Erreur lors de la récupération de la menuiserie ${id}:`, getError);
+      return null;
+    }
+    
+    const menuiserie_type = currentData.menuiserie_type as MenuiserieType;
+    
+    // Préparer les données à mettre à jour
+    const updates: any = {};
+    
+    if (changes.quantity !== undefined) updates.quantity = changes.quantity;
+    if (changes.largeur !== undefined) updates.width_override = changes.largeur;
+    if (changes.hauteur !== undefined) updates.height_override = changes.hauteur;
+    updates.updated_at = new Date().toISOString();
+    
+    // Effectuer la mise à jour
+    const { data, error } = await supabase
+      .from('room_menuiseries')
+      .update(updates)
+      .eq('id', id)
+      .select('*, menuiserie_type:menuiserie_type_id(*)')
+      .single();
+    
+    if (error) {
+      console.error(`Erreur lors de la mise à jour de la menuiserie ${id}:`, error);
+      return null;
+    }
+    
+    const updated_menuiserie_type = data.menuiserie_type as MenuiserieType;
+    
+    // Convertir le résultat en notre modèle local
+    return {
+      id: data.id,
+      type: updated_menuiserie_type ? updated_menuiserie_type.name : 'Inconnu',
+      name: updated_menuiserie_type ? updated_menuiserie_type.name : 'Inconnu',
+      largeur: data.width_override || (updated_menuiserie_type ? updated_menuiserie_type.largeur : 0),
+      hauteur: data.height_override || (updated_menuiserie_type ? updated_menuiserie_type.hauteur : 0),
+      quantity: data.quantity || 1,
+      surface: ((data.width_override || (updated_menuiserie_type ? updated_menuiserie_type.largeur : 0)) * 
+               (data.height_override || (updated_menuiserie_type ? updated_menuiserie_type.hauteur : 0))) / 10000,
+      surfaceImpactee: (updated_menuiserie_type ? updated_menuiserie_type.surface_impactee : 'Mur').toLowerCase() as "mur" | "plafond" | "sol",
+      impactePlinthe: updated_menuiserie_type ? updated_menuiserie_type.impacte_plinthe : false
+    };
+  } catch (error) {
+    console.error(`Exception lors de la mise à jour de la menuiserie ${id}:`, error);
+    return null;
+  }
+};
+
+// Supprimer une menuiserie
+export const deleteMenuiserie = async (id: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('room_menuiseries')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error(`Erreur lors de la suppression de la menuiserie ${id}:`, error);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error(`Exception lors de la suppression de la menuiserie ${id}:`, error);
+    return false;
   }
 };

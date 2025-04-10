@@ -3,11 +3,12 @@ import { createClient } from '@supabase/supabase-js';
 import { Database } from './types';
 
 // Récupérer les variables d'environnement
-const supabaseUrl = 'https://gofmlbehbkccqmktsvvb.supabase.co';
+export const SUPABASE_URL = 'https://gofmlbehbkccqmktsvvb.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdvZm1sYmVoYmtjY3Fta3RzdnZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwMzkwNTIsImV4cCI6MjA1OTYxNTA1Mn0.rR80Q8b2WMeZuDsrobagnVp58b-Fl0XzCOTwn4f-2Ag';
+export const SUPABASE_ANON_KEY = supabaseAnonKey;
 
 // Créer et exporter le client Supabase
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient<Database>(SUPABASE_URL, supabaseAnonKey);
 
 // Liste des tables disponibles dans Supabase
 export const supabaseTables = [
@@ -42,7 +43,7 @@ export const fromDynamic = (tableName: string) => {
 };
 
 // Vérifier la connexion à Supabase
-export const checkSupabaseConnection = async (): Promise<boolean> => {
+export const checkSupabaseConnection = async (): Promise<{ connected: boolean; error?: string; details?: any; data?: any; dbInfo?: any; tableStructures?: any }> => {
   try {
     const { data, error } = await supabase
       .from('work_types')
@@ -51,14 +52,63 @@ export const checkSupabaseConnection = async (): Promise<boolean> => {
     
     if (error) {
       console.error('Erreur de connexion à Supabase:', error);
-      return false;
+      return { connected: false, error: error.message, details: error };
     }
     
     console.log('Connexion à Supabase établie avec succès');
-    return true;
+    
+    // Récupérer des informations sur quelques tables
+    const tableStructures = {
+      work_types: await getTableStructure('work_types'),
+      service_groups: await getTableStructure('service_groups'),
+      services: await getTableStructure('services')
+    };
+    
+    return { 
+      connected: true, 
+      data,
+      tableStructures
+    };
   } catch (err) {
     console.error('Exception lors de la vérification de la connexion à Supabase:', err);
-    return false;
+    return { connected: false, error: 'Exception inattendue', details: err };
+  }
+};
+
+// Fonction pour récupérer les informations sur la structure d'une table
+export const getTableStructure = async (tableName: string): Promise<string[] | string> => {
+  try {
+    if (!isValidSupabaseTable(tableName)) {
+      return `La table "${tableName}" n'existe pas dans Supabase`;
+    }
+    
+    const { data, error } = await supabase
+      .rpc('get_table_info', { table_name: tableName });
+    
+    if (error) {
+      return `Erreur: ${error.message}`;
+    }
+    
+    return data?.map((col: any) => col.name) || [`Aucune colonne trouvée pour ${tableName}`];
+  } catch (err) {
+    return `Exception: ${(err as Error).message}`;
+  }
+};
+
+// Alias de getTableStructure pour compatibilité avec le composant SupabaseStatus
+export const getDatabaseInfo = async () => {
+  try {
+    const tables = [];
+    for (const table of supabaseTables) {
+      const columns = await getTableStructure(table);
+      tables.push({
+        name: table,
+        columns: Array.isArray(columns) ? columns.map(col => ({ name: col })) : [{ error: columns }]
+      });
+    }
+    return { tables };
+  } catch (err) {
+    return { error: (err as Error).message };
   }
 };
 

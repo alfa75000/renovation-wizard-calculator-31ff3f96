@@ -1,21 +1,25 @@
 
-/**
- * @deprecated Ce fichier est maintenu pour des raisons de compatibilité.
- * Utilisez plutôt import { supabase } from '@/integrations/supabase/client'
- */
-
 import { 
-  supabase,
-  checkSupabaseConnection,
+  supabase, 
+  SUPABASE_URL, 
+  SUPABASE_ANON_KEY, 
+  checkSupabaseConnection, 
   getDatabaseInfo,
-  SUPABASE_URL,
-  SUPABASE_ANON_KEY
+  getTableInfo,
+  fromDynamic 
 } from '@/integrations/supabase/client';
 
-export {
-  supabase,
-  checkSupabaseConnection,
+// Ce fichier sert de couche de compatibilité pour les anciens imports
+// Il redirige simplement vers le nouveau client Supabase
+
+export { 
+  supabase, 
+  SUPABASE_URL, 
+  SUPABASE_ANON_KEY, 
+  checkSupabaseConnection, 
   getDatabaseInfo,
-  SUPABASE_URL,
-  SUPABASE_ANON_KEY
+  getTableInfo,
+  fromDynamic 
 };
+
+export default supabase;

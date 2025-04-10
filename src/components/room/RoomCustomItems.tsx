@@ -1,366 +1,269 @@
-import React, { useState, useEffect } from 'react';
-import { useRoomCustomItemsWithSupabase } from '@/hooks/useRoomCustomItemsWithSupabase';
-import { RoomCustomItem } from '@/types/supabase';
-import { AutreSurface, TypeAutreSurface } from '@/types';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Edit, Trash2, AlertCircle, ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
-import AutreSurfaceForm from '@/features/renovation/components/AutreSurfaceForm';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2 } from 'lucide-react';
-import { useAutresSurfaces } from '@/hooks/useAutresSurfaces';
-import { useAutresSurfaces as useAutresSurfacesContext } from '@/contexts/AutresSurfacesContext';
 
-interface RoomCustomItemsProps {
-  roomId?: string;
-  isLocalMode?: boolean;
-  autresSurfaces?: AutreSurface[];
-  onAddAutreSurface?: (surface: Omit<AutreSurface, 'id' | 'surface'>, quantity?: number) => AutreSurface[];
-  onUpdateAutreSurface?: (id: string, surface: Partial<Omit<AutreSurface, 'id' | 'surface'>>) => AutreSurface | null;
-  onDeleteAutreSurface?: (id: string) => void;
+import React, { useState, useEffect } from 'react';
+import { useRoom } from '@/hooks/useRoom';
+import { useAutresSurfaces } from '@/hooks/useAutresSurfaces';
+import { AutreSurface, TypeAutreSurface } from '@/types';
+import { AutresSurfacesList } from './AutresSurfacesList';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AutreSurfaceForm } from '@/features/renovation/components/AutreSurfaceForm';
+import { useAutresSurfacesWithSupabase } from '@/hooks/useAutresSurfacesWithSupabase';
+import { Loader } from '@/components/ui/loader';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { PlusCircle, UploadCloud, AlertCircle } from 'lucide-react';
+import { toast } from 'sonner';
+
+export interface RoomCustomItemsProps {
+  roomId: string;
 }
 
-const RoomCustomItems: React.FC<RoomCustomItemsProps> = ({ 
-  roomId,
-  isLocalMode = false,
-  autresSurfaces = [],
-  onAddAutreSurface,
-  onUpdateAutreSurface,
-  onDeleteAutreSurface
-}) => {
-  const {
-    customItems,
-    loading,
-    error,
-    addCustomItem,
-    updateCustomItem,
-    deleteCustomItem,
-    fetchCustomItemTypes
-  } = useRoomCustomItemsWithSupabase(isLocalMode ? undefined : roomId);
-
-  const { state: autresSurfacesState } = useAutresSurfacesContext();
+const RoomCustomItems = ({ roomId }: RoomCustomItemsProps) => {
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [syncingToSupabase, setSyncingToSupabase] = useState(false);
+  const { room } = useRoom(roomId);
+  const { 
+    autresSurfaces: localAutresSurfaces, 
+    typesAutresSurfaces: localTypesAutresSurfaces, 
+    addAutreSurface: addLocalAutreSurface,
+    updateAutreSurfaceItem: updateLocalAutreSurface,
+    deleteAutreSurfaceItem: deleteLocalAutreSurface
+  } = useAutresSurfaces();
   
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [editingItemId, setEditingItemId] = useState<string | null>(null);
-  const [typesAutresSurfaces, setTypesAutresSurfaces] = useState<TypeAutreSurface[]>([]);
-
-  useEffect(() => {
-    const loadTypes = async () => {
-      if (isLocalMode) {
-        setTypesAutresSurfaces(autresSurfacesState.typesAutresSurfaces);
+  // Hooks pour Supabase
+  const {
+    autresSurfaces: supabaseAutresSurfaces,
+    typesAutresSurfaces: supabaseTypesAutresSurfaces,
+    loading: supabaseLoading,
+    error: supabaseError,
+    addAutreSurface: addSupabaseAutreSurface,
+    updateAutreSurfaceItem: updateSupabaseAutreSurface,
+    deleteAutreSurfaceItem: deleteSupabaseAutreSurface,
+    synchronizeLocalSurfaces
+  } = useAutresSurfacesWithSupabase(roomId);
+  
+  // État pour suivre la source des données (local ou Supabase)
+  const [useSupabase, setUseSupabase] = useState(true);
+  
+  // Données à afficher en fonction de la source
+  const autresSurfaces = useSupabase ? supabaseAutresSurfaces : localAutresSurfaces.filter(s => s.id.includes(roomId));
+  const typesAutresSurfaces = useSupabase ? supabaseTypesAutresSurfaces : localTypesAutresSurfaces;
+  
+  // Fonction pour ajouter une autre surface
+  const handleAddAutreSurface = async (surface: Omit<AutreSurface, 'id' | 'surface'>, quantity: number = 1) => {
+    setLoading(true);
+    try {
+      if (useSupabase) {
+        // Ajouter via Supabase
+        const addedItems = await addSupabaseAutreSurface(surface, quantity);
+        if (addedItems.length > 0) {
+          toast.success(`Surface ajoutée avec succès`);
+          setIsFormOpen(false);
+        }
       } else {
-        const types = await fetchCustomItemTypes();
-        setTypesAutresSurfaces(types.map(type => ({
-          id: type.id,
-          nom: type.name,
-          description: type.description || '',
-          largeur: type.largeur || 0,
-          hauteur: type.hauteur || 0,
-          surfaceImpacteeParDefaut: type.surface_impactee.toLowerCase() as any,
-          estDeduction: type.adjustment_type === 'Déduire',
-          impactePlinthe: type.impacte_plinthe
-        })));
+        // Ajouter en local
+        for (let i = 0; i < quantity; i++) {
+          await addLocalAutreSurface({
+            ...surface,
+            id: `${roomId}-${Date.now()}-${i}`,
+            surface: surface.largeur * surface.hauteur,
+          });
+        }
+        toast.success(`Surface ajoutée avec succès`);
+        setIsFormOpen(false);
       }
-    };
+    } catch (error) {
+      console.error('Erreur lors de l\'ajout de la surface:', error);
+      toast.error('Impossible d\'ajouter la surface');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Fonction pour mettre à jour une autre surface
+  const handleUpdateAutreSurface = async (id: string, changes: Partial<Omit<AutreSurface, 'id' | 'surface'>>) => {
+    setLoading(true);
+    try {
+      if (useSupabase) {
+        // Mettre à jour via Supabase
+        const updated = await updateSupabaseAutreSurface(id, changes);
+        if (updated) {
+          toast.success('Surface mise à jour avec succès');
+        }
+      } else {
+        // Mettre à jour en local
+        await updateLocalAutreSurface(id, changes);
+        toast.success('Surface mise à jour avec succès');
+      }
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour de la surface:', error);
+      toast.error('Impossible de mettre à jour la surface');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Fonction pour supprimer une autre surface
+  const handleDeleteAutreSurface = async (id: string) => {
+    setLoading(true);
+    try {
+      if (useSupabase) {
+        // Supprimer via Supabase
+        await deleteSupabaseAutreSurface(id);
+        toast.success('Surface supprimée avec succès');
+      } else {
+        // Supprimer en local
+        await deleteLocalAutreSurface(id);
+        toast.success('Surface supprimée avec succès');
+      }
+    } catch (error) {
+      console.error('Erreur lors de la suppression de la surface:', error);
+      toast.error('Impossible de supprimer la surface');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Fonction pour synchroniser les surfaces locales vers Supabase
+  const handleSyncToSupabase = async () => {
+    if (!roomId) return;
     
-    loadTypes();
-  }, [isLocalMode, autresSurfacesState]);
-
-  const handleSubmit = async (data: any) => {
-    if (isLocalMode && onAddAutreSurface && !editingItemId) {
-      const newSurface: Omit<AutreSurface, 'id' | 'surface'> = {
-        type: data.type || data.type_id,
-        name: data.name,
-        designation: data.designation || data.name,
-        largeur: data.largeur,
-        hauteur: data.hauteur,
-        quantity: data.quantity || 1,
-        surfaceImpactee: data.surfaceImpactee || data.surface_impactee,
-        estDeduction: data.estDeduction || data.adjustment_type === 'deduire',
-        impactePlinthe: data.impactePlinthe || data.impacte_plinthe,
-        description: data.description || ''
-      };
+    setSyncingToSupabase(true);
+    try {
+      // Filtrer les surfaces locales pour cette pièce
+      const surfacesToSync = localAutresSurfaces.filter(s => s.id.includes(roomId));
       
-      onAddAutreSurface(newSurface, data.quantity);
-      setShowAddForm(false);
-    }
-    else if (isLocalMode && onUpdateAutreSurface && editingItemId) {
-      const updatedSurface: Partial<Omit<AutreSurface, 'id' | 'surface'>> = {
-        type: data.type || data.type_id,
-        name: data.name,
-        designation: data.designation || data.name,
-        largeur: data.largeur,
-        hauteur: data.hauteur,
-        quantity: data.quantity || 1,
-        surfaceImpactee: data.surfaceImpactee || data.surface_impactee,
-        estDeduction: data.estDeduction || data.adjustment_type === 'deduire',
-        impactePlinthe: data.impactePlinthe || data.impacte_plinthe,
-        description: data.description || ''
-      };
+      // Convertir pour Supabase (retirer les IDs locaux)
+      const convertedSurfaces = surfacesToSync.map(s => ({
+        room_id: roomId,
+        type: 'autre',
+        name: s.name,
+        designation: s.designation,
+        largeur: s.largeur,
+        hauteur: s.hauteur,
+        surface: s.surface,
+        quantity: s.quantity,
+        surface_impactee: s.surfaceImpactee === 'mur' ? 'Mur' : 
+                        s.surfaceImpactee === 'plafond' ? 'Plafond' : 'Sol',
+        adjustment_type: s.estDeduction ? 'Déduire' : 'Ajouter',
+        impacte_plinthe: s.impactePlinthe,
+        description: s.description,
+        updated_at: new Date().toISOString()
+      }));
       
-      onUpdateAutreSurface(editingItemId, updatedSurface);
-      setEditingItemId(null);
-    }
-    else {
-      const newItem: Omit<RoomCustomItem, 'id' | 'created_at'> = {
-        room_id: roomId || '',
-        type: data.type_id || 'custom',
-        name: data.name,
-        designation: data.designation || data.name,
-        largeur: data.largeur,
-        hauteur: data.hauteur,
-        surface: data.largeur * data.hauteur,
-        quantity: data.quantity,
-        surface_impactee: data.surfaceImpactee || data.surface_impactee,
-        adjustment_type: data.estDeduction || data.adjustment_type === 'deduire' ? 'Déduire' : 'Ajouter',
-        impacte_plinthe: data.impactePlinthe || data.impacte_plinthe,
-        description: data.description || null
-      };
-
-      if (editingItemId) {
-        await updateCustomItem(editingItemId, newItem);
-        setEditingItemId(null);
+      const success = await synchronizeLocalSurfaces(roomId, surfacesToSync);
+      
+      if (success) {
+        toast.success('Synchronisation avec Supabase réussie');
+        setUseSupabase(true);
       } else {
-        await addCustomItem(newItem);
-        setShowAddForm(false);
+        toast.error('Échec de la synchronisation avec Supabase');
       }
+    } catch (error) {
+      console.error('Erreur lors de la synchronisation avec Supabase:', error);
+      toast.error('Erreur lors de la synchronisation avec Supabase');
+    } finally {
+      setSyncingToSupabase(false);
     }
   };
-
-  const handleEdit = (item: RoomCustomItem | AutreSurface) => {
-    setEditingItemId(item.id);
-  };
-
-  const handleDelete = async (id: string) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer cet élément ?')) {
-      if (isLocalMode && onDeleteAutreSurface) {
-        onDeleteAutreSurface(id);
-      } else {
-        await deleteCustomItem(id);
-      }
-    }
-  };
-
-  const handleCancel = () => {
-    setShowAddForm(false);
-    setEditingItemId(null);
-  };
-
-  const getItemsToDisplay = (): (RoomCustomItem | AutreSurface)[] => {
-    if (isLocalMode) {
-      return autresSurfaces;
-    } else {
-      return customItems;
-    }
-  };
-
-  const getFormattedItem = (item: RoomCustomItem | AutreSurface) => {
-    if ('surface_impactee' in item) {
-      return {
-        name: item.name,
-        type: item.type,
-        designation: item.designation || item.name,
-        largeur: item.largeur,
-        hauteur: item.hauteur,
-        surface: item.surface,
-        quantity: item.quantity,
-        surfaceImpactee: item.surface_impactee.toLowerCase(),
-        estDeduction: item.adjustment_type === 'Déduire',
-        impactePlinthe: item.impacte_plinthe,
-        description: item.description || '',
-        id: item.id
-      };
-    } else {
-      return {
-        name: item.name,
-        type: item.type,
-        designation: item.designation,
-        largeur: item.largeur,
-        hauteur: item.hauteur,
-        surface: item.surface,
-        quantity: item.quantity || 1,
-        surfaceImpactee: item.surfaceImpactee,
-        estDeduction: item.estDeduction,
-        impactePlinthe: item.impactePlinthe,
-        description: item.description || '',
-        id: item.id
-      };
-    }
-  };
-
-  const isItemDeduction = (item: RoomCustomItem | AutreSurface): boolean => {
-    if ('adjustment_type' in item) {
-      return item.adjustment_type === 'Déduire';
-    } else {
-      return item.estDeduction;
-    }
-  };
-
-  const getItemSurfaceImpactee = (item: RoomCustomItem | AutreSurface): string => {
-    if ('surface_impactee' in item) {
-      return item.surface_impactee;
-    } else {
-      return item.surfaceImpactee.charAt(0).toUpperCase() + item.surfaceImpactee.slice(1);
-    }
-  };
-
-  if (error && roomId && !isLocalMode) {
+  
+  // Affichage conditionnel en fonction de l'état de chargement et des erreurs
+  if (useSupabase && supabaseLoading && autresSurfaces.length === 0) {
     return (
-      <Alert variant="destructive" className="mt-4">
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Erreur</AlertTitle>
-        <AlertDescription>{error}</AlertDescription>
-      </Alert>
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle>Autres surfaces</CardTitle>
+        </CardHeader>
+        <CardContent className="flex justify-center p-6">
+          <Loader />
+        </CardContent>
+      </Card>
     );
   }
-
-  return (
-    <div className="mt-4 space-y-4">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium">Surfaces personnalisées</h3>
-        {(!roomId && isLocalMode || roomId) && !showAddForm && !editingItemId && (
-          <Button
-            onClick={() => setShowAddForm(true)}
-            variant="outline"
-            size="sm"
-            disabled={loading && !isLocalMode}
+  
+  if (useSupabase && supabaseError) {
+    return (
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle>Autres surfaces</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Erreur de chargement</AlertTitle>
+            <AlertDescription>
+              Impossible de charger les données depuis Supabase. 
+              {supabaseError}
+            </AlertDescription>
+          </Alert>
+          <Button 
+            variant="secondary" 
+            onClick={() => setUseSupabase(false)} 
+            className="mt-4"
           >
-            <PlusCircle className="h-4 w-4 mr-2" />
-            Ajouter une surface
+            Utiliser les données locales
           </Button>
-        )}
-      </div>
-
-      {loading && !isLocalMode && !getItemsToDisplay().length && (
-        <div className="py-8 flex justify-center">
-          <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
-        </div>
-      )}
-
-      {!roomId && !isLocalMode && (
-        <div className="py-8 text-center text-gray-500">
-          <p>Les surfaces personnalisées pourront être ajoutées après la création de la pièce</p>
-        </div>
-      )}
-
-      {((roomId && !loading && !getItemsToDisplay().length && !showAddForm && !isLocalMode) ||
-        (isLocalMode && !getItemsToDisplay().length && !showAddForm)) && (
-        <div className="py-8 text-center text-gray-500">
-          <p>Aucune surface personnalisée ajoutée</p>
-          <p className="text-sm">
-            Ajoutez des surfaces personnalisées pour prendre en compte des éléments
-            spécifiques dans vos calculs (niches, trémies, etc.)
-          </p>
-        </div>
-      )}
-
-      {showAddForm && (roomId || isLocalMode) && (
-        <Card className="border-blue-200 bg-blue-50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Ajouter une surface personnalisée</CardTitle>
-            <CardDescription>
-              Définissez les caractéristiques de la surface à ajouter
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <AutreSurfaceForm
-              roomId={roomId}
-              onSubmit={handleSubmit}
-              onCancel={handleCancel}
-              typesAutresSurfaces={typesAutresSurfaces}
-            />
-          </CardContent>
-        </Card>
-      )}
-
-      {editingItemId && (
-        <Card className="border-amber-200 bg-amber-50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Modifier la surface</CardTitle>
-            <CardDescription>
-              Modifiez les caractéristiques de cette surface
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <AutreSurfaceForm
-              roomId={roomId}
-              onSubmit={handleSubmit}
-              onCancel={handleCancel}
-              itemToEdit={getFormattedItem(
-                getItemsToDisplay().find(item => item.id === editingItemId)!
+        </CardContent>
+      </Card>
+    );
+  }
+  
+  return (
+    <Card className="w-full">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle>Autres surfaces</CardTitle>
+        <div className="flex space-x-2">
+          {!useSupabase && (
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={handleSyncToSupabase}
+              disabled={syncingToSupabase}
+            >
+              {syncingToSupabase ? (
+                <Loader size="sm" className="mr-2" />
+              ) : (
+                <UploadCloud className="h-4 w-4 mr-2" />
               )}
-              typesAutresSurfaces={typesAutresSurfaces}
-            />
-          </CardContent>
-        </Card>
-      )}
-
-      {getItemsToDisplay().length > 0 && !editingItemId && (
-        <div className="space-y-3 mt-4">
-          {getItemsToDisplay().map((item) => (
-            <Card key={item.id} className={isItemDeduction(item) ? 'border-red-200' : 'border-green-200'}>
-              <CardHeader className="pb-2">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="text-base flex items-center gap-2">
-                      {item.name}
-                      {isItemDeduction(item) ? (
-                        <Badge variant="destructive" className="ml-2">
-                          <ArrowDownCircle className="h-3 w-3 mr-1" />
-                          Déduction
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary" className="ml-2 bg-green-600 hover:bg-green-700">
-                          <ArrowUpCircle className="h-3 w-3 mr-1" />
-                          Ajout
-                        </Badge>
-                      )}
-                    </CardTitle>
-                    <CardDescription>
-                      {('designation' in item && item.designation) || item.name} - Surface impactée: {getItemSurfaceImpactee(item)}
-                    </CardDescription>
-                  </div>
-                  <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => handleEdit(item)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="pb-2">
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="font-medium">Dimensions:</span> {item.largeur}m × {item.hauteur}m
-                  </div>
-                  <div>
-                    <span className="font-medium">Quantité:</span> {item.quantity}
-                  </div>
-                  <div>
-                    <span className="font-medium">Surface totale:</span> {item.surface}m²
-                  </div>
-                  <div>
-                    <span className="font-medium">Impacte plinthes:</span> {'impacte_plinthe' in item ? (item.impacte_plinthe ? 'Oui' : 'Non') : (item.impactePlinthe ? 'Oui' : 'Non')}
-                  </div>
-                </div>
-                {('description' in item && item.description) && (
-                  <>
-                    <Separator className="my-2" />
-                    <div className="text-sm">
-                      <span className="font-medium">Description:</span> {item.description}
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+              Synchroniser avec Supabase
+            </Button>
+          )}
+          <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm">
+                <PlusCircle className="h-4 w-4 mr-2" />
+                Ajouter
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Ajouter une autre surface</DialogTitle>
+              </DialogHeader>
+              <AutreSurfaceForm 
+                typesAutresSurfaces={typesAutresSurfaces}
+                onSubmit={handleAddAutreSurface}
+                onCancel={() => setIsFormOpen(false)}
+                loading={loading}
+              />
+            </DialogContent>
+          </Dialog>
         </div>
-      )}
-    </div>
+      </CardHeader>
+      <CardContent>
+        <AutresSurfacesList 
+          surfaces={autresSurfaces} 
+          onUpdate={handleUpdateAutreSurface}
+          onDelete={handleDeleteAutreSurface}
+          loading={loading}
+        />
+      </CardContent>
+      <CardFooter>
+        <div className="text-xs text-muted-foreground">
+          {useSupabase ? 'Données synchronisées avec Supabase' : 'Données locales (non synchronisées)'}
+        </div>
+      </CardFooter>
+    </Card>
   );
 };
 
