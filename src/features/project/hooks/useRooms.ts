@@ -4,6 +4,7 @@ import { Room } from '@/types';
 import { toast } from 'sonner';
 import { useProject } from '@/contexts/ProjectContext';
 import { v4 as uuidv4 } from 'uuid';
+import { generateRoomName } from '../utils/projectUtils';
 
 /**
  * Hook pour la gestion des pièces dans le projet
@@ -16,11 +17,17 @@ export const useRooms = () => {
    * Ajoute une nouvelle pièce au projet
    */
   const addRoom = useCallback((room: Omit<Room, 'id'>) => {
-    const newRoom = { ...room, id: uuidv4() };
+    // Utiliser la fonction utilitaire pour générer le nom si non spécifié
+    let roomData = { ...room };
+    if (!roomData.name || roomData.name === '') {
+      roomData.name = generateRoomName(rooms, roomData.type);
+    }
+    
+    const newRoom = { ...roomData, id: uuidv4() };
     dispatch({ type: 'ADD_ROOM', payload: newRoom });
     toast.success(`Pièce "${newRoom.name}" ajoutée avec succès`);
     return newRoom;
-  }, [dispatch]);
+  }, [dispatch, rooms]);
 
   /**
    * Met à jour une pièce existante

@@ -31,3 +31,40 @@ export const generateRoomName = (rooms: Room[], type: string): string => {
   // Retourner le nom avec le numéro suivant
   return `${type} ${maxNumber + 1}`;
 };
+
+/**
+ * Génère un identifiant unique pour un élément (pièce, travail, etc.)
+ * @returns Identifiant unique
+ */
+export const generateUniqueId = (): string => {
+  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+};
+
+/**
+ * Calcule le montant total d'un projet (somme des travaux)
+ * @param travaux Liste des travaux
+ * @returns Montant total
+ */
+export const calculateTotalAmount = (travaux: any[]): number => {
+  return travaux.reduce((total, travail) => {
+    const prixFournitures = travail.prixFournitures || 0;
+    const prixMainOeuvre = travail.prixMainOeuvre || 0;
+    return total + prixFournitures + prixMainOeuvre;
+  }, 0);
+};
+
+/**
+ * Génère des statistiques sur le projet (nombre de pièces, total des surfaces, etc.)
+ * @param rooms Liste des pièces
+ * @returns Statistiques du projet
+ */
+export const generateProjectStats = (rooms: Room[]) => {
+  const totalSurface = rooms.reduce((sum, room) => sum + (room.surface || 0), 0);
+  const totalWallSurface = rooms.reduce((sum, room) => sum + (room.surfaceBruteMurs || 0), 0);
+  
+  return {
+    totalRooms: rooms.length,
+    totalSurface: totalSurface,
+    totalWallSurface: totalWallSurface,
+  };
+};

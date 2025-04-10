@@ -1,31 +1,15 @@
+
 import React, { createContext, useContext, useReducer, useEffect, useState, useCallback } from 'react';
-import { ProjectState, Property, Room, Travail, ProjectAction } from '@/types';
+import { ProjectState, ProjectAction, Travail } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'sonner';
-import { 
-  createProject, 
-  updateProject, 
-  fetchProjectById, 
-  fetchProjects, 
-  deleteProject,
-  generateDefaultProjectName,
-  Project
-} from '@/services/projectService';
+import { projectReducer, initialProjectState } from '@/features/project/reducers/projectReducer';
+import { useRooms } from '@/features/project/hooks/useRooms';
+import { useProjectStorage } from '@/features/project/hooks/useProjectStorage';
+import { Project } from '@/services/projectService';
+import { filtrerTravauxParPiece } from '@/features/travaux/utils/travauxUtils';
 
-// État initial
-const initialState: ProjectState = {
-  property: {
-    type: 'Appartement',
-    floors: 1,
-    totalArea: 0,
-    rooms: 0,
-    ceilingHeight: 2.5,
-  },
-  rooms: [],
-  travaux: [],
-};
-
-// Créer le contexte
+// Création du contexte
 const ProjectContext = createContext<{
   state: ProjectState;
   dispatch: React.Dispatch<ProjectAction>;
@@ -40,8 +24,10 @@ const ProjectContext = createContext<{
   createNewProject: () => void;
   deleteCurrentProject: () => Promise<void>;
   refreshProjects: () => Promise<void>;
+  // Hooks pour les pièces et travaux
+  rooms: ReturnType<typeof useRooms>;
 }>({
-  state: initialState,
+  state: initialProjectState,
   dispatch: () => null,
   isLoading: false,
   isSaving: false,
@@ -54,223 +40,76 @@ const ProjectContext = createContext<{
   createNewProject: () => {},
   deleteCurrentProject: async () => {},
   refreshProjects: async () => {},
+  rooms: {} as ReturnType<typeof useRooms>,
 });
-
-// Fonction utilitaire pour générer un nom de pièce séquentiel
-const generateRoomName = (rooms: Room[], type: string): string => {
-  console.log("generateRoomName - Démarrage pour type:", type);
-  console.log("generateRoomName - Toutes les pièces:", rooms);
-  
-  // Filtrer les pièces du même type
-  const sameTypeRooms = rooms.filter(room => room.type === type);
-  console.log("generateRoomName - Pièces du même type:", sameTypeRooms);
-  
-  // Trouver le numéro le plus élevé déjà utilisé
-  let maxNumber = 0;
-  
-  sameTypeRooms.forEach(room => {
-    // Extraire le numéro à la fin du nom (ex: "Chambre 1" -> 1)
-    const match = room.name.match(/\s(\d+)$/);
-    console.log("generateRoomName - Analyse de la pièce:", room.name, "avec match:", match);
-    
-    if (match && match[1]) {
-      const num = parseInt(match[1], 10);
-      if (!isNaN(num) && num > maxNumber) {
-        maxNumber = num;
-      }
-    }
-  });
-  
-  console.log("generateRoomName - Numéro maximal trouvé:", maxNumber);
-  
-  // Retourner le nom avec le numéro suivant
-  const newName = `${type} ${maxNumber + 1}`;
-  console.log("generateRoomName - Nouveau nom généré:", newName);
-  return newName;
-};
-
-// Reducer pour gérer les actions
-function projectReducer(state: ProjectState, action: ProjectAction): ProjectState {
-  switch (action.type) {
-    case 'UPDATE_PROPERTY':
-      return {
-        ...state,
-        property: {
-          ...state.property,
-          ...action.payload,
-        },
-      };
-    
-    case 'ADD_ROOM': {
-      console.log("ADD_ROOM - Action reçue avec payload:", action.payload);
-      
-      // Si le nom n'est pas spécifié, générer un nom séquentiel
-      const roomData = {...action.payload};
-      if (!roomData.name || roomData.name === '') {
-        console.log("ADD_ROOM - Nom non spécifié, génération automatique");
-        roomData.name = generateRoomName(state.rooms, roomData.type);
-        console.log("ADD_ROOM - Nom généré:", roomData.name);
-      }
-      
-      const newRoom = {...roomData, id: roomData.id || uuidv4()};
-      console.log("ADD_ROOM - Nouvelle pièce finale:", newRoom);
-      
-      return {
-        ...state,
-        rooms: [...state.rooms, newRoom],
-      };
-    }
-    
-    case 'UPDATE_ROOM': {
-      const { id, room } = action.payload;
-      return {
-        ...state,
-        rooms: state.rooms.map((r) => (r.id === id ? room : r)),
-      };
-    }
-    
-    case 'DELETE_ROOM':
-      return {
-        ...state,
-        rooms: state.rooms.filter((room) => room.id !== action.payload),
-        // Supprimer également les travaux associés à cette pièce
-        travaux: state.travaux.filter((travail) => travail.pieceId !== action.payload),
-      };
-    
-    case 'ADD_TRAVAIL':
-      return {
-        ...state,
-        travaux: [...state.travaux, action.payload],
-      };
-    
-    case 'UPDATE_TRAVAIL': {
-      const { id, travail } = action.payload;
-      return {
-        ...state,
-        travaux: state.travaux.map((t) => (t.id === id ? travail : t)),
-      };
-    }
-    
-    case 'DELETE_TRAVAIL':
-      return {
-        ...state,
-        travaux: state.travaux.filter((travail) => travail.id !== action.payload),
-      };
-    
-    case 'RESET_PROJECT':
-      return initialState;
-    
-    case 'LOAD_PROJECT':
-      return action.payload;
-    
-    default:
-      return state;
-  }
-}
 
 // Provider component
 export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [state, dispatch] = useReducer(projectReducer, initialState);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isSaving, setIsSaving] = useState<boolean>(false);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
-  // Suppression des états liés à la sauvegarde automatique
+  const [state, dispatch] = useReducer(projectReducer, initialProjectState);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
+  const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
+  const [lastSavedState, setLastSavedState] = useState<string>('');
   
-  // Fonction pour récupérer la liste des projets depuis Supabase
-  const refreshProjects = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const projectsData = await fetchProjects();
-      setProjects(projectsData);
-    } catch (error) {
-      console.error('Erreur lors du chargement des projets:', error);
-      toast.error('Impossible de charger la liste des projets');
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  // Charger la liste des projets au démarrage
-  useEffect(() => {
-    refreshProjects();
-  }, [refreshProjects]);
-
-  // Suppression des effets liés à la détection des changements
+  // Utilisation des hooks spécialisés
+  const rooms = useRooms();
   
-  // Suppression des effets liés à la sauvegarde automatique
-
-  // Fonction pour créer un nouveau projet
-  const createNewProject = useCallback(() => {
-    dispatch({ type: 'RESET_PROJECT' });
-    setCurrentProjectId(null);
-    setHasUnsavedChanges(false);
-    toast.success('Nouveau projet créé');
-  }, []);
-
-  // Fonction pour sauvegarder le projet actuel
+  // Initialiser le hook de stockage de projet avec le state, dispatch et autres dépendances
+  const { 
+    isLoading, 
+    isSaving, 
+    projects,
+    saveProject: saveProjectToStorage,
+    loadProject: loadProjectFromStorage,
+    createNewProject: createEmptyProject,
+    deleteCurrentProject: deleteProjectFromStorage,
+    refreshProjects 
+  } = useProjectStorage();
+  
+  // Mise à jour des fonctions avec le hook spécialisé
   const saveProject = useCallback(async (name?: string) => {
     try {
-      setIsSaving(true);
-      toast.loading('Sauvegarde en cours...', { id: 'saving-project' });
-      
-      // Préparer les informations du projet
-      const projectInfo = {
-        name: name || (currentProjectId ? projects.find(p => p.id === currentProjectId)?.name : generateDefaultProjectName()),
-      };
-      
-      if (currentProjectId) {
-        // Mettre à jour un projet existant
-        await updateProject(currentProjectId, state, projectInfo);
-        toast.success('Projet mis à jour avec succès', { id: 'saving-project' });
-      } else {
-        // Créer un nouveau projet
-        const result = await createProject(state, projectInfo);
-        setCurrentProjectId(result.id);
-        toast.success('Projet enregistré avec succès', { id: 'saving-project' });
-      }
-      
+      await saveProjectToStorage(name);
+      const stateSnapshot = JSON.stringify(state);
+      setLastSavedState(stateSnapshot);
       setHasUnsavedChanges(false);
-      await refreshProjects();
     } catch (error) {
       console.error('Erreur lors de la sauvegarde du projet:', error);
-      toast.error('Erreur lors de la sauvegarde du projet', { id: 'saving-project' });
-    } finally {
-      setIsSaving(false);
+      toast.error('Erreur lors de la sauvegarde du projet');
     }
-  }, [state, currentProjectId, projects, refreshProjects]);
-
-  // Fonction pour sauvegarder en tant que brouillon (simplifiée)
+  }, [state, saveProjectToStorage]);
+  
   const saveProjectAsDraft = useCallback(async () => {
     try {
       await saveProject();
     } catch (error) {
       console.error('Erreur lors de la sauvegarde automatique:', error);
-      toast.error('Erreur lors de la sauvegarde automatique');
     }
   }, [saveProject]);
-
-  // Fonction pour charger un projet depuis Supabase
+  
   const loadProject = useCallback(async (projectId: string) => {
     try {
-      setIsLoading(true);
-      
-      const { projectData, projectState } = await fetchProjectById(projectId);
-      dispatch({ type: 'LOAD_PROJECT', payload: projectState });
+      await loadProjectFromStorage(projectId);
       setCurrentProjectId(projectId);
-      setHasUnsavedChanges(false);
       
-      toast.success(`Projet "${projectData.name}" chargé avec succès`);
+      // Mise à jour de l'état sauvegardé pour le suivi des modifications
+      const stateSnapshot = JSON.stringify(state);
+      setLastSavedState(stateSnapshot);
+      setHasUnsavedChanges(false);
     } catch (error) {
       console.error('Erreur lors du chargement du projet:', error);
       toast.error('Erreur lors du chargement du projet');
-    } finally {
-      setIsLoading(false);
     }
-  }, []);
-
-  // Fonction pour supprimer le projet actuel
+  }, [loadProjectFromStorage, state]);
+  
+  const createNewProject = useCallback(() => {
+    createEmptyProject();
+    setCurrentProjectId(null);
+    setHasUnsavedChanges(false);
+    // Mise à jour de l'état sauvegardé pour le nouveau projet vide
+    const stateSnapshot = JSON.stringify(initialProjectState);
+    setLastSavedState(stateSnapshot);
+  }, [createEmptyProject]);
+  
   const deleteCurrentProject = useCallback(async () => {
     if (!currentProjectId) {
       toast.error('Aucun projet à supprimer');
@@ -278,26 +117,50 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
     
     try {
-      setIsLoading(true);
-      await deleteProject(currentProjectId);
-      
-      // Réinitialiser l'état après la suppression
-      dispatch({ type: 'RESET_PROJECT' });
+      await deleteProjectFromStorage();
       setCurrentProjectId(null);
       setHasUnsavedChanges(false);
       
-      await refreshProjects();
-      toast.success('Projet supprimé avec succès');
+      // Réinitialiser l'état sauvegardé
+      const stateSnapshot = JSON.stringify(initialProjectState);
+      setLastSavedState(stateSnapshot);
     } catch (error) {
       console.error('Erreur lors de la suppression du projet:', error);
       toast.error('Erreur lors de la suppression du projet');
-    } finally {
-      setIsLoading(false);
     }
-  }, [currentProjectId, refreshProjects]);
+  }, [currentProjectId, deleteProjectFromStorage]);
+  
+  // Détecter les changements non sauvegardés
+  useEffect(() => {
+    if (lastSavedState) {
+      const currentStateSnapshot = JSON.stringify(state);
+      setHasUnsavedChanges(currentStateSnapshot !== lastSavedState);
+    }
+  }, [state, lastSavedState]);
+  
+  // Avertissement avant de quitter la page avec des modifications non sauvegardées
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        // Message d'avertissement standard pour tous les navigateurs
+        const message = 'Vous avez des modifications non enregistrées. Êtes-vous sûr de vouloir quitter cette page?';
+        e.returnValue = message;
+        return message;
+      }
+    };
 
-  // Suppression de l'effet de confirmation avant de quitter la page
-
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [hasUnsavedChanges]);
+  
+  // Rafraîchir la liste des projets au démarrage
+  useEffect(() => {
+    refreshProjects();
+  }, [refreshProjects]);
+  
   return (
     <ProjectContext.Provider value={{ 
       state, 
@@ -312,7 +175,8 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       loadProject,
       createNewProject,
       deleteCurrentProject,
-      refreshProjects
+      refreshProjects,
+      rooms
     }}>
       {children}
     </ProjectContext.Provider>
@@ -328,34 +192,48 @@ export const useProject = () => {
   return context;
 };
 
-// Hook pour la gestion des travaux
+// Hook pour la gestion des travaux (implémentation directe pour éviter l'importation circulaire)
 export const useTravaux = () => {
   const { state, dispatch } = useProject();
   
-  const getTravauxForPiece = (pieceId: string) => {
-    return state.travaux.filter(travail => travail.pieceId === pieceId);
-  };
+  // Fonction pour récupérer les travaux d'une pièce spécifique
+  const getTravauxForPiece = useCallback((pieceId: string) => {
+    return filtrerTravauxParPiece(state.travaux, pieceId);
+  }, [state.travaux]);
   
-  const addTravail = (travail: Omit<Travail, 'id'>) => {
+  // Fonction pour ajouter un nouveau travail
+  const addTravail = useCallback((travail: Omit<Travail, 'id'>) => {
+    const newTravail = { ...travail, id: uuidv4() };
+    
     dispatch({
       type: 'ADD_TRAVAIL',
-      payload: { ...travail, id: uuidv4() }
+      payload: newTravail
     });
-  };
+    
+    toast.success(`Travail "${travail.description}" ajouté avec succès`);
+    
+    return newTravail;
+  }, [dispatch]);
   
-  const updateTravail = (id: string, travail: Travail) => {
+  // Fonction pour mettre à jour un travail existant
+  const updateTravail = useCallback((id: string, travail: Partial<Travail>) => {
     dispatch({
       type: 'UPDATE_TRAVAIL',
-      payload: { id, travail }
+      payload: { id, travail: { ...travail, id } as Travail }
     });
-  };
+    
+    toast.success(`Travail mis à jour avec succès`);
+  }, [dispatch]);
   
-  const deleteTravail = (id: string) => {
+  // Fonction pour supprimer un travail
+  const deleteTravail = useCallback((id: string) => {
     dispatch({
       type: 'DELETE_TRAVAIL',
       payload: id
     });
-  };
+    
+    toast.success(`Travail supprimé avec succès`);
+  }, [dispatch]);
   
   return {
     travaux: state.travaux,
