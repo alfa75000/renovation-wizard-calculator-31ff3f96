@@ -6,13 +6,13 @@ import { Badge } from '@/components/ui/badge';
 interface ProjectSummaryProps {
   projectState: ProjectState;
   hasUnsavedChanges: boolean;
-  currentProjectName?: string; // Add this new prop
+  currentProjectName?: string;
 }
 
 export const ProjectSummary: React.FC<ProjectSummaryProps> = ({ 
   projectState, 
   hasUnsavedChanges,
-  currentProjectName // Use the prop
+  currentProjectName
 }) => {
   const { property, rooms } = projectState;
   
