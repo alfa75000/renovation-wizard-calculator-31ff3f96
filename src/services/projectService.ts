@@ -315,6 +315,11 @@ export const createProject = async (projectState: ProjectState, projectInfo: any
       // Créer les autres surfaces pour cette pièce
       if (room.autresSurfaces && room.autresSurfaces.length > 0) {
         for (const surface of room.autresSurfaces) {
+          // Convertir le type de surfaceImpactee au format attendu par la base de données
+          const surfaceImpactee = surface.surfaceImpactee === 'mur' ? 'Mur' : 
+                                 surface.surfaceImpactee === 'plafond' ? 'Plafond' : 
+                                 surface.surfaceImpactee === 'sol' ? 'Sol' : 'Aucune';
+
           const { error: surfaceError } = await supabase
             .from('room_custom_items')
             .insert({
@@ -323,9 +328,7 @@ export const createProject = async (projectState: ProjectState, projectInfo: any
               largeur: surface.largeur,
               hauteur: surface.hauteur,
               quantity: surface.quantity || 1,
-              surface_impactee: (surface.surfaceImpactee === 'mur' ? 'Mur' : 
-                              surface.surfaceImpactee === 'plafond' ? 'Plafond' : 
-                              surface.surfaceImpactee === 'sol' ? 'Sol' : 'Aucune'),
+              surface_impactee: surfaceImpactee,
               adjustment_type: surface.estDeduction ? 'Déduire' : 'Ajouter',
               impacte_plinthe: surface.impactePlinthe || false,
               description: surface.description || null
@@ -345,7 +348,7 @@ export const createProject = async (projectState: ProjectState, projectInfo: any
         .from('room_works')
         .insert({
           room_id: travail.pieceId,
-          service_id: travail.typeTravauxId || '', // À adapter pour correspondre à un service réel
+          service_id: travail.typeTravauxId || '', // Nécessaire pour l'insertion
           type_travaux_id: travail.typeTravauxId,
           type_travaux_label: travail.typeTravauxLabel,
           sous_type_id: travail.sousTypeId,

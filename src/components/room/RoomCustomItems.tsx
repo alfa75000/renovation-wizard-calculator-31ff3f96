@@ -105,7 +105,7 @@ const RoomCustomItems: React.FC<RoomCustomItemsProps> = ({
             )}
             
             <AutresSurfacesList
-              autresSurfaces={autresSurfaces}
+              items={autresSurfaces}
               onUpdate={handleUpdateSurface}
               onDelete={handleDeleteSurface}
             />

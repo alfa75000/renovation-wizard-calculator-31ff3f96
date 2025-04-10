@@ -10,7 +10,7 @@ interface AutresSurfacesListWithSupabaseProps {
 }
 
 const AutresSurfacesListWithSupabase: React.FC<AutresSurfacesListWithSupabaseProps> = ({ roomId }) => {
-  const { loading, error } = useAutresSurfacesWithSupabase(roomId);
+  const { autresSurfaces, loading, error, addAutreSurface, updateAutreSurfaceItem, deleteAutreSurfaceItem } = useAutresSurfacesWithSupabase(roomId);
 
   if (loading) {
     return (
@@ -43,7 +43,11 @@ const AutresSurfacesListWithSupabase: React.FC<AutresSurfacesListWithSupabasePro
   return (
     <div className="mt-4">
       <RoomCustomItems 
-        roomId={roomId} 
+        roomId={roomId}
+        autresSurfaces={autresSurfaces} 
+        onAddAutreSurface={addAutreSurface}
+        onUpdateAutreSurface={updateAutreSurfaceItem}
+        onDeleteAutreSurface={deleteAutreSurfaceItem}
       />
     </div>
   );
