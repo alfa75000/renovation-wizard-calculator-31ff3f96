@@ -13,7 +13,6 @@ import { useClients } from '@/contexts/ClientsContext';
 import { ClientDetails } from './ClientDetails';
 import { toast } from 'sonner';
 import { generateDevisNumber } from '@/services/projectService';
-import { getDefaultClient } from '@/services/clientService';
 
 interface ProjectFormProps {
   clientId: string;
@@ -63,116 +62,21 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
   isLoading
 }) => {
   const navigate = useNavigate();
-  const { state: clientsState, dispatch: clientsDispatch } = useClients();
+  const { state: clientsState } = useClients();
   const [isGeneratingDevisNumber, setIsGeneratingDevisNumber] = useState<boolean>(false);
-  
-  // S'assurer que le client par défaut existe dans le context ClientsState
-  useEffect(() => {
-    const ensureClientExists = async () => {
-      if (clientsState.clients.length === 0) {
-        try {
-          const defaultClient = await getDefaultClient();
-          
-          if (!clientsState.clients.some(c => c.id === defaultClient.id)) {
-            clientsDispatch({ 
-              type: 'ADD_CLIENT', 
-              payload: defaultClient 
-            });
-            console.log('Client par défaut ajouté à l\'état local:', defaultClient.nom);
-          }
-        } catch (error) {
-          console.error('Erreur lors de la vérification du client par défaut:', error);
-        }
-      }
-    };
-    
-    ensureClientExists();
-  }, [clientsState.clients.length, clientsDispatch]);
-  
-  // Génération automatique du nom du projet basé sur le client, le numéro de devis et la description
-  useEffect(() => {
-    generateProjectName();
-  }, [clientId, devisNumber, descriptionProjet, clientsState.clients]);
-  
-  // Générer automatiquement un numéro de devis lors du chargement initial si non défini
-  useEffect(() => {
-    const setupDevisNumber = async () => {
-      if (!devisNumber && !isGeneratingDevisNumber) {
-        await handleGenerateDevisNumber();
-      }
-    };
-    
-    setupDevisNumber();
-  }, []);
-  
-  const generateProjectName = () => {
-    let newName = '';
-    
-    const client = clientsState.clients.find(c => c.id === clientId);
-    const clientName = client ? `${client.nom} ${client.prenom || ''}`.trim() : 'Client à définir';
-    
-    if (devisNumber) {
-      newName = `Devis n° ${devisNumber} - ${clientName}`;
-    } else {
-      newName = clientName;
-    }
-    
-    const desc = descriptionProjet || 'Projet en cours';
-    newName += desc.length > 40 
-      ? ` - ${desc.substring(0, 40)}...` 
-      : ` - ${desc}`;
-    
-    setNomProjet(newName);
-  };
   
   const handleGenerateDevisNumber = async () => {
     try {
       setIsGeneratingDevisNumber(true);
       const newDevisNumber = await generateDevisNumber();
       setDevisNumber(newDevisNumber);
-      console.log('Numéro de devis généré automatiquement:', newDevisNumber);
+      toast.success('Numéro de devis généré avec succès');
     } catch (error) {
       console.error('Erreur lors de la génération du numéro de devis:', error);
+      toast.error('Erreur lors de la génération du numéro de devis');
     } finally {
       setIsGeneratingDevisNumber(false);
     }
-  };
-  
-  const handleSaveProject = async () => {
-    if (!clientId) {
-      try {
-        const defaultClient = await getDefaultClient();
-        setClientId(defaultClient.id);
-        
-        if (!clientsState.clients.some(c => c.id === defaultClient.id)) {
-          clientsDispatch({ 
-            type: 'ADD_CLIENT', 
-            payload: defaultClient 
-          });
-        }
-        
-        toast.info('Client par défaut utilisé pour le projet');
-      } catch (error) {
-        console.error('Erreur lors de la récupération du client par défaut:', error);
-        toast.error('Erreur lors de la récupération du client par défaut');
-        return;
-      }
-    }
-    
-    if (!devisNumber) {
-      try {
-        const newDevisNumber = await generateDevisNumber();
-        setDevisNumber(newDevisNumber);
-      } catch (error) {
-        console.error('Erreur lors de la génération automatique du numéro de devis:', error);
-      }
-    }
-    
-    if (!descriptionProjet) {
-      setDescriptionProjet('Projet en cours');
-    }
-    
-    onSaveProject();
   };
   
   return (
@@ -328,7 +232,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
         
         <Button 
           variant="default" 
-          onClick={handleSaveProject}
+          onClick={onSaveProject}
           className="ml-auto"
           disabled={isLoading}
         >

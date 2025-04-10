@@ -60,31 +60,11 @@ export const useProjectStorage = () => {
       setIsSaving(true);
       toast.loading('Sauvegarde en cours...', { id: 'saving-project' });
       
-      console.log('Sauvegarde du projet avec infos additionnelles:', additionalInfo);
-      
       // Préparer les informations du projet
       const projectInfo = {
         name: name || (currentProjectId ? projects.find(p => p.id === currentProjectId)?.name : generateDefaultProjectName()),
         ...additionalInfo
       };
-      
-      // Vérifier et compléter les valeurs obligatoires
-      if (!projectInfo.client_id) {
-        console.warn('Client ID manquant lors de la sauvegarde, utilisation de la valeur par défaut');
-      }
-      
-      if (!projectInfo.devis_number) {
-        try {
-          projectInfo.devis_number = await generateDevisNumber();
-          console.log('Numéro de devis généré automatiquement pendant la sauvegarde:', projectInfo.devis_number);
-        } catch (e) {
-          console.error('Erreur lors de la génération du numéro de devis pendant la sauvegarde:', e);
-        }
-      }
-      
-      if (!projectInfo.description) {
-        projectInfo.description = 'Projet en cours';
-      }
       
       if (currentProjectId) {
         // Mettre à jour un projet existant

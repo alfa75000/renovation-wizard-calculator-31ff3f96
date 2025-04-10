@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Button } from '../ui/button';
 import { FilePlus2, FolderOpen, Save, SaveAll } from 'lucide-react';
 import { useProject } from '@/contexts/ProjectContext';
@@ -17,20 +17,9 @@ export const ProjectBar: React.FC<ProjectBarProps> = ({
   onSaveProject,
   onSaveAsProject
 }) => {
-  const { currentProjectId, projects, state } = useProject();
-  const [projectDisplayName, setProjectDisplayName] = useState<string>("Projet sans titre");
-
-  // Effet pour mettre à jour le nom affiché du projet lorsque le projet actuel change
-  useEffect(() => {
-    if (currentProjectId) {
-      const currentProject = projects.find(p => p.id === currentProjectId);
-      if (currentProject) {
-        setProjectDisplayName(currentProject.name || "Projet sans titre");
-      }
-    } else {
-      setProjectDisplayName("Projet sans titre");
-    }
-  }, [currentProjectId, projects, state]);
+  const { currentProjectId, projects } = useProject();
+  const currentProject = projects.find(p => p.id === currentProjectId);
+  const projectDisplayName = currentProject?.name || "Projet sans titre";
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-2 mb-2 flex flex-wrap items-center justify-between border-b">
