@@ -8,11 +8,13 @@ import { toast } from 'sonner';
 
 interface ProjectNameFieldProps {
   nomProjet: string;
+  setNomProjet: (nom: string) => void;  // Add this prop
   onGenerateProjectName: () => void;
 }
 
 export const ProjectNameField: React.FC<ProjectNameFieldProps> = ({
   nomProjet,
+  setNomProjet,  // Use this prop
   onGenerateProjectName
 }) => {
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
@@ -37,8 +39,9 @@ export const ProjectNameField: React.FC<ProjectNameFieldProps> = ({
         <Input 
           id="nomProjet" 
           value={nomProjet} 
-          readOnly
-          className="bg-gray-50 flex-1"
+          onChange={(e) => setNomProjet(e.target.value)}
+          readOnly={false}
+          className="bg-white flex-1"
           placeholder="Se génère automatiquement à l'ajout de la première pièce"
         />
         <Button 

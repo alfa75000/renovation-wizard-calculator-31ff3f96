@@ -89,11 +89,15 @@ export const useProjectInfo = () => {
   const generateProjectNameIfNeeded = useCallback(async () => {
     if (shouldGenerateProjectName()) {
       console.log("Generating project name automatically...");
-      await generateProjectName();
+      const newName = await generateProjectName();
+      // Force UI update if needed
+      if (newName && newName !== nomProjet) {
+        setNomProjet(newName);
+      }
       return true;
     }
     return false;
-  }, [shouldGenerateProjectName, generateProjectName]);
+  }, [shouldGenerateProjectName, generateProjectName, nomProjet, setNomProjet]);
 
   return {
     projectState: projectStateRaw,

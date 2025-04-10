@@ -98,6 +98,9 @@ export const useProjectMetadata = () => {
     
     console.log("Nouveau nom de projet généré:", newName);
     setNomProjet(newName);
+    
+    // Force state update (this is important to update the UI)
+    return newName;
   }, [clientId, devisNumber, descriptionProjet, clientsState.clients, getDefaultClientId]);
 
   return {

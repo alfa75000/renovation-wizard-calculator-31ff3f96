@@ -56,13 +56,8 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
   isLoading,
   onGenerateProjectName
 }) => {
-  // Effect to update project name when client, devis number or description changes
-  useEffect(() => {
-    if (clientId || devisNumber || descriptionProjet) {
-      console.log("Critical field changed, updating project name...");
-      onGenerateProjectName();
-    }
-  }, [clientId, devisNumber, descriptionProjet, onGenerateProjectName]);
+  // Removed automatic effect trigger to prevent unwanted automatic regeneration
+  // We'll rely on explicit calls to onGenerateProjectName instead
   
   return (
     <div className="space-y-6">
@@ -80,6 +75,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
       
       <ProjectNameField
         nomProjet={nomProjet}
+        setNomProjet={setNomProjet}
         onGenerateProjectName={onGenerateProjectName}
       />
       
