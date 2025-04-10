@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useClients } from '@/contexts/ClientsContext';
 import { useProject } from '@/contexts/ProjectContext';
@@ -33,11 +32,12 @@ const InfosChantier: React.FC = () => {
   const [devisNumber, setDevisNumber] = useState<string>('');
   
   const { state: clientsState } = useClients();
-  const clientSelectionne = clientsState.clients.find(c => c.id === clientId);
   
   // Trouver l'ID du client "Client à définir"
   const getDefaultClientId = (): string => {
+    console.log("Recherche du client par défaut...");
     const defaultClient = clientsState.clients.find(c => c.nom === "Client à définir");
+    console.log("Client par défaut trouvé:", defaultClient);
     return defaultClient ? defaultClient.id : '';
   };
   
@@ -45,6 +45,7 @@ const InfosChantier: React.FC = () => {
     if (currentProjectId) {
       const currentProject = projects.find(p => p.id === currentProjectId);
       if (currentProject) {
+        console.log("Chargement du projet courant:", currentProject);
         setClientId(currentProject.client_id || '');
         setNomProjet(currentProject.name || '');
         setDescriptionProjet(currentProject.description || '');
@@ -60,6 +61,7 @@ const InfosChantier: React.FC = () => {
   // Cette fonction génère le nom du projet en se basant sur le client, le numéro de devis et la description
   const generateProjectName = async () => {
     console.log("Génération du nom de projet en cours...");
+    
     // Si pas de clientId sélectionné, définir le client par défaut
     let updatedClientId = clientId;
     if (!clientId) {
@@ -69,7 +71,7 @@ const InfosChantier: React.FC = () => {
         updatedClientId = defaultClientId;
         console.log("Client par défaut sélectionné:", defaultClientId);
       } else {
-        toast.error("Impossible de trouver le client par défaut");
+        console.error("Impossible de trouver le client par défaut");
         return;
       }
     }
@@ -83,7 +85,6 @@ const InfosChantier: React.FC = () => {
         console.log("Numéro de devis généré:", updatedDevisNumber);
       } catch (error) {
         console.error("Erreur lors de la génération du numéro de devis:", error);
-        toast.error("Erreur lors de la génération du numéro de devis");
         return;
       }
     }
@@ -99,7 +100,7 @@ const InfosChantier: React.FC = () => {
     // Récupérer le client sélectionné
     const selectedClient = clientsState.clients.find(c => c.id === updatedClientId);
     if (!selectedClient) {
-      toast.error("Client non trouvé");
+      console.error("Client non trouvé");
       return;
     }
     

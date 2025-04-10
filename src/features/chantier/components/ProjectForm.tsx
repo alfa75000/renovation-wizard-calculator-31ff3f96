@@ -68,6 +68,14 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
   const [isGeneratingDevisNumber, setIsGeneratingDevisNumber] = useState<boolean>(false);
   const [isGeneratingProjectName, setIsGeneratingProjectName] = useState<boolean>(false);
   
+  // Effect to update project name when client, devis number or description changes
+  useEffect(() => {
+    if (clientId || devisNumber || descriptionProjet) {
+      console.log("Critical field changed, updating project name...");
+      onGenerateProjectName();
+    }
+  }, [clientId, devisNumber, descriptionProjet, onGenerateProjectName]);
+  
   const handleGenerateDevisNumber = async () => {
     try {
       setIsGeneratingDevisNumber(true);
