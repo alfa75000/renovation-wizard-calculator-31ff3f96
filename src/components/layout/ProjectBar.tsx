@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Button } from '../ui/button';
 import { FilePlus2, FolderOpen, Save, SaveAll } from 'lucide-react';
 import { useProject } from '@/contexts/ProjectContext';
@@ -18,8 +18,19 @@ export const ProjectBar: React.FC<ProjectBarProps> = ({
   onSaveAsProject
 }) => {
   const { currentProjectId, projects } = useProject();
+  
+  // Trouver le projet actuel dans la liste des projets
   const currentProject = projects.find(p => p.id === currentProjectId);
-  const projectDisplayName = currentProject?.name || "Projet sans titre";
+  
+  // Obtenir le nom d'affichage
+  let projectDisplayName = "Projet sans titre";
+  
+  if (currentProject?.name) {
+    projectDisplayName = currentProject.name;
+  } else if (currentProjectId) {
+    // Si nous avons un ID mais pas de nom, c'est un cas bizarre, mais afficher l'ID
+    projectDisplayName = `Projet #${currentProjectId.substring(0, 8)}`;
+  }
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-2 mb-2 flex flex-wrap items-center justify-between border-b">

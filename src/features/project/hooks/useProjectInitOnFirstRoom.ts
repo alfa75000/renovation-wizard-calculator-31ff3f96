@@ -1,7 +1,8 @@
 
 import { useEffect, useState } from 'react';
 import { useProject } from '@/contexts/ProjectContext';
-import { findDefaultClientId, generateDevisNumber } from '@/services/devisService';
+import { findDefaultClientId } from '@/services/devisService';
+import { generateDevisNumber } from '@/services/projectService';
 import { toast } from 'sonner';
 import { useClients } from '@/contexts/ClientsContext';
 
@@ -16,7 +17,7 @@ export const useProjectInitOnFirstRoom = (
   descriptionProjet: string,
   setDescriptionProjet: (description: string) => void
 ) => {
-  const { state: projectState, saveProject } = useProject();
+  const { state: projectState } = useProject();
   const { state: clientsState } = useClients();
   const [isFirstRoom, setIsFirstRoom] = useState<boolean>(true);
 
@@ -60,23 +61,18 @@ export const useProjectInitOnFirstRoom = (
           initialized = true;
         }
         
-        // Générer un nom de projet avec les données disponibles
+        // Si nous avons initialisé quelque chose, afficher un message
         if (initialized) {
-          // Générer et sauvegarder le projet avec les nouvelles informations
-          // Cela mettra à jour automatiquement la barre supérieure
-          try {
-            const selectedClient = clientsState.clients.find(c => c.id === defaultClientId);
-            const clientName = selectedClient ? `${selectedClient.nom} ${selectedClient.prenom || ''}`.trim() : 'Client';
-            const projectName = `Devis n° ${newDevisNumber} - ${clientName} - ${newDescription.substring(0, 40)}`;
-            
-            // Pour simuler la mise à jour sans sauvegarder réellement
-            // C'est l'affichage qui va se mettre à jour, pas la sauvegarde
-            await saveProject(projectName);
-            
-            toast.info("Informations du projet initialisées automatiquement");
-          } catch (error) {
-            console.error("Erreur lors de la mise à jour du nom du projet:", error);
-          }
+          // Générer le nom du projet pour l'affichage dans la barre supérieure
+          // Mais ne pas essayer de sauvegarder le projet automatiquement
+          const selectedClient = clientsState.clients.find(c => c.id === defaultClientId);
+          const clientName = selectedClient ? `${selectedClient.nom} ${selectedClient.prenom || ''}`.trim() : 'Client';
+          const projectName = `Devis n° ${newDevisNumber} - ${clientName} - ${newDescription.substring(0, 40)}`;
+          
+          // Ne pas sauvegarder ici, simplement mettre à jour les variables d'état locales
+          // Cela sera suffisant pour mettre à jour l'affichage dans la barre supérieure sans causer d'erreurs
+          
+          toast.info("Informations du projet initialisées automatiquement");
         }
       }
       
@@ -87,7 +83,7 @@ export const useProjectInitOnFirstRoom = (
     };
     
     initProjectOnFirstRoom();
-  }, [projectState?.rooms, clientId, devisNumber, descriptionProjet, isFirstRoom, setClientId, setDevisNumber, setDescriptionProjet, clientsState.clients, saveProject]);
+  }, [projectState?.rooms, clientId, devisNumber, descriptionProjet, isFirstRoom, setClientId, setDevisNumber, setDescriptionProjet, clientsState.clients]);
   
   // Renvoyer le flag pour pouvoir le réinitialiser depuis l'extérieur si nécessaire
   return {

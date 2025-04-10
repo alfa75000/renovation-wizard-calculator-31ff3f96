@@ -20,13 +20,14 @@ const RenovationEstimator: React.FC = () => {
   const { property, rooms } = state;
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
   
-  // Dummy state vars for useProjectInitOnFirstRoom that will be synchronized via context
+  // Variables d'état pour les informations du projet
+  // Ces variables seront synchronisées via le hook useProjectInitOnFirstRoom
   const [clientId, setClientId] = useState<string>('');
   const [devisNumber, setDevisNumber] = useState<string>('');
   const [descriptionProjet, setDescriptionProjet] = useState<string>('');
   
-  // Use the hook to initialize project data when first room is added
-  const { isFirstRoom } = useProjectInitOnFirstRoom(
+  // Utiliser le hook pour initialiser les informations du projet lors de l'ajout de la première pièce
+  useProjectInitOnFirstRoom(
     clientId,
     setClientId,
     devisNumber,
