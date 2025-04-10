@@ -162,8 +162,6 @@ const Travaux: React.FC = () => {
             </div>
           </CardHeader>
           <CardContent>
-            {/* Suppression du composant AutresSurfacesList */}
-            
             <h3 className="text-lg font-medium mb-3">Travaux</h3>
             {travauxForSelectedRoom.length > 0 ? (
               <div className="space-y-4">

@@ -1,8 +1,15 @@
-
 import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
 import { Room, Travail, ProjectState } from '@/types';
 import { surfaceTypeToDb } from '@/utils/surfaceTypesAdapter';
+
+/**
+ * Génère un nom par défaut pour un nouveau projet
+ */
+export function generateDefaultProjectName() {
+  const date = new Date();
+  return `Nouveau projet ${date.toLocaleDateString('fr-FR')}`;
+}
 
 /**
  * Récupère tous les projets depuis Supabase
@@ -90,19 +97,6 @@ export const fetchProjectById = async (projectId: string) => {
         throw menuiseriesError;
       }
       
-      // Assigner les menuiseries à la pièce comme propriété temporaire
-      const roomMenuiseries = (menuiseriesData || []).map(item => ({
-        id: item.id,
-        type: item.type || item.menuiserie_type?.name || '',
-        name: item.name || item.menuiserie_type?.name || '',
-        largeur: item.largeur || item.width_override || item.menuiserie_type?.largeur || 0,
-        hauteur: item.hauteur || item.height_override || item.menuiserie_type?.hauteur || 0,
-        quantity: item.quantity || 1,
-        surface: ((item.largeur || item.width_override || item.menuiserie_type?.largeur || 0) * 
-                 (item.hauteur || item.height_override || item.menuiserie_type?.hauteur || 0)) / 10000,
-        surfaceImpactee: item.surface_impactee?.toLowerCase() || 'mur'
-      }));
-      
       // Récupérer les surfaces personnalisées
       const { data: surfacesData, error: surfacesError } = await supabase
         .from('room_custom_items')
@@ -114,7 +108,19 @@ export const fetchProjectById = async (projectId: string) => {
         throw surfacesError;
       }
       
-      // Assigner les surfaces personnalisées à la pièce comme propriété temporaire
+      // Traitement des données pour compatibilité
+      const roomMenuiseries = (menuiseriesData || []).map(item => ({
+        id: item.id,
+        type: item.type || (item.menuiserie_type ? item.menuiserie_type.name : ''),
+        name: item.name || (item.menuiserie_type ? item.menuiserie_type.name : ''),
+        largeur: item.largeur || item.width_override || (item.menuiserie_type ? item.menuiserie_type.largeur : 0),
+        hauteur: item.hauteur || item.height_override || (item.menuiserie_type ? item.menuiserie_type.hauteur : 0),
+        quantity: item.quantity || 1,
+        surface: ((item.largeur || item.width_override || (item.menuiserie_type ? item.menuiserie_type.largeur : 0)) * 
+                 (item.hauteur || item.height_override || (item.menuiserie_type ? item.menuiserie_type.hauteur : 0))) / 10000,
+        surfaceImpactee: item.surface_impactee?.toLowerCase() || 'mur'
+      }));
+      
       const roomAutresSurfaces = (surfacesData || []).map(item => ({
         id: item.id,
         type: item.name || '',
@@ -125,12 +131,23 @@ export const fetchProjectById = async (projectId: string) => {
         surface: (item.largeur * item.hauteur) || 0,
         quantity: item.quantity || 1,
         surfaceImpactee: item.surface_impactee?.toLowerCase() || 'mur',
-        estDeduction: item.adjustment_type === 'Déduire'
+        estDeduction: item.adjustment_type === 'Déduire',
+        impactePlinthe: item.impacte_plinthe,
+        description: item.description || ''
       }));
       
       // Étendre la pièce avec des propriétés temporaires
-      (room as any).menuiseries = roomMenuiseries;
-      (room as any).autresSurfaces = roomAutresSurfaces;
+      const extendedRoom = {
+        ...room,
+        menuiseries: roomMenuiseries,
+        autresSurfaces: roomAutresSurfaces
+      };
+      
+      // Remplacer la pièce dans le tableau
+      const roomIndex = rooms.findIndex(r => r.id === room.id);
+      if (roomIndex !== -1) {
+        rooms[roomIndex] = extendedRoom;
+      }
     }
     
     // Construire l'objet ProjectState complet
@@ -297,6 +314,9 @@ export const createProject = async (projectState: ProjectState, projectInfo: any
       // Créer les menuiseries pour cette pièce
       if (room.menuiseries && room.menuiseries.length > 0) {
         for (const menuiserie of room.menuiseries) {
+          // Convertir le type de surfaceImpactee au format attendu par la base de données
+          const surfaceImpacteeDB = surfaceTypeToDb(menuiserie.surfaceImpactee);
+          
           const { error: menuiserieError } = await supabase
             .from('room_menuiseries')
             .insert({
@@ -308,7 +328,7 @@ export const createProject = async (projectState: ProjectState, projectInfo: any
               hauteur: menuiserie.hauteur,
               quantity: menuiserie.quantity,
               surface: menuiserie.surface,
-              surface_impactee: menuiserie.surfaceImpactee
+              surface_impactee: surfaceImpacteeDB
             });
           
           if (menuiserieError) {
@@ -322,7 +342,7 @@ export const createProject = async (projectState: ProjectState, projectInfo: any
       if (room.autresSurfaces && room.autresSurfaces.length > 0) {
         for (const surface of room.autresSurfaces) {
           // Convertir le type de surfaceImpactee au format attendu par la base de données
-          const surfaceImpactee = surfaceTypeToDb(surface.surfaceImpactee);
+          const surfaceImpacteeDB = surfaceTypeToDb(surface.surfaceImpactee);
 
           const { error: surfaceError } = await supabase
             .from('room_custom_items')
@@ -332,7 +352,7 @@ export const createProject = async (projectState: ProjectState, projectInfo: any
               largeur: surface.largeur,
               hauteur: surface.hauteur,
               quantity: surface.quantity || 1,
-              surface_impactee: surfaceImpactee,
+              surface_impactee: surfaceImpacteeDB,
               adjustment_type: surface.estDeduction ? 'Déduire' : 'Ajouter',
               impacte_plinthe: surface.impactePlinthe || false,
               description: surface.description || null
@@ -352,13 +372,14 @@ export const createProject = async (projectState: ProjectState, projectInfo: any
         .from('room_works')
         .insert({
           room_id: travail.pieceId,
-          service_id: travail.typeTravauxId || null,
+          service_id: null, // Valeur par défaut
           type_travaux_id: travail.typeTravauxId,
           type_travaux_label: travail.typeTravauxLabel,
           sous_type_id: travail.sousTypeId,
           sous_type_label: travail.sousTypeLabel,
           menuiserie_id: travail.menuiserieId || null,
           description: travail.description,
+          description_override: travail.description,
           quantity: travail.quantite,
           unit: travail.unite,
           supply_price_override: travail.prixFournitures,
@@ -886,11 +907,3 @@ export const deleteProject = async (projectId: string) => {
     throw error;
   }
 };
-
-/**
- * Génère un nom par défaut pour un nouveau projet
- */
-export function generateDefaultProjectName() {
-  const date = new Date();
-  return `Nouveau projet ${date.toLocaleDateString('fr-FR')}`;
-}

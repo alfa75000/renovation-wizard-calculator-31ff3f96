@@ -48,3 +48,21 @@ export function surfaceTypeFromDb(type?: string): SurfaceImpactee {
       return 'mur';
   }
 }
+
+/**
+ * Helper function to convert SurfaceImpacteeDB to SurfaceImpactee
+ */
+export function convertDbSurfaceToFrontend(dbSurface: SurfaceImpacteeDB | string): SurfaceImpactee {
+  if (!dbSurface) return 'mur';
+  
+  switch (dbSurface) {
+    case 'Mur':
+      return 'mur';
+    case 'Plafond':
+      return 'plafond';
+    case 'Sol':
+      return 'sol';
+    default:
+      return 'mur';
+  }
+}

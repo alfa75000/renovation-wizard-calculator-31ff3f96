@@ -67,6 +67,11 @@ const RoomCustomItems: React.FC<RoomCustomItemsProps> = ({
       await deleteAutreSurfaceItem(id);
     }
   };
+
+  const handleFormSubmit = (data: any, quantity?: number) => {
+    handleAddSurface(data, quantity);
+    setShowForm(false);
+  };
   
   return (
     <Card>
@@ -95,10 +100,7 @@ const RoomCustomItems: React.FC<RoomCustomItemsProps> = ({
               <div className="mb-4">
                 <AutreSurfaceForm
                   autresSurfaceTypes={typesAutresSurfaces || []}
-                  onSubmit={(data, quantity) => {
-                    handleAddSurface(data, quantity);
-                    setShowForm(false);
-                  }}
+                  onSubmit={handleFormSubmit}
                   onCancel={() => setShowForm(false)}
                 />
               </div>
