@@ -28,7 +28,7 @@ interface InfosChantierLayoutProps {
   projectState: any;
   isLoading: boolean;
   hasUnsavedChanges: boolean;
-  onGenerateProjectName: () => void;
+  onGenerateProjectName: () => Promise<void>;
   generateProjectNameIfNeeded: () => Promise<boolean>;
   shouldGenerateProjectName: () => boolean;
   onSaveProject: () => void;
