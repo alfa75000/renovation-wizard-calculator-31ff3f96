@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useClients } from '@/contexts/ClientsContext';
 import { useProject } from '@/contexts/ProjectContext';
@@ -44,6 +45,7 @@ const InfosChantier: React.FC = () => {
     setDescriptionProjet
   );
   
+  // Charger les données du projet courant
   useEffect(() => {
     if (currentProjectId) {
       const currentProject = projects.find(p => p.id === currentProjectId);
@@ -60,6 +62,7 @@ const InfosChantier: React.FC = () => {
     }
   }, [currentProjectId, projects]);
   
+  // Générer le nom du projet en fonction du client et du numéro de devis
   useEffect(() => {
     if (clientSelectionne && (descriptionProjet || devisNumber)) {
       const clientName = `${clientSelectionne.nom} ${clientSelectionne.prenom || ''}`.trim();
@@ -79,6 +82,7 @@ const InfosChantier: React.FC = () => {
       
       setNomProjet(newName);
       
+      // Mettre à jour le nom du projet dans le contexte pour la barre de navigation
       dispatch({ 
         type: 'UPDATE_PROJECT_NAME', 
         payload: newName 
@@ -86,6 +90,17 @@ const InfosChantier: React.FC = () => {
     }
   }, [devisNumber, clientSelectionne, descriptionProjet, dispatch]);
   
+  // Générer à nouveau le nom du projet lorsque le nom est mis à jour dans le formulaire
+  useEffect(() => {
+    if (nomProjet) {
+      dispatch({ 
+        type: 'UPDATE_PROJECT_NAME', 
+        payload: nomProjet 
+      });
+    }
+  }, [nomProjet, dispatch]);
+  
+  // Fonctions de gestion des projets
   const handleChargerProjet = async (projetId: string) => {
     try {
       await loadProject(projetId);

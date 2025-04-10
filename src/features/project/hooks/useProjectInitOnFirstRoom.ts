@@ -20,7 +20,7 @@ export const useProjectInitOnFirstRoom = (
   const { state: projectState, dispatch } = useProject();
   const { state: clientsState } = useClients();
   
-  // Add a storage flag to avoid showing the toast multiple times
+  // Utiliser sessionStorage pour suivre l'état d'initialisation
   const [hasInitialized, setHasInitialized] = useState<boolean>(() => {
     const stored = sessionStorage.getItem('project_initialized');
     return stored === 'true';
@@ -29,10 +29,16 @@ export const useProjectInitOnFirstRoom = (
   const [isFirstRoom, setIsFirstRoom] = useState<boolean>(() => {
     return projectState?.rooms?.length === 0;
   });
+  
+  // Utiliser sessionStorage pour éviter les toasts répétés
+  const [hasShownToast, setHasShownToast] = useState<boolean>(() => {
+    const stored = sessionStorage.getItem('project_init_toast_shown');
+    return stored === 'true';
+  });
 
   useEffect(() => {
     const initProjectOnFirstRoom = async () => {
-      // If we have a first room added and initialization hasn't been done yet
+      // Si nous avons une première pièce ajoutée et que l'initialisation n'a pas encore été faite
       if (projectState?.rooms?.length === 1 && isFirstRoom && !hasInitialized) {
         setIsFirstRoom(false);
         setHasInitialized(true);
@@ -40,7 +46,7 @@ export const useProjectInitOnFirstRoom = (
         
         let initialized = false;
         
-        // If no client selected, select "Client à définir"
+        // Si aucun client n'est sélectionné, sélectionner "Client à définir"
         let defaultClientId = clientId;
         if (!clientId) {
           defaultClientId = await findDefaultClientId();
@@ -51,7 +57,7 @@ export const useProjectInitOnFirstRoom = (
           }
         }
         
-        // If no devis number, generate one automatically
+        // Si aucun numéro de devis, en générer un automatiquement
         let newDevisNumber = devisNumber;
         if (!devisNumber) {
           try {
@@ -64,7 +70,7 @@ export const useProjectInitOnFirstRoom = (
           }
         }
         
-        // If no description, use "Projet en cours"
+        // Si aucune description, utiliser "Projet en cours"
         let newDescription = descriptionProjet;
         if (!descriptionProjet) {
           newDescription = "Projet en cours";
@@ -73,37 +79,43 @@ export const useProjectInitOnFirstRoom = (
           initialized = true;
         }
         
-        // If we initialized something, show a message
-        if (initialized) {
-          // Generate project name for display in top bar
+        // Si nous avons initialisé quelque chose, afficher un message
+        if (initialized && !hasShownToast) {
+          // Générer le nom du projet pour l'affichage dans la barre supérieure
           const selectedClient = clientsState.clients.find(c => c.id === defaultClientId);
           const clientName = selectedClient ? `${selectedClient.nom} ${selectedClient.prenom || ''}`.trim() : 'Client';
           const projectName = `Devis n° ${newDevisNumber} - ${clientName} - ${newDescription.substring(0, 40)}`;
           
-          // Update project name in global context for top bar
+          // Mettre à jour le nom du projet dans le contexte global pour la barre supérieure
           dispatch({ 
             type: 'UPDATE_PROJECT_NAME', 
             payload: projectName 
           });
           
+          // Marquer que le toast a été affiché pour éviter les répétitions
+          setHasShownToast(true);
+          sessionStorage.setItem('project_init_toast_shown', 'true');
+          
           toast.info("Informations du projet initialisées automatiquement", {
-            id: 'project-init' // Use an ID to avoid duplicates
+            id: 'project-init' // Utiliser un ID pour éviter les doublons
           });
         }
       }
       
-      // Reset flag if no room is present and we reset the project
+      // Réinitialiser le drapeau si aucune pièce n'est présente et que nous avons réinitialisé le projet
       if (projectState?.rooms?.length === 0 && !isFirstRoom) {
         setIsFirstRoom(true);
         setHasInitialized(false);
+        setHasShownToast(false);
         sessionStorage.removeItem('project_initialized');
+        sessionStorage.removeItem('project_init_toast_shown');
       }
     };
     
     initProjectOnFirstRoom();
-  }, [projectState?.rooms, clientId, devisNumber, descriptionProjet, isFirstRoom, hasInitialized, setClientId, setDevisNumber, setDescriptionProjet, clientsState.clients, dispatch]);
+  }, [projectState?.rooms, clientId, devisNumber, descriptionProjet, isFirstRoom, hasInitialized, hasShownToast, setClientId, setDevisNumber, setDescriptionProjet, clientsState.clients, dispatch]);
   
-  // Return the flag to be able to reset it from outside if needed
+  // Renvoyer le drapeau pour pouvoir le réinitialiser depuis l'extérieur si nécessaire
   return {
     isFirstRoom,
     setIsFirstRoom,
