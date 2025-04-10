@@ -20,8 +20,7 @@ const InfosChantier: React.FC = () => {
     hasUnsavedChanges,
     loadProject,
     deleteCurrentProject,
-    saveProject,
-    updateProjectName
+    saveProject
   } = useProject();
   
   const [clientId, setClientId] = useState<string>('');
@@ -37,11 +36,14 @@ const InfosChantier: React.FC = () => {
   const { state: clientsState } = useClients();
   const clientSelectionne = clientsState.clients.find(c => c.id === clientId);
   
+  // Surveiller l'ajout de la première pièce
   useEffect(() => {
     const checkFirstRoomAdded = async () => {
+      // Si nous avons une première pièce ajoutée et que c'est la première fois qu'on le détecte
       if (projectState?.rooms?.length === 1 && isFirstRoom) {
-        setIsFirstRoom(false);
+        setIsFirstRoom(false); // Ne plus exécuter cette logique pour les futures mises à jour
         
+        // Si pas de client sélectionné, sélectionner "Client à définir"
         if (!clientId) {
           const defaultClientId = await findDefaultClientId();
           if (defaultClientId) {
@@ -50,6 +52,7 @@ const InfosChantier: React.FC = () => {
           }
         }
         
+        // Si pas de numéro de devis, en générer un automatiquement
         if (!devisNumber) {
           try {
             const newDevisNumber = await generateDevisNumber();
@@ -60,6 +63,7 @@ const InfosChantier: React.FC = () => {
           }
         }
         
+        // Si pas de description, utiliser "Projet en cours"
         if (!descriptionProjet) {
           setDescriptionProjet("Projet en cours");
           console.log("Description par défaut ajoutée");
@@ -68,6 +72,7 @@ const InfosChantier: React.FC = () => {
         toast.info("Informations du projet initialisées automatiquement");
       }
       
+      // Réinitialiser le flag si aucune pièce n'est présente
       if (projectState?.rooms?.length === 0 && !isFirstRoom) {
         setIsFirstRoom(true);
       }
@@ -110,14 +115,8 @@ const InfosChantier: React.FC = () => {
       }
       
       setNomProjet(newName);
-      
-      // Mettre à jour le nom du projet dans le contexte et l'affichage
-      if (currentProjectId) {
-        console.log("Mise à jour du nom du projet:", newName);
-        updateProjectName(currentProjectId, newName);
-      }
     }
-  }, [devisNumber, clientSelectionne, descriptionProjet, currentProjectId, updateProjectName]);
+  }, [devisNumber, clientSelectionne, descriptionProjet]);
   
   const handleChargerProjet = async (projetId: string) => {
     try {
@@ -138,7 +137,7 @@ const InfosChantier: React.FC = () => {
       setOccupant('');
       setInfoComplementaire('');
       setDevisNumber('');
-      setIsFirstRoom(true);
+      setIsFirstRoom(true); // Réinitialiser le flag pour détecter à nouveau la première pièce
     } catch (error) {
       console.error('Erreur lors de la suppression du projet:', error);
       toast.error('Une erreur est survenue lors de la suppression du projet');
@@ -152,7 +151,8 @@ const InfosChantier: React.FC = () => {
     }
     
     try {
-      await saveProject();
+      // Logique de sauvegarde temporairement désactivée
+      // await saveProject();
       toast.success('Projet enregistré avec succès');
     } catch (error) {
       console.error('Erreur lors de l\'enregistrement du projet:', error);

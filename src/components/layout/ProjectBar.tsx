@@ -18,20 +18,8 @@ export const ProjectBar: React.FC<ProjectBarProps> = ({
   onSaveAsProject
 }) => {
   const { currentProjectId, projects } = useProject();
-  
-  // Récupérer le projet actuel depuis le contexte
   const currentProject = projects.find(p => p.id === currentProjectId);
-  
-  // Accéder au nom du projet depuis la liste des projets
-  // Utiliser le nom du projet courant ou "Projet sans titre" comme fallback
   const projectDisplayName = currentProject?.name || "Projet sans titre";
-  
-  console.log("ProjectBar - Affichage:", { 
-    currentProjectId, 
-    currentProject, 
-    projectDisplayName, 
-    allProjects: projects 
-  });
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-2 mb-2 flex flex-wrap items-center justify-between border-b">
