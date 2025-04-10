@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useClients } from '@/contexts/ClientsContext';
@@ -44,7 +43,6 @@ const InfosChantier: React.FC = () => {
   
   const clientSelectionne = clientsState.clients.find(c => c.id === clientId);
   
-  // Si un projet est sélectionné, charger ses informations
   useEffect(() => {
     if (currentProjectId) {
       const currentProject = projects.find(p => p.id === currentProjectId);
@@ -61,7 +59,6 @@ const InfosChantier: React.FC = () => {
     }
   }, [currentProjectId, projects]);
   
-  // Mettre à jour le nom du projet automatiquement
   useEffect(() => {
     if (clientSelectionne && descriptionProjet) {
       const clientName = `${clientSelectionne.nom} ${clientSelectionne.prenom || ''}`.trim();
@@ -95,7 +92,6 @@ const InfosChantier: React.FC = () => {
   const handleDeleteProject = async () => {
     try {
       await deleteCurrentProject();
-      // Réinitialiser le formulaire
       setClientId('');
       setNomProjet('');
       setDescriptionProjet('');
@@ -116,7 +112,6 @@ const InfosChantier: React.FC = () => {
       setDevisNumber(newDevisNumber);
       toast.success('Numéro de devis généré avec succès');
       
-      // Si un projet est déjà chargé, sauvegarder le nouveau numéro de devis
       if (currentProjectId) {
         await saveProject(nomProjet, {
           client_id: clientId,
@@ -250,7 +245,6 @@ const InfosChantier: React.FC = () => {
                 id="descriptionProjet" 
                 value={descriptionProjet} 
                 onChange={(e) => {
-                  // Limiter à 100 caractères
                   if (e.target.value.length <= 100) {
                     setDescriptionProjet(e.target.value);
                   }
