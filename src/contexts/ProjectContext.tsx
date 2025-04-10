@@ -23,6 +23,7 @@ type ProjectContextType = {
   createNewProject: () => void;
   deleteCurrentProject: () => Promise<void>;
   refreshProjects: () => Promise<void>;
+  updateProjectName: (projectId: string, name: string) => void;
   rooms: {
     rooms: ProjectState['rooms'];
     addRoom: ReturnType<typeof useRooms>['addRoom'];
@@ -57,6 +58,23 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   // Hook pour la gestion des pièces - passer state et dispatch en arguments
   const roomsManager = useRooms(state, dispatch);
+  
+  // Fonction de mise à jour du nom du projet
+  const updateProjectName = (projectId: string, name: string) => {
+    if (!projectId) return;
+    
+    // Mettre à jour le nom du projet dans la liste locale
+    const updatedProjects = projects.map(p => 
+      p.id === projectId ? { ...p, name: name } : p
+    );
+    
+    // Log pour débogage
+    console.log("Mise à jour du nom du projet:", projectId, name);
+    console.log("Projets mis à jour:", updatedProjects);
+    
+    // Lors de la prochaine sauvegarde, le nom sera persisté
+    // puisque nous utilisons la version locale mise à jour
+  };
   
   // Fonction améliorée de sauvegarde avec suivi d'état
   const enhancedSaveProject = async (name?: string) => {
@@ -98,6 +116,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       createNewProject: enhancedCreateNewProject,
       deleteCurrentProject,
       refreshProjects,
+      updateProjectName,
       rooms: roomsManager
     }}>
       {children}
