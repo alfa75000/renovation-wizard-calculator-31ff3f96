@@ -11,6 +11,7 @@ import { NewProjectDialog } from '@/components/layout/NewProjectDialog';
 import { OpenProjectSheet } from '@/components/layout/OpenProjectSheet';
 import { SaveAsDialog } from '@/components/layout/SaveAsDialog';
 import { useState } from 'react';
+import { useProject } from '@/contexts/ProjectContext';
 
 interface InfosChantierLayoutProps {
   clientId: string;
@@ -74,6 +75,7 @@ export const InfosChantierLayout: React.FC<InfosChantierLayoutProps> = ({
   const [isNewProjectOpen, setIsNewProjectOpen] = useState(false);
   const [isOpenProjectOpen, setIsOpenProjectOpen] = useState(false);
   const [isSaveAsOpen, setIsSaveAsOpen] = useState(false);
+  const { createNewProject } = useProject();
   
   const handleNewProject = () => {
     setIsNewProjectOpen(true);
@@ -95,6 +97,12 @@ export const InfosChantierLayout: React.FC<InfosChantierLayoutProps> = ({
     
     // Ensuite sauvegarder le projet
     await onSaveProject();
+  };
+
+  // Gestion des props pour les dialogues
+  const handleCreateProject = () => {
+    createNewProject();
+    setIsNewProjectOpen(false);
   };
   
   return (
@@ -166,6 +174,8 @@ export const InfosChantierLayout: React.FC<InfosChantierLayoutProps> = ({
             <ProjectList 
               projects={projects} 
               currentProjectId={currentProjectId}
+              projectState={projectState}
+              isLoading={isLoading}
               onSelectProject={onSelectProject}
             />
           </div>
@@ -174,7 +184,8 @@ export const InfosChantierLayout: React.FC<InfosChantierLayoutProps> = ({
       
       <NewProjectDialog 
         open={isNewProjectOpen} 
-        onOpenChange={setIsNewProjectOpen} 
+        onOpenChange={setIsNewProjectOpen}
+        onCreateProject={handleCreateProject}
       />
       
       <OpenProjectSheet 
@@ -184,7 +195,8 @@ export const InfosChantierLayout: React.FC<InfosChantierLayoutProps> = ({
       
       <SaveAsDialog 
         open={isSaveAsOpen} 
-        onOpenChange={setIsSaveAsOpen} 
+        onOpenChange={setIsSaveAsOpen}
+        onSaveProject={handleSaveProject}
       />
     </Layout>
   );

@@ -38,6 +38,38 @@ export const useProjectInfo = () => {
   
   const { state: projectStateRaw, saveProject: saveProjectContext } = useProject();
   
+  // Déclarer la fonction shouldGenerateProjectName avant de l'utiliser
+  const shouldGenerateProjectName = useCallback(() => {
+    return !nomProjet || nomProjet.trim() === '';
+  }, [nomProjet]);
+
+  // Déclarer generateProjectNameIfNeeded avant de l'utiliser ailleurs
+  const generateProjectNameIfNeeded = useCallback(async () => {
+    if (shouldGenerateProjectName()) {
+      console.log("Generating project name automatically...");
+      const newName = await generateProjectName();
+      // Force UI update if needed
+      if (newName && newName !== nomProjet) {
+        setNomProjet(newName);
+        
+        // Sauvegarder temporairement les modifications pour éviter la perte lors du changement de page
+        const projectInfo = {
+          name: newName,
+          client_id: clientId,
+          description: descriptionProjet,
+          address: adresseChantier,
+          occupant: occupant,
+          devis_number: devisNumber
+        };
+        
+        // Mettre à jour le context avec le nouveau nom
+        await saveProjectContext(newName);
+      }
+      return true;
+    }
+    return false;
+  }, [shouldGenerateProjectName, generateProjectName, nomProjet, setNomProjet, clientId, descriptionProjet, adresseChantier, occupant, devisNumber, saveProjectContext]);
+  
   // Synchronize project data to context when loaded
   useEffect(() => {
     if (currentProjectId) {
@@ -99,9 +131,11 @@ export const useProjectInfo = () => {
       await saveProjectContext(projectInfo.name);
       
       // Ensuite utiliser l'implémentation de base pour la sauvegarde complète
-      return await baseHandleSaveProject(clientId, nomProjet, async () => {
+      const result = await baseHandleSaveProject(clientId, nomProjet, async () => {
         return nomProjet;
       });
+      
+      return result;
     } catch (error) {
       console.error("Erreur lors de la sauvegarde du projet:", error);
       return false;
@@ -117,38 +151,6 @@ export const useProjectInfo = () => {
     saveProjectContext,
     generateProjectNameIfNeeded
   ]);
-
-  // New helper function to check if project name is empty and should be generated
-  const shouldGenerateProjectName = useCallback(() => {
-    return !nomProjet || nomProjet.trim() === '';
-  }, [nomProjet]);
-
-  // Expose a simple function to generate project name if needed
-  const generateProjectNameIfNeeded = useCallback(async () => {
-    if (shouldGenerateProjectName()) {
-      console.log("Generating project name automatically...");
-      const newName = await generateProjectName();
-      // Force UI update if needed
-      if (newName && newName !== nomProjet) {
-        setNomProjet(newName);
-        
-        // Sauvegarder temporairement les modifications pour éviter la perte lors du changement de page
-        const projectInfo = {
-          name: newName,
-          client_id: clientId,
-          description: descriptionProjet,
-          address: adresseChantier,
-          occupant: occupant,
-          devis_number: devisNumber
-        };
-        
-        // Mettre à jour le context avec le nouveau nom
-        await saveProjectContext(newName);
-      }
-      return true;
-    }
-    return false;
-  }, [shouldGenerateProjectName, generateProjectName, nomProjet, setNomProjet, clientId, descriptionProjet, adresseChantier, occupant, devisNumber, saveProjectContext]);
 
   return {
     projectState: projectStateRaw,

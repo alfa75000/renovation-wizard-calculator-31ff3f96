@@ -77,6 +77,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
     descriptionProjet,
     adresseChantier,
     occupant,
+    infoComplementaire, // Ajout de ce champ qui était manquant
     devisNumber,
     currentProjectId,
     hasUnsavedChanges,

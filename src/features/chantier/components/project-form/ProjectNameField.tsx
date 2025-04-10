@@ -20,16 +20,15 @@ export const ProjectNameField: React.FC<ProjectNameFieldProps> = ({
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [localNomProjet, setLocalNomProjet] = useState<string>(nomProjet);
   
-  // Synchroniser l'état local avec les props
+  // Synchroniser l'état local avec les props à chaque changement
   useEffect(() => {
-    if (nomProjet !== localNomProjet) {
-      setLocalNomProjet(nomProjet);
-    }
+    setLocalNomProjet(nomProjet);
   }, [nomProjet]);
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
     setLocalNomProjet(newValue);
+    // Propager immédiatement la valeur au parent
     setNomProjet(newValue);
   };
   
@@ -40,6 +39,10 @@ export const ProjectNameField: React.FC<ProjectNameFieldProps> = ({
       
       if (typeof generatedName === 'string') {
         setLocalNomProjet(generatedName);
+        setNomProjet(generatedName); // S'assurer que la valeur est propagée
+      } else if (nomProjet) {
+        // Si le nom existe déjà, synchroniser avec l'état local
+        setLocalNomProjet(nomProjet);
       }
       
       toast.success('Nom du projet généré avec succès');

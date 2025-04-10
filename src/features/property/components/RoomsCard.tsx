@@ -34,15 +34,21 @@ const RoomsCard: React.FC<RoomsCardProps> = ({
 
   // Enhanced handler for adding a room that also generates project name if needed
   const handleAddRoom = async (room: Omit<Room, "id">) => {
-    // Check if this is the first room and project name is empty
-    if (rooms.length === 0 && shouldGenerateProjectName()) {
-      // Generate project name before adding the room
-      console.log("First room being added with empty project name, generating name automatically");
-      await generateProjectNameIfNeeded();
+    try {
+      // Check if this is the first room and project name is empty
+      if (rooms.length === 0 && shouldGenerateProjectName()) {
+        // Generate project name before adding the room
+        console.log("First room being added with empty project name, generating name automatically");
+        await generateProjectNameIfNeeded();
+      }
+      
+      // Call the original onAddRoom function
+      onAddRoom(room);
+    } catch (error) {
+      console.error("Erreur lors de l'ajout de pièce:", error);
+      // Continue with adding the room even if name generation fails
+      onAddRoom(room);
     }
-    
-    // Call the original onAddRoom function
-    onAddRoom(room);
   };
 
   return (
