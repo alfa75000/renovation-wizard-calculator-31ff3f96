@@ -1,5 +1,5 @@
 
-import { useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 import { useProjectMetadata } from './useProjectMetadata';
 import { useProjectOperations } from './useProjectOperations';
 import { useProject } from '@/contexts/ProjectContext';
@@ -56,13 +56,10 @@ export const useProjectInfo = () => {
     }
   }, [currentProjectId, projects, setClientId, setNomProjet, setDescriptionProjet, setAdresseChantier, setOccupant, setDevisNumber]);
   
-  // Utilisation d'un useEffect pour charger les données du projet lors du montage du composant
-  // et lorsque currentProjectId ou projects changent
-  useEffect(() => {
-    if (currentProjectId && projects.length > 0) {
-      loadCurrentProjectData();
-    }
-  }, [currentProjectId, projects, loadCurrentProjectData]);
+  // React effect to load project data is now an explicit function call
+  if (currentProjectId && projects.length > 0) {
+    loadCurrentProjectData();
+  }
   
   // Enhanced version of handleDeleteProject that also resets local state
   const handleDeleteProject = useCallback(async () => {
