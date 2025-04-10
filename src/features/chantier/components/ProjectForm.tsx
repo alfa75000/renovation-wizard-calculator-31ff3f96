@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -13,7 +14,6 @@ import { ClientDetails } from './ClientDetails';
 import { toast } from 'sonner';
 import { generateDevisNumber } from '@/services/projectService';
 import { getDefaultClient } from '@/services/clientService';
-import { Client } from '@/types';
 
 interface ProjectFormProps {
   clientId: string;
@@ -66,6 +66,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
   const { state: clientsState, dispatch: clientsDispatch } = useClients();
   const [isGeneratingDevisNumber, setIsGeneratingDevisNumber] = useState<boolean>(false);
   
+  // S'assurer que le client par défaut existe dans le context ClientsState
   useEffect(() => {
     const ensureClientExists = async () => {
       if (clientsState.clients.length === 0) {
@@ -88,9 +89,21 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
     ensureClientExists();
   }, [clientsState.clients.length, clientsDispatch]);
   
+  // Génération automatique du nom du projet basé sur le client, le numéro de devis et la description
   useEffect(() => {
     generateProjectName();
   }, [clientId, devisNumber, descriptionProjet, clientsState.clients]);
+  
+  // Générer automatiquement un numéro de devis lors du chargement initial si non défini
+  useEffect(() => {
+    const setupDevisNumber = async () => {
+      if (!devisNumber && !isGeneratingDevisNumber) {
+        await handleGenerateDevisNumber();
+      }
+    };
+    
+    setupDevisNumber();
+  }, []);
   
   const generateProjectName = () => {
     let newName = '';
@@ -117,10 +130,9 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
       setIsGeneratingDevisNumber(true);
       const newDevisNumber = await generateDevisNumber();
       setDevisNumber(newDevisNumber);
-      toast.success('Numéro de devis généré avec succès');
+      console.log('Numéro de devis généré automatiquement:', newDevisNumber);
     } catch (error) {
       console.error('Erreur lors de la génération du numéro de devis:', error);
-      toast.error('Erreur lors de la génération du numéro de devis');
     } finally {
       setIsGeneratingDevisNumber(false);
     }

@@ -32,24 +32,24 @@ const InfosChantier: React.FC = () => {
   const [dateDevis, setDateDevis] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [devisNumber, setDevisNumber] = useState<string>('');
   
-  // Chargement du client par défaut si nécessaire
+  // Chargement du client par défaut dès le démarrage
   useEffect(() => {
-    const loadDefaultClientIfNeeded = async () => {
-      if (!clientId && currentProjectId) {
-        try {
+    const loadDefaultClient = async () => {
+      try {
+        if (!clientId) {
           const defaultClient = await getDefaultClient();
           if (defaultClient && defaultClient.id) {
             setClientId(defaultClient.id);
-            console.log('Client par défaut chargé:', defaultClient.nom);
+            console.log('Client par défaut chargé automatiquement:', defaultClient.nom);
           }
-        } catch (error) {
-          console.error('Erreur lors du chargement du client par défaut:', error);
         }
+      } catch (error) {
+        console.error('Erreur lors du chargement du client par défaut:', error);
       }
     };
     
-    loadDefaultClientIfNeeded();
-  }, [clientId, currentProjectId]);
+    loadDefaultClient();
+  }, []);
   
   useEffect(() => {
     if (currentProjectId) {
@@ -94,7 +94,7 @@ const InfosChantier: React.FC = () => {
   
   const handleSaveProject = async () => {
     try {
-      // Si aucun client n'est sélectionné, utiliser le client par défaut
+      // S'assurer que le client, la description et le numéro de devis sont définis avant la sauvegarde
       if (!clientId) {
         try {
           const defaultClient = await getDefaultClient();
@@ -107,8 +107,13 @@ const InfosChantier: React.FC = () => {
         }
       }
       
-      // Logique de sauvegarde désactivée temporairement
-      // await saveProject();
+      // Si pas de description, utiliser "Projet en cours"
+      if (!descriptionProjet) {
+        setDescriptionProjet('Projet en cours');
+      }
+      
+      // Activer la sauvegarde une fois que tout est prêt
+      await saveProject();
       toast.success('Projet enregistré avec succès');
     } catch (error) {
       console.error('Erreur lors de l\'enregistrement du projet:', error);
