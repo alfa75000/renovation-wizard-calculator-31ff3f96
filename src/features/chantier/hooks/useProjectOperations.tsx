@@ -39,7 +39,8 @@ export const useProjectOperations = () => {
   }, [deleteCurrentProject]);
   
   // Handler for saving the current project
-  const handleSaveProject = useCallback(async (clientId: string, nomProjet: string, generateNameFn: () => Promise<void>) => {
+  // Updated to accept a function that can return a string
+  const handleSaveProject = useCallback(async (clientId: string, nomProjet: string, generateNameFn: () => Promise<string | void>) => {
     if (!clientId) {
       toast.error('Veuillez sélectionner un client');
       return false;

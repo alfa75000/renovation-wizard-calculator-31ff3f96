@@ -76,8 +76,12 @@ export const useProjectInfo = () => {
   }, [baseHandleDeleteProject, setClientId, setNomProjet, setDescriptionProjet, setAdresseChantier, setOccupant, setInfoComplementaire, setDevisNumber]);
   
   // Enhanced version of handleSaveProject that passes required arguments
+  // Update the type signature to expect a function returning Promise<string | void>
   const handleSaveProject = useCallback(async () => {
-    return await baseHandleSaveProject(clientId, nomProjet, generateProjectName);
+    return await baseHandleSaveProject(clientId, nomProjet, async () => {
+      const name = await generateProjectName();
+      return name; // Now correctly passes the string return value
+    });
   }, [baseHandleSaveProject, clientId, nomProjet, generateProjectName]);
 
   // New helper function to check if project name is empty and should be generated
