@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
 import { Room, Travail, ProjectState } from '@/types';
+import { surfaceTypeToDb } from '@/utils/surfaceTypesAdapter';
 
 /**
  * Récupère tous les projets depuis Supabase
@@ -88,8 +89,8 @@ export const fetchProjectById = async (projectId: string) => {
         throw menuiseriesError;
       }
       
-      // Assigner les menuiseries à la pièce
-      room.menuiseries = (menuiseriesData || []).map(item => ({
+      // Assigner les menuiseries à la pièce comme propriété temporaire
+      const roomMenuiseries = (menuiseriesData || []).map(item => ({
         id: item.id,
         type: item.type || item.menuiserie_type?.name || '',
         name: item.name || item.menuiserie_type?.name || '',
@@ -98,7 +99,7 @@ export const fetchProjectById = async (projectId: string) => {
         quantity: item.quantity || 1,
         surface: ((item.largeur || item.width_override || item.menuiserie_type?.largeur || 0) * 
                  (item.hauteur || item.height_override || item.menuiserie_type?.hauteur || 0)) / 10000,
-        surfaceImpactee: item.surface_impactee || 'mur'
+        surfaceImpactee: item.surface_impactee?.toLowerCase() || 'mur'
       }));
       
       // Récupérer les surfaces personnalisées
@@ -112,8 +113,8 @@ export const fetchProjectById = async (projectId: string) => {
         throw surfacesError;
       }
       
-      // Assigner les surfaces personnalisées à la pièce
-      room.autresSurfaces = (surfacesData || []).map(item => ({
+      // Assigner les surfaces personnalisées à la pièce comme propriété temporaire
+      const roomAutresSurfaces = (surfacesData || []).map(item => ({
         id: item.id,
         type: item.name || '',
         name: item.name || '',
@@ -125,6 +126,19 @@ export const fetchProjectById = async (projectId: string) => {
         surfaceImpactee: item.surface_impactee?.toLowerCase() || 'mur',
         estDeduction: item.adjustment_type === 'Déduire'
       }));
+      
+      // Utilisation des données temporaires pour la construction de l'état final
+      const roomWithData = {
+        ...room,
+        menuiseries: roomMenuiseries,
+        autresSurfaces: roomAutresSurfaces
+      };
+      
+      // Remplacer la pièce dans notre tableau avec la version complète
+      const roomIndex = rooms.findIndex(r => r.id === room.id);
+      if (roomIndex !== -1) {
+        rooms[roomIndex] = roomWithData;
+      }
     }
     
     // Construire l'objet ProjectState complet
@@ -316,9 +330,7 @@ export const createProject = async (projectState: ProjectState, projectInfo: any
       if (room.autresSurfaces && room.autresSurfaces.length > 0) {
         for (const surface of room.autresSurfaces) {
           // Convertir le type de surfaceImpactee au format attendu par la base de données
-          const surfaceImpactee = surface.surfaceImpactee === 'mur' ? 'Mur' : 
-                                 surface.surfaceImpactee === 'plafond' ? 'Plafond' : 
-                                 surface.surfaceImpactee === 'sol' ? 'Sol' : 'Aucune';
+          const surfaceImpactee = surfaceTypeToDb(surface.surfaceImpactee);
 
           const { error: surfaceError } = await supabase
             .from('room_custom_items')

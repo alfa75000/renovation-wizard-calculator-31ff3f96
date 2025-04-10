@@ -179,7 +179,7 @@ const InfosChantier: React.FC = () => {
               />
             </div>
             
-            {/* Les boutons de sauvegarde ont été supprimés ici */}
+            {/* Tous les boutons de sauvegarde ont été supprimés */}
           </div>
         </div>
         

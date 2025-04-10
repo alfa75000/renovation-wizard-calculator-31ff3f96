@@ -56,7 +56,7 @@ const RoomCustomItems: React.FC<RoomCustomItemsProps> = ({
       return externalUpdateHandler(id, changes);
     } else {
       const result = await updateAutreSurfaceItem(id, changes);
-      return result || {} as AutreSurface;
+      return result as AutreSurface;
     }
   };
   
@@ -105,7 +105,7 @@ const RoomCustomItems: React.FC<RoomCustomItemsProps> = ({
             )}
             
             <AutresSurfacesList
-              surfaces={autresSurfaces}
+              autresSurfaces={autresSurfaces}
               onUpdate={handleUpdateSurface}
               onDelete={handleDeleteSurface}
             />

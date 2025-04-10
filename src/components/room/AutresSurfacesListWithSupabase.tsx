@@ -4,6 +4,7 @@ import RoomCustomItems from './RoomCustomItems';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useAutresSurfacesWithSupabase } from '@/hooks/useAutresSurfacesWithSupabase';
 import { Loader } from '@/components/ui/loader';
+import { AutreSurface } from '@/types';
 
 interface AutresSurfacesListWithSupabaseProps {
   roomId: string;
@@ -45,9 +46,9 @@ const AutresSurfacesListWithSupabase: React.FC<AutresSurfacesListWithSupabasePro
     return result || [];
   };
 
-  const handleUpdateSurface = async (id: string, changes: any) => {
+  const handleUpdateSurface = async (id: string, changes: Partial<Omit<AutreSurface, 'id' | 'surface'>>) => {
     const result = await updateAutreSurfaceItem(id, changes);
-    return result || {};
+    return result as AutreSurface; // Add type assertion here to fix the error
   };
 
   const handleDeleteSurface = async (id: string) => {

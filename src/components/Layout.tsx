@@ -21,7 +21,7 @@ interface LayoutProps {
 
 export const Layout: React.FC<LayoutProps> = ({ children, title, subtitle }) => {
   const location = useLocation();
-  const { state: projectState, currentProjectId, projects, saveProject } = useProject();
+  const { state: projectState, currentProjectId, projects, saveProject, loadProject } = useProject();
   const { state: chantierState } = useProjetChantier();
   const { state: clientsState } = useClients();
   
@@ -71,10 +71,11 @@ export const Layout: React.FC<LayoutProps> = ({ children, title, subtitle }) => 
     }
     
     try {
+      // Nous devons passer un objet avec les propriétés appropriées
       saveProject({
         name: projectName,
-        client_id: clientId,
-        // Autres propriétés si nécessaire
+        client_id: clientId || null,
+        // Add other properties if needed
       });
       
       toast.success("Projet enregistré", { description: "Le projet a été enregistré avec succès" });
@@ -99,6 +100,13 @@ export const Layout: React.FC<LayoutProps> = ({ children, title, subtitle }) => 
       console.error("Erreur lors de l'enregistrement du projet:", error);
       toast.error("Erreur", { description: "Une erreur est survenue lors de l'enregistrement du projet" });
     }
+  };
+
+  // Gestionnaire pour ouvrir un projet
+  const handleOpenProject = (projectId: string) => {
+    loadProject(projectId);
+    setOpenProjectSheetOpen(false);
+    toast.success("Projet ouvert", { description: "Le projet a été chargé avec succès" });
   };
   
   const isActive = (path: string) => {
@@ -317,10 +325,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, title, subtitle }) => 
                     <div 
                       key={project.id}
                       className="p-4 border rounded-md hover:bg-gray-50 cursor-pointer flex justify-between items-center"
-                      onClick={() => {
-                        // Fonction à compléter pour charger le projet
-                        setOpenProjectSheetOpen(false);
-                      }}
                     >
                       <div>
                         <h3 className="font-medium">{project.name}</h3>
@@ -333,7 +337,11 @@ export const Layout: React.FC<LayoutProps> = ({ children, title, subtitle }) => 
                           {project.updated_at ? new Date(project.updated_at).toLocaleDateString() : new Date(project.created_at).toLocaleDateString()}
                         </p>
                       </div>
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleOpenProject(project.id)}
+                      >
                         Ouvrir
                       </Button>
                     </div>
