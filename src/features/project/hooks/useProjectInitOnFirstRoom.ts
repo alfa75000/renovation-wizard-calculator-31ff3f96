@@ -40,6 +40,7 @@ export const useProjectInitOnFirstRoom = (
     const initProjectOnFirstRoom = async () => {
       // Si nous avons une première pièce ajoutée et que l'initialisation n'a pas encore été faite
       if (projectState?.rooms?.length === 1 && isFirstRoom && !hasInitialized) {
+        console.log("Initialisation du projet après ajout de première pièce");
         setIsFirstRoom(false);
         setHasInitialized(true);
         sessionStorage.setItem('project_initialized', 'true');
@@ -109,6 +110,7 @@ export const useProjectInitOnFirstRoom = (
         setHasShownToast(false);
         sessionStorage.removeItem('project_initialized');
         sessionStorage.removeItem('project_init_toast_shown');
+        console.log("Réinitialisation des indicateurs de projet vide");
       }
     };
     

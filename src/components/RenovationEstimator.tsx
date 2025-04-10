@@ -27,7 +27,7 @@ const RenovationEstimator: React.FC = () => {
   const [descriptionProjet, setDescriptionProjet] = useState<string>('');
   
   // Utiliser le hook pour initialiser les informations du projet lors de l'ajout de la première pièce
-  useProjectInitOnFirstRoom(
+  const { isFirstRoom, setIsFirstRoom } = useProjectInitOnFirstRoom(
     clientId,
     setClientId,
     devisNumber,
@@ -35,6 +35,16 @@ const RenovationEstimator: React.FC = () => {
     descriptionProjet,
     setDescriptionProjet
   );
+
+  // Nettoyer sessionStorage au chargement du composant pour permettre l'initialisation
+  // C'est important pour un nouveau projet
+  useEffect(() => {
+    if (rooms.length === 0) {
+      sessionStorage.removeItem('project_initialized');
+      sessionStorage.removeItem('project_init_toast_shown');
+      setIsFirstRoom(true);
+    }
+  }, [rooms.length, setIsFirstRoom]);
 
   const roomTypes = ["Salon", "Chambre", "Cuisine", "Salle de bain", "Toilettes", "Bureau", "Entrée", "Couloir", "Autre"];
 
