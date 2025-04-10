@@ -76,7 +76,9 @@ export const convertSupabaseSurfaceToAutreSurface = (item: any) => {
     surface: item.surface || 0,
     quantity: item.quantity || 1,
     surfaceImpactee: item.surface_impactee || 'mur',
-    estDeduction: item.est_deduction || false
+    estDeduction: item.est_deduction || false,
+    impactePlinthe: item.impacte_plinthe || false,
+    description: item.description || ''
   };
 };
 
