@@ -1,6 +1,7 @@
 
 import React, { createContext, useContext, useReducer, useEffect, useState, useCallback } from 'react';
 import { ProjectState, Property, Room, Travail, ProjectAction } from '@/types';
+import { Project } from '@/types/supabase';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'sonner';
 import { 
@@ -9,8 +10,7 @@ import {
   fetchProjectById, 
   fetchProjects, 
   deleteProject,
-  generateDefaultProjectName,
-  Project
+  generateDefaultProjectName
 } from '@/services/projectService';
 
 // État initial
@@ -185,7 +185,27 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     try {
       setIsLoading(true);
       const projectsData = await fetchProjects();
-      setProjects(projectsData);
+      
+      // Assurons-nous que les données sont conformes au type Project
+      const typedProjects: Project[] = projectsData.map(p => ({
+        id: p.id,
+        name: p.name,
+        description: '',
+        address: '',
+        postal_code: '',
+        city: '',
+        occupant: '',
+        client_id: p.client_id,
+        property_type: p.property_type,
+        floors: p.floors,
+        total_area: p.total_area,
+        ceiling_height: p.ceiling_height,
+        status: p.status,
+        created_at: p.created_at,
+        updated_at: p.updated_at
+      }));
+      
+      setProjects(typedProjects);
     } catch (error) {
       console.error('Erreur lors du chargement des projets:', error);
       toast.error('Impossible de charger la liste des projets');

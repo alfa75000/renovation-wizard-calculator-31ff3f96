@@ -20,7 +20,6 @@ export const useTravaux = () => {
     });
     
     toast({
-      title: "Travail ajouté",
       description: `Le travail "${travail.description}" a été ajouté avec succès.`
     });
     
@@ -34,7 +33,6 @@ export const useTravaux = () => {
     });
     
     toast({
-      title: "Travail mis à jour",
       description: `Le travail a été mis à jour avec succès.`
     });
   };
@@ -46,7 +44,6 @@ export const useTravaux = () => {
     });
     
     toast({
-      title: "Travail supprimé",
       description: `Le travail a été supprimé avec succès.`
     });
   };

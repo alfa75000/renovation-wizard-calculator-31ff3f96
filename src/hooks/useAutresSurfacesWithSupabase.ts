@@ -54,7 +54,7 @@ export const useAutresSurfacesWithSupabase = (roomId?: string) => {
   }, [customItems, itemsLoading, itemsError]);
 
   // Fonction utilitaire pour convertir les valeurs de Supabase en format frontend
-  const convertSurfaceImpacteeToFrontend = (value: SurfaceImpactee): string => {
+  const convertSurfaceImpacteeToFrontend = (value: SurfaceImpactee): "mur" | "plafond" | "sol" => {
     switch (value) {
       case 'Mur':
         return 'mur';
@@ -97,7 +97,7 @@ export const useAutresSurfacesWithSupabase = (roomId?: string) => {
           hauteur: item.hauteur || 0,
           surfaceImpacteeParDefaut: convertSurfaceImpacteeToFrontend(item.surface_impactee),
           estDeduction: item.adjustment_type === 'Déduire',
-          impactePlinthe: item.impacte_plinthe
+          impactePlinthe: item.impacte_plinthe || false
         }));
         
         setTypesAutresSurfaces(convertedTypes);
@@ -130,17 +130,16 @@ export const useAutresSurfacesWithSupabase = (roomId?: string) => {
       // Ajouter la quantité spécifiée
       for (let i = 0; i < quantity; i++) {
         // Convertir au format RoomCustomItem
-        const newItemData: Omit<RoomCustomItem, 'id' | 'created_at'> = {
+        const newItemData: Omit<RoomCustomItem, 'id' | 'created_at' | 'updated_at' | 'surface'> = {
           room_id: roomId,
           type: surface.type,
           name: surface.name,
           designation: surface.designation,
           largeur: surface.largeur,
           hauteur: surface.hauteur,
-          surface: surface.largeur * surface.hauteur,
           quantity: surface.quantity || 1,
-          surface_impactee: convertSurfaceImpacteeToSupabase(surface.surfaceImpactee),
-          adjustment_type: surface.estDeduction ? 'Déduire' : 'Ajouter',
+          surface_impactee: convertSurfaceImpacteeToSupabase(surface.surfaceImpactee) as SurfaceImpactee,
+          adjustment_type: surface.estDeduction ? 'Déduire' : 'Ajouter' as AdjustmentType,
           impacte_plinthe: surface.impactePlinthe,
           description: surface.description
         };
@@ -185,7 +184,7 @@ export const useAutresSurfacesWithSupabase = (roomId?: string) => {
       setLoading(true);
       
       // Convertir au format RoomCustomItem
-      const updateData: Partial<Omit<RoomCustomItem, 'id' | 'created_at'>> = {};
+      const updateData: Partial<Omit<RoomCustomItem, 'id' | 'created_at' | 'updated_at' | 'surface'>> = {};
       
       // Copier les champs standards qui ont le même nom
       if (changes.name !== undefined) updateData.name = changes.name;
@@ -198,11 +197,11 @@ export const useAutresSurfacesWithSupabase = (roomId?: string) => {
       
       // Convertir spécifiquement les champs qui ont un nom différent
       if (changes.surfaceImpactee !== undefined) {
-        updateData.surface_impactee = convertSurfaceImpacteeToSupabase(changes.surfaceImpactee);
+        updateData.surface_impactee = convertSurfaceImpacteeToSupabase(changes.surfaceImpactee) as SurfaceImpactee;
       }
       
       if (changes.estDeduction !== undefined) {
-        updateData.adjustment_type = changes.estDeduction ? 'Déduire' : 'Ajouter';
+        updateData.adjustment_type = changes.estDeduction ? 'Déduire' : 'Ajouter' as AdjustmentType;
       }
       
       if (changes.impactePlinthe !== undefined) {

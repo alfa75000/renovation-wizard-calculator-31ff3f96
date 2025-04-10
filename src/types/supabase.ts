@@ -49,24 +49,27 @@ export type RoomMenuiserie = {
   room_id: string;
   menuiserie_type_id: string;
   quantity: number;
-  largeur?: number;
-  hauteur?: number;
-  surface_impactee?: string;
+  width_override?: number;
+  height_override?: number;
+  notes?: string | null;
+  updated_at: string;
   menuiserie_type?: MenuiserieType;
 };
 
 export type Client = {
   id: string;
   created_at: string;
-  name: string;
-  first_name: string | null;
+  nom: string;
+  prenom: string | null;
   email: string | null;
-  phone: string | null;
-  address: string | null;
-  city: string | null;
-  postal_code: string | null;
+  tel1: string | null;
+  tel2: string | null;
+  adresse: string | null;
+  ville: string | null;
+  code_postal: string | null;
   client_type_id: string;
-  notes: string | null;
+  infos_complementaires: string | null;
+  autre_info: string | null;
 };
 
 export type ClientType = {
@@ -79,6 +82,7 @@ export type ClientType = {
 export type RoomCustomItem = {
   id: string;
   created_at: string;
+  updated_at: string;
   room_id: string;
   type: string;
   name: string;
@@ -91,6 +95,7 @@ export type RoomCustomItem = {
   adjustment_type: AdjustmentType;
   impacte_plinthe: boolean;
   description: string | null;
+  source_type_id?: string | null;
 };
 
 // Type pour la table autres_surfaces_types
@@ -119,4 +124,49 @@ export type RoomWork = {
   supply_price_override: number | null;
   description_override: string | null;
   vat_rate: number;
+};
+
+// Type pour la table projects
+export type Project = {
+  id: string;
+  name: string;
+  description?: string;
+  address?: string;
+  postal_code?: string;
+  city?: string;
+  occupant?: string;
+  client_id: string | null;
+  property_type: string | null;
+  floors: number | null;
+  total_area: number | null;
+  rooms_count?: number | null;
+  ceiling_height: number | null;
+  status?: string;
+  created_at: string;
+  updated_at: string;
+};
+
+// Type pour la table rooms
+export type Room = {
+  id: string;
+  project_id: string;
+  name: string;
+  custom_name?: string | null;
+  type: string | null;
+  width?: number | null;
+  length?: number | null;
+  height?: number | null;
+  perimeter?: number | null;
+  surface?: number | null;
+  wall_height?: number | null;
+  wall_surface?: number | null;
+  floor_surface?: number | null;
+  ceiling_surface?: number | null;
+  plinth_height?: number | null;
+  type_sol?: string | null;
+  type_mur?: string | null;
+  menuiseries?: RoomMenuiserie[];
+  custom_items?: RoomCustomItem[];
+  created_at: string;
+  updated_at: string;
 };
