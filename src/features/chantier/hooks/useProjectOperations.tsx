@@ -12,7 +12,7 @@ export const useProjectOperations = () => {
     projects,
     hasUnsavedChanges,
     isLoading,
-    projectState
+    state // Changed from projectState to state, which is the correct property name
   } = useProject();
 
   // Handler for loading a project
@@ -69,6 +69,6 @@ export const useProjectOperations = () => {
     projects,
     hasUnsavedChanges,
     isLoading,
-    projectState
+    projectState: state // Return state as projectState for backward compatibility
   };
 };
