@@ -27,6 +27,8 @@ const InfosChantier: React.FC = () => {
     devisNumber,
     setDevisNumber,
     generateProjectName,
+    generateProjectNameIfNeeded,
+    shouldGenerateProjectName,
     handleChargerProjet,
     handleDeleteProject,
     handleSaveProject
@@ -56,6 +58,8 @@ const InfosChantier: React.FC = () => {
       isLoading={isLoading}
       hasUnsavedChanges={hasUnsavedChanges}
       onGenerateProjectName={generateProjectName}
+      generateProjectNameIfNeeded={generateProjectNameIfNeeded}
+      shouldGenerateProjectName={shouldGenerateProjectName}
       onSaveProject={handleSaveProject}
       onDeleteProject={handleDeleteProject}
       onSelectProject={handleChargerProjet}

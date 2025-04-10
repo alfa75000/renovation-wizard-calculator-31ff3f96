@@ -80,6 +80,21 @@ export const useProjectInfo = () => {
     return await baseHandleSaveProject(clientId, nomProjet, generateProjectName);
   }, [baseHandleSaveProject, clientId, nomProjet, generateProjectName]);
 
+  // New helper function to check if project name is empty and should be generated
+  const shouldGenerateProjectName = useCallback(() => {
+    return !nomProjet || nomProjet.trim() === '';
+  }, [nomProjet]);
+
+  // Expose a simple function to generate project name if needed
+  const generateProjectNameIfNeeded = useCallback(async () => {
+    if (shouldGenerateProjectName()) {
+      console.log("Generating project name automatically...");
+      await generateProjectName();
+      return true;
+    }
+    return false;
+  }, [shouldGenerateProjectName, generateProjectName]);
+
   return {
     projectState: projectStateRaw,
     isLoading,
@@ -103,6 +118,8 @@ export const useProjectInfo = () => {
     devisNumber,
     setDevisNumber,
     generateProjectName,
+    generateProjectNameIfNeeded,
+    shouldGenerateProjectName,
     handleChargerProjet,
     handleDeleteProject,
     handleSaveProject

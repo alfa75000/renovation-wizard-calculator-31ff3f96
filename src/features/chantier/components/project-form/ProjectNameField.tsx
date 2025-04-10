@@ -39,6 +39,7 @@ export const ProjectNameField: React.FC<ProjectNameFieldProps> = ({
           value={nomProjet} 
           readOnly
           className="bg-gray-50 flex-1"
+          placeholder="Se génère automatiquement à l'ajout de la première pièce"
         />
         <Button 
           type="button" 

@@ -1,10 +1,11 @@
 
-import React from "react";
+import React, { useContext } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { formaterQuantite } from "@/lib/utils";
 import { Room } from "@/types";
 import RoomForm from "@/components/room/RoomForm";
 import RoomsList from "@/components/room/RoomsList";
+import { useProjectInfo } from "@/features/chantier/hooks/useProjectInfo";
 
 interface RoomsCardProps {
   rooms: Room[];
@@ -23,11 +24,26 @@ const RoomsCard: React.FC<RoomsCardProps> = ({
   onEditRoom,
   onDeleteRoom
 }) => {
+  const { generateProjectNameIfNeeded, shouldGenerateProjectName } = useProjectInfo();
+
   const calculateTotalArea = () => {
     return rooms.reduce((total, room) => total + room.surface, 0);
   };
 
   const editingRoom = editingRoomId ? rooms.find(room => room.id === editingRoomId) || null : null;
+
+  // Enhanced handler for adding a room that also generates project name if needed
+  const handleAddRoom = async (room: Omit<Room, "id">) => {
+    // Check if this is the first room and project name is empty
+    if (rooms.length === 0 && shouldGenerateProjectName()) {
+      // Generate project name before adding the room
+      console.log("First room being added with empty project name, generating name automatically");
+      await generateProjectNameIfNeeded();
+    }
+    
+    // Call the original onAddRoom function
+    onAddRoom(room);
+  };
 
   return (
     <Card className="mb-8 shadow-md">
@@ -37,7 +53,7 @@ const RoomsCard: React.FC<RoomsCardProps> = ({
         </div>
         
         <RoomForm 
-          onAddRoom={onAddRoom}
+          onAddRoom={handleAddRoom}
           editingRoom={editingRoom}
           roomTypes={roomTypes}
         />
