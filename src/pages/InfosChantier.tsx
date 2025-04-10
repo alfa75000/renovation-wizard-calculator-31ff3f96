@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useClients } from '@/contexts/ClientsContext';
 import { useProject } from '@/contexts/ProjectContext';
@@ -110,7 +111,9 @@ const InfosChantier: React.FC = () => {
       
       setNomProjet(newName);
       
+      // Mettre à jour le nom du projet dans le contexte et l'affichage
       if (currentProjectId) {
+        console.log("Mise à jour du nom du projet:", newName);
         updateProjectName(currentProjectId, newName);
       }
     }

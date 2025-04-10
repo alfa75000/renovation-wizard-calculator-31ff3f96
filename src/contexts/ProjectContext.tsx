@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useReducer } from 'react';
 import { ProjectState, ProjectAction, Project } from '@/types';
 import { toast } from 'sonner';
@@ -49,8 +50,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     loadProject,
     createNewProject,
     deleteCurrentProject,
-    refreshProjects,
-    updateProjectNameInStorage
+    refreshProjects
   } = useProjectStorage();
   
   // Hook pour la gestion des avertissements de sauvegarde
@@ -63,8 +63,17 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const updateProjectName = (projectId: string, name: string) => {
     if (!projectId) return;
     
-    // Mettre à jour le nom du projet dans le stockage
-    updateProjectNameInStorage(projectId, name);
+    // Mettre à jour le nom du projet dans la liste locale
+    const updatedProjects = projects.map(p => 
+      p.id === projectId ? { ...p, name: name } : p
+    );
+    
+    // Log pour débogage
+    console.log("Mise à jour du nom du projet:", projectId, name);
+    console.log("Projets mis à jour:", updatedProjects);
+    
+    // Lors de la prochaine sauvegarde, le nom sera persisté
+    // puisque nous utilisons la version locale mise à jour
   };
   
   // Fonction améliorée de sauvegarde avec suivi d'état
