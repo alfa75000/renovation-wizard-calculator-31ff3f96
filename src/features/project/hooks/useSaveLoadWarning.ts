@@ -23,7 +23,7 @@ export const useSaveLoadWarning = (state: ProjectState) => {
     setHasUnsavedChanges(false);
   };
 
-  // Détecter les changements non sauvegardés
+  // Détecter les changements non sauvegardés en comparant tout l'état
   useEffect(() => {
     if (lastSavedState) {
       const currentStateSnapshot = JSON.stringify(state);

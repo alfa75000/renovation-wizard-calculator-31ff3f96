@@ -47,7 +47,27 @@ export interface Project {
   ceiling_height: number;
   created_at: string;
   updated_at: string;
-  devis_number?: string; // Ajout du numéro de devis
+  devis_number?: string;
+  general_data?: ProjectGeneralData;
+}
+
+// Données générales du projet
+export interface ProjectGeneralData {
+  infoComplementaire?: string;
+  dateDevis?: string;
+  [key: string]: any;
+}
+
+// Métadonnées du projet
+export interface ProjectMetadata {
+  clientId: string;
+  nomProjet: string;
+  descriptionProjet: string;
+  adresseChantier: string;
+  occupant: string;
+  infoComplementaire: string;
+  dateDevis: string;
+  devisNumber: string;
 }
 
 // On importe Room et Travail pour éviter les erreurs de référence circulaire
@@ -59,6 +79,7 @@ export interface ProjectState {
   property: Property;
   rooms: Room[];
   travaux: Travail[];
+  metadata: ProjectMetadata;
 }
 
 export interface ProjetChantierState {
@@ -78,7 +99,8 @@ export type ProjectAction =
   | { type: 'UPDATE_TRAVAIL'; payload: { id: string; travail: Travail } }
   | { type: 'DELETE_TRAVAIL'; payload: string }
   | { type: 'SAVE_PROJECT'; payload?: { projectId?: string } }
-  | { type: 'LOAD_PROJECT_FROM_SUPABASE'; payload: { projectId: string } };
+  | { type: 'LOAD_PROJECT_FROM_SUPABASE'; payload: { projectId: string } }
+  | { type: 'UPDATE_METADATA'; payload: Partial<ProjectMetadata> };
 
 // Actions pour les projets chantier
 export type ProjetChantierAction =

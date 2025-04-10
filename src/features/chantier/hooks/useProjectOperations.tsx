@@ -2,6 +2,7 @@
 import { useCallback } from 'react';
 import { useProject } from '@/contexts/ProjectContext';
 import { toast } from 'sonner';
+import { ProjectMetadata } from '@/types';
 
 export const useProjectOperations = () => {
   const { 
@@ -12,7 +13,7 @@ export const useProjectOperations = () => {
     projects,
     hasUnsavedChanges,
     isLoading,
-    state // Changed from projectState to state, which is the correct property name
+    state
   } = useProject();
 
   // Handler for loading a project
@@ -29,7 +30,6 @@ export const useProjectOperations = () => {
   const handleDeleteProject = useCallback(async () => {
     try {
       await deleteCurrentProject();
-      // The rest of the state cleanup will be handled by the composite hook
       return true;
     } catch (error) {
       console.error('Erreur lors de la suppression du projet:', error);
@@ -41,8 +41,26 @@ export const useProjectOperations = () => {
   // Handler for saving the current project
   const handleSaveProject = useCallback(async (projectInfo?: any) => {
     try {
-      // Save project with additional metadata
-      await saveProject(projectInfo);
+      // Prepare project metadata from the state
+      const metadata = state.metadata;
+      
+      // Combine with any additional project info passed in
+      const combinedProjectInfo = {
+        client_id: metadata.clientId,
+        name: metadata.nomProjet,
+        description: metadata.descriptionProjet,
+        address: metadata.adresseChantier,
+        occupant: metadata.occupant,
+        general_data: {
+          infoComplementaire: metadata.infoComplementaire,
+          dateDevis: metadata.dateDevis
+        },
+        devis_number: metadata.devisNumber,
+        ...projectInfo // This allows overriding defaults if needed
+      };
+      
+      // Save project with metadata
+      await saveProject(combinedProjectInfo);
       toast.success('Projet enregistré avec succès');
       return true;
     } catch (error) {
@@ -50,7 +68,7 @@ export const useProjectOperations = () => {
       toast.error('Erreur lors de l\'enregistrement du projet');
       return false;
     }
-  }, [saveProject]);
+  }, [saveProject, state.metadata]);
 
   return {
     handleChargerProjet,
@@ -60,6 +78,6 @@ export const useProjectOperations = () => {
     projects,
     hasUnsavedChanges,
     isLoading,
-    projectState: state // Return state as projectState for backward compatibility
+    projectState: state 
   };
 };

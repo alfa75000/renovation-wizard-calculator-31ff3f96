@@ -1,30 +1,16 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { generateDevisNumber } from '@/services/devisService';
 import { useClients } from '@/contexts/ClientsContext';
+import { useProject } from '@/contexts/ProjectContext';
 
 export const useProjectMetadata = () => {
-  const [clientId, setClientId] = useState<string>('');
-  const [nomProjet, setNomProjet] = useState<string>('');
-  const [descriptionProjet, setDescriptionProjet] = useState<string>('');
-  const [adresseChantier, setAdresseChantier] = useState<string>('');
-  const [occupant, setOccupant] = useState<string>('');
-  const [infoComplementaire, setInfoComplementaire] = useState<string>('');
-  const [dateDevis, setDateDevis] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
-  const [devisNumber, setDevisNumber] = useState<string>('');
-  
+  const { state, dispatch } = useProject();
   const { state: clientsState } = useClients();
-
-  // Update document title when project name changes
-  useEffect(() => {
-    if (nomProjet) {
-      document.title = `${nomProjet} - Infos Chantier`;
-    } else {
-      document.title = 'Infos Chantier / Client';
-    }
-  }, [nomProjet]);
+  
+  const { metadata } = state;
   
   // Find the default client ID
   const getDefaultClientId = useCallback((): string => {
@@ -34,13 +20,60 @@ export const useProjectMetadata = () => {
     return defaultClient ? defaultClient.id : '';
   }, [clientsState.clients]);
 
+  // Update metadata helper
+  const updateMetadata = useCallback((field: string, value: string) => {
+    dispatch({
+      type: 'UPDATE_METADATA',
+      payload: { [field]: value }
+    });
+  }, [dispatch]);
+
+  // Create setters for each metadata field
+  const setClientId = useCallback((value: string) => {
+    updateMetadata('clientId', value);
+  }, [updateMetadata]);
+
+  const setNomProjet = useCallback((value: string) => {
+    updateMetadata('nomProjet', value);
+    // Update document title when project name changes
+    if (value) {
+      document.title = `${value} - Infos Chantier`;
+    } else {
+      document.title = 'Infos Chantier / Client';
+    }
+  }, [updateMetadata]);
+
+  const setDescriptionProjet = useCallback((value: string) => {
+    updateMetadata('descriptionProjet', value);
+  }, [updateMetadata]);
+
+  const setAdresseChantier = useCallback((value: string) => {
+    updateMetadata('adresseChantier', value);
+  }, [updateMetadata]);
+
+  const setOccupant = useCallback((value: string) => {
+    updateMetadata('occupant', value);
+  }, [updateMetadata]);
+
+  const setInfoComplementaire = useCallback((value: string) => {
+    updateMetadata('infoComplementaire', value);
+  }, [updateMetadata]);
+
+  const setDateDevis = useCallback((value: string) => {
+    updateMetadata('dateDevis', value);
+  }, [updateMetadata]);
+
+  const setDevisNumber = useCallback((value: string) => {
+    updateMetadata('devisNumber', value);
+  }, [updateMetadata]);
+
   // Generate project name based on client, devis number and description
   const generateProjectName = useCallback(async () => {
     console.log("Génération du nom de projet en cours...");
     
     // Set default client if none selected
-    let updatedClientId = clientId;
-    if (!clientId) {
+    let updatedClientId = metadata.clientId;
+    if (!metadata.clientId) {
       const defaultClientId = getDefaultClientId();
       if (defaultClientId) {
         setClientId(defaultClientId);
@@ -53,8 +86,8 @@ export const useProjectMetadata = () => {
     }
     
     // Generate devis number if none exists
-    let updatedDevisNumber = devisNumber;
-    if (!devisNumber) {
+    let updatedDevisNumber = metadata.devisNumber;
+    if (!metadata.devisNumber) {
       try {
         updatedDevisNumber = await generateDevisNumber();
         setDevisNumber(updatedDevisNumber);
@@ -66,8 +99,8 @@ export const useProjectMetadata = () => {
     }
     
     // Set default description if none exists
-    let updatedDescription = descriptionProjet;
-    if (!descriptionProjet) {
+    let updatedDescription = metadata.descriptionProjet;
+    if (!metadata.descriptionProjet) {
       updatedDescription = "Projet en cours";
       setDescriptionProjet(updatedDescription);
       console.log("Description par défaut utilisée:", updatedDescription);
@@ -98,25 +131,42 @@ export const useProjectMetadata = () => {
     
     console.log("Nouveau nom de projet généré:", newName);
     setNomProjet(newName);
-  }, [clientId, devisNumber, descriptionProjet, clientsState.clients, getDefaultClientId]);
+  }, [metadata, setClientId, setDevisNumber, setDescriptionProjet, setNomProjet, clientsState.clients, getDefaultClientId]);
+
+  // Vérifier si le nom du projet est vide et devrait être généré
+  const shouldGenerateProjectName = useCallback(() => {
+    return !metadata.nomProjet || metadata.nomProjet.trim() === '';
+  }, [metadata.nomProjet]);
+
+  // Générer le nom du projet si nécessaire
+  const generateProjectNameIfNeeded = useCallback(async () => {
+    if (shouldGenerateProjectName()) {
+      console.log("Generating project name automatically...");
+      await generateProjectName();
+      return true;
+    }
+    return false;
+  }, [shouldGenerateProjectName, generateProjectName]);
 
   return {
-    clientId,
+    clientId: metadata.clientId,
     setClientId,
-    nomProjet,
+    nomProjet: metadata.nomProjet,
     setNomProjet,
-    descriptionProjet,
+    descriptionProjet: metadata.descriptionProjet,
     setDescriptionProjet,
-    adresseChantier,
+    adresseChantier: metadata.adresseChantier,
     setAdresseChantier,
-    occupant,
+    occupant: metadata.occupant,
     setOccupant,
-    infoComplementaire,
+    infoComplementaire: metadata.infoComplementaire,
     setInfoComplementaire,
-    dateDevis,
+    dateDevis: metadata.dateDevis,
     setDateDevis,
-    devisNumber,
+    devisNumber: metadata.devisNumber,
     setDevisNumber,
-    generateProjectName
+    generateProjectName,
+    generateProjectNameIfNeeded,
+    shouldGenerateProjectName
   };
 };

@@ -1,7 +1,19 @@
 
-import { ProjectState, ProjectAction, Room, Travail } from '@/types';
+import { ProjectState, ProjectAction, Room, Travail, ProjectMetadata } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import { generateRoomName } from '../utils/projectUtils';
+
+// Métadonnées initiales du projet
+const initialMetadata: ProjectMetadata = {
+  clientId: '',
+  nomProjet: '',
+  descriptionProjet: '',
+  adresseChantier: '',
+  occupant: '',
+  infoComplementaire: '',
+  dateDevis: new Date().toISOString().split('T')[0], // Format YYYY-MM-DD
+  devisNumber: '',
+};
 
 // État initial pour le projet
 export const initialProjectState: ProjectState = {
@@ -14,6 +26,7 @@ export const initialProjectState: ProjectState = {
   },
   rooms: [],
   travaux: [],
+  metadata: initialMetadata,
 };
 
 /**
@@ -26,6 +39,15 @@ export function projectReducer(state: ProjectState, action: ProjectAction): Proj
         ...state,
         property: {
           ...state.property,
+          ...action.payload,
+        },
+      };
+    
+    case 'UPDATE_METADATA':
+      return {
+        ...state,
+        metadata: {
+          ...state.metadata,
           ...action.payload,
         },
       };
