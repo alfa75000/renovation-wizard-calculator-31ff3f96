@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { AutreSurface, TypeAutreSurface } from '@/types';
-import { RoomCustomItem } from '@/types/supabase';
+import { RoomCustomItem, SurfaceImpactee, AdjustmentType } from '@/types/supabase';
 import { useRoomCustomItemsWithSupabase } from '@/hooks/useRoomCustomItemsWithSupabase';
 import { toast } from 'sonner';
 import { isValidUUID } from '@/lib/utils';
@@ -28,24 +28,28 @@ export const useAutresSurfacesWithSupabase = (roomId?: string) => {
     syncLocalSurfacesToSupabase
   } = useRoomCustomItemsWithSupabase(roomId);
 
+  // Convertir un RoomCustomItem (Supabase) en AutreSurface (local)
+  const convertToAutreSurface = (item: RoomCustomItem): AutreSurface => {
+    return {
+      id: item.id,
+      type: item.type,
+      name: item.name,
+      designation: item.designation || item.name,
+      largeur: item.largeur,
+      hauteur: item.hauteur,
+      surface: item.surface,
+      quantity: item.quantity,
+      surfaceImpactee: item.surface_impactee.toLowerCase() as any,
+      estDeduction: item.adjustment_type === 'Déduire',
+      impactePlinthe: item.impacte_plinthe,
+      description: item.description || ''
+    };
+  };
+
   // Convertir les customItems en autresSurfaces pour compatibilité
   useEffect(() => {
     if (customItems) {
-      const convertedItems: AutreSurface[] = customItems.map(item => ({
-        id: item.id,
-        type: item.type,
-        name: item.name,
-        designation: item.designation || item.name,
-        largeur: item.largeur,
-        hauteur: item.hauteur,
-        surface: item.surface,
-        quantity: item.quantity,
-        surfaceImpactee: item.surface_impactee.toLowerCase() as any,
-        estDeduction: item.adjustment_type === 'Déduire',
-        impactePlinthe: item.impacte_plinthe,
-        description: item.description || ''
-      }));
-      
+      const convertedItems: AutreSurface[] = customItems.map(convertToAutreSurface);
       setAutresSurfaces(convertedItems);
     }
     
@@ -102,41 +106,25 @@ export const useAutresSurfacesWithSupabase = (roomId?: string) => {
       // Ajouter la quantité spécifiée
       for (let i = 0; i < quantity; i++) {
         // Convertir au format RoomCustomItem
-        const newItemData: Omit<RoomCustomItem, 'id' | 'created_at'> = {
+        const newItemData = {
           room_id: roomId,
-          type: surface.type,
           name: surface.name,
-          designation: surface.designation,
-          largeur: surface.largeur,
           hauteur: surface.hauteur,
-          surface: surface.largeur * surface.hauteur,
+          largeur: surface.largeur,
           quantity: surface.quantity || 1,
-          surface_impactee: surface.surfaceImpactee === 'mur' ? 'Mur' : 
+          surface_impactee: (surface.surfaceImpactee === 'mur' ? 'Mur' : 
                           surface.surfaceImpactee === 'plafond' ? 'Plafond' : 
-                          surface.surfaceImpactee === 'sol' ? 'Sol' : 'Aucune',
-          adjustment_type: surface.estDeduction ? 'Déduire' : 'Ajouter',
+                          surface.surfaceImpactee === 'sol' ? 'Sol' : 'Aucune') as SurfaceImpactee,
+          adjustment_type: (surface.estDeduction ? 'Déduire' : 'Ajouter') as AdjustmentType,
           impacte_plinthe: surface.impactePlinthe,
-          description: surface.description
+          description: surface.description || null
         };
         
         const newItem = await addCustomItem(newItemData);
         
         if (newItem) {
           // Convertir de nouveau au format AutreSurface
-          newItems.push({
-            id: newItem.id,
-            type: newItem.type,
-            name: newItem.name,
-            designation: newItem.designation || newItem.name,
-            largeur: newItem.largeur,
-            hauteur: newItem.hauteur,
-            surface: newItem.surface,
-            quantity: newItem.quantity,
-            surfaceImpactee: newItem.surface_impactee.toLowerCase() as any,
-            estDeduction: newItem.adjustment_type === 'Déduire',
-            impactePlinthe: newItem.impacte_plinthe,
-            description: newItem.description || ''
-          });
+          newItems.push(convertToAutreSurface(newItem));
         }
       }
       
@@ -159,26 +147,24 @@ export const useAutresSurfacesWithSupabase = (roomId?: string) => {
       setLoading(true);
       
       // Convertir au format RoomCustomItem
-      const updateData: Partial<Omit<RoomCustomItem, 'id' | 'created_at'>> = {};
+      const updateData: any = {};
       
       // Copier les champs standards qui ont le même nom
       if (changes.name !== undefined) updateData.name = changes.name;
-      if (changes.designation !== undefined) updateData.designation = changes.designation;
       if (changes.largeur !== undefined) updateData.largeur = changes.largeur;
       if (changes.hauteur !== undefined) updateData.hauteur = changes.hauteur;
       if (changes.quantity !== undefined) updateData.quantity = changes.quantity;
       if (changes.description !== undefined) updateData.description = changes.description;
-      if (changes.type !== undefined) updateData.type = changes.type;
       
       // Convertir spécifiquement les champs qui ont un nom différent
       if (changes.surfaceImpactee !== undefined) {
-        updateData.surface_impactee = changes.surfaceImpactee === 'mur' ? 'Mur' : 
+        updateData.surface_impactee = (changes.surfaceImpactee === 'mur' ? 'Mur' : 
                                      changes.surfaceImpactee === 'plafond' ? 'Plafond' : 
-                                     changes.surfaceImpactee === 'sol' ? 'Sol' : 'Aucune';
+                                     changes.surfaceImpactee === 'sol' ? 'Sol' : 'Aucune') as SurfaceImpactee;
       }
       
       if (changes.estDeduction !== undefined) {
-        updateData.adjustment_type = changes.estDeduction ? 'Déduire' : 'Ajouter';
+        updateData.adjustment_type = (changes.estDeduction ? 'Déduire' : 'Ajouter') as AdjustmentType;
       }
       
       if (changes.impactePlinthe !== undefined) {
@@ -190,22 +176,7 @@ export const useAutresSurfacesWithSupabase = (roomId?: string) => {
       if (!updatedItem) return null;
       
       // Convertir de nouveau au format AutreSurface
-      const convertedItem: AutreSurface = {
-        id: updatedItem.id,
-        type: updatedItem.type,
-        name: updatedItem.name,
-        designation: updatedItem.designation || updatedItem.name,
-        largeur: updatedItem.largeur,
-        hauteur: updatedItem.hauteur,
-        surface: updatedItem.surface,
-        quantity: updatedItem.quantity,
-        surfaceImpactee: updatedItem.surface_impactee.toLowerCase() as any,
-        estDeduction: updatedItem.adjustment_type === 'Déduire',
-        impactePlinthe: updatedItem.impacte_plinthe,
-        description: updatedItem.description || ''
-      };
-      
-      return convertedItem;
+      return convertToAutreSurface(updatedItem);
     } catch (err) {
       console.error(`Erreur lors de la mise à jour de la surface ${id}:`, err);
       toast.error('Impossible de mettre à jour la surface');
@@ -255,6 +226,6 @@ export const useAutresSurfacesWithSupabase = (roomId?: string) => {
     addAutreSurface,
     updateAutreSurfaceItem,
     deleteAutreSurfaceItem,
-    synchronizeLocalSurfaces  // Nouvelle fonction
+    synchronizeLocalSurfaces
   };
 };
