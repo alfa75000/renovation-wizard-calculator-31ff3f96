@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Home, RefreshCw, Save, FileCheck } from "lucide-react";
+import { Home, RefreshCw } from "lucide-react";
 import { formaterQuantite } from "@/lib/utils";
 import { useProject } from "@/contexts/ProjectContext";
 import { Room } from "@/types";
@@ -18,10 +18,8 @@ const RenovationEstimator: React.FC = () => {
   const { 
     state, 
     dispatch, 
-    saveProjectAsDraft, 
     createNewProject, 
-    isLoading, 
-    isSaving,
+    isLoading,
     hasUnsavedChanges 
   } = useProject();
   
@@ -92,15 +90,6 @@ const RenovationEstimator: React.FC = () => {
     return rooms.reduce((total, room) => total + room.surface, 0);
   };
 
-  const handleSaveDraft = async () => {
-    try {
-      await saveProjectAsDraft();
-    } catch (error) {
-      console.error('Erreur lors de la sauvegarde du brouillon:', error);
-      toast.error('Une erreur est survenue lors de la sauvegarde du brouillon');
-    }
-  };
-
   const resetProject = () => {
     createNewProject();
     setEditingRoomId(null);
@@ -122,21 +111,6 @@ const RenovationEstimator: React.FC = () => {
                   Modifications non enregistrées
                 </Badge>
               )}
-              
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleSaveDraft}
-                disabled={isLoading || isSaving || !hasUnsavedChanges}
-                className="flex items-center gap-1"
-              >
-                {isSaving ? (
-                  <span className="animate-spin mr-2">◌</span>
-                ) : (
-                  <FileCheck className="h-4 w-4" />
-                )}
-                Sauvegarder
-              </Button>
               
               <AlertDialog>
                 <AlertDialogTrigger asChild>
@@ -258,23 +232,11 @@ const RenovationEstimator: React.FC = () => {
           />
           
           {rooms.length > 0 && (
-            <div className="mt-4 p-4 bg-blue-50 rounded-md flex justify-between items-center">
+            <div className="mt-4 p-4 bg-blue-50 rounded-md">
               <div>
                 <span className="font-medium">Surface totale des pièces : </span>
                 <span className="text-xl font-bold">{formaterQuantite(calculateTotalArea())} m²</span>
               </div>
-              
-              {hasUnsavedChanges && (
-                <Button 
-                  size="sm" 
-                  onClick={handleSaveDraft} 
-                  disabled={isSaving}
-                  className="flex items-center gap-1"
-                >
-                  <Save className="h-4 w-4" />
-                  Sauvegarder les modifications
-                </Button>
-              )}
             </div>
           )}
         </CardContent>
