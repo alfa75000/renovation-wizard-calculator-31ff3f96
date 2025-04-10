@@ -36,11 +36,11 @@ const InfosChantier: React.FC = () => {
   const { state: clientsState } = useClients();
   const clientSelectionne = clientsState.clients.find(c => c.id === clientId);
   
-  // Surveiller l'ajout de la première pièce
+  // Écouter l'événement personnalisé 'firstRoomAdded' déclenché depuis RenovationEstimator
   useEffect(() => {
-    const checkFirstRoomAdded = async () => {
-      // Si nous avons une première pièce ajoutée et que c'est la première fois qu'on le détecte
-      if (projectState?.rooms?.length === 1 && isFirstRoom) {
+    const handleFirstRoomAdded = async (event: CustomEvent) => {
+      // Si c'est la première pièce ajoutée
+      if (isFirstRoom) {
         setIsFirstRoom(false); // Ne plus exécuter cette logique pour les futures mises à jour
         
         // Si pas de client sélectionné, sélectionner "Client à définir"
@@ -71,15 +71,26 @@ const InfosChantier: React.FC = () => {
         
         toast.info("Informations du projet initialisées automatiquement");
       }
-      
-      // Réinitialiser le flag si aucune pièce n'est présente
-      if (projectState?.rooms?.length === 0 && !isFirstRoom) {
-        setIsFirstRoom(true);
-      }
     };
+
+    // Convertir l'écouteur d'événement pour TypeScript
+    const typedEventListener = (e: Event) => {
+      handleFirstRoomAdded(e as unknown as CustomEvent);
+    };
+
+    window.addEventListener('firstRoomAdded', typedEventListener);
     
-    checkFirstRoomAdded();
-  }, [projectState?.rooms, clientId, devisNumber, descriptionProjet, isFirstRoom]);
+    return () => {
+      window.removeEventListener('firstRoomAdded', typedEventListener);
+    };
+  }, [clientId, devisNumber, descriptionProjet, isFirstRoom]);
+  
+  // Réinitialiser le flag si aucune pièce n'est présente
+  useEffect(() => {
+    if (projectState?.rooms?.length === 0 && !isFirstRoom) {
+      setIsFirstRoom(true);
+    }
+  }, [projectState?.rooms, isFirstRoom]);
   
   useEffect(() => {
     if (currentProjectId) {
