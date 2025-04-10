@@ -12,10 +12,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Calendar, Trash } from 'lucide-react';
+import { Calendar, Trash, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
+import { generateDevisNumber, isDevisNumberUnique } from '@/services/projectService';
 
 const InfosChantier: React.FC = () => {
   const navigate = useNavigate();
@@ -27,7 +28,8 @@ const InfosChantier: React.FC = () => {
     currentProjectId,
     hasUnsavedChanges,
     loadProject,
-    deleteCurrentProject
+    deleteCurrentProject,
+    saveProject
   } = useProject();
   
   const [clientId, setClientId] = useState<string>('');
@@ -37,6 +39,8 @@ const InfosChantier: React.FC = () => {
   const [occupant, setOccupant] = useState<string>('');
   const [infoComplementaire, setInfoComplementaire] = useState<string>('');
   const [dateDevis, setDateDevis] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
+  const [devisNumber, setDevisNumber] = useState<string>('');
+  const [isGeneratingDevisNumber, setIsGeneratingDevisNumber] = useState<boolean>(false);
   
   const clientSelectionne = clientsState.clients.find(c => c.id === clientId);
   
@@ -50,9 +54,34 @@ const InfosChantier: React.FC = () => {
         setDescriptionProjet(currentProject.description || '');
         setAdresseChantier(currentProject.address || '');
         setOccupant(currentProject.occupant || '');
+        if (currentProject.devis_number) {
+          setDevisNumber(currentProject.devis_number);
+        }
       }
     }
   }, [currentProjectId, projects]);
+  
+  // Mettre à jour le nom du projet automatiquement
+  useEffect(() => {
+    if (clientSelectionne && descriptionProjet) {
+      const clientName = `${clientSelectionne.nom} ${clientSelectionne.prenom || ''}`.trim();
+      let newName = '';
+      
+      if (devisNumber) {
+        newName = `Devis n° ${devisNumber} - ${clientName}`;
+      } else {
+        newName = clientName;
+      }
+      
+      if (descriptionProjet) {
+        newName += descriptionProjet.length > 40 
+          ? ` - ${descriptionProjet.substring(0, 40)}...` 
+          : ` - ${descriptionProjet}`;
+      }
+      
+      setNomProjet(newName);
+    }
+  }, [devisNumber, clientSelectionne, descriptionProjet]);
   
   const handleChargerProjet = async (projetId: string) => {
     try {
@@ -73,9 +102,57 @@ const InfosChantier: React.FC = () => {
       setAdresseChantier('');
       setOccupant('');
       setInfoComplementaire('');
+      setDevisNumber('');
     } catch (error) {
       console.error('Erreur lors de la suppression du projet:', error);
       toast.error('Une erreur est survenue lors de la suppression du projet');
+    }
+  };
+  
+  const handleGenerateDevisNumber = async () => {
+    try {
+      setIsGeneratingDevisNumber(true);
+      const newDevisNumber = await generateDevisNumber();
+      setDevisNumber(newDevisNumber);
+      toast.success('Numéro de devis généré avec succès');
+      
+      // Si un projet est déjà chargé, sauvegarder le nouveau numéro de devis
+      if (currentProjectId) {
+        await saveProject(nomProjet, {
+          client_id: clientId,
+          description: descriptionProjet,
+          address: adresseChantier,
+          occupant: occupant,
+          devis_number: newDevisNumber
+        });
+        toast.success('Numéro de devis enregistré');
+      }
+    } catch (error) {
+      console.error('Erreur lors de la génération du numéro de devis:', error);
+      toast.error('Erreur lors de la génération du numéro de devis');
+    } finally {
+      setIsGeneratingDevisNumber(false);
+    }
+  };
+  
+  const handleSaveProject = async () => {
+    if (!clientId) {
+      toast.error('Veuillez sélectionner un client');
+      return;
+    }
+    
+    try {
+      await saveProject(nomProjet, {
+        client_id: clientId,
+        description: descriptionProjet,
+        address: adresseChantier,
+        occupant: occupant,
+        devis_number: devisNumber
+      });
+      toast.success('Projet enregistré avec succès');
+    } catch (error) {
+      console.error('Erreur lors de l\'enregistrement du projet:', error);
+      toast.error('Erreur lors de l\'enregistrement du projet');
     }
   };
   
@@ -136,13 +213,55 @@ const InfosChantier: React.FC = () => {
             )}
             
             <div>
-              <Label htmlFor="nomProjet">Nom du projet</Label>
+              <Label htmlFor="devisNumber">Numéro du devis</Label>
+              <div className="flex gap-2">
+                <Input 
+                  id="devisNumber" 
+                  value={devisNumber} 
+                  onChange={(e) => setDevisNumber(e.target.value)}
+                  placeholder="Ex: 2504-1"
+                  className="flex-1"
+                />
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="icon" 
+                  onClick={handleGenerateDevisNumber}
+                  disabled={isGeneratingDevisNumber}
+                >
+                  <RefreshCw className={`h-4 w-4 ${isGeneratingDevisNumber ? 'animate-spin' : ''}`} />
+                </Button>
+              </div>
+            </div>
+            
+            <div>
+              <Label htmlFor="nomProjet">Nom du projet (généré automatiquement)</Label>
               <Input 
                 id="nomProjet" 
                 value={nomProjet} 
-                onChange={(e) => setNomProjet(e.target.value)}
-                placeholder="Ex: Rénovation salle de bain"
+                readOnly
+                className="bg-gray-50"
               />
+            </div>
+            
+            <div>
+              <Label htmlFor="descriptionProjet">Description du projet (100 caractères max)</Label>
+              <Textarea 
+                id="descriptionProjet" 
+                value={descriptionProjet} 
+                onChange={(e) => {
+                  // Limiter à 100 caractères
+                  if (e.target.value.length <= 100) {
+                    setDescriptionProjet(e.target.value);
+                  }
+                }}
+                placeholder="Description détaillée des travaux"
+                rows={2}
+                maxLength={100}
+              />
+              <div className="text-xs text-gray-500 text-right mt-1">
+                {descriptionProjet.length}/100 caractères
+              </div>
             </div>
             
             <div>
@@ -175,17 +294,6 @@ const InfosChantier: React.FC = () => {
                 value={occupant} 
                 onChange={(e) => setOccupant(e.target.value)}
                 placeholder="Nom de l'occupant si différent du client"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="descriptionProjet">Description du projet</Label>
-              <Textarea 
-                id="descriptionProjet" 
-                value={descriptionProjet} 
-                onChange={(e) => setDescriptionProjet(e.target.value)}
-                placeholder="Description détaillée des travaux"
-                rows={4}
               />
             </div>
             
@@ -234,9 +342,17 @@ const InfosChantier: React.FC = () => {
               )}
               
               <Button 
+                variant="default" 
+                onClick={handleSaveProject}
+                className="ml-auto"
+                disabled={isLoading}
+              >
+                Enregistrer
+              </Button>
+              
+              <Button 
                 variant="outline" 
                 onClick={() => navigate('/travaux')}
-                className="ml-auto"
               >
                 Aller aux travaux
               </Button>
@@ -263,6 +379,11 @@ const InfosChantier: React.FC = () => {
                       onClick={() => handleChargerProjet(projet.id)}
                     >
                       <h3 className="font-medium">{projet.name}</h3>
+                      {projet.devis_number && (
+                        <p className="text-xs text-blue-600 font-medium">
+                          Devis n° {projet.devis_number}
+                        </p>
+                      )}
                       {client && (
                         <p className="text-sm text-gray-500">
                           Client: {client.nom} {client.prenom}

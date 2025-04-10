@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { ProjectState } from '@/types';
 
@@ -23,6 +22,7 @@ export interface ProjectSave {
   status: string;
   created_at: string;
   updated_at: string;
+  devis_number: string | null; // Nouveau champ pour le numéro de devis
 }
 
 /**
@@ -53,6 +53,69 @@ export const fetchProjectSaves = async (): Promise<ProjectSave[]> => {
 export const generateDefaultProjectName = (): string => {
   const date = new Date();
   return `Projet du ${date.toLocaleDateString('fr-FR')}`;
+};
+
+/**
+ * Génère un numéro de devis unique au format AAMM-X
+ */
+export const generateDevisNumber = async (): Promise<string> => {
+  try {
+    const date = new Date();
+    const year = date.getFullYear().toString().substring(2); // Prendre les 2 derniers chiffres de l'année
+    const month = (date.getMonth() + 1).toString().padStart(2, '0'); // Mois sur 2 chiffres
+    const prefix = `${year}${month}-`;
+    
+    // Récupérer le dernier numéro de devis avec ce préfixe
+    const { data, error } = await supabase
+      .from('projects_save')
+      .select('devis_number')
+      .like('devis_number', `${prefix}%`)
+      .order('devis_number', { ascending: false })
+      .limit(1);
+    
+    if (error) {
+      console.error('Erreur lors de la récupération du dernier numéro de devis:', error);
+      throw error;
+    }
+    
+    let sequenceNumber = 1;
+    
+    if (data && data.length > 0 && data[0].devis_number) {
+      // Extraire le numéro de séquence du dernier devis
+      const lastNumber = data[0].devis_number.split('-')[1];
+      if (lastNumber && !isNaN(parseInt(lastNumber))) {
+        sequenceNumber = parseInt(lastNumber) + 1;
+      }
+    }
+    
+    return `${prefix}${sequenceNumber}`;
+  } catch (error) {
+    console.error('Exception lors de la génération du numéro de devis:', error);
+    throw error;
+  }
+};
+
+/**
+ * Vérifie si un numéro de devis est unique
+ */
+export const isDevisNumberUnique = async (devisNumber: string): Promise<boolean> => {
+  try {
+    const { data, error } = await supabase
+      .from('projects_save')
+      .select('id')
+      .eq('devis_number', devisNumber)
+      .limit(1);
+    
+    if (error) {
+      console.error('Erreur lors de la vérification du numéro de devis:', error);
+      throw error;
+    }
+    
+    return data.length === 0;
+  } catch (error) {
+    console.error('Exception lors de la vérification du numéro de devis:', error);
+    throw error;
+  }
 };
 
 /**
@@ -118,10 +181,11 @@ export const createProjectSave = async (projectState: ProjectState, projectInfo:
       occupant: projectInfo.occupant || '',
       property_type: projectState.property.type || 'Appartement',
       floors: projectState.property.floors || 1,
-      total_area: projectState.property.totalArea || 0,
-      rooms_count: projectState.rooms.length || 0,
+      total_area: projectState.property.totalArea || 52, // Valeur par défaut mise à jour à 52
+      rooms_count: projectState.rooms.length || 3, // Valeur par défaut mise à jour à 3
       ceiling_height: projectState.property.ceilingHeight || 2.5,
-      status: projectInfo.status || 'Brouillon'
+      status: projectInfo.status || 'Brouillon',
+      devis_number: projectInfo.devis_number || null
     };
     
     // Insérer le projet dans la base de données
@@ -138,7 +202,8 @@ export const createProjectSave = async (projectState: ProjectState, projectInfo:
     
     return {
       id: data.id,
-      name: data.name
+      name: data.name,
+      devis_number: data.devis_number
     };
   } catch (error) {
     console.error('Exception lors de la création du projet:', error);
@@ -183,6 +248,7 @@ export const updateProjectSave = async (projectId: string, projectState: Project
     if (projectInfo.city !== undefined) updatedProjectData['city'] = projectInfo.city;
     if (projectInfo.occupant !== undefined) updatedProjectData['occupant'] = projectInfo.occupant;
     if (projectInfo.status !== undefined) updatedProjectData['status'] = projectInfo.status;
+    if (projectInfo.devis_number !== undefined) updatedProjectData['devis_number'] = projectInfo.devis_number;
     
     // Mettre à jour le projet dans la base de données
     const { data, error } = await supabase
@@ -199,7 +265,8 @@ export const updateProjectSave = async (projectId: string, projectState: Project
     
     return {
       id: data.id,
-      name: data.name
+      name: data.name,
+      devis_number: data.devis_number
     };
   } catch (error) {
     console.error('Exception lors de la mise à jour du projet:', error);

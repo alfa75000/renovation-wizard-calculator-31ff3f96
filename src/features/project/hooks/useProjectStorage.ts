@@ -10,6 +10,7 @@ import {
   fetchProjects, 
   deleteProject,
   generateDefaultProjectName,
+  generateDevisNumber,
   Project
 } from '@/services/projectService';
 import { initialProjectState } from '@/features/project/reducers/projectReducer';
@@ -54,7 +55,7 @@ export const useProjectStorage = () => {
   /**
    * Sauvegarde le projet actuel
    */
-  const saveProject = useCallback(async (name?: string) => {
+  const saveProject = useCallback(async (name?: string, additionalInfo: any = {}) => {
     try {
       setIsSaving(true);
       toast.loading('Sauvegarde en cours...', { id: 'saving-project' });
@@ -62,6 +63,7 @@ export const useProjectStorage = () => {
       // Préparer les informations du projet
       const projectInfo = {
         name: name || (currentProjectId ? projects.find(p => p.id === currentProjectId)?.name : generateDefaultProjectName()),
+        ...additionalInfo
       };
       
       if (currentProjectId) {

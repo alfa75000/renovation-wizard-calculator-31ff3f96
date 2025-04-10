@@ -210,6 +210,7 @@ export type Database = {
           client_id: string
           created_at: string
           description: string | null
+          devis_number: string | null
           floors: number | null
           general_data: Json | null
           id: string
@@ -231,6 +232,7 @@ export type Database = {
           client_id: string
           created_at?: string
           description?: string | null
+          devis_number?: string | null
           floors?: number | null
           general_data?: Json | null
           id?: string
@@ -252,6 +254,7 @@ export type Database = {
           client_id?: string
           created_at?: string
           description?: string | null
+          devis_number?: string | null
           floors?: number | null
           general_data?: Json | null
           id?: string

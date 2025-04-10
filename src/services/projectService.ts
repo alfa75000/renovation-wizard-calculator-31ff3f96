@@ -9,6 +9,8 @@ import {
   updateProjectSave as updateProject,
   deleteProjectSave as deleteProject,
   generateDefaultProjectName,
+  generateDevisNumber,
+  isDevisNumberUnique,
   type Project
 } from './projectSaveService';
 
@@ -20,5 +22,7 @@ export {
   updateProject,
   deleteProject,
   generateDefaultProjectName,
+  generateDevisNumber,
+  isDevisNumberUnique,
   type Project
 };
