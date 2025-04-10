@@ -9,7 +9,8 @@ import {
   fetchProjectById, 
   fetchProjects, 
   deleteProject,
-  generateDefaultProjectName
+  generateDefaultProjectName,
+  Project
 } from '@/services/projectService';
 
 /**
@@ -19,21 +20,19 @@ export const useProjectStorage = () => {
   const { state, dispatch } = useProject();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
-  const [projects, setProjects] = useState<any[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
 
   /**
    * Rafraîchit la liste des projets depuis Supabase
    */
-  const refreshProjects = useCallback(async () => {
+  const refreshProjects = useCallback(async (): Promise<void> => {
     try {
       const projectsList = await fetchProjects();
       setProjects(projectsList);
-      return projectsList;
     } catch (error) {
       console.error('Erreur lors du chargement des projets:', error);
       toast.error('Erreur lors du chargement des projets');
-      return [];
     }
   }, []);
 

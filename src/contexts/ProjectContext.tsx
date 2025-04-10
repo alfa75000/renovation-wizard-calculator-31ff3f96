@@ -77,19 +77,18 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   // Fonctions de gestion de projet
-  const refreshProjects = useCallback(async () => {
+  const refreshProjects = useCallback(async (): Promise<void> => {
     try {
       // Note: Dans une implémentation réelle, cette fonction appellerait
       // fetchProjects() du service, mais pour éviter de changer l'architecture
       // actuelle, on garde cette implémentation minimale
-      return projects;
+      return;
     } catch (error) {
       console.error('Erreur lors du chargement des projets:', error);
       toast.error('Erreur lors du chargement des projets');
-      return [];
     }
-  }, [projects]);
-
+  }, []);
+  
   const saveProject = useCallback(async (name?: string) => {
     try {
       setIsSaving(true);
