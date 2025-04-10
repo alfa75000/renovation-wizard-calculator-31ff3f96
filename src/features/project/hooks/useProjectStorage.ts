@@ -1,5 +1,5 @@
 
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { ProjectState } from '@/types';
 import { toast } from 'sonner';
 import { useProject } from '@/contexts/ProjectContext';
@@ -16,15 +16,38 @@ import {
  * Hook pour gérer la sauvegarde et le chargement des projets
  */
 export const useProjectStorage = () => {
-  const { state, dispatch, projects, currentProjectId, refreshProjects } = useProject();
+  const { state, dispatch } = useProject();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [projects, setProjects] = useState<any[]>([]);
+  const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
+
+  /**
+   * Rafraîchit la liste des projets depuis Supabase
+   */
+  const refreshProjects = useCallback(async () => {
+    try {
+      const projectsList = await fetchProjects();
+      setProjects(projectsList);
+      return projectsList;
+    } catch (error) {
+      console.error('Erreur lors du chargement des projets:', error);
+      toast.error('Erreur lors du chargement des projets');
+      return [];
+    }
+  }, []);
+
+  // Charger la liste des projets au démarrage
+  useEffect(() => {
+    refreshProjects();
+  }, [refreshProjects]);
 
   /**
    * Créer un nouveau projet vide
    */
   const createNewProject = useCallback(() => {
     dispatch({ type: 'RESET_PROJECT' });
+    setCurrentProjectId(null);
     toast.success('Nouveau projet créé');
   }, [dispatch]);
 
@@ -48,6 +71,9 @@ export const useProjectStorage = () => {
       } else {
         // Créer un nouveau projet
         const result = await createProject(state, projectInfo);
+        if (result?.id) {
+          setCurrentProjectId(result.id);
+        }
         toast.success('Projet enregistré avec succès', { id: 'saving-project' });
       }
       
@@ -69,6 +95,7 @@ export const useProjectStorage = () => {
       
       const { projectData, projectState } = await fetchProjectById(projectId);
       dispatch({ type: 'LOAD_PROJECT', payload: projectState });
+      setCurrentProjectId(projectId);
       
       toast.success(`Projet "${projectData.name}" chargé avec succès`);
     } catch (error) {
@@ -94,6 +121,7 @@ export const useProjectStorage = () => {
       
       // Réinitialiser l'état après la suppression
       dispatch({ type: 'RESET_PROJECT' });
+      setCurrentProjectId(null);
       
       await refreshProjects();
       toast.success('Projet supprimé avec succès');
@@ -108,9 +136,12 @@ export const useProjectStorage = () => {
   return {
     isLoading,
     isSaving,
+    projects,
+    currentProjectId,
     saveProject,
     loadProject,
     createNewProject,
     deleteCurrentProject,
+    refreshProjects,
   };
 };
