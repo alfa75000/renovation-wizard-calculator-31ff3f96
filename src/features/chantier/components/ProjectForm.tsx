@@ -65,6 +65,32 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
   const { state: clientsState } = useClients();
   const [isGeneratingDevisNumber, setIsGeneratingDevisNumber] = useState<boolean>(false);
   
+  // Effet pour générer automatiquement le nom du projet lorsque le client ou la description ou le numéro de devis change
+  useEffect(() => {
+    if (clientId && (devisNumber || descriptionProjet)) {
+      const selectedClient = clientsState.clients.find(c => c.id === clientId);
+      if (selectedClient) {
+        const clientName = `${selectedClient.nom} ${selectedClient.prenom || ''}`.trim();
+        let newName = '';
+        
+        if (devisNumber) {
+          newName = `Devis n° ${devisNumber} - ${clientName}`;
+        } else {
+          newName = clientName;
+        }
+        
+        if (descriptionProjet) {
+          newName += descriptionProjet.length > 40 
+            ? ` - ${descriptionProjet.substring(0, 40)}...` 
+            : ` - ${descriptionProjet}`;
+        }
+        
+        setNomProjet(newName);
+        console.log("Nom du projet généré automatiquement:", newName);
+      }
+    }
+  }, [clientId, devisNumber, descriptionProjet, clientsState.clients, setNomProjet]);
+  
   const handleGenerateDevisNumber = async () => {
     try {
       setIsGeneratingDevisNumber(true);

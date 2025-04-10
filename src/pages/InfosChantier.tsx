@@ -34,13 +34,12 @@ const InfosChantier: React.FC = () => {
   const [isFirstRoom, setIsFirstRoom] = useState<boolean>(true);
   
   const { state: clientsState } = useClients();
-  const clientSelectionne = clientsState.clients.find(c => c.id === clientId);
   
   // Écouter l'événement personnalisé 'firstRoomAdded' déclenché depuis RenovationEstimator
   useEffect(() => {
     console.log("InfosChantier - Mise en place de l'écouteur d'événement");
     
-    const handleFirstRoomAdded = (event: Event) => {
+    const handleFirstRoomAdded = async (event: Event) => {
       const customEvent = event as CustomEvent;
       console.log("InfosChantier - Événement firstRoomAdded reçu:", customEvent.detail);
       
@@ -52,15 +51,37 @@ const InfosChantier: React.FC = () => {
         setIsFirstRoom(false); // Ne plus exécuter cette logique pour les futures mises à jour
         
         // Si pas de client sélectionné, utiliser celui fourni par l'événement ou en chercher un
-        if (!clientId && data.clientId) {
-          setClientId(data.clientId);
-          console.log("Client par défaut sélectionné:", data.clientId);
+        if (!clientId) {
+          if (data.clientId) {
+            setClientId(data.clientId);
+            console.log("Client par défaut sélectionné:", data.clientId);
+          } else {
+            try {
+              const defaultClientId = await findDefaultClientId();
+              if (defaultClientId) {
+                setClientId(defaultClientId);
+                console.log("Client par défaut récupéré de la base:", defaultClientId);
+              }
+            } catch (error) {
+              console.error("Erreur lors de la récupération du client par défaut:", error);
+            }
+          }
         }
         
-        // Si pas de numéro de devis, utiliser celui fourni par l'événement
-        if (!devisNumber && data.devisNumber) {
-          setDevisNumber(data.devisNumber);
-          console.log("Numéro de devis généré:", data.devisNumber);
+        // Si pas de numéro de devis, utiliser celui fourni par l'événement ou en générer un
+        if (!devisNumber) {
+          if (data.devisNumber) {
+            setDevisNumber(data.devisNumber);
+            console.log("Numéro de devis généré:", data.devisNumber);
+          } else {
+            try {
+              const newDevisNumber = await generateDevisNumber();
+              setDevisNumber(newDevisNumber);
+              console.log("Numéro de devis généré:", newDevisNumber);
+            } catch (error) {
+              console.error("Erreur lors de la génération du numéro de devis:", error);
+            }
+          }
         }
         
         // Si pas de description, utiliser "Projet en cours"
@@ -90,6 +111,7 @@ const InfosChantier: React.FC = () => {
     }
   }, [projectState?.rooms, isFirstRoom]);
   
+  // Charger les données du projet courant
   useEffect(() => {
     if (currentProjectId) {
       const currentProject = projects.find(p => p.id === currentProjectId);
@@ -106,27 +128,7 @@ const InfosChantier: React.FC = () => {
     }
   }, [currentProjectId, projects]);
   
-  useEffect(() => {
-    if (clientSelectionne && descriptionProjet) {
-      const clientName = `${clientSelectionne.nom} ${clientSelectionne.prenom || ''}`.trim();
-      let newName = '';
-      
-      if (devisNumber) {
-        newName = `Devis n° ${devisNumber} - ${clientName}`;
-      } else {
-        newName = clientName;
-      }
-      
-      if (descriptionProjet) {
-        newName += descriptionProjet.length > 40 
-          ? ` - ${descriptionProjet.substring(0, 40)}...` 
-          : ` - ${descriptionProjet}`;
-      }
-      
-      setNomProjet(newName);
-    }
-  }, [devisNumber, clientSelectionne, descriptionProjet]);
-  
+  // Gestionnaires d'événements pour les actions sur les projets
   const handleChargerProjet = async (projetId: string) => {
     try {
       await loadProject(projetId);
@@ -160,8 +162,7 @@ const InfosChantier: React.FC = () => {
     }
     
     try {
-      // Logique de sauvegarde temporairement désactivée
-      // await saveProject();
+      await saveProject();
       toast.success('Projet enregistré avec succès');
     } catch (error) {
       console.error('Erreur lors de l\'enregistrement du projet:', error);
