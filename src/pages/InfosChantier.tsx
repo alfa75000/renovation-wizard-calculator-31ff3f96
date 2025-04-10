@@ -34,53 +34,32 @@ const InfosChantier: React.FC = () => {
   const [isFirstRoom, setIsFirstRoom] = useState<boolean>(true);
   
   const { state: clientsState } = useClients();
+  const clientSelectionne = clientsState.clients.find(c => c.id === clientId);
   
-  // Écouter l'événement personnalisé 'firstRoomAdded' déclenché depuis RenovationEstimator
+  // Surveiller l'ajout de la première pièce
   useEffect(() => {
-    console.log("InfosChantier - Mise en place de l'écouteur d'événement");
-    
-    const handleFirstRoomAdded = async (event: Event) => {
-      const customEvent = event as CustomEvent;
-      console.log("InfosChantier - Événement firstRoomAdded reçu:", customEvent.detail);
-      
-      // Récupérer les données de l'événement
-      const data = customEvent.detail || {};
-      
-      // Si c'est la première pièce ajoutée et les champs sont vides
-      if (isFirstRoom) {
+    const checkFirstRoomAdded = async () => {
+      // Si nous avons une première pièce ajoutée et que c'est la première fois qu'on le détecte
+      if (projectState?.rooms?.length === 1 && isFirstRoom) {
         setIsFirstRoom(false); // Ne plus exécuter cette logique pour les futures mises à jour
         
-        // Si pas de client sélectionné, utiliser celui fourni par l'événement ou en chercher un
+        // Si pas de client sélectionné, sélectionner "Client à définir"
         if (!clientId) {
-          if (data.clientId) {
-            setClientId(data.clientId);
-            console.log("Client par défaut sélectionné:", data.clientId);
-          } else {
-            try {
-              const defaultClientId = await findDefaultClientId();
-              if (defaultClientId) {
-                setClientId(defaultClientId);
-                console.log("Client par défaut récupéré de la base:", defaultClientId);
-              }
-            } catch (error) {
-              console.error("Erreur lors de la récupération du client par défaut:", error);
-            }
+          const defaultClientId = await findDefaultClientId();
+          if (defaultClientId) {
+            setClientId(defaultClientId);
+            console.log("Client par défaut sélectionné:", defaultClientId);
           }
         }
         
-        // Si pas de numéro de devis, utiliser celui fourni par l'événement ou en générer un
+        // Si pas de numéro de devis, en générer un automatiquement
         if (!devisNumber) {
-          if (data.devisNumber) {
-            setDevisNumber(data.devisNumber);
-            console.log("Numéro de devis généré:", data.devisNumber);
-          } else {
-            try {
-              const newDevisNumber = await generateDevisNumber();
-              setDevisNumber(newDevisNumber);
-              console.log("Numéro de devis généré:", newDevisNumber);
-            } catch (error) {
-              console.error("Erreur lors de la génération du numéro de devis:", error);
-            }
+          try {
+            const newDevisNumber = await generateDevisNumber();
+            setDevisNumber(newDevisNumber);
+            console.log("Numéro de devis généré:", newDevisNumber);
+          } catch (error) {
+            console.error("Erreur lors de la génération du numéro de devis:", error);
           }
         }
         
@@ -92,26 +71,16 @@ const InfosChantier: React.FC = () => {
         
         toast.info("Informations du projet initialisées automatiquement");
       }
+      
+      // Réinitialiser le flag si aucune pièce n'est présente
+      if (projectState?.rooms?.length === 0 && !isFirstRoom) {
+        setIsFirstRoom(true);
+      }
     };
-
-    // Ajouter l'écouteur d'événement
-    window.addEventListener('firstRoomAdded', handleFirstRoomAdded);
     
-    return () => {
-      // Retirer l'écouteur d'événement lors du démontage du composant
-      window.removeEventListener('firstRoomAdded', handleFirstRoomAdded);
-    };
-  }, [clientId, devisNumber, descriptionProjet, isFirstRoom]);
+    checkFirstRoomAdded();
+  }, [projectState?.rooms, clientId, devisNumber, descriptionProjet, isFirstRoom]);
   
-  // Réinitialiser le flag si aucune pièce n'est présente
-  useEffect(() => {
-    if (projectState?.rooms?.length === 0 && !isFirstRoom) {
-      setIsFirstRoom(true);
-      console.log("InfosChantier - Flag isFirstRoom réinitialisé");
-    }
-  }, [projectState?.rooms, isFirstRoom]);
-  
-  // Charger les données du projet courant
   useEffect(() => {
     if (currentProjectId) {
       const currentProject = projects.find(p => p.id === currentProjectId);
@@ -128,7 +97,27 @@ const InfosChantier: React.FC = () => {
     }
   }, [currentProjectId, projects]);
   
-  // Gestionnaires d'événements pour les actions sur les projets
+  useEffect(() => {
+    if (clientSelectionne && descriptionProjet) {
+      const clientName = `${clientSelectionne.nom} ${clientSelectionne.prenom || ''}`.trim();
+      let newName = '';
+      
+      if (devisNumber) {
+        newName = `Devis n° ${devisNumber} - ${clientName}`;
+      } else {
+        newName = clientName;
+      }
+      
+      if (descriptionProjet) {
+        newName += descriptionProjet.length > 40 
+          ? ` - ${descriptionProjet.substring(0, 40)}...` 
+          : ` - ${descriptionProjet}`;
+      }
+      
+      setNomProjet(newName);
+    }
+  }, [devisNumber, clientSelectionne, descriptionProjet]);
+  
   const handleChargerProjet = async (projetId: string) => {
     try {
       await loadProject(projetId);
@@ -162,7 +151,8 @@ const InfosChantier: React.FC = () => {
     }
     
     try {
-      await saveProject();
+      // Logique de sauvegarde temporairement désactivée
+      // await saveProject();
       toast.success('Projet enregistré avec succès');
     } catch (error) {
       console.error('Erreur lors de l\'enregistrement du projet:', error);
