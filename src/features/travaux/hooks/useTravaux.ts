@@ -5,6 +5,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { toast } from '@/components/ui/use-toast';
 import { filtrerTravauxParPiece } from '../utils/travauxUtils';
 
+/**
+ * Hook pour la gestion des travaux dans le projet
+ */
 export const useTravaux = () => {
   const { state, dispatch } = useProject();
   
