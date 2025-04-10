@@ -10,12 +10,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader } from '@/components/ui/loader';
 
 export interface RoomCustomItemsProps {
-  roomId?: string;
+  roomId: string;
   isLocalMode?: boolean;
   autresSurfaces?: AutreSurface[];
-  onAddAutreSurface?: (surface: Omit<AutreSurface, 'id' | 'surface'>, quantity?: number) => Promise<AutreSurface[]> | AutreSurface[];
-  onUpdateAutreSurface?: (id: string, surface: Partial<Omit<AutreSurface, 'id' | 'surface'>>) => Promise<AutreSurface> | AutreSurface;
-  onDeleteAutreSurface?: (id: string) => Promise<void> | void;
+  onAddAutreSurface?: (surface: Omit<AutreSurface, 'id' | 'surface'>, quantity?: number) => AutreSurface[];
+  onUpdateAutreSurface?: (id: string, surface: Partial<Omit<AutreSurface, 'id' | 'surface'>>) => AutreSurface;
+  onDeleteAutreSurface?: (id: string) => void;
 }
 
 const RoomCustomItems: React.FC<RoomCustomItemsProps> = ({
@@ -56,7 +56,7 @@ const RoomCustomItems: React.FC<RoomCustomItemsProps> = ({
       return externalUpdateHandler(id, changes);
     } else {
       const result = await updateAutreSurfaceItem(id, changes);
-      return result as AutreSurface;
+      return result || {} as AutreSurface;
     }
   };
   
@@ -66,11 +66,6 @@ const RoomCustomItems: React.FC<RoomCustomItemsProps> = ({
     } else {
       await deleteAutreSurfaceItem(id);
     }
-  };
-
-  const handleFormSubmit = (data: any, quantity?: number) => {
-    handleAddSurface(data, quantity);
-    setShowForm(false);
   };
   
   return (
@@ -100,14 +95,17 @@ const RoomCustomItems: React.FC<RoomCustomItemsProps> = ({
               <div className="mb-4">
                 <AutreSurfaceForm
                   autresSurfaceTypes={typesAutresSurfaces || []}
-                  onSubmit={handleFormSubmit}
+                  onSubmit={(data, quantity) => {
+                    handleAddSurface(data, quantity);
+                    setShowForm(false);
+                  }}
                   onCancel={() => setShowForm(false)}
                 />
               </div>
             )}
             
             <AutresSurfacesList
-              items={autresSurfaces}
+              autresSurfaces={autresSurfaces}
               onUpdate={handleUpdateSurface}
               onDelete={handleDeleteSurface}
             />

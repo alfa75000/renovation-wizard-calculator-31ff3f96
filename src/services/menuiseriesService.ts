@@ -1,9 +1,9 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { TypeMenuiserie, Menuiserie } from '@/types';
 import { MenuiserieType, SurfaceImpactee } from '@/types/supabase';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'sonner';
-import { surfaceTypeToDb } from '@/utils/surfaceTypesAdapter';
 
 // Fonction de conversion entre "mur" et "Mur" pour le type surface_impactee
 const convertToSupabaseSurfaceImpactee = (value: string): SurfaceImpactee => {
@@ -11,11 +11,6 @@ const convertToSupabaseSurfaceImpactee = (value: string): SurfaceImpactee => {
   if (value.toLowerCase() === 'plafond') return 'Plafond';
   if (value.toLowerCase() === 'sol') return 'Sol';
   return 'Aucune';
-};
-
-// Récupérer tous les types de menuiseries (renamed from fetchMenuiserieTypes to getTypesMenuiseries)
-export const fetchMenuiserieTypes = async (): Promise<TypeMenuiserie[]> => {
-  return getTypesMenuiseries();
 };
 
 // Récupérer tous les types de menuiseries
@@ -32,7 +27,7 @@ export const getTypesMenuiseries = async (): Promise<TypeMenuiserie[]> => {
       throw error;
     }
     
-    console.log('Résultat de la requête menuiseries_types:', { data, error, dataLength: data?.length });
+    console.log('Résultat de la requête menuiseries_types:', { data, error });
     
     // Convertir les données Supabase vers notre modèle local
     const typesMenuiseries: TypeMenuiserie[] = (data || []).map(item => ({
@@ -83,11 +78,6 @@ export const getTypeMenuiserieById = async (id: string): Promise<TypeMenuiserie 
   }
 };
 
-// Ajouter un type de menuiserie - renamed to match expected import name
-export const createMenuiserieType = async (type: Omit<TypeMenuiserie, 'id'>): Promise<TypeMenuiserie | null> => {
-  return addTypeMenuiserie(type);
-};
-
 // Ajouter un type de menuiserie
 export const addTypeMenuiserie = async (type: Omit<TypeMenuiserie, 'id'>): Promise<TypeMenuiserie | null> => {
   try {
@@ -128,11 +118,6 @@ export const addTypeMenuiserie = async (type: Omit<TypeMenuiserie, 'id'>): Promi
     toast.error('Erreur lors de l\'ajout du type de menuiserie');
     return null;
   }
-};
-
-// Mettre à jour un type de menuiserie - renamed to match expected import name
-export const updateMenuiserieType = async (id: string, changes: Partial<Omit<TypeMenuiserie, 'id'>>): Promise<TypeMenuiserie | null> => {
-  return updateTypeMenuiserie(id, changes);
 };
 
 // Mettre à jour un type de menuiserie
@@ -176,11 +161,6 @@ export const updateTypeMenuiserie = async (id: string, changes: Partial<Omit<Typ
     toast.error('Erreur lors de la mise à jour du type de menuiserie');
     return null;
   }
-};
-
-// Supprimer un type de menuiserie - renamed to match expected import name
-export const deleteMenuiserieType = async (id: string): Promise<boolean> => {
-  return deleteTypeMenuiserie(id);
 };
 
 // Supprimer un type de menuiserie
@@ -243,11 +223,6 @@ export const getMenuiseriesForRoom = async (roomId: string): Promise<Menuiserie[
   }
 };
 
-// Ajouter une menuiserie à une pièce - adding aliases for consistency
-export const createRoomMenuiserie = async (roomId: string, typeId: string, quantity: number = 1, overrides?: { largeur?: number, hauteur?: number }): Promise<Menuiserie | null> => {
-  return addMenuiserieToRoom(roomId, typeId, quantity, overrides);
-};
-
 // Ajouter une menuiserie à une pièce
 export const addMenuiserieToRoom = async (roomId: string, typeId: string, quantity: number = 1, overrides?: { largeur?: number, hauteur?: number }): Promise<Menuiserie | null> => {
   try {
@@ -298,11 +273,6 @@ export const addMenuiserieToRoom = async (roomId: string, typeId: string, quanti
     console.error('Exception lors de l\'ajout de la menuiserie:', error);
     return null;
   }
-};
-
-// Mettre à jour une menuiserie - adding aliases for consistency
-export const updateRoomMenuiserie = async (id: string, changes: Partial<Omit<Menuiserie, 'id'>>): Promise<Menuiserie | null> => {
-  return updateMenuiserie(id, changes);
 };
 
 // Mettre à jour une menuiserie
@@ -362,11 +332,6 @@ export const updateMenuiserie = async (id: string, changes: Partial<Omit<Menuise
     console.error(`Exception lors de la mise à jour de la menuiserie ${id}:`, error);
     return null;
   }
-};
-
-// Supprimer une menuiserie - adding aliases for consistency
-export const deleteRoomMenuiserie = async (id: string): Promise<boolean> => {
-  return deleteMenuiserie(id);
 };
 
 // Supprimer une menuiserie

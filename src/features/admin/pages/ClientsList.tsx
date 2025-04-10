@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import Layout from "@/components/Layout";
+import { Layout } from '@/components/Layout';
 import { useClients } from '@/contexts/ClientsContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,6 +21,7 @@ const ClientsList: React.FC = () => {
   const [clientToDelete, setClientToDelete] = useState<string | null>(null);
   const [isProcessingDelete, setIsProcessingDelete] = useState(false);
 
+  // Filtrer les clients en fonction du terme de recherche
   const filteredClients = state.clients.filter(client => {
     const searchLower = searchTerm.toLowerCase();
     return (

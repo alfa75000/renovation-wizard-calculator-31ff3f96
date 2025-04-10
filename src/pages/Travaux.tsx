@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronRight, PlusCircle, ArrowLeft, ArrowRight, Paintbrush, Square } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import Layout from "@/components/Layout";
+import { Layout } from "@/components/Layout";
 import { useProject } from "@/contexts/ProjectContext";
 import { useTravaux } from "@/features/travaux/hooks/useTravaux";
 import { Room, Travail } from "@/types";
@@ -162,6 +163,8 @@ const Travaux: React.FC = () => {
             </div>
           </CardHeader>
           <CardContent>
+            {/* Suppression du composant AutresSurfacesList */}
+            
             <h3 className="text-lg font-medium mb-3">Travaux</h3>
             {travauxForSelectedRoom.length > 0 ? (
               <div className="space-y-4">

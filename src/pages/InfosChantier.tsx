@@ -1,8 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useClients } from '@/contexts/ClientsContext';
 import { useProject } from '@/contexts/ProjectContext';
-import Layout from "@/components/Layout";
+import { Layout } from '@/components/Layout';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -10,7 +12,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Calendar } from 'lucide-react';
+import { Calendar, PlusCircle, Save, Trash, FileCheck } from 'lucide-react';
+import { toast } from 'sonner';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 
 const InfosChantier: React.FC = () => {
@@ -19,10 +23,15 @@ const InfosChantier: React.FC = () => {
   const { 
     state: projectState, 
     isLoading, 
+    isSaving,
     projects, 
     currentProjectId,
     hasUnsavedChanges,
+    saveProject,
+    saveProjectAsDraft,
     loadProject,
+    createNewProject,
+    deleteCurrentProject
   } = useProject();
   
   const [clientId, setClientId] = useState<string>('');
@@ -35,6 +44,7 @@ const InfosChantier: React.FC = () => {
   
   const clientSelectionne = clientsState.clients.find(c => c.id === clientId);
   
+  // Si un projet est sélectionné, charger ses informations
   useEffect(() => {
     if (currentProjectId) {
       const currentProject = projects.find(p => p.id === currentProjectId);
@@ -48,11 +58,73 @@ const InfosChantier: React.FC = () => {
     }
   }, [currentProjectId, projects]);
   
+  const handleSave = async () => {
+    if (!nomProjet) {
+      toast.error('Veuillez saisir un nom de projet');
+      return;
+    }
+    
+    try {
+      // Mettre à jour les informations du projet
+      const projectInfo = {
+        name: nomProjet,
+        clientId: clientId || null,
+        description: descriptionProjet,
+        address: adresseChantier,
+        occupant: occupant,
+        infoComplementaire: infoComplementaire
+      };
+      
+      await saveProject(nomProjet);
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde du projet:', error);
+      toast.error('Une erreur est survenue lors de la sauvegarde du projet');
+    }
+  };
+  
+  const handleSaveDraft = async () => {
+    try {
+      await saveProjectAsDraft();
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde du brouillon:', error);
+      toast.error('Une erreur est survenue lors de la sauvegarde du brouillon');
+    }
+  };
+  
   const handleChargerProjet = async (projetId: string) => {
     try {
       await loadProject(projetId);
     } catch (error) {
       console.error('Erreur lors du chargement du projet:', error);
+      toast.error('Une erreur est survenue lors du chargement du projet');
+    }
+  };
+  
+  const handleNouveauProjet = () => {
+    createNewProject();
+    // Réinitialiser le formulaire
+    setClientId('');
+    setNomProjet('');
+    setDescriptionProjet('');
+    setAdresseChantier('');
+    setOccupant('');
+    setInfoComplementaire('');
+    setDateDevis(format(new Date(), 'yyyy-MM-dd'));
+  };
+  
+  const handleDeleteProject = async () => {
+    try {
+      await deleteCurrentProject();
+      // Réinitialiser le formulaire
+      setClientId('');
+      setNomProjet('');
+      setDescriptionProjet('');
+      setAdresseChantier('');
+      setOccupant('');
+      setInfoComplementaire('');
+    } catch (error) {
+      console.error('Erreur lors de la suppression du projet:', error);
+      toast.error('Une erreur est survenue lors de la suppression du projet');
     }
   };
   
@@ -177,7 +249,76 @@ const InfosChantier: React.FC = () => {
               />
             </div>
             
-            {/* Tous les boutons de sauvegarde ont été supprimés */}
+            <div className="pt-4 flex flex-wrap gap-4">
+              <Button 
+                onClick={handleSave} 
+                disabled={isLoading || isSaving}
+                className="flex items-center gap-2"
+              >
+                <Save className="h-4 w-4" />
+                {isSaving ? 'Enregistrement...' : 'Enregistrer le projet'}
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                onClick={handleSaveDraft}
+                disabled={isLoading || isSaving || !hasUnsavedChanges}
+                className="flex items-center gap-2"
+              >
+                <FileCheck className="h-4 w-4" />
+                Sauvegarder brouillon
+              </Button>
+              
+              <Button 
+                variant="secondary" 
+                onClick={handleNouveauProjet}
+                disabled={isLoading}
+                className="flex items-center gap-2"
+              >
+                <PlusCircle className="h-4 w-4" />
+                Nouveau projet
+              </Button>
+              
+              {currentProjectId && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button 
+                      variant="destructive" 
+                      disabled={isLoading}
+                      className="flex items-center gap-2"
+                    >
+                      <Trash className="h-4 w-4" />
+                      Supprimer projet
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Êtes-vous sûr de vouloir supprimer ce projet ?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Cette action est irréversible. Toutes les données du projet seront définitivement supprimées.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Annuler</AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={handleDeleteProject}
+                        className="bg-red-500 hover:bg-red-600"
+                      >
+                        Supprimer
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+              
+              <Button 
+                variant="outline" 
+                onClick={() => navigate('/travaux')}
+                className="ml-auto"
+              >
+                Aller aux travaux
+              </Button>
+            </div>
           </div>
         </div>
         

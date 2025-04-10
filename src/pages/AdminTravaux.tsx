@@ -1,5 +1,6 @@
+
 import React, { useState } from "react";
-import Layout from "@/components/Layout";
+import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Plus, PlusCircle, Edit, Trash, Undo, Clipboard, Archive } from "lucide-react";
 import { 
