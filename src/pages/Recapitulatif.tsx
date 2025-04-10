@@ -1,4 +1,3 @@
-
 import React from "react";
 import { 
   Card, 
@@ -10,7 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Printer, Home, Info, FileText } from "lucide-react";
 import { Link } from "react-router-dom";
-import { Layout } from "@/components/Layout";
+import Layout from "@/components/Layout";
 import { useProject } from "@/contexts/ProjectContext";
 import { useTravaux } from "@/features/travaux/hooks/useTravaux";
 import { formaterPrix } from "@/lib/utils";

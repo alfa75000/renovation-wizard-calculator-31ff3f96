@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
 import { Room, Travail, ProjectState } from '@/types';
@@ -889,7 +890,7 @@ export const deleteProject = async (projectId: string) => {
 /**
  * Génère un nom par défaut pour un nouveau projet
  */
-function generateDefaultProjectName() {
+export function generateDefaultProjectName() {
   const date = new Date();
   return `Nouveau projet ${date.toLocaleDateString('fr-FR')}`;
 }
