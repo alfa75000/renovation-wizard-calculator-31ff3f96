@@ -1,9 +1,11 @@
+
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useProject } from "@/contexts/ProjectContext";
 import { Room } from "@/types";
 import PropertyCard from "@/features/property/components/PropertyCard";
 import RoomsCard from "@/features/property/components/RoomsCard";
+import { generateDevisNumber, findDefaultClientId } from "@/services/devisService";
 
 const RenovationEstimator: React.FC = () => {
   const { 
@@ -15,6 +17,7 @@ const RenovationEstimator: React.FC = () => {
   
   const { property, rooms } = state;
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
+  const [isFirstRoom, setIsFirstRoom] = useState<boolean>(true);
   
   const roomTypes = ["Salon", "Chambre", "Cuisine", "Salle de bain", "Toilettes", "Bureau", "Entrée", "Couloir", "Autre"];
 
@@ -32,7 +35,7 @@ const RenovationEstimator: React.FC = () => {
     });
   };
 
-  const handleAddRoom = (room: Omit<Room, "id">) => {
+  const handleAddRoom = async (room: Omit<Room, "id">) => {
     if (editingRoomId) {
       dispatch({
         type: 'UPDATE_ROOM',
@@ -55,6 +58,32 @@ const RenovationEstimator: React.FC = () => {
       });
       
       toast.success(`${room.name} ajouté avec succès`);
+
+      // Vérifier si c'est la première pièce ajoutée
+      if (rooms.length === 0 && isFirstRoom) {
+        setIsFirstRoom(false);
+        
+        try {
+          // Déclencher la génération automatique immédiatement ici
+          const clientId = await findDefaultClientId();
+          const devisNumber = await generateDevisNumber();
+          
+          // On déclenche aussi l'événement pour la page InfosChantier
+          const event = new CustomEvent('firstRoomAdded', {
+            detail: {
+              roomName: room.name,
+              clientId: clientId,
+              devisNumber: devisNumber
+            }
+          });
+          window.dispatchEvent(event);
+          
+          // Toast pour indiquer que la génération automatique a été effectuée
+          toast.info("Les informations du projet ont été initialisées automatiquement");
+        } catch (error) {
+          console.error("Erreur lors de la génération des informations:", error);
+        }
+      }
     }
   };
 
@@ -73,11 +102,17 @@ const RenovationEstimator: React.FC = () => {
     });
     
     toast.success(`${roomName} supprimé avec succès`);
+    
+    // Réinitialiser le flag si toutes les pièces sont supprimées
+    if (rooms.length === 1) { // Si cette pièce est la dernière
+      setIsFirstRoom(true);
+    }
   };
 
   const resetProject = () => {
     createNewProject();
     setEditingRoomId(null);
+    setIsFirstRoom(true);
   };
 
   return (
