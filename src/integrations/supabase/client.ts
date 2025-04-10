@@ -23,7 +23,8 @@ export const supabaseTables = [
   'room_works',
   'services',
   'service_groups',
-  'work_types'
+  'work_types',
+  'room_custom_surfaces'
 ] as const;
 
 export type SupabaseTables = typeof supabaseTables[number];
@@ -89,7 +90,11 @@ export const getTableStructure = async (tableName: string): Promise<string[] | s
       return `Erreur: ${error.message}`;
     }
     
-    return data?.map((col: any) => col.name) || [`Aucune colonne trouvée pour ${tableName}`];
+    if (data && Array.isArray(data)) {
+      return data.map((col: any) => col.name);
+    } else {
+      return [`Aucune colonne trouvée pour ${tableName}`];
+    }
   } catch (err) {
     return `Exception: ${(err as Error).message}`;
   }

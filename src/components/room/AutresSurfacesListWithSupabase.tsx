@@ -11,7 +11,6 @@ const AutresSurfacesListWithSupabase: React.FC<AutresSurfacesListWithSupabasePro
     <div className="mt-4">
       <RoomCustomItems 
         roomId={roomId} 
-        isLocalMode={false}
       />
     </div>
   );

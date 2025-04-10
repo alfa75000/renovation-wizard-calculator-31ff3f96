@@ -161,6 +161,7 @@ export type Database = {
           id: string
           name: string
           property_type: string | null
+          rooms_count: number | null
           status: string | null
           total_area: number | null
           updated_at: string
@@ -173,6 +174,7 @@ export type Database = {
           id?: string
           name: string
           property_type?: string | null
+          rooms_count?: number | null
           status?: string | null
           total_area?: number | null
           updated_at?: string
@@ -185,6 +187,7 @@ export type Database = {
           id?: string
           name?: string
           property_type?: string | null
+          rooms_count?: number | null
           status?: string | null
           total_area?: number | null
           updated_at?: string
@@ -262,37 +265,111 @@ export type Database = {
           },
         ]
       }
+      room_custom_surfaces: {
+        Row: {
+          created_at: string | null
+          designation: string | null
+          est_deduction: boolean | null
+          hauteur: number
+          id: string
+          largeur: number
+          name: string
+          quantity: number | null
+          room_id: string | null
+          surface: number | null
+          surface_impactee: string | null
+          type: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          designation?: string | null
+          est_deduction?: boolean | null
+          hauteur: number
+          id?: string
+          largeur: number
+          name: string
+          quantity?: number | null
+          room_id?: string | null
+          surface?: number | null
+          surface_impactee?: string | null
+          type?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          designation?: string | null
+          est_deduction?: boolean | null
+          hauteur?: number
+          id?: string
+          largeur?: number
+          name?: string
+          quantity?: number | null
+          room_id?: string | null
+          surface?: number | null
+          surface_impactee?: string | null
+          type?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_custom_surfaces_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       room_menuiseries: {
         Row: {
           created_at: string
+          hauteur: number | null
           height_override: number | null
           id: string
+          largeur: number | null
           menuiserie_type_id: string
+          name: string | null
           notes: string | null
           quantity: number
           room_id: string
+          surface: number | null
+          surface_impactee: string | null
+          type: string | null
           updated_at: string
           width_override: number | null
         }
         Insert: {
           created_at?: string
+          hauteur?: number | null
           height_override?: number | null
           id?: string
+          largeur?: number | null
           menuiserie_type_id: string
+          name?: string | null
           notes?: string | null
           quantity?: number
           room_id: string
+          surface?: number | null
+          surface_impactee?: string | null
+          type?: string | null
           updated_at?: string
           width_override?: number | null
         }
         Update: {
           created_at?: string
+          hauteur?: number | null
           height_override?: number | null
           id?: string
+          largeur?: number | null
           menuiserie_type_id?: string
+          name?: string | null
           notes?: string | null
           quantity?: number
           room_id?: string
+          surface?: number | null
+          surface_impactee?: string | null
+          type?: string | null
           updated_at?: string
           width_override?: number | null
         }
@@ -315,41 +392,89 @@ export type Database = {
       }
       room_works: {
         Row: {
+          commentaire: string | null
           created_at: string
+          description: string | null
           description_override: string | null
           id: string
           labor_price_override: number | null
+          menuiserie_id: string | null
+          personnalisation: string | null
+          prix_fournitures: number | null
+          prix_main_oeuvre: number | null
+          quantite: number | null
           quantity: number
           room_id: string
           service_id: string
+          sous_type: string | null
+          sous_type_id: string | null
+          sous_type_label: string | null
           supply_price_override: number | null
+          surface_impactee: string | null
+          taux_tva: number | null
+          type_travaux: string | null
+          type_travaux_id: string | null
+          type_travaux_label: string | null
           unit: string | null
+          unite: string | null
           updated_at: string
           vat_rate: number | null
         }
         Insert: {
+          commentaire?: string | null
           created_at?: string
+          description?: string | null
           description_override?: string | null
           id?: string
           labor_price_override?: number | null
+          menuiserie_id?: string | null
+          personnalisation?: string | null
+          prix_fournitures?: number | null
+          prix_main_oeuvre?: number | null
+          quantite?: number | null
           quantity?: number
           room_id: string
           service_id: string
+          sous_type?: string | null
+          sous_type_id?: string | null
+          sous_type_label?: string | null
           supply_price_override?: number | null
+          surface_impactee?: string | null
+          taux_tva?: number | null
+          type_travaux?: string | null
+          type_travaux_id?: string | null
+          type_travaux_label?: string | null
           unit?: string | null
+          unite?: string | null
           updated_at?: string
           vat_rate?: number | null
         }
         Update: {
+          commentaire?: string | null
           created_at?: string
+          description?: string | null
           description_override?: string | null
           id?: string
           labor_price_override?: number | null
+          menuiserie_id?: string | null
+          personnalisation?: string | null
+          prix_fournitures?: number | null
+          prix_main_oeuvre?: number | null
+          quantite?: number | null
           quantity?: number
           room_id?: string
           service_id?: string
+          sous_type?: string | null
+          sous_type_id?: string | null
+          sous_type_label?: string | null
           supply_price_override?: number | null
+          surface_impactee?: string | null
+          taux_tva?: number | null
+          type_travaux?: string | null
+          type_travaux_id?: string | null
+          type_travaux_label?: string | null
           unit?: string | null
+          unite?: string | null
           updated_at?: string
           vat_rate?: number | null
         }
@@ -372,46 +497,127 @@ export type Database = {
       }
       rooms: {
         Row: {
+          autres_surfaces_murs: number | null
+          autres_surfaces_plafond: number | null
+          autres_surfaces_sol: number | null
           ceiling_surface: number | null
           created_at: string
+          custom_name: string | null
           floor_surface: number | null
+          height: number | null
           id: string
+          length: number | null
+          lineaire_brut: number | null
+          lineaire_net: number | null
+          menuiseries_murs_surface: number | null
+          menuiseries_plafond_surface: number | null
+          menuiseries_sol_surface: number | null
           name: string
+          net_wall_surface: number | null
           perimeter: number | null
+          plinth_height: number | null
           project_id: string
           surface: number | null
+          surface_brute_murs: number | null
+          surface_brute_plafond: number | null
+          surface_brute_sol: number | null
+          surface_menuiseries: number | null
+          surface_nette_murs: number | null
+          surface_nette_plafond: number | null
+          surface_nette_sol: number | null
+          total_menuiserie_surface: number | null
+          total_plinth_length: number | null
+          total_plinth_surface: number | null
           type: string | null
+          type_mur: string | null
+          type_sol: string | null
           updated_at: string
           wall_height: number | null
           wall_surface: number | null
+          wall_surface_raw: number | null
+          width: number | null
         }
         Insert: {
+          autres_surfaces_murs?: number | null
+          autres_surfaces_plafond?: number | null
+          autres_surfaces_sol?: number | null
           ceiling_surface?: number | null
           created_at?: string
+          custom_name?: string | null
           floor_surface?: number | null
+          height?: number | null
           id?: string
+          length?: number | null
+          lineaire_brut?: number | null
+          lineaire_net?: number | null
+          menuiseries_murs_surface?: number | null
+          menuiseries_plafond_surface?: number | null
+          menuiseries_sol_surface?: number | null
           name: string
+          net_wall_surface?: number | null
           perimeter?: number | null
+          plinth_height?: number | null
           project_id: string
           surface?: number | null
+          surface_brute_murs?: number | null
+          surface_brute_plafond?: number | null
+          surface_brute_sol?: number | null
+          surface_menuiseries?: number | null
+          surface_nette_murs?: number | null
+          surface_nette_plafond?: number | null
+          surface_nette_sol?: number | null
+          total_menuiserie_surface?: number | null
+          total_plinth_length?: number | null
+          total_plinth_surface?: number | null
           type?: string | null
+          type_mur?: string | null
+          type_sol?: string | null
           updated_at?: string
           wall_height?: number | null
           wall_surface?: number | null
+          wall_surface_raw?: number | null
+          width?: number | null
         }
         Update: {
+          autres_surfaces_murs?: number | null
+          autres_surfaces_plafond?: number | null
+          autres_surfaces_sol?: number | null
           ceiling_surface?: number | null
           created_at?: string
+          custom_name?: string | null
           floor_surface?: number | null
+          height?: number | null
           id?: string
+          length?: number | null
+          lineaire_brut?: number | null
+          lineaire_net?: number | null
+          menuiseries_murs_surface?: number | null
+          menuiseries_plafond_surface?: number | null
+          menuiseries_sol_surface?: number | null
           name?: string
+          net_wall_surface?: number | null
           perimeter?: number | null
+          plinth_height?: number | null
           project_id?: string
           surface?: number | null
+          surface_brute_murs?: number | null
+          surface_brute_plafond?: number | null
+          surface_brute_sol?: number | null
+          surface_menuiseries?: number | null
+          surface_nette_murs?: number | null
+          surface_nette_plafond?: number | null
+          surface_nette_sol?: number | null
+          total_menuiserie_surface?: number | null
+          total_plinth_length?: number | null
+          total_plinth_surface?: number | null
           type?: string | null
+          type_mur?: string | null
+          type_sol?: string | null
           updated_at?: string
           wall_height?: number | null
           wall_surface?: number | null
+          wall_surface_raw?: number | null
+          width?: number | null
         }
         Relationships: [
           {
