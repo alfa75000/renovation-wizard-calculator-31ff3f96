@@ -1,10 +1,16 @@
 
 import React from 'react';
 import { Layout } from '@/components/Layout';
-import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ClientDetails } from './ClientDetails';
 import { ProjectForm } from './ProjectForm';
+import { ProjectBar } from '@/components/layout/ProjectBar';
 import { ProjectList } from './ProjectList';
 import { ProjectSummary } from './ProjectSummary';
+import { NewProjectDialog } from '@/components/layout/NewProjectDialog';
+import { OpenProjectSheet } from '@/components/layout/OpenProjectSheet';
+import { SaveAsDialog } from '@/components/layout/SaveAsDialog';
+import { useState } from 'react';
 
 interface InfosChantierLayoutProps {
   clientId: string;
@@ -28,12 +34,12 @@ interface InfosChantierLayoutProps {
   projectState: any;
   isLoading: boolean;
   hasUnsavedChanges: boolean;
-  onGenerateProjectName: () => void;
+  onGenerateProjectName: () => Promise<string | void>;
   generateProjectNameIfNeeded: () => Promise<boolean>;
   shouldGenerateProjectName: () => boolean;
-  onSaveProject: () => void;
-  onDeleteProject: () => void;
-  onSelectProject: (projectId: string) => void;
+  onSaveProject: () => Promise<boolean>;
+  onDeleteProject: () => Promise<void>;
+  onSelectProject: (projectId: string) => Promise<void>;
 }
 
 export const InfosChantierLayout: React.FC<InfosChantierLayoutProps> = ({
@@ -65,73 +71,121 @@ export const InfosChantierLayout: React.FC<InfosChantierLayoutProps> = ({
   onDeleteProject,
   onSelectProject
 }) => {
+  const [isNewProjectOpen, setIsNewProjectOpen] = useState(false);
+  const [isOpenProjectOpen, setIsOpenProjectOpen] = useState(false);
+  const [isSaveAsOpen, setIsSaveAsOpen] = useState(false);
+  
+  const handleNewProject = () => {
+    setIsNewProjectOpen(true);
+  };
+  
+  const handleOpenProject = () => {
+    setIsOpenProjectOpen(true);
+  };
+  
+  const handleSaveAsProject = () => {
+    setIsSaveAsOpen(true);
+  };
+  
+  const handleSaveProject = async () => {
+    // Vérifie si le nom du projet est vide et a besoin d'être généré
+    if (shouldGenerateProjectName()) {
+      await generateProjectNameIfNeeded();
+    }
+    
+    // Ensuite sauvegarder le projet
+    await onSaveProject();
+  };
+  
   return (
     <Layout
-      title="Infos Chantier / Client"
-      subtitle="Gérez les informations du projet et du client"
-      currentProjectName={nomProjet}
+      title="Informations du chantier et client"
+      subtitle="Créez un nouveau projet ou modifiez un projet existant"
     >
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div className="md:col-span-2 bg-white p-6 rounded-lg shadow-md">
-          <div className="flex items-center justify-between mb-4 border-b pb-2">
-            <h2 className="text-xl font-semibold">Informations du projet</h2>
-            {hasUnsavedChanges && (
-              <Badge variant="outline" className="ml-2 text-amber-500 border-amber-500">
-                Modifications non enregistrées
-              </Badge>
-            )}
-          </div>
-          
-          <ProjectForm 
-            clientId={clientId}
-            setClientId={setClientId}
-            nomProjet={nomProjet}
-            setNomProjet={setNomProjet}
-            descriptionProjet={descriptionProjet}
-            setDescriptionProjet={setDescriptionProjet}
-            adresseChantier={adresseChantier}
-            setAdresseChantier={setAdresseChantier}
-            occupant={occupant}
-            setOccupant={setOccupant}
-            infoComplementaire={infoComplementaire}
-            setInfoComplementaire={setInfoComplementaire}
-            dateDevis={dateDevis}
-            setDateDevis={setDateDevis}
-            devisNumber={devisNumber}
-            setDevisNumber={setDevisNumber}
-            hasUnsavedChanges={hasUnsavedChanges}
-            currentProjectId={currentProjectId}
-            onSaveProject={onSaveProject}
-            onDeleteProject={onDeleteProject}
-            isLoading={isLoading}
-            onGenerateProjectName={onGenerateProjectName}
-          />
+      <ProjectBar
+        onNewProject={handleNewProject}
+        onOpenProject={handleOpenProject}
+        onSaveProject={handleSaveProject}
+        onSaveAsProject={handleSaveAsProject}
+        projectDisplayName={nomProjet} // Utiliser le nom du projet actuel
+      />
+      
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="col-span-2">
+          <Tabs defaultValue="infos" className="w-full">
+            <TabsList className="mb-4">
+              <TabsTrigger value="infos">Informations du projet</TabsTrigger>
+              <TabsTrigger value="client">Détails du client</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="infos" className="p-4 border rounded-md">
+              <ProjectForm
+                clientId={clientId}
+                setClientId={setClientId}
+                nomProjet={nomProjet}
+                setNomProjet={setNomProjet}
+                descriptionProjet={descriptionProjet}
+                setDescriptionProjet={setDescriptionProjet}
+                adresseChantier={adresseChantier}
+                setAdresseChantier={setAdresseChantier}
+                occupant={occupant}
+                setOccupant={setOccupant}
+                infoComplementaire={infoComplementaire}
+                setInfoComplementaire={setInfoComplementaire}
+                dateDevis={dateDevis}
+                setDateDevis={setDateDevis}
+                devisNumber={devisNumber}
+                setDevisNumber={setDevisNumber}
+                hasUnsavedChanges={hasUnsavedChanges}
+                currentProjectId={currentProjectId}
+                onSaveProject={onSaveProject}
+                onDeleteProject={onDeleteProject}
+                isLoading={isLoading}
+                onGenerateProjectName={onGenerateProjectName}
+              />
+            </TabsContent>
+            
+            <TabsContent value="client" className="p-4 border rounded-md">
+              <ClientDetails clientId={clientId} />
+            </TabsContent>
+          </Tabs>
         </div>
         
-        <div className="md:col-span-1">
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h2 className="text-xl font-semibold mb-4 border-b pb-2">Projets enregistrés</h2>
-            
-            <ProjectList 
-              projects={projects}
-              currentProjectId={currentProjectId}
-              projectState={projectState}
-              isLoading={isLoading}
-              onSelectProject={onSelectProject}
+        <div>
+          <div className="border rounded-md p-4 mb-6">
+            <h2 className="text-lg font-semibold mb-4">Résumé du projet</h2>
+            <ProjectSummary 
+              projectState={projectState} 
+              hasUnsavedChanges={hasUnsavedChanges}
+              currentProjectName={nomProjet} // Pass the current project name
             />
           </div>
           
-          <div className="mt-6 bg-white p-6 rounded-lg shadow-md">
-            <h2 className="text-xl font-semibold mb-4 border-b pb-2">Résumé du projet</h2>
-            
-            <ProjectSummary 
-              projectState={projectState}
-              hasUnsavedChanges={hasUnsavedChanges}
-              currentProjectName={nomProjet}
+          <div className="border rounded-md p-4">
+            <h2 className="text-lg font-semibold mb-4">Projets existants</h2>
+            <ProjectList 
+              projects={projects} 
+              currentProjectId={currentProjectId}
+              onSelectProject={onSelectProject}
             />
           </div>
         </div>
       </div>
+      
+      <NewProjectDialog 
+        open={isNewProjectOpen} 
+        onOpenChange={setIsNewProjectOpen} 
+      />
+      
+      <OpenProjectSheet 
+        open={isOpenProjectOpen} 
+        onOpenChange={setIsOpenProjectOpen} 
+      />
+      
+      <SaveAsDialog 
+        open={isSaveAsOpen} 
+        onOpenChange={setIsSaveAsOpen} 
+      />
     </Layout>
   );
 };

@@ -26,10 +26,10 @@ interface ProjectFormProps {
   setDevisNumber: (number: string) => void;
   hasUnsavedChanges: boolean;
   currentProjectId: string | null;
-  onSaveProject: () => void;
-  onDeleteProject: () => void;
+  onSaveProject: () => Promise<boolean>;
+  onDeleteProject: () => Promise<void>;
   isLoading: boolean;
-  onGenerateProjectName: () => void;
+  onGenerateProjectName: () => Promise<string | void>;
 }
 
 export const ProjectForm: React.FC<ProjectFormProps> = ({
@@ -56,8 +56,32 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
   isLoading,
   onGenerateProjectName
 }) => {
-  // Removed automatic effect trigger to prevent unwanted automatic regeneration
-  // We'll rely on explicit calls to onGenerateProjectName instead
+  // Effet pour sauvegarder automatiquement les changements de formulaire
+  // après un délai d'inactivité (uniquement si un projet est déjà chargé)
+  useEffect(() => {
+    const saveTimeout = setTimeout(() => {
+      if (currentProjectId && hasUnsavedChanges) {
+        console.log("Sauvegarde automatique des modifications de formulaire...");
+        onSaveProject().then(success => {
+          if (success) {
+            console.log("Modifications sauvegardées automatiquement");
+          }
+        });
+      }
+    }, 2000); // 2 secondes d'inactivité avant sauvegarde
+
+    return () => clearTimeout(saveTimeout);
+  }, [
+    clientId,
+    nomProjet,
+    descriptionProjet,
+    adresseChantier,
+    occupant,
+    devisNumber,
+    currentProjectId,
+    hasUnsavedChanges,
+    onSaveProject
+  ]);
   
   return (
     <div className="space-y-6">
