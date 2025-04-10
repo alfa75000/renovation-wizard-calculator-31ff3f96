@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useReducer } from 'react';
 import { ProjectState, ProjectAction, Project } from '@/types';
 import { toast } from 'sonner';
@@ -23,6 +22,7 @@ type ProjectContextType = {
   createNewProject: () => void;
   deleteCurrentProject: () => Promise<void>;
   refreshProjects: () => Promise<void>;
+  updateProjectName: (projectId: string, name: string) => void;
   rooms: {
     rooms: ProjectState['rooms'];
     addRoom: ReturnType<typeof useRooms>['addRoom'];
@@ -49,7 +49,8 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     loadProject,
     createNewProject,
     deleteCurrentProject,
-    refreshProjects
+    refreshProjects,
+    updateProjectNameInStorage
   } = useProjectStorage();
   
   // Hook pour la gestion des avertissements de sauvegarde
@@ -57,6 +58,14 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   // Hook pour la gestion des pièces - passer state et dispatch en arguments
   const roomsManager = useRooms(state, dispatch);
+  
+  // Fonction de mise à jour du nom du projet
+  const updateProjectName = (projectId: string, name: string) => {
+    if (!projectId) return;
+    
+    // Mettre à jour le nom du projet dans le stockage
+    updateProjectNameInStorage(projectId, name);
+  };
   
   // Fonction améliorée de sauvegarde avec suivi d'état
   const enhancedSaveProject = async (name?: string) => {
@@ -98,6 +107,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       createNewProject: enhancedCreateNewProject,
       deleteCurrentProject,
       refreshProjects,
+      updateProjectName,
       rooms: roomsManager
     }}>
       {children}
