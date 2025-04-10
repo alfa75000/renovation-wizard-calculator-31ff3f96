@@ -59,3 +59,41 @@ export const isDevisNumberUnique = async (devisNumber: string): Promise<boolean>
   
   return !data; // Retourne true si aucun projet n'est trouvé avec ce numéro
 };
+
+/**
+ * Obtient un client par défaut
+ * Retourne le premier client de type "À définir" ou le premier client disponible
+ */
+export const getDefaultClient = async (): Promise<string | null> => {
+  try {
+    // Rechercher d'abord un client avec le type "À définir"
+    const { data: clientTypes } = await supabase
+      .from('client_types')
+      .select('id')
+      .eq('name', 'À définir')
+      .maybeSingle();
+
+    if (clientTypes?.id) {
+      const { data: defaultClients } = await supabase
+        .from('clients')
+        .select('id')
+        .eq('client_type_id', clientTypes.id)
+        .limit(1);
+
+      if (defaultClients && defaultClients.length > 0) {
+        return defaultClients[0].id;
+      }
+    }
+
+    // Si aucun client "À définir", retourner le premier client disponible
+    const { data: anyClient } = await supabase
+      .from('clients')
+      .select('id')
+      .limit(1);
+
+    return anyClient && anyClient.length > 0 ? anyClient[0].id : null;
+  } catch (error) {
+    console.error('Erreur lors de la récupération du client par défaut:', error);
+    return null;
+  }
+};

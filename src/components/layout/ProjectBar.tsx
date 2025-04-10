@@ -19,6 +19,8 @@ export const ProjectBar: React.FC<ProjectBarProps> = ({
 }) => {
   const { currentProjectId, projects } = useProject();
   const currentProject = projects.find(p => p.id === currentProjectId);
+  
+  // Utilisation du nom complet du projet s'il existe, sinon "Projet sans titre"
   const projectDisplayName = currentProject?.name || "Projet sans titre";
 
   return (
