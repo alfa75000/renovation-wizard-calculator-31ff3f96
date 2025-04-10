@@ -1,145 +1,68 @@
 
-// IMPORTANT: Ce fichier est maintenu pour la compatibilité avec le code existant
-// Pour les nouveaux développements, utilisez import { supabase } from '@/integrations/supabase/client'
-import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from '@/integrations/supabase/client';
-
-// Exporter tout ce qui était déjà exporté pour maintenir la compatibilité
-export { supabase, SUPABASE_URL, SUPABASE_ANON_KEY };
+import { createClient } from '@supabase/supabase-js';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from '@/integrations/supabase/client';
 
 /**
- * Récupère les informations sur les tables de la base de données
+ * Client Supabase pour l'application.
+ * Note: Ce fichier va être déprécié en faveur de src/integrations/supabase/client.ts
  */
-export const getDatabaseInfo = async () => {
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/**
+ * Détecte si une table existe dans le schéma Supabase
+ * @param tableName Nom de la table à vérifier
+ * @returns Promise<boolean> Vrai si la table existe
+ */
+export const tableExists = async (tableName: string): Promise<boolean> => {
   try {
-    console.log("Récupération des informations sur la base de données...");
+    const { data, error } = await supabase
+      .rpc('get_table_info', { table_name: tableName });
     
-    // Liste des tables principales que nous souhaitons explorer
-    const mainTables = [
-      'work_types',
-      'service_groups',
-      'services',
-      'clients',
-      'client_types',
-      'menuiseries_types',
-      'rooms',
-      'room_custom_items',
-      'projects'
-    ];
-    
-    const tablesData = [];
-    
-    for (const tableName of mainTables) {
-      try {
-        // Récupérer un échantillon de données pour déterminer la structure de la table
-        const { data: sampleData, error } = await supabase
-          .from(tableName)
-          .select('*')
-          .limit(1);
-        
-        if (error) {
-          console.warn(`La table ${tableName} n'existe pas ou n'est pas accessible:`, error);
-          continue;
-        }
-        
-        if (sampleData && sampleData.length > 0) {
-          // Extraire les colonnes à partir de l'échantillon
-          const columns = Object.keys(sampleData[0]).map(name => ({ 
-            name, 
-            type: typeof sampleData[0][name]
-          }));
-          
-          tablesData.push({
-            name: tableName,
-            columns
-          });
-        } else {
-          // Table existe mais est vide
-          tablesData.push({
-            name: tableName,
-            columns: [],
-            note: "Table vide"
-          });
-        }
-      } catch (tableError) {
-        console.error(`Erreur lors de l'analyse de la table ${tableName}:`, tableError);
-      }
+    if (error) {
+      console.error('Erreur lors de la vérification de l\'existence de la table:', error);
+      return false;
     }
     
-    return { tables: tablesData };
-  } catch (error) {
-    console.error('Exception lors de la récupération des informations de la base de données:', error);
-    return { error: "Exception inattendue" };
+    return Array.isArray(data) && data.length > 0;
+  } catch (err) {
+    console.error('Exception lors de la vérification de l\'existence de la table:', err);
+    return false;
   }
 };
 
-// Fonction utilitaire pour vérifier la connexion
-export const checkSupabaseConnection = async () => {
+/**
+ * Exécute une requête pour vérifier si une table contient des données
+ * @param tableName Nom de la table à vérifier
+ * @returns Promise<boolean> Vrai si la table contient des données
+ */
+export const hasTableData = async (tableName: string): Promise<boolean> => {
   try {
-    console.log("Vérification de la connexion à Supabase...");
+    // Vérifier d'abord si la table existe
+    const tableExist = await tableExists(tableName);
+    if (!tableExist) {
+      console.warn(`La table ${tableName} n'existe pas.`);
+      return false;
+    }
     
-    // Tenter une requête simple
-    const { data, error } = await supabase.from('work_types').select('*').limit(3);
-    
-    console.log("Résultat de la requête test work_types:", { 
-      data, 
-      error, 
-      count: data?.length || 0
-    });
+    // Utiliser directement la méthode from avec une validation de type
+    const validatedTableName = tableName as "autres_surfaces_types" | "client_types" | 
+      "clients" | "menuiseries_types" | "projects" | "room_custom_items" | 
+      "rooms" | "room_menuiseries" | "room_works" | "services" | 
+      "service_groups" | "work_types";
+      
+    const { data, error, count } = await supabase
+      .from(validatedTableName)
+      .select('*', { count: 'exact', head: true })
+      .limit(1);
     
     if (error) {
-      console.error('Erreur de connexion à Supabase:', error);
-      return {
-        connected: false,
-        error: error.message,
-        details: error
-      };
-    }
-
-    // Récupérer les infos de la base de données
-    let dbInfo = null;
-    try {
-      dbInfo = await getDatabaseInfo();
-    } catch (e) {
-      console.warn("Impossible de récupérer les informations complètes de la base de données:", e);
+      console.error(`Erreur lors de la vérification des données de la table ${tableName}:`, error);
+      return false;
     }
     
-    // Récupérer les structures des tables principales
-    const { data: workTypesColumns } = await supabase
-      .from('work_types')
-      .select('*')
-      .limit(1);
-    
-    const { data: serviceGroupsColumns } = await supabase
-      .from('service_groups')
-      .select('*')
-      .limit(1);
-    
-    const { data: servicesColumns } = await supabase
-      .from('services')
-      .select('*')
-      .limit(1);
-    
-    console.log("Structures des tables récupérées:", {
-      work_types: workTypesColumns ? Object.keys(workTypesColumns[0] || {}) : "Pas de données",
-      service_groups: serviceGroupsColumns ? Object.keys(serviceGroupsColumns[0] || {}) : "Pas de données",
-      services: servicesColumns ? Object.keys(servicesColumns[0] || {}) : "Pas de données"
-    });
-    
-    return {
-      connected: true,
-      data,
-      dbInfo: dbInfo || "Non disponible",
-      tableStructures: {
-        work_types: workTypesColumns ? Object.keys(workTypesColumns[0] || {}) : "Pas de données",
-        service_groups: serviceGroupsColumns ? Object.keys(serviceGroupsColumns[0] || {}) : "Pas de données",
-        services: servicesColumns ? Object.keys(servicesColumns[0] || {}) : "Pas de données"
-      }
-    };
-  } catch (error) {
-    console.error('Exception lors de la connexion à Supabase:', error);
-    return {
-      connected: false,
-      error: "Exception inattendue lors de la connexion"
-    };
+    return count !== null && count > 0;
+  } catch (err) {
+    console.error(`Exception lors de la vérification des données de la table ${tableName}:`, err);
+    return false;
   }
 };

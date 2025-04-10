@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useRoomCustomItemsWithSupabase } from '@/hooks/useRoomCustomItemsWithSupabase';
-import { RoomCustomItem } from '@/types/supabase';
+import { RoomCustomItem, SurfaceImpactee, AdjustmentType } from '@/types/supabase';
 import { AutreSurface, TypeAutreSurface } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -116,7 +116,8 @@ const RoomCustomItems: React.FC<RoomCustomItemsProps> = ({
         surface_impactee: data.surfaceImpactee || data.surface_impactee,
         adjustment_type: data.estDeduction || data.adjustment_type === 'deduire' ? 'Déduire' : 'Ajouter',
         impacte_plinthe: data.impactePlinthe || data.impacte_plinthe,
-        description: data.description || null
+        description: data.description || null,
+        updated_at: new Date().toISOString()
       };
 
       if (editingItemId) {

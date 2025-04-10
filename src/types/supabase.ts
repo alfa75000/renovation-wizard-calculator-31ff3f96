@@ -54,6 +54,11 @@ export type RoomMenuiserie = {
   notes?: string | null;
   updated_at: string;
   menuiserie_type?: MenuiserieType;
+  // Propriétés calculées ou issues de menuiserie_type
+  largeur?: number;
+  hauteur?: number;
+  surface?: number;
+  surface_impactee?: SurfaceImpactee;
 };
 
 export type Client = {
@@ -124,6 +129,16 @@ export type RoomWork = {
   supply_price_override: number | null;
   description_override: string | null;
   vat_rate: number;
+  // Champs supplémentaires pour les travaux personnalisés
+  type_travaux_id?: string;
+  type_travaux_label?: string;
+  sous_type_id?: string;
+  sous_type_label?: string;
+  menuiserie_id?: string;
+  personnalisation?: string;
+  type_travaux?: string;
+  sous_type?: string;
+  surface_impactee?: string;
 };
 
 // Type pour la table projects
@@ -169,4 +184,26 @@ export type Room = {
   custom_items?: RoomCustomItem[];
   created_at: string;
   updated_at: string;
+  // Valeurs calculées supplémentaires pour la compatibilité
+  wall_surface_raw?: number;
+  total_plinth_length?: number;
+  total_plinth_surface?: number;
+  menuiseries_murs_surface?: number;
+  menuiseries_plafond_surface?: number;
+  menuiseries_sol_surface?: number;
+  autres_surfaces_murs?: number;
+  autres_surfaces_plafond?: number;
+  autres_surfaces_sol?: number;
+  net_wall_surface?: number;
+  surface_nette_murs?: number;
+  surface_nette_sol?: number;
+  surface_nette_plafond?: number;
+  surface_brute_sol?: number;
+  surface_brute_plafond?: number;
+  surface_brute_murs?: number;
+  surface_menuiseries?: number;
+  total_menuiserie_surface?: number;
+  lineaire_brut?: number;
+  lineaire_net?: number;
+  autresSurfaces?: any[];
 };

@@ -65,12 +65,14 @@ export const useRoomCustomItemsWithSupabase = (roomId?: string) => {
         
         if (data) {
           // S'assurer que les données sont conformes au type RoomCustomItem
-          const typedData = data.map(item => ({
+          const typedData: RoomCustomItem[] = data.map(item => ({
             ...item,
-            type: item.type || '', // Ajouter type s'il n'existe pas
-            designation: item.designation || null, // Ajouter designation s'il n'existe pas
-            surface: item.surface || (item.largeur * item.hauteur) // Calculer surface si elle n'existe pas
-          })) as RoomCustomItem[];
+            type: item.type || 'custom', // Type par défaut si absent
+            designation: item.designation || item.name, // Désignation par défaut si absente
+            surface: item.surface || (item.largeur * item.hauteur), // Calculer surface si elle n'existe pas
+            adjustment_type: item.adjustment_type || 'Ajouter',
+            surface_impactee: item.surface_impactee || 'Mur'
+          }));
           
           setCustomItems(typedData);
         } else {
@@ -90,7 +92,7 @@ export const useRoomCustomItemsWithSupabase = (roomId?: string) => {
 
   // Ajouter un élément personnalisé
   const addCustomItem = async (
-    item: Omit<RoomCustomItem, 'id' | 'created_at' | 'updated_at' | 'surface'>
+    item: Omit<RoomCustomItem, 'id' | 'created_at' | 'updated_at'>
   ): Promise<RoomCustomItem | null> => {
     if (!roomId) {
       toast.error('Aucune pièce sélectionnée');
@@ -103,13 +105,14 @@ export const useRoomCustomItemsWithSupabase = (roomId?: string) => {
       // Obtenir l'UUID correspondant pour Supabase
       const supabaseRoomId = getOrCreateUUID(roomId);
       
-      // Calculer la surface à partir des dimensions
-      const surface = item.largeur * item.hauteur;
+      // Calculer la surface à partir des dimensions si non fournie
+      const surface = item.surface || (item.largeur * item.hauteur);
       
       const newItem = {
         ...item,
         room_id: supabaseRoomId,
-        surface // Ajouter la surface calculée
+        surface, // Ajouter la surface calculée
+        updated_at: new Date().toISOString()
       };
       
       const { data, error } = await supabase
@@ -128,8 +131,8 @@ export const useRoomCustomItemsWithSupabase = (roomId?: string) => {
         // S'assurer que les données ont les propriétés requises
         const typedData: RoomCustomItem = {
           ...data,
-          type: data.type || '',
-          designation: data.designation || null,
+          type: data.type || 'custom',
+          designation: data.designation || data.name,
           surface: data.surface || surface
         };
         
@@ -153,7 +156,7 @@ export const useRoomCustomItemsWithSupabase = (roomId?: string) => {
   // Mettre à jour un élément personnalisé
   const updateCustomItem = async (
     id: string, 
-    changes: Partial<Omit<RoomCustomItem, 'id' | 'created_at' | 'updated_at' | 'surface'>>
+    changes: Partial<Omit<RoomCustomItem, 'id' | 'created_at' | 'updated_at'>>
   ): Promise<RoomCustomItem | null> => {
     try {
       setLoading(true);
@@ -167,9 +170,12 @@ export const useRoomCustomItemsWithSupabase = (roomId?: string) => {
         if (currentItem) {
           const largeur = changes.largeur !== undefined ? changes.largeur : currentItem.largeur;
           const hauteur = changes.hauteur !== undefined ? changes.hauteur : currentItem.hauteur;
-          updatedChanges.surface = largeur * hauteur;
+          updatedChanges.surface = changes.surface !== undefined ? changes.surface : (largeur * hauteur);
         }
       }
+      
+      // Ajouter le timestamp de mise à jour
+      updatedChanges.updated_at = new Date().toISOString();
       
       const { data, error } = await supabase
         .from('room_custom_items')
@@ -188,9 +194,9 @@ export const useRoomCustomItemsWithSupabase = (roomId?: string) => {
         // S'assurer que les données ont les propriétés requises
         const typedData: RoomCustomItem = {
           ...data,
-          type: data.type || '',
-          designation: data.designation || null,
-          surface: data.surface || 0
+          type: data.type || 'custom',
+          designation: data.designation || data.name,
+          surface: data.surface || (data.largeur * data.hauteur)
         };
         
         // Mettre à jour l'état local
@@ -319,7 +325,8 @@ export const useRoomCustomItemsWithSupabase = (roomId?: string) => {
           surface_impactee,
           adjustment_type,
           impacte_plinthe: item.impactePlinthe,
-          description: item.description || null
+          description: item.description || null,
+          updated_at: new Date().toISOString()
         };
       });
       
@@ -346,12 +353,12 @@ export const useRoomCustomItemsWithSupabase = (roomId?: string) => {
       
       if (!error && data) {
         // S'assurer que les données sont conformes au type RoomCustomItem
-        const typedData = data.map(item => ({
+        const typedData: RoomCustomItem[] = data.map(item => ({
           ...item,
-          type: item.type || '',
-          designation: item.designation || null,
+          type: item.type || 'custom',
+          designation: item.designation || item.name,
           surface: item.surface || (item.largeur * item.hauteur)
-        })) as RoomCustomItem[];
+        }));
         
         setCustomItems(typedData);
       }

@@ -172,6 +172,39 @@ export const createRoomMenuiserie = async (roomMenuiserie: {
   }
 };
 
+// Mettre à jour une menuiserie de pièce
+export const updateRoomMenuiserie = async (id: string, changes: {
+  menuiserie_type_id?: string;
+  quantity?: number;
+  width_override?: number;
+  height_override?: number;
+  notes?: string;
+}) => {
+  try {
+    console.log("Mise à jour de la menuiserie de pièce:", { id, changes });
+    
+    const { data, error } = await supabase
+      .from('room_menuiseries')
+      .update(changes)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Erreur lors de la mise à jour de la menuiserie:', error);
+      toast.error('Erreur lors de la mise à jour de la menuiserie');
+      return null;
+    }
+    
+    toast.success('Menuiserie mise à jour avec succès');
+    return data;
+  } catch (error) {
+    console.error('Exception lors de la mise à jour de la menuiserie:', error);
+    toast.error('Erreur lors de la mise à jour de la menuiserie');
+    return null;
+  }
+};
+
 // Récupérer les menuiseries d'une pièce
 export const fetchRoomMenuiseries = async (roomId: string) => {
   try {

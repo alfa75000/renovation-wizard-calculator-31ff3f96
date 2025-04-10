@@ -18,6 +18,20 @@ const convertSurfaceImpacteeToFrontend = (value: SurfaceImpactee): "mur" | "plaf
   }
 };
 
+// Convertir le type frontend en SurfaceImpactee de Supabase
+const convertSurfaceImpacteeToSupabase = (value: string): SurfaceImpactee => {
+  switch (value.toLowerCase()) {
+    case 'mur':
+      return 'Mur';
+    case 'plafond':
+      return 'Plafond';
+    case 'sol':
+      return 'Sol';
+    default:
+      return 'Aucune';
+  }
+};
+
 // Récupérer tous les types d'autres surfaces
 export const getAutresSurfacesTypes = async (): Promise<TypeAutreSurface[]> => {
   const { data, error } = await supabase
@@ -91,12 +105,10 @@ export const addAutreSurfaceToRoom = async (
     hauteur: surface.hauteur,
     surface: surfaceValue,
     quantity: surface.quantity || 1,
-    surface_impactee: surface.surfaceImpactee === 'mur' ? 'Mur' :
-                     surface.surfaceImpactee === 'plafond' ? 'Plafond' :
-                     surface.surfaceImpactee === 'sol' ? 'Sol' : 'Aucune' as SurfaceImpactee,
-    adjustment_type: surface.estDeduction ? 'Déduire' : 'Ajouter' as AdjustmentType,
+    surface_impactee: convertSurfaceImpacteeToSupabase(surface.surfaceImpactee),
+    adjustment_type: surface.estDeduction ? 'Déduire' : 'Ajouter',
     impacte_plinthe: surface.impactePlinthe || false,
-    description: surface.description || '',
+    description: surface.description || ''
   };
 
   const { data, error } = await supabase
@@ -151,7 +163,8 @@ export const updateAutreSurface = async (
 
   // Préparer les mises à jour
   const updates: Partial<RoomCustomItem> = {
-    surface: surface
+    surface: surface,
+    updated_at: new Date().toISOString()
   };
 
   // Copier les champs qui ont le même nom
@@ -165,13 +178,11 @@ export const updateAutreSurface = async (
 
   // Convertir les champs qui ont un nom différent
   if (changes.surfaceImpactee !== undefined) {
-    updates.surface_impactee = changes.surfaceImpactee === 'mur' ? 'Mur' :
-                              changes.surfaceImpactee === 'plafond' ? 'Plafond' :
-                              changes.surfaceImpactee === 'sol' ? 'Sol' : 'Aucune' as SurfaceImpactee;
+    updates.surface_impactee = convertSurfaceImpacteeToSupabase(changes.surfaceImpactee);
   }
 
   if (changes.estDeduction !== undefined) {
-    updates.adjustment_type = changes.estDeduction ? 'Déduire' : 'Ajouter' as AdjustmentType;
+    updates.adjustment_type = changes.estDeduction ? 'Déduire' : 'Ajouter';
   }
 
   if (changes.impactePlinthe !== undefined) {
@@ -219,4 +230,3 @@ export const deleteAutreSurface = async (id: string): Promise<void> => {
     throw error;
   }
 };
-
