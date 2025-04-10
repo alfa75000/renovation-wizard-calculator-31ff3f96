@@ -7,6 +7,7 @@ import {
   calculerTotalHT, 
   calculerTotalTTC 
 } from "@/features/travaux/utils/travauxUtils";
+import { TableCell, TableRow } from "@/components/ui/table";
 
 interface TravailRecapRowProps {
   travail: Travail;
@@ -18,8 +19,8 @@ const TravailRecapRow: React.FC<TravailRecapRowProps> = ({ travail }) => {
   const totalTTC = calculerTotalTTC(travail);
   
   return (
-    <tr className="border-b">
-      <td className="px-3 py-2">
+    <TableRow>
+      <TableCell>
         <div>{travail.typeTravauxLabel}: {travail.sousTypeLabel}</div>
         {travail.description && (
           <div className="text-xs text-gray-600 mt-1 italic">
@@ -35,12 +36,12 @@ const TravailRecapRow: React.FC<TravailRecapRowProps> = ({ travail }) => {
           MO: {formaterPrix(travail.prixMainOeuvre)}/u, Fourn: {formaterPrix(travail.prixFournitures)}/u 
           (total: {formaterPrix(prixUnitaireHT)}/u)
         </div>
-      </td>
-      <td className="px-3 py-2 text-right">{travail.quantite} {travail.unite}</td>
-      <td className="px-3 py-2 text-right">{formaterPrix(prixUnitaireHT)}</td>
-      <td className="px-3 py-2 text-right">{travail.tauxTVA}%</td>
-      <td className="px-3 py-2 text-right font-medium">{formaterPrix(totalTTC)}</td>
-    </tr>
+      </TableCell>
+      <TableCell className="text-right">{travail.quantite} {travail.unite}</TableCell>
+      <TableCell className="text-right">{formaterPrix(prixUnitaireHT)}</TableCell>
+      <TableCell className="text-right">{travail.tauxTVA}%</TableCell>
+      <TableCell className="text-right font-medium">{formaterPrix(totalTTC)}</TableCell>
+    </TableRow>
   );
 };
 

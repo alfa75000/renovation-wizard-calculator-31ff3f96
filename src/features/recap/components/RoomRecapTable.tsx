@@ -1,12 +1,16 @@
 
 import React from "react";
 import { Room, Travail } from "@/types";
-import { formaterPrix } from "@/lib/utils";
 import TravailRecapRow from "./TravailRecapRow";
-import { 
-  calculerTotalHTTravaux, 
-  calculerTotalTTCTravaux 
-} from "@/features/travaux/utils/travauxUtils";
+import TotauxRecap from "./TotauxRecap";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface RoomRecapTableProps {
   room: Room;
@@ -18,10 +22,6 @@ const RoomRecapTable: React.FC<RoomRecapTableProps> = ({ room, travaux }) => {
     return null;
   }
 
-  // Utiliser les fonctions utilitaires pour calculer les totaux
-  const totalHT = calculerTotalHTTravaux(travaux);
-  const totalTTC = calculerTotalTTCTravaux(travaux);
-
   return (
     <div className="mb-8">
       <h3 className="text-lg font-semibold mb-2 border-b pb-2">
@@ -29,34 +29,33 @@ const RoomRecapTable: React.FC<RoomRecapTableProps> = ({ room, travaux }) => {
       </h3>
       
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-3 py-2 text-left">Description</th>
-              <th className="px-3 py-2 text-right">Quantité</th>
-              <th className="px-3 py-2 text-right">Prix unitaire HT</th>
-              <th className="px-3 py-2 text-right">TVA</th>
-              <th className="px-3 py-2 text-right">Total TTC</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Description</TableHead>
+              <TableHead className="text-right">Quantité</TableHead>
+              <TableHead className="text-right">Prix unitaire HT</TableHead>
+              <TableHead className="text-right">TVA</TableHead>
+              <TableHead className="text-right">Total TTC</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {travaux.map(travail => (
               <TravailRecapRow key={travail.id} travail={travail} />
             ))}
-            
-            <tr className="bg-gray-50 font-medium">
-              <td colSpan={3} className="px-3 py-2">
-                Total pour {room.name}
-              </td>
-              <td className="px-3 py-2 text-right">
-                {formaterPrix(totalHT)}
-              </td>
-              <td className="px-3 py-2 text-right">
-                {formaterPrix(totalTTC)}
-              </td>
-            </tr>
-          </tbody>
-        </table>
+          </TableBody>
+          <TableRow className="bg-gray-50 font-medium">
+            <TableCell colSpan={3}>
+              Total pour {room.name}
+            </TableCell>
+            <TableCell colSpan={2} className="text-right">
+              <TotauxRecap 
+                travaux={travaux} 
+                className="justify-end"
+              />
+            </TableCell>
+          </TableRow>
+        </Table>
       </div>
     </div>
   );
