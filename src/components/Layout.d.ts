@@ -6,5 +6,4 @@ export interface LayoutProps {
   title: string;
   subtitle?: string;
   actions?: ReactNode;
-  currentProjectName?: string; // Add this new prop
 }

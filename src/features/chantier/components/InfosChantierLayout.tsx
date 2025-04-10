@@ -69,7 +69,6 @@ export const InfosChantierLayout: React.FC<InfosChantierLayoutProps> = ({
     <Layout
       title="Infos Chantier / Client"
       subtitle="Gérez les informations du projet et du client"
-      currentProjectName={nomProjet}
     >
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div className="md:col-span-2 bg-white p-6 rounded-lg shadow-md">

@@ -15,13 +15,16 @@ export const Layout: React.FC<LayoutProps> = ({
   title, 
   subtitle,
   actions,
-  currentProjectName // Use the prop that's now defined in LayoutProps
 }) => {
   const { 
     currentProjectId, 
     saveProject, 
-    createNewProject 
+    createNewProject,
+    state 
   } = useProject();
+  
+  // Récupérer directement le nom du projet depuis le contexte global
+  const projectName = state.metadata.nomProjet || '';
   
   const [newProjectDialogOpen, setNewProjectDialogOpen] = useState(false);
   const [saveAsDialogOpen, setSaveAsDialogOpen] = useState(false);
@@ -52,7 +55,7 @@ export const Layout: React.FC<LayoutProps> = ({
         onOpenProject={() => setOpenProjectSheetOpen(true)}
         onSaveProject={handleSaveProject}
         onSaveAsProject={() => setSaveAsDialogOpen(true)}
-        projectDisplayName={currentProjectName} // Pass the currentProjectName to ProjectBar
+        projectDisplayName={projectName} // Utiliser la valeur du state global
       />
       
       <TitleHeader title={title} subtitle={subtitle} />
