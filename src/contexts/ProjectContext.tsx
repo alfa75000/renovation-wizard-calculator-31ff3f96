@@ -23,7 +23,12 @@ type ProjectContextType = {
   createNewProject: () => void;
   deleteCurrentProject: () => Promise<void>;
   refreshProjects: () => Promise<void>;
-  rooms: ReturnType<typeof useRooms>;
+  rooms: {
+    rooms: ProjectState['rooms'];
+    addRoom: ReturnType<typeof useRooms>['addRoom'];
+    updateRoom: ReturnType<typeof useRooms>['updateRoom'];
+    deleteRoom: ReturnType<typeof useRooms>['deleteRoom'];
+  };
 };
 
 // Création du contexte
@@ -49,8 +54,8 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // Hook pour la gestion des avertissements de sauvegarde
   const { hasUnsavedChanges, updateSavedState, resetSavedState } = useSaveLoadWarning(state);
 
-  // Hook pour la gestion des pièces
-  const rooms = useRooms();
+  // Hook pour la gestion des pièces - maintenant avec state et dispatch passés comme arguments
+  const roomsManager = useRooms(state, dispatch);
   
   // Fonction améliorée de sauvegarde avec suivi d'état
   const enhancedSaveProject = async (name?: string) => {
@@ -88,7 +93,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       createNewProject: enhancedCreateNewProject,
       deleteCurrentProject,
       refreshProjects,
-      rooms
+      rooms: roomsManager
     }}>
       {children}
     </ProjectContext.Provider>

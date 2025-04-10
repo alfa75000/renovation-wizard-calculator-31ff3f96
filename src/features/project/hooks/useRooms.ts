@@ -1,16 +1,17 @@
 
 import { useCallback } from 'react';
-import { Room } from '@/types';
+import { Room, ProjectState, ProjectAction } from '@/types';
 import { toast } from 'sonner';
-import { useProject } from '@/contexts/ProjectContext';
 import { v4 as uuidv4 } from 'uuid';
 import { generateRoomName } from '../utils/projectUtils';
 
 /**
  * Hook pour la gestion des pièces dans le projet
  */
-export const useRooms = () => {
-  const { state, dispatch } = useProject();
+export const useRooms = (
+  state: ProjectState,
+  dispatch: React.Dispatch<ProjectAction>
+) => {
   const { rooms } = state;
 
   /**
