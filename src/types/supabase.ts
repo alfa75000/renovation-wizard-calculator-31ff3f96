@@ -83,18 +83,18 @@ export type ClientType = {
   name: string;
 };
 
-// Type pour la table room_custom_items
+// Type pour la table room_custom_items avec tous les champs nécessaires
 export type RoomCustomItem = {
   id: string;
   created_at: string;
   updated_at: string;
   room_id: string;
-  type: string;
+  type: string;          // Ajout: type d'élément personnalisé
   name: string;
-  designation: string | null;
+  designation: string | null;  // Ajout: désignation pour affichage
   largeur: number;
   hauteur: number;
-  surface: number;
+  surface: number;       // Ajout: surface calculée (largeur * hauteur)
   quantity: number;
   surface_impactee: SurfaceImpactee;
   adjustment_type: AdjustmentType;

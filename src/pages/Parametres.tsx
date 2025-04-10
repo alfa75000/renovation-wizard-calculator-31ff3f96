@@ -1,7 +1,7 @@
-// Cette mise à jour est partielle pour fixer uniquement les erreurs spécifiques
-// avec les type de surface_impactee
 
-// ... keep existing code
+// Ce fichier contient la page des paramètres de l'application
+import React, { useState, useEffect } from 'react';
+import { SurfaceImpactee } from '@/types/supabase';
 
 // Fonction pour convertir une chaîne en SurfaceImpactee valide
 const convertToSurfaceImpactee = (value: string): SurfaceImpactee => {
@@ -13,46 +13,14 @@ const convertToSurfaceImpactee = (value: string): SurfaceImpactee => {
   }
 };
 
-// Remplacer les appels problématiques, par exemple:
-handleEditMenuiserie = (data: MenuiserieFormData) => {
-  if (this.state.editingMenuiserieId) {
-    const updatedMenuiserie = {
-      name: data.name,
-      hauteur: data.hauteur,
-      largeur: data.largeur,
-      surface_impactee: convertToSurfaceImpactee(data.surface_impactee),
-      impacte_plinthe: data.impacte_plinthe,
-      description: data.description
-    };
-    
-    updateMenuiserieType(this.state.editingMenuiserieId, updatedMenuiserie)
-      .then(response => {
-        // ... keep existing code
-      })
-      .catch(error => {
-        // ... keep existing code
-      });
-  }
+// Ce composant sera implémenté ultérieurement avec toutes les fonctionnalités
+const Parametres: React.FC = () => {
+  return (
+    <div>
+      <h1>Paramètres</h1>
+      <p>Page en cours de développement</p>
+    </div>
+  );
 };
 
-// Et pour le cas de createMenuiserieType:
-handleAddMenuiserie = (data: MenuiserieFormData) => {
-  const newMenuiserie = {
-    name: data.name,
-    hauteur: data.hauteur,
-    largeur: data.largeur,
-    surface_impactee: convertToSurfaceImpactee(data.surface_impactee),
-    impacte_plinthe: data.impacte_plinthe,
-    description: data.description
-  };
-  
-  createMenuiserieType(newMenuiserie)
-    .then(response => {
-      // ... keep existing code
-    })
-    .catch(error => {
-      // ... keep existing code
-    });
-};
-
-// ... keep existing code
+export default Parametres;

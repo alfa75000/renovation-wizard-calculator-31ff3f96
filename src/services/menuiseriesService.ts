@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { MenuiserieType, SurfaceImpactee } from '@/types/supabase';
 import { toast } from 'sonner';
@@ -173,35 +172,31 @@ export const createRoomMenuiserie = async (roomMenuiserie: {
 };
 
 // Mettre à jour une menuiserie de pièce
-export const updateRoomMenuiserie = async (id: string, changes: {
-  menuiserie_type_id?: string;
-  quantity?: number;
-  width_override?: number;
-  height_override?: number;
-  notes?: string;
-}) => {
+export const updateRoomMenuiserie = async (
+  id: string, 
+  updates: Partial<RoomMenuiserie>
+): Promise<RoomMenuiserie | null> => {
   try {
-    console.log("Mise à jour de la menuiserie de pièce:", { id, changes });
-    
     const { data, error } = await supabase
       .from('room_menuiseries')
-      .update(changes)
+      .update(updates)
       .eq('id', id)
-      .select()
+      .select('*')
       .single();
     
     if (error) {
-      console.error('Erreur lors de la mise à jour de la menuiserie:', error);
-      toast.error('Erreur lors de la mise à jour de la menuiserie');
+      console.error(`Erreur lors de la mise à jour de la menuiserie ${id}:`, error);
+      throw error;
+    }
+    
+    if (!data) {
       return null;
     }
     
-    toast.success('Menuiserie mise à jour avec succès');
     return data;
   } catch (error) {
-    console.error('Exception lors de la mise à jour de la menuiserie:', error);
-    toast.error('Erreur lors de la mise à jour de la menuiserie');
-    return null;
+    console.error('Erreur lors de la mise à jour de la menuiserie:', error);
+    throw error;
   }
 };
 

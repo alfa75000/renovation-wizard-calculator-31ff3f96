@@ -1,6 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
-import { checkSupabaseConnection, getDatabaseInfo, SUPABASE_URL } from '@/lib/supabase';
+import { checkSupabaseConnection, getDatabaseInfo } from '@/lib/supabase';
+import { SUPABASE_URL } from '@/integrations/supabase/client';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Loader2, AlertCircle, CheckCircle2, ChevronDown, ChevronRight, Database } from 'lucide-react';

@@ -70,8 +70,6 @@ export const useRoomCustomItemsWithSupabase = (roomId?: string) => {
             type: item.type || 'custom', // Type par défaut si absent
             designation: item.designation || item.name, // Désignation par défaut si absente
             surface: item.surface || (item.largeur * item.hauteur), // Calculer surface si elle n'existe pas
-            adjustment_type: item.adjustment_type || 'Ajouter',
-            surface_impactee: item.surface_impactee || 'Mur'
           }));
           
           setCustomItems(typedData);
@@ -315,16 +313,16 @@ export const useRoomCustomItemsWithSupabase = (roomId?: string) => {
         
         return {
           room_id: supabaseRoomId,
-          type: item.type,
+          type: item.type || 'custom',
           name: item.name,
-          designation: item.designation || null,
+          designation: item.designation || item.name,
           largeur: item.largeur,
           hauteur: item.hauteur,
-          surface: item.surface,
+          surface: item.surface || (item.largeur * item.hauteur),
           quantity: item.quantity || 1,
           surface_impactee,
           adjustment_type,
-          impacte_plinthe: item.impactePlinthe,
+          impacte_plinthe: item.impactePlinthe || false,
           description: item.description || null,
           updated_at: new Date().toISOString()
         };
