@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -344,8 +343,8 @@ const RoomForm: React.FC<RoomFormProps> = ({ onAddRoom, editingRoom, roomTypes }
       
       <Separator className="my-6" />
       
-      {/* Remplacer AutresSurfacesListWithSupabase par un nouveau composant qui gère les surfaces localement */}
       <RoomCustomItems 
+        roomId=""
         isLocalMode={true}
         autresSurfaces={autresSurfaces}
         onAddAutreSurface={addAutreSurface}

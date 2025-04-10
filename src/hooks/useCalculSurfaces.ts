@@ -23,11 +23,14 @@ export const useCalculSurfaces = () => {
   const calculerLongueurPlinthe = (perimetre: number, menuiseries: Menuiserie[]): number => {
     let doorWidths = 0;
     
-    menuiseries.forEach(item => {
-      if ((item.type.toLowerCase().includes('porte') || item.impactePlinthe) && item.surfaceImpactee === 'mur') {
-        doorWidths += (item.largeur / 100) * item.quantity;
-      }
-    });
+    if (menuiseries && menuiseries.length > 0) {
+      menuiseries.forEach(item => {
+        if (item && ((item.type && item.type.toLowerCase().includes('porte')) || item.impactePlinthe) && 
+            item.surfaceImpactee === 'mur') {
+          doorWidths += ((item.largeur || 0) / 100) * (item.quantity || 1);
+        }
+      });
+    }
     
     return arrondir2Decimales(perimetre - doorWidths);
   };
@@ -39,10 +42,12 @@ export const useCalculSurfaces = () => {
   
   // Calculer la surface des menuiseries sur un type d'impact (mur, sol, plafond)
   const calculerSurfaceMenuiseries = (menuiseries: Menuiserie[], surfaceImpactee: 'mur' | 'plafond' | 'sol'): number => {
+    if (!menuiseries || menuiseries.length === 0) return 0;
+    
     return arrondir2Decimales(
       menuiseries
-        .filter(m => m.surfaceImpactee === surfaceImpactee)
-        .reduce((total, m) => total + m.surface * m.quantity, 0)
+        .filter(m => m && m.surfaceImpactee === surfaceImpactee)
+        .reduce((total, m) => total + (m.surface || 0) * (m.quantity || 1), 0)
     );
   };
   
@@ -52,10 +57,12 @@ export const useCalculSurfaces = () => {
     surfaceImpactee: 'mur' | 'plafond' | 'sol', 
     estDeduction: boolean
   ): number => {
+    if (!autresSurfaces || autresSurfaces.length === 0) return 0;
+    
     return arrondir2Decimales(
       autresSurfaces
-        .filter(s => s.surfaceImpactee === surfaceImpactee && s.estDeduction === estDeduction)
-        .reduce((total, s) => total + s.surface * s.quantity, 0)
+        .filter(s => s && s.surfaceImpactee === surfaceImpactee && s.estDeduction === estDeduction)
+        .reduce((total, s) => total + (s.surface || 0) * (s.quantity || 1), 0)
     );
   };
   
@@ -86,8 +93,19 @@ export const useCalculSurfaces = () => {
   
   // Calculer toutes les surfaces pour une pièce
   const calculerToutesSurfaces = (room: Omit<Room, 'id'>): Partial<Room> => {
-    // Extraire les valeurs
-    const { length, width, height, plinthHeight, menuiseries, autresSurfaces } = room;
+    // Extraire les valeurs avec des valeurs par défaut sécurisées
+    const { 
+      length = 0, 
+      width = 0, 
+      height = 0, 
+      plinthHeight = 0,
+      menuiseries = [],
+      autresSurfaces = []
+    } = room;
+    
+    // Vérifier que les tableaux existent pour éviter les erreurs
+    const safeMenuiseries = menuiseries || [];
+    const safeAutresSurfaces = autresSurfaces || [];
     
     // Calculs de base
     const surfaceBruteSol = calculerSurfaceBrute(length, width);
@@ -96,21 +114,21 @@ export const useCalculSurfaces = () => {
     const surfaceBruteMurs = calculerSurfaceMuraleBrute(length, width, height);
     
     // Calculs des menuiseries
-    const menuiseriesMursSurface = calculerSurfaceMenuiseries(menuiseries, 'mur');
-    const menuiseriesPlafondSurface = calculerSurfaceMenuiseries(menuiseries, 'plafond');
-    const menuiseriesSolSurface = calculerSurfaceMenuiseries(menuiseries, 'sol');
+    const menuiseriesMursSurface = calculerSurfaceMenuiseries(safeMenuiseries, 'mur');
+    const menuiseriesPlafondSurface = calculerSurfaceMenuiseries(safeMenuiseries, 'plafond');
+    const menuiseriesSolSurface = calculerSurfaceMenuiseries(safeMenuiseries, 'sol');
     const totalMenuiserieSurface = menuiseriesMursSurface + menuiseriesPlafondSurface + menuiseriesSolSurface;
     
     // Calculs des autres surfaces
-    const autresMursAjout = calculerSurfaceAutres(autresSurfaces, 'mur', false);
-    const autresMursDeduction = calculerSurfaceAutres(autresSurfaces, 'mur', true);
-    const autresPlafondAjout = calculerSurfaceAutres(autresSurfaces, 'plafond', false);
-    const autresPlafondDeduction = calculerSurfaceAutres(autresSurfaces, 'plafond', true);
-    const autresSolAjout = calculerSurfaceAutres(autresSurfaces, 'sol', false);
-    const autresSolDeduction = calculerSurfaceAutres(autresSurfaces, 'sol', true);
+    const autresMursAjout = calculerSurfaceAutres(safeAutresSurfaces, 'mur', false);
+    const autresMursDeduction = calculerSurfaceAutres(safeAutresSurfaces, 'mur', true);
+    const autresPlafondAjout = calculerSurfaceAutres(safeAutresSurfaces, 'plafond', false);
+    const autresPlafondDeduction = calculerSurfaceAutres(safeAutresSurfaces, 'plafond', true);
+    const autresSolAjout = calculerSurfaceAutres(safeAutresSurfaces, 'sol', false);
+    const autresSolDeduction = calculerSurfaceAutres(safeAutresSurfaces, 'sol', true);
     
     // Calculs des plinthes
-    const totalPlinthLength = calculerLongueurPlinthe(perimetre, menuiseries);
+    const totalPlinthLength = calculerLongueurPlinthe(perimetre, safeMenuiseries);
     const totalPlinthSurface = calculerSurfacePlinthe(totalPlinthLength, plinthHeight);
     
     // Calculs des surfaces nettes

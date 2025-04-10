@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader } from '@/components/ui/loader';
 
 export interface RoomCustomItemsProps {
-  roomId: string;
+  roomId?: string;
   isLocalMode?: boolean;
   autresSurfaces?: AutreSurface[];
   onAddAutreSurface?: (surface: Omit<AutreSurface, 'id' | 'surface'>, quantity?: number) => Promise<AutreSurface[]> | AutreSurface[];
@@ -105,7 +105,7 @@ const RoomCustomItems: React.FC<RoomCustomItemsProps> = ({
             )}
             
             <AutresSurfacesList
-              autresSurfaces={autresSurfaces}
+              items={autresSurfaces}
               onUpdate={handleUpdateSurface}
               onDelete={handleDeleteSurface}
             />

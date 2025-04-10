@@ -1,8 +1,12 @@
 
+import { SurfaceImpactee } from "@/types/supabase";
+
 /**
  * Convertit une valeur de type de surface du format de l'application au format de la base de données
  */
-export function surfaceTypeToDb(type: string): 'Mur' | 'Plafond' | 'Sol' | 'Aucune' {
+export function surfaceTypeToDb(type?: string): SurfaceImpactee {
+  if (!type) return 'Aucune';
+  
   switch (type.toLowerCase()) {
     case 'mur':
       return 'Mur';
@@ -18,7 +22,9 @@ export function surfaceTypeToDb(type: string): 'Mur' | 'Plafond' | 'Sol' | 'Aucu
 /**
  * Convertit une valeur de type de surface du format de la base de données au format de l'application
  */
-export function surfaceTypeFromDb(type: string): 'mur' | 'plafond' | 'sol' | 'aucune' {
+export function surfaceTypeFromDb(type?: string): 'mur' | 'plafond' | 'sol' | 'aucune' {
+  if (!type) return 'aucune';
+  
   switch (type) {
     case 'Mur':
       return 'mur';

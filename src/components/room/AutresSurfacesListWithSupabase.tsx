@@ -48,7 +48,7 @@ const AutresSurfacesListWithSupabase: React.FC<AutresSurfacesListWithSupabasePro
 
   const handleUpdateSurface = async (id: string, changes: Partial<Omit<AutreSurface, 'id' | 'surface'>>) => {
     const result = await updateAutreSurfaceItem(id, changes);
-    return result as AutreSurface; // Add type assertion here to fix the error
+    return result as AutreSurface; 
   };
 
   const handleDeleteSurface = async (id: string) => {

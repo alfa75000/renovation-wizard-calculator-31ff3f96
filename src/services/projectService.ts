@@ -127,18 +127,9 @@ export const fetchProjectById = async (projectId: string) => {
         estDeduction: item.adjustment_type === 'Déduire'
       }));
       
-      // Utilisation des données temporaires pour la construction de l'état final
-      const roomWithData = {
-        ...room,
-        menuiseries: roomMenuiseries,
-        autresSurfaces: roomAutresSurfaces
-      };
-      
-      // Remplacer la pièce dans notre tableau avec la version complète
-      const roomIndex = rooms.findIndex(r => r.id === room.id);
-      if (roomIndex !== -1) {
-        rooms[roomIndex] = roomWithData;
-      }
+      // Étendre la pièce avec des propriétés temporaires
+      (room as any).menuiseries = roomMenuiseries;
+      (room as any).autresSurfaces = roomAutresSurfaces;
     }
     
     // Construire l'objet ProjectState complet
@@ -360,28 +351,23 @@ export const createProject = async (projectState: ProjectState, projectInfo: any
         .from('room_works')
         .insert({
           room_id: travail.pieceId,
-          service_id: travail.typeTravauxId || '', // Nécessaire pour l'insertion
+          service_id: travail.typeTravauxId || null,
           type_travaux_id: travail.typeTravauxId,
           type_travaux_label: travail.typeTravauxLabel,
           sous_type_id: travail.sousTypeId,
           sous_type_label: travail.sousTypeLabel,
           menuiserie_id: travail.menuiserieId || null,
           description: travail.description,
-          quantite: travail.quantite,
-          unite: travail.unite,
-          prix_fournitures: travail.prixFournitures,
-          prix_main_oeuvre: travail.prixMainOeuvre,
-          taux_tva: travail.tauxTVA,
-          commentaire: travail.commentaire || '',
-          personnalisation: travail.personnalisation || '',
-          type_travaux: travail.typeTravaux || '',
-          sous_type: travail.sousType || '',
-          surface_impactee: travail.surfaceImpactee || '',
           quantity: travail.quantite,
           unit: travail.unite,
           supply_price_override: travail.prixFournitures,
           labor_price_override: travail.prixMainOeuvre,
-          vat_rate: travail.tauxTVA
+          vat_rate: travail.tauxTVA,
+          commentaire: travail.commentaire || '',
+          personnalisation: travail.personnalisation || '',
+          type_travaux: travail.typeTravaux || '',
+          sous_type: travail.sousType || '',
+          surface_impactee: travail.surfaceImpactee || ''
         });
       
       if (travailError) {
@@ -753,11 +739,11 @@ export const updateProject = async (projectId: string, projectState: ProjectStat
               sous_type_label: travail.sousTypeLabel,
               menuiserie_id: travail.menuiserieId || null,
               description: travail.description,
-              quantite: travail.quantite,
-              unite: travail.unite,
-              prix_fournitures: travail.prixFournitures,
-              prix_main_oeuvre: travail.prixMainOeuvre,
-              taux_tva: travail.tauxTVA,
+              quantity: travail.quantite,
+              unit: travail.unite,
+              supply_price_override: travail.prixFournitures,
+              labor_price_override: travail.prixMainOeuvre,
+              vat_rate: travail.tauxTVA,
               commentaire: travail.commentaire || '',
               personnalisation: travail.personnalisation || '',
               type_travaux: travail.typeTravaux || '',
@@ -783,11 +769,11 @@ export const updateProject = async (projectId: string, projectState: ProjectStat
               sous_type_label: travail.sousTypeLabel,
               menuiserie_id: travail.menuiserieId || null,
               description: travail.description,
-              quantite: travail.quantite,
-              unite: travail.unite,
-              prix_fournitures: travail.prixFournitures,
-              prix_main_oeuvre: travail.prixMainOeuvre,
-              taux_tva: travail.tauxTVA,
+              quantity: travail.quantite,
+              unit: travail.unite,
+              supply_price_override: travail.prixFournitures,
+              labor_price_override: travail.prixMainOeuvre,
+              vat_rate: travail.tauxTVA,
               commentaire: travail.commentaire || '',
               personnalisation: travail.personnalisation || '',
               type_travaux: travail.typeTravaux || '',
@@ -903,8 +889,7 @@ export const deleteProject = async (projectId: string) => {
 /**
  * Génère un nom par défaut pour un nouveau projet
  */
-export const generateDefaultProjectName = () => {
-  const now = new Date();
-  const dateFormat = format(now, 'dd/MM/yyyy à HH:mm');
-  return `Projet du ${dateFormat}`;
-};
+function generateDefaultProjectName() {
+  const date = new Date();
+  return `Nouveau projet ${date.toLocaleDateString('fr-FR')}`;
+}
