@@ -11,7 +11,7 @@ import TvaSelect from "./TvaSelect";
 import UniteSelect from "./UniteSelect";
 import SurfaceImpacteeSelect from "./SurfaceImpacteeSelect";
 import { Room, Travail } from "@/types";
-import { Service, SurfaceImpactee } from "@/types/supabase";
+import { Service } from "@/types/supabase";
 
 interface TravailFormProps {
   piece: Room | null;

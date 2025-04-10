@@ -29,6 +29,9 @@ export interface TypeAutreSurface {
   impactePlinthe: boolean;
 }
 
+// Surface impactée type for use in the application
+export type SurfaceImpactee = 'Mur' | 'Plafond' | 'Sol' | 'Aucune';
+
 // Constantes pour les surfaces de référence
 export const surfacesReference = [
   { id: 'murs', label: 'Surface des murs' },

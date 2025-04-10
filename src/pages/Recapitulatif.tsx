@@ -14,6 +14,7 @@ import { Layout } from "@/components/Layout";
 import { useProject } from "@/contexts/ProjectContext";
 import { useTravaux } from "@/features/travaux/hooks/useTravaux";
 import { formaterPrix } from "@/lib/utils";
+import { Travail } from "@/types";
 
 const Recapitulatif: React.FC = () => {
   const { state } = useProject();

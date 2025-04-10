@@ -24,7 +24,8 @@ import {
   AutreSurface,
   TypeAutreSurface,
   surfacesReference,
-  surfacesMenuiseries
+  surfacesMenuiseries,
+  SurfaceImpactee
 } from './surface';
 
 import {
@@ -62,7 +63,8 @@ export type {
   TravauxType,
   TypeTravauxItem,
   SousTypeTravauxItem,
-  Client
+  Client,
+  SurfaceImpactee
 };
 
 // Exports d'états et d'actions pour les contextes
