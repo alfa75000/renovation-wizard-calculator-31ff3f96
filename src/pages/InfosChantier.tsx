@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useClients } from '@/contexts/ClientsContext';
 import { useProject } from '@/contexts/ProjectContext';
@@ -20,7 +19,8 @@ const InfosChantier: React.FC = () => {
     hasUnsavedChanges,
     loadProject,
     deleteCurrentProject,
-    saveProject
+    saveProject,
+    dispatch
   } = useProject();
   
   const [clientId, setClientId] = useState<string>('');
@@ -35,7 +35,6 @@ const InfosChantier: React.FC = () => {
   const { state: clientsState } = useClients();
   const clientSelectionne = clientsState.clients.find(c => c.id === clientId);
   
-  // Utiliser le hook pour initialiser les informations du projet à la première pièce
   const { isFirstRoom, setIsFirstRoom } = useProjectInitOnFirstRoom(
     clientId,
     setClientId,
@@ -79,8 +78,13 @@ const InfosChantier: React.FC = () => {
       }
       
       setNomProjet(newName);
+      
+      dispatch({ 
+        type: 'UPDATE_PROJECT_NAME', 
+        payload: newName 
+      });
     }
-  }, [devisNumber, clientSelectionne, descriptionProjet]);
+  }, [devisNumber, clientSelectionne, descriptionProjet, dispatch]);
   
   const handleChargerProjet = async (projetId: string) => {
     try {
@@ -115,7 +119,6 @@ const InfosChantier: React.FC = () => {
     }
     
     try {
-      // Sauvegarder avec le nom du projet mis à jour
       await saveProject(nomProjet);
       toast.success('Projet enregistré avec succès');
     } catch (error) {

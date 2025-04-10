@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar, Trash, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useClients } from '@/contexts/ClientsContext';
+import { useProject } from '@/contexts/ProjectContext';
 import { ClientDetails } from './ClientDetails';
 import { toast } from 'sonner';
 import { generateDevisNumber } from '@/services/projectService';
@@ -63,7 +64,18 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
 }) => {
   const navigate = useNavigate();
   const { state: clientsState } = useClients();
+  const { dispatch } = useProject();
   const [isGeneratingDevisNumber, setIsGeneratingDevisNumber] = useState<boolean>(false);
+  
+  // Add effect to update project name in context when nomProjet changes
+  useEffect(() => {
+    if (nomProjet) {
+      dispatch({ 
+        type: 'UPDATE_PROJECT_NAME', 
+        payload: nomProjet 
+      });
+    }
+  }, [nomProjet, dispatch]);
   
   const handleGenerateDevisNumber = async () => {
     try {

@@ -19,18 +19,28 @@ export const useProjectInitOnFirstRoom = (
 ) => {
   const { state: projectState, dispatch } = useProject();
   const { state: clientsState } = useClients();
-  const [hasInitialized, setHasInitialized] = useState<boolean>(false);
-  const [isFirstRoom, setIsFirstRoom] = useState<boolean>(true);
+  
+  // Add a storage flag to avoid showing the toast multiple times
+  const [hasInitialized, setHasInitialized] = useState<boolean>(() => {
+    const stored = sessionStorage.getItem('project_initialized');
+    return stored === 'true';
+  });
+  
+  const [isFirstRoom, setIsFirstRoom] = useState<boolean>(() => {
+    return projectState?.rooms?.length === 0;
+  });
 
   useEffect(() => {
     const initProjectOnFirstRoom = async () => {
-      // Si nous avons une première pièce ajoutée et que l'initialisation n'a pas encore été faite
+      // If we have a first room added and initialization hasn't been done yet
       if (projectState?.rooms?.length === 1 && isFirstRoom && !hasInitialized) {
-        setIsFirstRoom(false); // Ne plus exécuter cette logique pour les futures mises à jour
-        setHasInitialized(true); // Marquer comme initialisé pour éviter les répétitions
+        setIsFirstRoom(false);
+        setHasInitialized(true);
+        sessionStorage.setItem('project_initialized', 'true');
+        
         let initialized = false;
         
-        // Si pas de client sélectionné, sélectionner "Client à définir"
+        // If no client selected, select "Client à définir"
         let defaultClientId = clientId;
         if (!clientId) {
           defaultClientId = await findDefaultClientId();
@@ -41,7 +51,7 @@ export const useProjectInitOnFirstRoom = (
           }
         }
         
-        // Si pas de numéro de devis, en générer un automatiquement
+        // If no devis number, generate one automatically
         let newDevisNumber = devisNumber;
         if (!devisNumber) {
           try {
@@ -54,7 +64,7 @@ export const useProjectInitOnFirstRoom = (
           }
         }
         
-        // Si pas de description, utiliser "Projet en cours"
+        // If no description, use "Projet en cours"
         let newDescription = descriptionProjet;
         if (!descriptionProjet) {
           newDescription = "Projet en cours";
@@ -63,36 +73,37 @@ export const useProjectInitOnFirstRoom = (
           initialized = true;
         }
         
-        // Si nous avons initialisé quelque chose, afficher un message
+        // If we initialized something, show a message
         if (initialized) {
-          // Générer le nom du projet pour l'affichage dans la barre supérieure
+          // Generate project name for display in top bar
           const selectedClient = clientsState.clients.find(c => c.id === defaultClientId);
           const clientName = selectedClient ? `${selectedClient.nom} ${selectedClient.prenom || ''}`.trim() : 'Client';
           const projectName = `Devis n° ${newDevisNumber} - ${clientName} - ${newDescription.substring(0, 40)}`;
           
-          // Mettre à jour le nom du projet dans le contexte global pour la barre supérieure
+          // Update project name in global context for top bar
           dispatch({ 
             type: 'UPDATE_PROJECT_NAME', 
             payload: projectName 
           });
           
           toast.info("Informations du projet initialisées automatiquement", {
-            id: 'project-init' // Utiliser un ID pour éviter les doublons
+            id: 'project-init' // Use an ID to avoid duplicates
           });
         }
       }
       
-      // Réinitialiser le flag si aucune pièce n'est présente
+      // Reset flag if no room is present and we reset the project
       if (projectState?.rooms?.length === 0 && !isFirstRoom) {
         setIsFirstRoom(true);
         setHasInitialized(false);
+        sessionStorage.removeItem('project_initialized');
       }
     };
     
     initProjectOnFirstRoom();
   }, [projectState?.rooms, clientId, devisNumber, descriptionProjet, isFirstRoom, hasInitialized, setClientId, setDevisNumber, setDescriptionProjet, clientsState.clients, dispatch]);
   
-  // Renvoyer le flag pour pouvoir le réinitialiser depuis l'extérieur si nécessaire
+  // Return the flag to be able to reset it from outside if needed
   return {
     isFirstRoom,
     setIsFirstRoom,
