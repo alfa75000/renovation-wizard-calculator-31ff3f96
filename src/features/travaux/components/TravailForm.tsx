@@ -10,7 +10,7 @@ import SousTypeSelect from "./SousTypeSelect";
 import TvaSelect from "./TvaSelect";
 import UniteSelect from "./UniteSelect";
 import SurfaceImpacteeSelect from "./SurfaceImpacteeSelect";
-import { Room, Travail } from "@/types";
+import { Room, Travail, SurfaceImpactee } from "@/types";
 import { Service } from "@/types/supabase";
 
 interface TravailFormProps {
