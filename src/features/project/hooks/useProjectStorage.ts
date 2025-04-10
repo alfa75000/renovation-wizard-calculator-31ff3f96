@@ -12,6 +12,7 @@ import {
   generateDefaultProjectName,
   Project
 } from '@/services/projectService';
+import { initialProjectState } from '@/features/project/reducers/projectReducer';
 
 /**
  * Hook pour gérer la sauvegarde et le chargement des projets
