@@ -46,20 +46,22 @@ export const useProjectOperations = () => {
       
       // Combine with any additional project info passed in
       const combinedProjectInfo = {
-        client_id: metadata.clientId,
-        name: metadata.nomProjet,
-        description: metadata.descriptionProjet,
-        address: metadata.adresseChantier,
-        occupant: metadata.occupant,
+        client_id: metadata.clientId || projectInfo?.client_id,
+        name: metadata.nomProjet || projectInfo?.name || 'Projet sans nom',
+        description: metadata.descriptionProjet || projectInfo?.description || '',
+        address: metadata.adresseChantier || projectInfo?.address || '',
+        occupant: metadata.occupant || projectInfo?.occupant || '',
         general_data: {
-          infoComplementaire: metadata.infoComplementaire,
-          dateDevis: metadata.dateDevis
+          infoComplementaire: metadata.infoComplementaire || projectInfo?.general_data?.infoComplementaire || '',
+          dateDevis: metadata.dateDevis || projectInfo?.general_data?.dateDevis || new Date().toISOString().split('T')[0]
         },
-        devis_number: metadata.devisNumber,
+        devis_number: metadata.devisNumber || projectInfo?.devis_number || '',
         ...projectInfo // This allows overriding defaults if needed
       };
       
-      // Save project with metadata
+      console.log('CombinedProjectInfo avant sauvegarde:', combinedProjectInfo);
+      
+      // Save project with metadata only, don't pass the state itself which could cause errors
       await saveProject(combinedProjectInfo);
       toast.success('Projet enregistré avec succès');
       return true;

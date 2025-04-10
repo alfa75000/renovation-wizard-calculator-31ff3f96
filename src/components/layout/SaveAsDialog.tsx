@@ -129,7 +129,8 @@ export const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
         }
       });
       
-      // Préparer les données du projet pour la sauvegarde
+      // Préparer les données du projet pour la sauvegarde, envoyé uniquement les métadonnées
+      // et ne pas essayer d'accéder à state.property qui pourrait être undefined
       const projectData = {
         client_id: clientId,
         name: projectName,
@@ -143,6 +144,8 @@ export const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
         address: state.metadata.adresseChantier || '',
         occupant: state.metadata.occupant || ''
       };
+      
+      console.log('Données projet à sauvegarder:', projectData);
       
       // Sauvegarder le projet dans la base de données
       const result = await handleSaveProject(projectData);
