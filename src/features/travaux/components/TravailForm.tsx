@@ -1,17 +1,15 @@
 
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import TypeTravauxSelect from "./TypeTravauxSelect";
 import ServiceGroupSelect from "./ServiceGroupSelect";
 import SousTypeSelect from "./SousTypeSelect";
-import TvaSelect from "./TvaSelect";
-import UniteSelect from "./UniteSelect";
-import SurfaceImpacteeSelect from "./SurfaceImpacteeSelect";
 import { Room, Travail, SurfaceImpactee } from "@/types";
 import { Service } from "@/types/supabase";
+import DescriptionSection from "./DescriptionSection";
+import QuantitySection from "./QuantitySection";
+import PriceSection from "./PriceSection";
+import { Label } from "@/components/ui/label";
 
 interface TravailFormProps {
   piece: Room | null;
@@ -135,8 +133,8 @@ const TravailForm: React.FC<TravailFormProps> = ({
       prixFournitures,
       prixMainOeuvre,
       tauxTVA,
-      commentaire: "", // Supprimé comme demandé
-      surfaceImpactee, // Nouvelle propriété
+      commentaire: "",
+      surfaceImpactee,
     });
   };
 
@@ -182,97 +180,31 @@ const TravailForm: React.FC<TravailFormProps> = ({
 
       {sousTypeId && (
         <>
-          <div>
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              placeholder="Description du travail"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="mt-1"
-              rows={4}
-            />
-          </div>
+          <DescriptionSection 
+            description={description}
+            setDescription={setDescription}
+            personnalisation={personnalisation}
+            setPersonnalisation={setPersonnalisation}
+          />
 
-          <div>
-            <Label htmlFor="personnalisation">Personnalisation</Label>
-            <Textarea
-              id="personnalisation"
-              placeholder="Détails spécifiques (optionnel)"
-              value={personnalisation || ""}
-              onChange={(e) => setPersonnalisation(e.target.value)}
-              className="mt-1"
-              rows={2}
-            />
-          </div>
+          <QuantitySection
+            quantite={quantite}
+            setQuantite={setQuantite}
+            unite={unite}
+            setUnite={setUnite}
+            surfaceImpactee={surfaceImpactee}
+            setSurfaceImpactee={setSurfaceImpactee}
+          />
 
-          <div>
-            <Label htmlFor="surfaceImpactee">Surface impactée</Label>
-            <SurfaceImpacteeSelect
-              value={surfaceImpactee}
-              onChange={setSurfaceImpactee}
-              className="mt-1"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="quantite">Quantité</Label>
-              <Input
-                id="quantite"
-                type="number"
-                min="0"
-                step="0.01"
-                value={quantite}
-                onChange={(e) => setQuantite(parseFloat(e.target.value) || 0)}
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <Label htmlFor="unite">Unité</Label>
-              <UniteSelect
-                value={unite}
-                onChange={(value) => setUnite(value)}
-                className="mt-1"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="prixFournitures">Prix fournitures (€/{unite})</Label>
-              <Input
-                id="prixFournitures"
-                type="number"
-                min="0"
-                step="0.01"
-                value={prixFournitures}
-                onChange={(e) => setPrixFournitures(parseFloat(e.target.value) || 0)}
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <Label htmlFor="prixMainOeuvre">Prix main d'œuvre (€/{unite})</Label>
-              <Input
-                id="prixMainOeuvre"
-                type="number"
-                min="0"
-                step="0.01"
-                value={prixMainOeuvre}
-                onChange={(e) => setPrixMainOeuvre(parseFloat(e.target.value) || 0)}
-                className="mt-1"
-              />
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="tauxTVA">Taux de TVA (%)</Label>
-            <TvaSelect
-              value={tauxTVA}
-              onChange={(value) => setTauxTVA(value)}
-              className="mt-1"
-            />
-          </div>
+          <PriceSection
+            prixFournitures={prixFournitures}
+            setPrixFournitures={setPrixFournitures}
+            prixMainOeuvre={prixMainOeuvre}
+            setPrixMainOeuvre={setPrixMainOeuvre}
+            tauxTVA={tauxTVA}
+            setTauxTVA={setTauxTVA}
+            unite={unite}
+          />
         </>
       )}
 
