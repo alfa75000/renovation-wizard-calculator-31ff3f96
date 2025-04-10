@@ -30,6 +30,9 @@ export const getDefaultClient = async (): Promise<Client> => {
     
     console.log('Aucun client par défaut trouvé, création en cours...');
     
+    // ID du type client "particulier"
+    const PARTICULAR_CLIENT_TYPE_ID = '4b3375f8-af78-455f-be8c-1d506df4f753';
+    
     // Créer un client par défaut s'il n'existe pas
     const defaultClient: Client = {
       id: uuidv4(),
@@ -40,7 +43,7 @@ export const getDefaultClient = async (): Promise<Client> => {
       ville: '',
       telephone: '',
       email: '',
-      typeClient: 'particulier',
+      typeClient: PARTICULAR_CLIENT_TYPE_ID, // Utiliser l'ID exact du type "particulier"
     };
     
     const { data: newClient, error: createError } = await supabase
