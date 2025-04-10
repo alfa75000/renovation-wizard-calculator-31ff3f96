@@ -4,7 +4,6 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { generateDevisNumber } from '@/services/devisService';
 import { useClients } from '@/contexts/ClientsContext';
-import { useProject } from '@/contexts/ProjectContext';
 
 export const useProjectMetadata = () => {
   const [clientId, setClientId] = useState<string>('');
@@ -17,26 +16,15 @@ export const useProjectMetadata = () => {
   const [devisNumber, setDevisNumber] = useState<string>('');
   
   const { state: clientsState } = useClients();
-  const { saveProject: saveProjectToContext } = useProject();
 
   // Update document title when project name changes
   useEffect(() => {
     if (nomProjet) {
       document.title = `${nomProjet} - Infos Chantier`;
-      
-      // Mettre à jour le gestionnaire de projet pour maintenir le nom du projet
-      const saveTimeout = setTimeout(() => {
-        if (nomProjet) {
-          console.log("Mise à jour du nom du projet dans le contexte:", nomProjet);
-          saveProjectToContext(nomProjet).catch(console.error);
-        }
-      }, 500);
-      
-      return () => clearTimeout(saveTimeout);
     } else {
       document.title = 'Infos Chantier / Client';
     }
-  }, [nomProjet, saveProjectToContext]);
+  }, [nomProjet]);
   
   // Find the default client ID
   const getDefaultClientId = useCallback((): string => {
@@ -110,17 +98,7 @@ export const useProjectMetadata = () => {
     
     console.log("Nouveau nom de projet généré:", newName);
     setNomProjet(newName);
-    
-    // Sauvegarder immédiatement le nom pour éviter la perte lors des changements de page
-    try {
-      await saveProjectToContext(newName);
-    } catch (err) {
-      console.error("Erreur lors de la sauvegarde du nom de projet:", err);
-    }
-    
-    // Force state update (this is important to update the UI)
-    return newName;
-  }, [clientId, devisNumber, descriptionProjet, clientsState.clients, getDefaultClientId, saveProjectToContext]);
+  }, [clientId, devisNumber, descriptionProjet, clientsState.clients, getDefaultClientId]);
 
   return {
     clientId,

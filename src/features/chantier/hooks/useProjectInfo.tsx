@@ -1,5 +1,5 @@
 
-import { useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 import { useProjectMetadata } from './useProjectMetadata';
 import { useProjectOperations } from './useProjectOperations';
 import { useProject } from '@/contexts/ProjectContext';
@@ -36,46 +36,7 @@ export const useProjectInfo = () => {
     projectState
   } = useProjectOperations();
   
-  const { state: projectStateRaw, saveProject: saveProjectContext } = useProject();
-  
-  // Déclarer la fonction shouldGenerateProjectName avant de l'utiliser
-  const shouldGenerateProjectName = useCallback(() => {
-    return !nomProjet || nomProjet.trim() === '';
-  }, [nomProjet]);
-
-  // Déclarer generateProjectNameIfNeeded avant de l'utiliser ailleurs
-  const generateProjectNameIfNeeded = useCallback(async () => {
-    if (shouldGenerateProjectName()) {
-      console.log("Generating project name automatically...");
-      const newName = await generateProjectName();
-      // Force UI update if needed
-      if (newName && newName !== nomProjet) {
-        setNomProjet(newName);
-        
-        // Sauvegarder temporairement les modifications pour éviter la perte lors du changement de page
-        const projectInfo = {
-          name: newName,
-          client_id: clientId,
-          description: descriptionProjet,
-          address: adresseChantier,
-          occupant: occupant,
-          devis_number: devisNumber
-        };
-        
-        // Mettre à jour le context avec le nouveau nom
-        await saveProjectContext(newName);
-      }
-      return true;
-    }
-    return false;
-  }, [shouldGenerateProjectName, generateProjectName, nomProjet, setNomProjet, clientId, descriptionProjet, adresseChantier, occupant, devisNumber, saveProjectContext]);
-  
-  // Synchronize project data to context when loaded
-  useEffect(() => {
-    if (currentProjectId) {
-      loadCurrentProjectData();
-    }
-  }, [currentProjectId, projects]);
+  const { state: projectStateRaw } = useProject();
   
   // Integrate the project data into our local state when project ID changes
   const loadCurrentProjectData = useCallback(() => {
@@ -95,6 +56,11 @@ export const useProjectInfo = () => {
     }
   }, [currentProjectId, projects, setClientId, setNomProjet, setDescriptionProjet, setAdresseChantier, setOccupant, setDevisNumber]);
   
+  // React effect to load project data is now an explicit function call
+  if (currentProjectId && projects.length > 0) {
+    loadCurrentProjectData();
+  }
+  
   // Enhanced version of handleDeleteProject that also resets local state
   const handleDeleteProject = useCallback(async () => {
     const success = await baseHandleDeleteProject();
@@ -111,46 +77,23 @@ export const useProjectInfo = () => {
   
   // Enhanced version of handleSaveProject that passes required arguments
   const handleSaveProject = useCallback(async () => {
-    try {
-      // Assurez-vous que le nom du projet est généré si nécessaire
-      if (!nomProjet) {
-        await generateProjectNameIfNeeded();
-      }
-      
-      // Préparer les informations additionnelles du projet pour la sauvegarde
-      const projectInfo = {
-        name: nomProjet,
-        client_id: clientId,
-        description: descriptionProjet,
-        address: adresseChantier,
-        occupant: occupant,
-        devis_number: devisNumber
-      };
-      
-      // Sauvegarder le projet avec le context et les informations actuelles
-      await saveProjectContext(projectInfo.name);
-      
-      // Ensuite utiliser l'implémentation de base pour la sauvegarde complète
-      const result = await baseHandleSaveProject(clientId, nomProjet, async () => {
-        return nomProjet;
-      });
-      
-      return result;
-    } catch (error) {
-      console.error("Erreur lors de la sauvegarde du projet:", error);
-      return false;
+    return await baseHandleSaveProject(clientId, nomProjet, generateProjectName);
+  }, [baseHandleSaveProject, clientId, nomProjet, generateProjectName]);
+
+  // New helper function to check if project name is empty and should be generated
+  const shouldGenerateProjectName = useCallback(() => {
+    return !nomProjet || nomProjet.trim() === '';
+  }, [nomProjet]);
+
+  // Expose a simple function to generate project name if needed
+  const generateProjectNameIfNeeded = useCallback(async () => {
+    if (shouldGenerateProjectName()) {
+      console.log("Generating project name automatically...");
+      await generateProjectName();
+      return true;
     }
-  }, [
-    baseHandleSaveProject,
-    clientId, 
-    nomProjet,
-    descriptionProjet,
-    adresseChantier,
-    occupant,
-    devisNumber,
-    saveProjectContext,
-    generateProjectNameIfNeeded
-  ]);
+    return false;
+  }, [shouldGenerateProjectName, generateProjectName]);
 
   return {
     projectState: projectStateRaw,

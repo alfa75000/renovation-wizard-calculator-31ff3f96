@@ -26,10 +26,10 @@ interface ProjectFormProps {
   setDevisNumber: (number: string) => void;
   hasUnsavedChanges: boolean;
   currentProjectId: string | null;
-  onSaveProject: () => Promise<boolean>;
-  onDeleteProject: () => Promise<void>;
+  onSaveProject: () => void;
+  onDeleteProject: () => void;
   isLoading: boolean;
-  onGenerateProjectName: () => Promise<string | void>;
+  onGenerateProjectName: () => void;
 }
 
 export const ProjectForm: React.FC<ProjectFormProps> = ({
@@ -56,33 +56,13 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
   isLoading,
   onGenerateProjectName
 }) => {
-  // Effet pour sauvegarder automatiquement les changements de formulaire
-  // après un délai d'inactivité (uniquement si un projet est déjà chargé)
+  // Effect to update project name when client, devis number or description changes
   useEffect(() => {
-    const saveTimeout = setTimeout(() => {
-      if (currentProjectId && hasUnsavedChanges) {
-        console.log("Sauvegarde automatique des modifications de formulaire...");
-        onSaveProject().then(success => {
-          if (success) {
-            console.log("Modifications sauvegardées automatiquement");
-          }
-        });
-      }
-    }, 2000); // 2 secondes d'inactivité avant sauvegarde
-
-    return () => clearTimeout(saveTimeout);
-  }, [
-    clientId,
-    nomProjet,
-    descriptionProjet,
-    adresseChantier,
-    occupant,
-    infoComplementaire, // Ajout de ce champ qui était manquant
-    devisNumber,
-    currentProjectId,
-    hasUnsavedChanges,
-    onSaveProject
-  ]);
+    if (clientId || devisNumber || descriptionProjet) {
+      console.log("Critical field changed, updating project name...");
+      onGenerateProjectName();
+    }
+  }, [clientId, devisNumber, descriptionProjet, onGenerateProjectName]);
   
   return (
     <div className="space-y-6">
@@ -100,7 +80,6 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
       
       <ProjectNameField
         nomProjet={nomProjet}
-        setNomProjet={setNomProjet}
         onGenerateProjectName={onGenerateProjectName}
       />
       
