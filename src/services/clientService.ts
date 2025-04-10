@@ -48,7 +48,17 @@ export const getDefaultClient = async (): Promise<Client> => {
     
     const { data: newClient, error: createError } = await supabase
       .from('clients')
-      .insert(defaultClient)
+      .insert({
+        id: defaultClient.id,
+        nom: defaultClient.nom,
+        prenom: defaultClient.prenom,
+        adresse: defaultClient.adresse,
+        code_postal: defaultClient.codePostal,
+        ville: defaultClient.ville,
+        tel1: defaultClient.telephone,
+        email: defaultClient.email,
+        client_type_id: defaultClient.typeClient // S'assurer que cette valeur est correctement transmise
+      })
       .select()
       .single();
     
@@ -58,7 +68,21 @@ export const getDefaultClient = async (): Promise<Client> => {
     }
     
     console.log('Client par défaut créé avec succès:', newClient);
-    return newClient as Client;
+    
+    // Transformer les données de Supabase en objet Client
+    const result: Client = {
+      id: newClient.id,
+      nom: newClient.nom,
+      prenom: newClient.prenom || '',
+      adresse: newClient.adresse || '',
+      codePostal: newClient.code_postal || '',
+      ville: newClient.ville || '',
+      telephone: newClient.tel1 || '',
+      email: newClient.email || '',
+      typeClient: newClient.client_type_id
+    };
+    
+    return result;
   } catch (error) {
     console.error('Exception lors de la création/récupération du client par défaut:', error);
     toast.error('Erreur critique: Impossible de créer ou récupérer le client par défaut');

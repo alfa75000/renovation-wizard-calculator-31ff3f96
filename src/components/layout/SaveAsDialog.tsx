@@ -48,25 +48,62 @@ export const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
   // Synchroniser les données du projet actuel lorsque le modal s'ouvre
   useEffect(() => {
     if (open) {
+      console.log("Modal SaveAsDialog ouvert, synchronisation des données...");
+      
       if (currentProjectId) {
+        // Si un projet est actuellement chargé, utiliser ses données
         const currentProject = projects.find(p => p.id === currentProjectId);
         if (currentProject) {
+          console.log('Synchronisation des données du projet dans SaveAsDialog:', currentProject);
+          
+          // Informations de base du projet
           setClientId(currentProject.client_id || '');
           setProjectName(currentProject.name || '');
           setProjectDescription(currentProject.description || '');
           setDevisNumber(currentProject.devis_number || '');
-          console.log('Synchronisation des données du projet dans SaveAsDialog:', currentProject);
+          
+          // Données supplémentaires dans general_data
+          if (currentProject.general_data) {
+            try {
+              const generalData = typeof currentProject.general_data === 'string'
+                ? JSON.parse(currentProject.general_data)
+                : currentProject.general_data;
+              
+              if (generalData.dateDevis) {
+                setProjectDate(generalData.dateDevis);
+              }
+            } catch (error) {
+              console.error('Erreur lors du traitement des données général dans SaveAsDialog:', error);
+            }
+          }
         } else {
           console.warn('Projet actuel non trouvé dans la liste des projets');
         }
       } else {
-        // Si pas de projet courant, utiliser les valeurs de l'état global
-        if (projectState && projectState.property) {
+        // Si pas de projet courant, utiliser les valeurs par défaut
+        if (!projectDescription) {
           setProjectDescription('Projet en cours');
+        }
+        
+        // Si pas de client sélectionné, utiliser le client par défaut
+        if (!clientId) {
+          getDefaultClient()
+            .then(defaultClient => {
+              setClientId(defaultClient.id);
+              console.log('Client par défaut chargé dans SaveAsDialog');
+            })
+            .catch(error => {
+              console.error('Erreur lors du chargement du client par défaut dans SaveAsDialog:', error);
+            });
+        }
+        
+        // Si pas de numéro de devis, en générer un
+        if (!devisNumber) {
+          handleGenerateDevisNumber();
         }
       }
     }
-  }, [currentProjectId, projects, open, projectState]);
+  }, [currentProjectId, projects, open, projectDescription, clientId, devisNumber]);
   
   // Génération automatique du nom du projet
   useEffect(() => {

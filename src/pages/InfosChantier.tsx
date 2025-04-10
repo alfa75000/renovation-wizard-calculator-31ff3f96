@@ -32,51 +32,101 @@ const InfosChantier: React.FC = () => {
   const [infoComplementaire, setInfoComplementaire] = useState<string>('');
   const [dateDevis, setDateDevis] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [devisNumber, setDevisNumber] = useState<string>('');
+  const [initialSetupDone, setInitialSetupDone] = useState<boolean>(false);
   
-  // Chargement du client par défaut et du numéro de devis dès le démarrage
+  // Chargement initial des données par défaut
   useEffect(() => {
     const initialSetup = async () => {
       try {
-        // 1. Charger le client par défaut si aucun client n'est sélectionné
+        // Vérifier si l'initialisation a déjà été faite
+        if (initialSetupDone) return;
+        
+        console.log("Démarrage de l'initialisation des données du projet");
+        
+        // 1. Charger le client par défaut uniquement si aucun client n'est sélectionné
         if (!clientId) {
-          const defaultClient = await getDefaultClient();
-          if (defaultClient && defaultClient.id) {
-            setClientId(defaultClient.id);
-            console.log('Client par défaut chargé automatiquement:', defaultClient.nom);
+          try {
+            const defaultClient = await getDefaultClient();
+            if (defaultClient && defaultClient.id) {
+              setClientId(defaultClient.id);
+              console.log('Client par défaut chargé automatiquement:', defaultClient.nom);
+            }
+          } catch (error) {
+            console.error('Erreur lors du chargement du client par défaut:', error);
+            // Ne pas bloquer le chargement en cas d'erreur avec le client
           }
         }
         
         // 2. Générer automatiquement un numéro de devis si nécessaire
         if (!devisNumber) {
-          const newDevisNumber = await generateDevisNumber();
-          setDevisNumber(newDevisNumber);
-          console.log('Numéro de devis généré automatiquement:', newDevisNumber);
+          try {
+            const newDevisNumber = await generateDevisNumber();
+            setDevisNumber(newDevisNumber);
+            console.log('Numéro de devis généré automatiquement:', newDevisNumber);
+          } catch (error) {
+            console.error('Erreur lors de la génération du numéro de devis:', error);
+            // Ne pas bloquer le chargement en cas d'erreur avec le numéro de devis
+          }
         }
         
         // 3. Définir la description par défaut si non définie
         if (!descriptionProjet) {
           setDescriptionProjet('Projet en cours');
+          console.log('Description par défaut définie: "Projet en cours"');
         }
+        
+        // Marquer l'initialisation comme terminée
+        setInitialSetupDone(true);
+        console.log("Initialisation des données du projet terminée");
       } catch (error) {
-        console.error('Erreur lors de l\'initialisation des données du projet:', error);
+        console.error('Erreur globale lors de l\'initialisation des données du projet:', error);
       }
     };
     
     initialSetup();
-  }, []);
+  }, [clientId, devisNumber, descriptionProjet, initialSetupDone]);
   
   // Synchronisation des données lorsqu'un projet est chargé
   useEffect(() => {
     if (currentProjectId) {
       const currentProject = projects.find(p => p.id === currentProjectId);
       if (currentProject) {
+        console.log('Synchronisation des données du projet chargé:', currentProject);
+        
+        // Réinitialiser l'état initialSetupDone car nous chargeons un projet existant
+        setInitialSetupDone(true);
+        
+        // Mettre à jour tous les champs avec les données du projet
         setClientId(currentProject.client_id || '');
         setNomProjet(currentProject.name || '');
         setDescriptionProjet(currentProject.description || '');
         setAdresseChantier(currentProject.address || '');
         setOccupant(currentProject.occupant || '');
         setDevisNumber(currentProject.devis_number || '');
-        console.log('Projet chargé dans InfosChantier:', currentProject);
+        
+        // Rechercher dans les données générales s'il y a des champs supplémentaires
+        if (currentProject.general_data) {
+          try {
+            const generalData = typeof currentProject.general_data === 'string' 
+              ? JSON.parse(currentProject.general_data) 
+              : currentProject.general_data;
+            
+            setInfoComplementaire(generalData.infoComplementaire || '');
+            
+            // Si une date de devis est spécifiée, l'utiliser
+            if (generalData.dateDevis) {
+              setDateDevis(generalData.dateDevis);
+            }
+          } catch (error) {
+            console.error('Erreur lors du traitement des données générales:', error);
+          }
+        }
+      }
+    } else {
+      // Si aucun projet n'est chargé et que l'initialisation a déjà été faite,
+      // nous ne voulons pas réinitialiser les champs avec les valeurs par défaut
+      if (!initialSetupDone) {
+        setInitialSetupDone(false); // Permettre la réinitialisation lors du prochain montage
       }
     }
   }, [currentProjectId, projects]);
@@ -85,6 +135,7 @@ const InfosChantier: React.FC = () => {
   const handleChargerProjet = async (projetId: string) => {
     try {
       await loadProject(projetId);
+      toast.success('Projet chargé avec succès');
     } catch (error) {
       console.error('Erreur lors du chargement du projet:', error);
       toast.error('Une erreur est survenue lors du chargement du projet');
@@ -95,6 +146,7 @@ const InfosChantier: React.FC = () => {
   const handleDeleteProject = async () => {
     try {
       await deleteCurrentProject();
+      
       // Réinitialiser les états locaux
       setClientId('');
       setNomProjet('');
@@ -103,6 +155,12 @@ const InfosChantier: React.FC = () => {
       setOccupant('');
       setInfoComplementaire('');
       setDevisNumber('');
+      setDateDevis(format(new Date(), 'yyyy-MM-dd'));
+      
+      // Réinitialiser l'état d'initialisation pour permettre la configuration par défaut
+      setInitialSetupDone(false);
+      
+      toast.success('Projet supprimé avec succès');
     } catch (error) {
       console.error('Erreur lors de la suppression du projet:', error);
       toast.error('Une erreur est survenue lors de la suppression du projet');
@@ -141,8 +199,20 @@ const InfosChantier: React.FC = () => {
         setDescriptionProjet('Projet en cours');
       }
       
+      // Préparer les informations complètes du projet
+      const projectInfo = {
+        client_id: clientId,
+        name: nomProjet,
+        description: descriptionProjet,
+        address: adresseChantier,
+        occupant: occupant,
+        devis_number: devisNumber,
+        dateDevis: dateDevis,
+        infoComplementaire: infoComplementaire
+      };
+      
       // Sauvegarder le projet avec toutes les informations
-      await saveProject();
+      await saveProject(projectInfo.name, projectInfo);
       toast.success('Projet enregistré avec succès');
     } catch (error) {
       console.error('Erreur lors de l\'enregistrement du projet:', error);
