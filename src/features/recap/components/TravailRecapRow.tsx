@@ -2,16 +2,20 @@
 import React from "react";
 import { formaterPrix } from "@/lib/utils";
 import { Travail } from "@/types";
+import { 
+  calculerPrixUnitaireHT, 
+  calculerTotalHT, 
+  calculerTotalTTC 
+} from "@/features/travaux/utils/travauxUtils";
 
 interface TravailRecapRowProps {
   travail: Travail;
 }
 
 const TravailRecapRow: React.FC<TravailRecapRowProps> = ({ travail }) => {
-  const prixUnitaireHT = travail.prixFournitures + travail.prixMainOeuvre;
-  const totalHT = prixUnitaireHT * travail.quantite;
-  const montantTVA = totalHT * (travail.tauxTVA / 100);
-  const totalTTC = totalHT + montantTVA;
+  const prixUnitaireHT = calculerPrixUnitaireHT(travail);
+  const totalHT = calculerTotalHT(travail);
+  const totalTTC = calculerTotalTTC(travail);
   
   return (
     <tr className="border-b">

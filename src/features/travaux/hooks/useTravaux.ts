@@ -3,14 +3,17 @@ import { useProject } from '@/contexts/ProjectContext';
 import { Travail } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from '@/components/ui/use-toast';
+import { filtrerTravauxParPiece } from '../utils/travauxUtils';
 
 export const useTravaux = () => {
   const { state, dispatch } = useProject();
   
+  // Fonction pour récupérer les travaux d'une pièce spécifique
   const getTravauxForPiece = (pieceId: string) => {
-    return state.travaux.filter(travail => travail.pieceId === pieceId);
+    return filtrerTravauxParPiece(state.travaux, pieceId);
   };
   
+  // Fonction pour ajouter un nouveau travail
   const addTravail = (travail: Omit<Travail, 'id'>) => {
     const newTravail = { ...travail, id: uuidv4() };
     
@@ -27,6 +30,7 @@ export const useTravaux = () => {
     return newTravail;
   };
   
+  // Fonction pour mettre à jour un travail existant
   const updateTravail = (id: string, travail: Partial<Travail>) => {
     dispatch({
       type: 'UPDATE_TRAVAIL',
@@ -39,6 +43,7 @@ export const useTravaux = () => {
     });
   };
   
+  // Fonction pour supprimer un travail
   const deleteTravail = (id: string) => {
     dispatch({
       type: 'DELETE_TRAVAIL',
