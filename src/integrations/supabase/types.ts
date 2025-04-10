@@ -202,6 +202,72 @@ export type Database = {
           },
         ]
       }
+      projects_save: {
+        Row: {
+          address: string | null
+          ceiling_height: number | null
+          city: string | null
+          client_id: string
+          created_at: string
+          description: string | null
+          floors: number | null
+          general_data: Json | null
+          id: string
+          name: string
+          occupant: string | null
+          postal_code: string | null
+          project_data: Json | null
+          property_type: string | null
+          rooms_count: number | null
+          service_groups_used: Json[] | null
+          status: string | null
+          total_area: number | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          ceiling_height?: number | null
+          city?: string | null
+          client_id: string
+          created_at?: string
+          description?: string | null
+          floors?: number | null
+          general_data?: Json | null
+          id?: string
+          name: string
+          occupant?: string | null
+          postal_code?: string | null
+          project_data?: Json | null
+          property_type?: string | null
+          rooms_count?: number | null
+          service_groups_used?: Json[] | null
+          status?: string | null
+          total_area?: number | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          ceiling_height?: number | null
+          city?: string | null
+          client_id?: string
+          created_at?: string
+          description?: string | null
+          floors?: number | null
+          general_data?: Json | null
+          id?: string
+          name?: string
+          occupant?: string | null
+          postal_code?: string | null
+          project_data?: Json | null
+          property_type?: string | null
+          rooms_count?: number | null
+          service_groups_used?: Json[] | null
+          status?: string | null
+          total_area?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       room_custom_items: {
         Row: {
           adjustment_type: Database["public"]["Enums"]["adjustment_enum"]

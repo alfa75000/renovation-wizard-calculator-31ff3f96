@@ -1,16 +1,16 @@
 
 // Fichier adaptateur pour la rétrocompatibilité
-// Ce fichier réexporte toutes les fonctions du nouveau service modulaire pour maintenir la compatibilité avec le code existant
+// Ce fichier réexporte toutes les fonctions du nouveau service pour maintenir la compatibilité avec le code existant
 
 import { 
-  fetchProjects,
-  fetchProjectById,
-  createProject,
-  updateProject,
-  deleteProject,
+  fetchProjectSaves as fetchProjects,
+  fetchProjectSaveById as fetchProjectById,
+  createProjectSave as createProject,
+  updateProjectSave as updateProject,
+  deleteProjectSave as deleteProject,
   generateDefaultProjectName,
   type Project
-} from './project/index';
+} from './projectSaveService';
 
 // Réexporter toutes les fonctions pour la rétrocompatibilité
 export {
