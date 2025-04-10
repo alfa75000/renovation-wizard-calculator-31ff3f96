@@ -11,6 +11,7 @@ import { useClients } from '@/contexts/ClientsContext';
 import { useProject } from '@/contexts/ProjectContext';
 import { generateDevisNumber } from '@/services/projectService';
 import { toast } from 'sonner';
+import { useProjectOperations } from '@/features/chantier/hooks/useProjectOperations';
 
 interface SaveAsDialogProps {
   open: boolean;
@@ -24,7 +25,8 @@ export const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
   onSaveProject
 }) => {
   const { state: clientsState } = useClients();
-  const { state, currentProjectId, projects } = useProject();
+  const { state, dispatch } = useProject();
+  const { handleSaveProject } = useProjectOperations();
   
   // Initialiser les états locaux avec les valeurs du contexte global
   const [clientId, setClientId] = useState<string>(state.metadata.clientId || '');
@@ -33,6 +35,7 @@ export const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
   const [projectDate, setProjectDate] = useState<string>(state.metadata.dateDevis || '');
   const [devisNumber, setDevisNumber] = useState<string>(state.metadata.devisNumber || '');
   const [isGeneratingDevisNumber, setIsGeneratingDevisNumber] = useState<boolean>(false);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
   
   // Synchroniser les champs avec les données du projet courant dès l'ouverture du modal
   useEffect(() => {
@@ -110,20 +113,53 @@ export const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
   };
   
   // Fonction pour préparer les données du projet à sauvegarder
-  const handleSaveProject = () => {
-    const projectData = {
-      client_id: clientId,
-      name: projectName,
-      description: projectDescription,
-      general_data: {
-        dateDevis: projectDate,
-      },
-      devis_number: devisNumber,
-    };
-    
-    // Mettre à jour le contexte global avec les nouvelles valeurs
-    onSaveProject();
-    onOpenChange(false);
+  const handleSaveProjectData = async () => {
+    try {
+      setIsSaving(true);
+      
+      // Mettre à jour le state global avec les valeurs du formulaire
+      dispatch({
+        type: 'UPDATE_METADATA',
+        payload: {
+          clientId,
+          nomProjet: projectName,
+          descriptionProjet: projectDescription,
+          dateDevis: projectDate,
+          devisNumber
+        }
+      });
+      
+      // Préparer les données du projet pour la sauvegarde
+      const projectData = {
+        client_id: clientId,
+        name: projectName,
+        description: projectDescription,
+        general_data: {
+          dateDevis: projectDate,
+          infoComplementaire: state.metadata.infoComplementaire || ''
+        },
+        devis_number: devisNumber,
+        // Ajouter d'autres champs si nécessaire
+        address: state.metadata.adresseChantier || '',
+        occupant: state.metadata.occupant || ''
+      };
+      
+      // Sauvegarder le projet dans la base de données
+      const result = await handleSaveProject(projectData);
+      
+      if (result) {
+        toast.success('Projet enregistré avec succès');
+        // Appeler la fonction de callback
+        onSaveProject();
+        // Fermer le modal
+        onOpenChange(false);
+      }
+    } catch (error) {
+      console.error('Erreur lors de l\'enregistrement du projet:', error);
+      toast.error('Erreur lors de l\'enregistrement du projet');
+    } finally {
+      setIsSaving(false);
+    }
   };
   
   return (
@@ -223,7 +259,9 @@ export const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Annuler
           </Button>
-          <Button onClick={handleSaveProject}>Enregistrer</Button>
+          <Button onClick={handleSaveProjectData} disabled={isSaving}>
+            {isSaving ? 'Enregistrement...' : 'Enregistrer'}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
