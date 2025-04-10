@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useClients } from '@/contexts/ClientsContext';
 import { useProject } from '@/contexts/ProjectContext';
@@ -39,23 +38,26 @@ const InfosChantier: React.FC = () => {
   // Écouter l'événement personnalisé 'firstRoomAdded' déclenché depuis RenovationEstimator
   useEffect(() => {
     const handleFirstRoomAdded = async (event: CustomEvent) => {
+      // Récupérer les données de l'événement
+      const data = event.detail || {};
+      
       // Si c'est la première pièce ajoutée
       if (isFirstRoom) {
         setIsFirstRoom(false); // Ne plus exécuter cette logique pour les futures mises à jour
         
-        // Si pas de client sélectionné, sélectionner "Client à définir"
+        // Si pas de client sélectionné, utiliser celui fourni par l'événement ou en chercher un
         if (!clientId) {
-          const defaultClientId = await findDefaultClientId();
+          const defaultClientId = data.clientId || await findDefaultClientId();
           if (defaultClientId) {
             setClientId(defaultClientId);
             console.log("Client par défaut sélectionné:", defaultClientId);
           }
         }
         
-        // Si pas de numéro de devis, en générer un automatiquement
+        // Si pas de numéro de devis, utiliser celui fourni par l'événement ou en générer un
         if (!devisNumber) {
           try {
-            const newDevisNumber = await generateDevisNumber();
+            const newDevisNumber = data.devisNumber || await generateDevisNumber();
             setDevisNumber(newDevisNumber);
             console.log("Numéro de devis généré:", newDevisNumber);
           } catch (error) {
@@ -68,8 +70,6 @@ const InfosChantier: React.FC = () => {
           setDescriptionProjet("Projet en cours");
           console.log("Description par défaut ajoutée");
         }
-        
-        toast.info("Informations du projet initialisées automatiquement");
       }
     };
 

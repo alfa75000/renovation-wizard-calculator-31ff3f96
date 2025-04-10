@@ -64,16 +64,22 @@ const RenovationEstimator: React.FC = () => {
         setIsFirstRoom(false);
         
         try {
-          // Déclencher la génération automatique pour la page InfosChantier
+          // Déclencher la génération automatique immédiatement ici
+          const clientId = await findDefaultClientId();
+          const devisNumber = await generateDevisNumber();
+          
+          // On déclenche aussi l'événement pour la page InfosChantier
           const event = new CustomEvent('firstRoomAdded', {
             detail: {
-              roomName: room.name
+              roomName: room.name,
+              clientId: clientId,
+              devisNumber: devisNumber
             }
           });
           window.dispatchEvent(event);
           
-          // Toast pour indiquer que la génération automatique sera effectuée
-          toast.info("Les informations du projet seront initialisées automatiquement dans l'onglet Infos Chantier");
+          // Toast pour indiquer que la génération automatique a été effectuée
+          toast.info("Les informations du projet ont été initialisées automatiquement");
         } catch (error) {
           console.error("Erreur lors de la génération des informations:", error);
         }
