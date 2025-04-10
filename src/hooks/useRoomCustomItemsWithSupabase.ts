@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { RoomCustomItem, SurfaceImpactee, AdjustmentType, AutreSurfaceType } from '@/types/supabase';
+import { supabase } from '@/lib/supabase';
+import { RoomCustomItem, SurfaceImpactee } from '@/types/supabase';
 import { AutreSurface } from '@/types';
 import { toast } from 'sonner';
 import { isValidUUID } from '@/lib/utils';
@@ -63,19 +63,7 @@ export const useRoomCustomItemsWithSupabase = (roomId?: string) => {
           return;
         }
         
-        if (data) {
-          // S'assurer que les données sont conformes au type RoomCustomItem
-          const typedData: RoomCustomItem[] = data.map(item => ({
-            ...item,
-            type: item.type || 'custom', // Type par défaut si absent
-            designation: item.designation || item.name, // Désignation par défaut si absente
-            surface: item.surface || (item.largeur * item.hauteur), // Calculer surface si elle n'existe pas
-          }));
-          
-          setCustomItems(typedData);
-        } else {
-          setCustomItems([]);
-        }
+        setCustomItems(data || []);
       } catch (err) {
         console.error(`Exception lors du chargement des éléments personnalisés:`, err);
         setError(`Une erreur inattendue s'est produite`);
@@ -90,7 +78,7 @@ export const useRoomCustomItemsWithSupabase = (roomId?: string) => {
 
   // Ajouter un élément personnalisé
   const addCustomItem = async (
-    item: Omit<RoomCustomItem, 'id' | 'created_at' | 'updated_at'>
+    item: Omit<RoomCustomItem, 'id' | 'created_at'>
   ): Promise<RoomCustomItem | null> => {
     if (!roomId) {
       toast.error('Aucune pièce sélectionnée');
@@ -103,14 +91,9 @@ export const useRoomCustomItemsWithSupabase = (roomId?: string) => {
       // Obtenir l'UUID correspondant pour Supabase
       const supabaseRoomId = getOrCreateUUID(roomId);
       
-      // Calculer la surface à partir des dimensions si non fournie
-      const surface = item.surface || (item.largeur * item.hauteur);
-      
       const newItem = {
         ...item,
-        room_id: supabaseRoomId,
-        surface, // Ajouter la surface calculée
-        updated_at: new Date().toISOString()
+        room_id: supabaseRoomId
       };
       
       const { data, error } = await supabase
@@ -125,23 +108,12 @@ export const useRoomCustomItemsWithSupabase = (roomId?: string) => {
         return null;
       }
       
-      if (data) {
-        // S'assurer que les données ont les propriétés requises
-        const typedData: RoomCustomItem = {
-          ...data,
-          type: data.type || 'custom',
-          designation: data.designation || data.name,
-          surface: data.surface || surface
-        };
-        
-        // Mettre à jour l'état local
-        setCustomItems(prev => [...prev, typedData]);
-        
-        toast.success('Surface ajoutée avec succès');
-        return typedData;
-      }
+      // Mettre à jour l'état local
+      setCustomItems(prev => [...prev, data]);
       
-      return null;
+      toast.success('Surface ajoutée avec succès');
+      return data;
+      
     } catch (err) {
       console.error('Exception lors de l\'ajout d\'un élément personnalisé:', err);
       toast.error('Une erreur inattendue s\'est produite');
@@ -154,30 +126,14 @@ export const useRoomCustomItemsWithSupabase = (roomId?: string) => {
   // Mettre à jour un élément personnalisé
   const updateCustomItem = async (
     id: string, 
-    changes: Partial<Omit<RoomCustomItem, 'id' | 'created_at' | 'updated_at'>>
+    changes: Partial<Omit<RoomCustomItem, 'id' | 'created_at'>>
   ): Promise<RoomCustomItem | null> => {
     try {
       setLoading(true);
       
-      // Si les dimensions changent, recalculer la surface
-      let updatedChanges = { ...changes };
-      
-      if (changes.largeur !== undefined || changes.hauteur !== undefined) {
-        // Obtenir l'élément courant pour les dimensions manquantes
-        const currentItem = customItems.find(item => item.id === id);
-        if (currentItem) {
-          const largeur = changes.largeur !== undefined ? changes.largeur : currentItem.largeur;
-          const hauteur = changes.hauteur !== undefined ? changes.hauteur : currentItem.hauteur;
-          updatedChanges.surface = changes.surface !== undefined ? changes.surface : (largeur * hauteur);
-        }
-      }
-      
-      // Ajouter le timestamp de mise à jour
-      updatedChanges.updated_at = new Date().toISOString();
-      
       const { data, error } = await supabase
         .from('room_custom_items')
-        .update(updatedChanges)
+        .update(changes)
         .eq('id', id)
         .select()
         .single();
@@ -188,25 +144,14 @@ export const useRoomCustomItemsWithSupabase = (roomId?: string) => {
         return null;
       }
       
-      if (data) {
-        // S'assurer que les données ont les propriétés requises
-        const typedData: RoomCustomItem = {
-          ...data,
-          type: data.type || 'custom',
-          designation: data.designation || data.name,
-          surface: data.surface || (data.largeur * data.hauteur)
-        };
-        
-        // Mettre à jour l'état local
-        setCustomItems(prev => 
-          prev.map(item => item.id === id ? typedData : item)
-        );
-        
-        toast.success('Surface mise à jour avec succès');
-        return typedData;
-      }
+      // Mettre à jour l'état local
+      setCustomItems(prev => 
+        prev.map(item => item.id === id ? data : item)
+      );
       
-      return null;
+      toast.success('Surface mise à jour avec succès');
+      return data;
+      
     } catch (err) {
       console.error(`Exception lors de la mise à jour de l'élément ${id}:`, err);
       toast.error('Une erreur inattendue s\'est produite');
@@ -248,7 +193,7 @@ export const useRoomCustomItemsWithSupabase = (roomId?: string) => {
   };
 
   // Récupérer les types d'éléments personnalisés
-  const fetchCustomItemTypes = async (): Promise<AutreSurfaceType[]> => {
+  const fetchCustomItemTypes = async (): Promise<any[]> => {
     try {
       setLoading(true);
       
@@ -307,40 +252,32 @@ export const useRoomCustomItemsWithSupabase = (roomId?: string) => {
       }
       
       // Convertir les surfaces locales au format Supabase
-      const supabaseSurfaces = localSurfaces.map(item => {
-        const surface_impactee = convertSurfaceImpacteeToEnum(item.surfaceImpactee);
-        const adjustment_type = item.estDeduction ? 'Déduire' as AdjustmentType : 'Ajouter' as AdjustmentType;
-        
-        return {
-          room_id: supabaseRoomId,
-          type: item.type || 'custom',
-          name: item.name,
-          designation: item.designation || item.name,
-          largeur: item.largeur,
-          hauteur: item.hauteur,
-          surface: item.surface || (item.largeur * item.hauteur),
-          quantity: item.quantity || 1,
-          surface_impactee,
-          adjustment_type,
-          impacte_plinthe: item.impactePlinthe || false,
-          description: item.description || null,
-          updated_at: new Date().toISOString()
-        };
-      });
+      const supabaseSurfaces = localSurfaces.map(item => ({
+        room_id: supabaseRoomId,
+        type: item.type,
+        name: item.name,
+        designation: item.designation,
+        largeur: item.largeur,
+        hauteur: item.hauteur,
+        surface: item.surface,
+        quantity: item.quantity || 1,
+        surface_impactee: item.surfaceImpactee === 'mur' ? 'Mur' : 
+                      item.surfaceImpactee === 'plafond' ? 'Plafond' : 
+                      item.surfaceImpactee === 'sol' ? 'Sol' : 'Aucune',
+        adjustment_type: item.estDeduction ? 'Déduire' : 'Ajouter',
+        impacte_plinthe: item.impactePlinthe,
+        description: item.description || null
+      }));
       
-      // Insérer par lot
-      for (let i = 0; i < supabaseSurfaces.length; i += 20) {
-        const batch = supabaseSurfaces.slice(i, i + 20);
-        
-        const { error: insertError } = await supabase
-          .from('room_custom_items')
-          .insert(batch);
-        
-        if (insertError) {
-          console.error(`Erreur lors de l'insertion des surfaces ${i} à ${i + batch.length}:`, insertError);
-          toast.error(`Erreur lors de l'insertion des surfaces ${i} à ${i + batch.length}`);
-          return false;
-        }
+      // Insérer les nouvelles surfaces
+      const { error: insertError } = await supabase
+        .from('room_custom_items')
+        .insert(supabaseSurfaces);
+      
+      if (insertError) {
+        console.error('Erreur lors de l\'insertion des nouvelles surfaces:', insertError);
+        toast.error('Impossible de synchroniser toutes les surfaces');
+        return false;
       }
       
       // Rafraîchir les données
@@ -350,15 +287,7 @@ export const useRoomCustomItemsWithSupabase = (roomId?: string) => {
         .eq('room_id', supabaseRoomId);
       
       if (!error && data) {
-        // S'assurer que les données sont conformes au type RoomCustomItem
-        const typedData: RoomCustomItem[] = data.map(item => ({
-          ...item,
-          type: item.type || 'custom',
-          designation: item.designation || item.name,
-          surface: item.surface || (item.largeur * item.hauteur)
-        }));
-        
-        setCustomItems(typedData);
+        setCustomItems(data);
       }
       
       return true;
@@ -372,20 +301,6 @@ export const useRoomCustomItemsWithSupabase = (roomId?: string) => {
     }
   };
 
-  // Fonction utilitaire pour convertir les valeurs de surfaceImpactee en format enum
-  const convertSurfaceImpacteeToEnum = (value: string): SurfaceImpactee => {
-    switch (value.toLowerCase()) {
-      case 'mur':
-        return 'Mur';
-      case 'plafond':
-        return 'Plafond';
-      case 'sol':
-        return 'Sol';
-      default:
-        return 'Aucune';
-    }
-  };
-
   return {
     customItems,
     loading,
@@ -394,6 +309,6 @@ export const useRoomCustomItemsWithSupabase = (roomId?: string) => {
     updateCustomItem,
     deleteCustomItem,
     fetchCustomItemTypes,
-    syncLocalSurfacesToSupabase
+    syncLocalSurfacesToSupabase  // Nouvelle fonction pour synchroniser
   };
 };

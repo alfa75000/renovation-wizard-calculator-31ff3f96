@@ -1,24 +1,10 @@
 
 import { useState, useEffect } from 'react';
 import { AutreSurface, TypeAutreSurface } from '@/types';
-import { RoomCustomItem, SurfaceImpactee, AdjustmentType } from '@/types/supabase';
+import { RoomCustomItem } from '@/types/supabase';
 import { useRoomCustomItemsWithSupabase } from '@/hooks/useRoomCustomItemsWithSupabase';
 import { toast } from 'sonner';
 import { isValidUUID } from '@/lib/utils';
-
-// Convertir le type SurfaceImpactee de Supabase en format frontend
-const convertSurfaceImpacteeToFrontend = (value: SurfaceImpactee): "mur" | "plafond" | "sol" => {
-  switch (value) {
-    case 'Mur':
-      return 'mur';
-    case 'Plafond':
-      return 'plafond';
-    case 'Sol':
-      return 'sol';
-    default:
-      return 'mur'; // Valeur par défaut
-  }
-};
 
 /**
  * Hook pour fournir une transition entre l'ancien système et le nouveau
@@ -54,7 +40,7 @@ export const useAutresSurfacesWithSupabase = (roomId?: string) => {
         hauteur: item.hauteur,
         surface: item.surface,
         quantity: item.quantity,
-        surfaceImpactee: convertSurfaceImpacteeToFrontend(item.surface_impactee),
+        surfaceImpactee: item.surface_impactee.toLowerCase() as any,
         estDeduction: item.adjustment_type === 'Déduire',
         impactePlinthe: item.impacte_plinthe,
         description: item.description || ''
@@ -81,9 +67,9 @@ export const useAutresSurfacesWithSupabase = (roomId?: string) => {
           description: item.description || '',
           largeur: item.largeur || 0,
           hauteur: item.hauteur || 0,
-          surfaceImpacteeParDefaut: convertSurfaceImpacteeToFrontend(item.surface_impactee),
+          surfaceImpacteeParDefaut: item.surface_impactee.toLowerCase() as any,
           estDeduction: item.adjustment_type === 'Déduire',
-          impactePlinthe: item.impacte_plinthe || false
+          impactePlinthe: item.impacte_plinthe
         }));
         
         setTypesAutresSurfaces(convertedTypes);
@@ -116,7 +102,7 @@ export const useAutresSurfacesWithSupabase = (roomId?: string) => {
       // Ajouter la quantité spécifiée
       for (let i = 0; i < quantity; i++) {
         // Convertir au format RoomCustomItem
-        const newItemData: Omit<RoomCustomItem, 'id' | 'created_at' | 'updated_at'> = {
+        const newItemData: Omit<RoomCustomItem, 'id' | 'created_at'> = {
           room_id: roomId,
           type: surface.type,
           name: surface.name,
@@ -125,7 +111,9 @@ export const useAutresSurfacesWithSupabase = (roomId?: string) => {
           hauteur: surface.hauteur,
           surface: surface.largeur * surface.hauteur,
           quantity: surface.quantity || 1,
-          surface_impactee: convertSurfaceImpacteeToSupabase(surface.surfaceImpactee),
+          surface_impactee: surface.surfaceImpactee === 'mur' ? 'Mur' : 
+                          surface.surfaceImpactee === 'plafond' ? 'Plafond' : 
+                          surface.surfaceImpactee === 'sol' ? 'Sol' : 'Aucune',
           adjustment_type: surface.estDeduction ? 'Déduire' : 'Ajouter',
           impacte_plinthe: surface.impactePlinthe,
           description: surface.description
@@ -144,7 +132,7 @@ export const useAutresSurfacesWithSupabase = (roomId?: string) => {
             hauteur: newItem.hauteur,
             surface: newItem.surface,
             quantity: newItem.quantity,
-            surfaceImpactee: convertSurfaceImpacteeToFrontend(newItem.surface_impactee),
+            surfaceImpactee: newItem.surface_impactee.toLowerCase() as any,
             estDeduction: newItem.adjustment_type === 'Déduire',
             impactePlinthe: newItem.impacte_plinthe,
             description: newItem.description || ''
@@ -171,7 +159,7 @@ export const useAutresSurfacesWithSupabase = (roomId?: string) => {
       setLoading(true);
       
       // Convertir au format RoomCustomItem
-      const updateData: Partial<Omit<RoomCustomItem, 'id' | 'created_at' | 'updated_at'>> = {};
+      const updateData: Partial<Omit<RoomCustomItem, 'id' | 'created_at'>> = {};
       
       // Copier les champs standards qui ont le même nom
       if (changes.name !== undefined) updateData.name = changes.name;
@@ -182,19 +170,11 @@ export const useAutresSurfacesWithSupabase = (roomId?: string) => {
       if (changes.description !== undefined) updateData.description = changes.description;
       if (changes.type !== undefined) updateData.type = changes.type;
       
-      // Calculer la surface si les dimensions changent
-      if (changes.largeur !== undefined || changes.hauteur !== undefined) {
-        const currentItem = autresSurfaces.find(item => item.id === id);
-        if (currentItem) {
-          const largeur = changes.largeur !== undefined ? changes.largeur : currentItem.largeur;
-          const hauteur = changes.hauteur !== undefined ? changes.hauteur : currentItem.hauteur;
-          updateData.surface = largeur * hauteur;
-        }
-      }
-      
       // Convertir spécifiquement les champs qui ont un nom différent
       if (changes.surfaceImpactee !== undefined) {
-        updateData.surface_impactee = convertSurfaceImpacteeToSupabase(changes.surfaceImpactee);
+        updateData.surface_impactee = changes.surfaceImpactee === 'mur' ? 'Mur' : 
+                                     changes.surfaceImpactee === 'plafond' ? 'Plafond' : 
+                                     changes.surfaceImpactee === 'sol' ? 'Sol' : 'Aucune';
       }
       
       if (changes.estDeduction !== undefined) {
@@ -219,7 +199,7 @@ export const useAutresSurfacesWithSupabase = (roomId?: string) => {
         hauteur: updatedItem.hauteur,
         surface: updatedItem.surface,
         quantity: updatedItem.quantity,
-        surfaceImpactee: convertSurfaceImpacteeToFrontend(updatedItem.surface_impactee),
+        surfaceImpactee: updatedItem.surface_impactee.toLowerCase() as any,
         estDeduction: updatedItem.adjustment_type === 'Déduire',
         impactePlinthe: updatedItem.impacte_plinthe,
         description: updatedItem.description || ''
@@ -267,20 +247,6 @@ export const useAutresSurfacesWithSupabase = (roomId?: string) => {
     }
   };
 
-  // Fonction utilitaire pour convertir les valeurs de frontend en format Supabase
-  const convertSurfaceImpacteeToSupabase = (value: string): SurfaceImpactee => {
-    switch (value.toLowerCase()) {
-      case 'mur':
-        return 'Mur';
-      case 'plafond':
-        return 'Plafond';
-      case 'sol':
-        return 'Sol';
-      default:
-        return 'Aucune';
-    }
-  };
-
   return {
     autresSurfaces,
     typesAutresSurfaces,
@@ -289,6 +255,6 @@ export const useAutresSurfacesWithSupabase = (roomId?: string) => {
     addAutreSurface,
     updateAutreSurfaceItem,
     deleteAutreSurfaceItem,
-    synchronizeLocalSurfaces
+    synchronizeLocalSurfaces  // Nouvelle fonction
   };
 };

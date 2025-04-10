@@ -1,33 +1,95 @@
 
 import { createClient } from '@supabase/supabase-js';
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from '@/integrations/supabase/client';
-import { Database } from '@/integrations/supabase/types';
+
+// Ces valeurs sont celles que vous avez fournies
+export const SUPABASE_URL = 'https://gofmlbehbkccqmktsvvb.supabase.co';
+export const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdvZm1sYmVoYmtjY3Fta3RzdnZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwMzkwNTIsImV4cCI6MjA1OTYxNTA1Mn0.rR80Q8b2WMeZuDsrobagnVp58b-Fl0XzCOTwn4f-2Ag';
+
+// Initialisation du client Supabase
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 /**
- * Client Supabase pour l'application.
- * Note: Ce fichier va être déprécié en faveur de src/integrations/supabase/client.ts
+ * Récupère les informations sur les tables de la base de données
  */
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-/**
- * Vérifie la connexion à Supabase
- * @returns Promise<object> Résultat de la vérification
- */
-export const checkSupabaseConnection = async (): Promise<{
-  connected: boolean;
-  error?: string;
-  details?: any;
-  data?: any;
-  dbInfo?: any;
-  tableStructures?: any;
-}> => {
+export const getDatabaseInfo = async () => {
   try {
-    const { data, error } = await supabase
-      .from('work_types')
-      .select('*')
-      .limit(1);
+    console.log("Récupération des informations sur la base de données...");
+    
+    // Liste des tables principales que nous souhaitons explorer
+    const mainTables = [
+      'work_types',
+      'service_groups',
+      'services',
+      'clients',
+      'client_types',
+      'menuiseries_types',
+      'rooms',
+      'room_custom_items', // Changé de room_custom_surfaces à room_custom_items
+      'projects'
+    ];
+    
+    const tablesData = [];
+    
+    for (const tableName of mainTables) {
+      try {
+        // Récupérer un échantillon de données pour déterminer la structure de la table
+        const { data: sampleData, error } = await supabase
+          .from(tableName)
+          .select('*')
+          .limit(1);
+        
+        if (error) {
+          console.warn(`La table ${tableName} n'existe pas ou n'est pas accessible:`, error);
+          continue;
+        }
+        
+        if (sampleData && sampleData.length > 0) {
+          // Extraire les colonnes à partir de l'échantillon
+          const columns = Object.keys(sampleData[0]).map(name => ({ 
+            name, 
+            type: typeof sampleData[0][name]
+          }));
+          
+          tablesData.push({
+            name: tableName,
+            columns
+          });
+        } else {
+          // Table existe mais est vide
+          tablesData.push({
+            name: tableName,
+            columns: [],
+            note: "Table vide"
+          });
+        }
+      } catch (tableError) {
+        console.error(`Erreur lors de l'analyse de la table ${tableName}:`, tableError);
+      }
+    }
+    
+    return { tables: tablesData };
+  } catch (error) {
+    console.error('Exception lors de la récupération des informations de la base de données:', error);
+    return { error: "Exception inattendue" };
+  }
+};
+
+// Fonction utilitaire pour vérifier la connexion
+export const checkSupabaseConnection = async () => {
+  try {
+    console.log("Vérification de la connexion à Supabase...");
+    
+    // Tenter une requête simple
+    const { data, error } = await supabase.from('work_types').select('*').limit(3);
+    
+    console.log("Résultat de la requête test work_types:", { 
+      data, 
+      error, 
+      count: data?.length || 0
+    });
     
     if (error) {
+      console.error('Erreur de connexion à Supabase:', error);
       return {
         connected: false,
         error: error.message,
@@ -35,175 +97,51 @@ export const checkSupabaseConnection = async (): Promise<{
       };
     }
 
-    // Si on est ici, la connexion fonctionne, récupérons des infos sur les tables
-    const tableStructures = await Promise.all([
-      getTableInfo('work_types'),
-      getTableInfo('service_groups'),
-      getTableInfo('services')
-    ]).then(results => {
-      return {
-        work_types: results[0],
-        service_groups: results[1],
-        services: results[2]
-      };
-    }).catch(err => {
-      return {
-        work_types: "Erreur lors de la récupération des infos",
-        service_groups: "Erreur lors de la récupération des infos",
-        services: "Erreur lors de la récupération des infos"
-      };
+    // Récupérer les infos de la base de données
+    let dbInfo = null;
+    try {
+      dbInfo = await getDatabaseInfo();
+    } catch (e) {
+      console.warn("Impossible de récupérer les informations complètes de la base de données:", e);
+    }
+    
+    // Récupérer les structures des tables principales
+    const { data: workTypesColumns } = await supabase
+      .from('work_types')
+      .select('*')
+      .limit(1);
+    
+    const { data: serviceGroupsColumns } = await supabase
+      .from('service_groups')
+      .select('*')
+      .limit(1);
+    
+    const { data: servicesColumns } = await supabase
+      .from('services')
+      .select('*')
+      .limit(1);
+    
+    console.log("Structures des tables récupérées:", {
+      work_types: workTypesColumns ? Object.keys(workTypesColumns[0] || {}) : "Pas de données",
+      service_groups: serviceGroupsColumns ? Object.keys(serviceGroupsColumns[0] || {}) : "Pas de données",
+      services: servicesColumns ? Object.keys(servicesColumns[0] || {}) : "Pas de données"
     });
-
+    
     return {
       connected: true,
       data,
-      tableStructures
+      dbInfo: dbInfo || "Non disponible",
+      tableStructures: {
+        work_types: workTypesColumns ? Object.keys(workTypesColumns[0] || {}) : "Pas de données",
+        service_groups: serviceGroupsColumns ? Object.keys(serviceGroupsColumns[0] || {}) : "Pas de données",
+        services: servicesColumns ? Object.keys(servicesColumns[0] || {}) : "Pas de données"
+      }
     };
-  } catch (err: any) {
+  } catch (error) {
+    console.error('Exception lors de la connexion à Supabase:', error);
     return {
       connected: false,
-      error: "Erreur inattendue",
-      details: err
+      error: "Exception inattendue lors de la connexion"
     };
-  }
-};
-
-/**
- * Récupère des informations sur la structure de la base de données
- * @returns Promise<object> Informations sur la base de données
- */
-export const getDatabaseInfo = async (): Promise<any> => {
-  try {
-    // Récupérer la liste des tables
-    const { data: tablesData, error: tablesError } = await supabase
-      .rpc('get_table_info', { table_name: 'work_types' });
-    
-    if (tablesError) {
-      return { error: `Erreur lors de la récupération des infos des tables: ${tablesError.message}` };
-    }
-
-    // Récupérer les structures de quelques tables importantes
-    const tables = [
-      'work_types', 
-      'service_groups', 
-      'services', 
-      'menuiseries_types',
-      'room_menuiseries',
-      'room_custom_items'
-    ];
-    
-    const tablesInfo = await Promise.all(
-      tables.map(async (tableName) => {
-        const { data, error } = await supabase
-          .rpc('get_table_info', { table_name: tableName });
-        
-        if (error) {
-          return {
-            name: tableName,
-            error: error.message
-          };
-        }
-        
-        return {
-          name: tableName,
-          columns: data
-        };
-      })
-    );
-
-    return {
-      tables: tablesInfo
-    };
-  } catch (err: any) {
-    return { error: `Exception: ${err.message || err}` };
-  }
-};
-
-/**
- * Détecte si une table existe dans le schéma Supabase
- * @param tableName Nom de la table à vérifier
- * @returns Promise<boolean> Vrai si la table existe
- */
-export const tableExists = async (tableName: string): Promise<boolean> => {
-  try {
-    const { data, error } = await supabase
-      .rpc('get_table_info', { table_name: tableName });
-    
-    if (error) {
-      console.error('Erreur lors de la vérification de l\'existence de la table:', error);
-      return false;
-    }
-    
-    return Array.isArray(data) && data.length > 0;
-  } catch (err) {
-    console.error('Exception lors de la vérification de l\'existence de la table:', err);
-    return false;
-  }
-};
-
-/**
- * Récupère des informations sur une table
- * @param tableName Nom de la table
- * @returns Promise<any> Informations sur la table
- */
-export const getTableInfo = async (tableName: string): Promise<any> => {
-  try {
-    const { data, error } = await supabase
-      .rpc('get_table_info', { table_name: tableName });
-    
-    if (error) {
-      console.error(`Erreur lors de la récupération des infos de la table ${tableName}:`, error);
-      return `Erreur: ${error.message}`;
-    }
-    
-    return data;
-  } catch (err: any) {
-    console.error(`Exception lors de la récupération des infos de la table ${tableName}:`, err);
-    return `Exception: ${err.message || err}`;
-  }
-};
-
-/**
- * Exécute une requête pour vérifier si une table contient des données
- * @param tableName Nom de la table à vérifier
- * @returns Promise<boolean> Vrai si la table contient des données
- */
-export const hasTableData = async (tableName: string): Promise<boolean> => {
-  try {
-    // Vérifier d'abord si la table existe
-    const tableExist = await tableExists(tableName);
-    if (!tableExist) {
-      console.warn(`La table ${tableName} n'existe pas.`);
-      return false;
-    }
-    
-    // Liste des tables valides dans la base de données
-    const validatedTables: string[] = [
-      "autres_surfaces_types", "client_types", "clients", 
-      "menuiseries_types", "projects", "room_custom_items", 
-      "rooms", "room_menuiseries", "room_works", "services", 
-      "service_groups", "work_types"
-    ];
-    
-    // Vérifier que la table est valide
-    if (!validatedTables.includes(tableName)) {
-      console.error(`Table ${tableName} non reconnue.`);
-      return false;
-    }
-
-    const { data, error, count } = await supabase
-      .from(tableName as any)
-      .select('*', { count: 'exact', head: true })
-      .limit(1);
-    
-    if (error) {
-      console.error(`Erreur lors de la vérification des données de la table ${tableName}:`, error);
-      return false;
-    }
-    
-    return count !== null && count > 0;
-  } catch (err) {
-    console.error(`Exception lors de la vérification des données de la table ${tableName}:`, err);
-    return false;
   }
 };

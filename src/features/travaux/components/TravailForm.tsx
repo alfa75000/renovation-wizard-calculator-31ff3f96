@@ -42,9 +42,7 @@ const TravailForm: React.FC<TravailFormProps> = ({
     travailAModifier?.prixMainOeuvre || 0
   );
   const [tauxTVA, setTauxTVA] = useState<number>(travailAModifier?.tauxTVA || 10);
-  const [surfaceImpactee, setSurfaceImpactee] = useState<SurfaceImpactee>(
-    travailAModifier?.surfaceImpactee as SurfaceImpactee || 'Mur'
-  );
+  const [surfaceImpactee, setSurfaceImpactee] = useState<SurfaceImpactee>('Mur');
 
   useEffect(() => {
     setGroupId("");
@@ -137,8 +135,8 @@ const TravailForm: React.FC<TravailFormProps> = ({
       prixFournitures,
       prixMainOeuvre,
       tauxTVA,
-      commentaire: "", // Champ maintenu pour compatibilité
-      surfaceImpactee, // Propriété surfaceImpactee avec le type correct
+      commentaire: "", // Supprimé comme demandé
+      surfaceImpactee, // Nouvelle propriété
     });
   };
 
