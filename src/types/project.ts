@@ -78,7 +78,8 @@ export type ProjectAction =
   | { type: 'UPDATE_TRAVAIL'; payload: { id: string; travail: Travail } }
   | { type: 'DELETE_TRAVAIL'; payload: string }
   | { type: 'SAVE_PROJECT'; payload?: { projectId?: string } }
-  | { type: 'LOAD_PROJECT_FROM_SUPABASE'; payload: { projectId: string } };
+  | { type: 'LOAD_PROJECT_FROM_SUPABASE'; payload: { projectId: string } }
+  | { type: 'UPDATE_PROJECT_NAME'; payload: string };
 
 // Actions pour les projets chantier
 export type ProjetChantierAction =

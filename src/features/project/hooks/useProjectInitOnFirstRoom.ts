@@ -17,15 +17,17 @@ export const useProjectInitOnFirstRoom = (
   descriptionProjet: string,
   setDescriptionProjet: (description: string) => void
 ) => {
-  const { state: projectState } = useProject();
+  const { state: projectState, dispatch } = useProject();
   const { state: clientsState } = useClients();
+  const [hasInitialized, setHasInitialized] = useState<boolean>(false);
   const [isFirstRoom, setIsFirstRoom] = useState<boolean>(true);
 
   useEffect(() => {
     const initProjectOnFirstRoom = async () => {
-      // Si nous avons une première pièce ajoutée et que c'est la première fois qu'on le détecte
-      if (projectState?.rooms?.length === 1 && isFirstRoom) {
+      // Si nous avons une première pièce ajoutée et que l'initialisation n'a pas encore été faite
+      if (projectState?.rooms?.length === 1 && isFirstRoom && !hasInitialized) {
         setIsFirstRoom(false); // Ne plus exécuter cette logique pour les futures mises à jour
+        setHasInitialized(true); // Marquer comme initialisé pour éviter les répétitions
         let initialized = false;
         
         // Si pas de client sélectionné, sélectionner "Client à définir"
@@ -64,30 +66,37 @@ export const useProjectInitOnFirstRoom = (
         // Si nous avons initialisé quelque chose, afficher un message
         if (initialized) {
           // Générer le nom du projet pour l'affichage dans la barre supérieure
-          // Mais ne pas essayer de sauvegarder le projet automatiquement
           const selectedClient = clientsState.clients.find(c => c.id === defaultClientId);
           const clientName = selectedClient ? `${selectedClient.nom} ${selectedClient.prenom || ''}`.trim() : 'Client';
           const projectName = `Devis n° ${newDevisNumber} - ${clientName} - ${newDescription.substring(0, 40)}`;
           
-          // Ne pas sauvegarder ici, simplement mettre à jour les variables d'état locales
-          // Cela sera suffisant pour mettre à jour l'affichage dans la barre supérieure sans causer d'erreurs
+          // Mettre à jour le nom du projet dans le contexte global pour la barre supérieure
+          dispatch({ 
+            type: 'UPDATE_PROJECT_NAME', 
+            payload: projectName 
+          });
           
-          toast.info("Informations du projet initialisées automatiquement");
+          toast.info("Informations du projet initialisées automatiquement", {
+            id: 'project-init' // Utiliser un ID pour éviter les doublons
+          });
         }
       }
       
       // Réinitialiser le flag si aucune pièce n'est présente
       if (projectState?.rooms?.length === 0 && !isFirstRoom) {
         setIsFirstRoom(true);
+        setHasInitialized(false);
       }
     };
     
     initProjectOnFirstRoom();
-  }, [projectState?.rooms, clientId, devisNumber, descriptionProjet, isFirstRoom, setClientId, setDevisNumber, setDescriptionProjet, clientsState.clients]);
+  }, [projectState?.rooms, clientId, devisNumber, descriptionProjet, isFirstRoom, hasInitialized, setClientId, setDevisNumber, setDescriptionProjet, clientsState.clients, dispatch]);
   
   // Renvoyer le flag pour pouvoir le réinitialiser depuis l'extérieur si nécessaire
   return {
     isFirstRoom,
-    setIsFirstRoom
+    setIsFirstRoom,
+    hasInitialized,
+    setHasInitialized
   };
 };

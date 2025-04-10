@@ -92,6 +92,10 @@ export function projectReducer(state: ProjectState, action: ProjectAction): Proj
     case 'LOAD_PROJECT':
       return action.payload;
     
+    // L'action UPDATE_PROJECT_NAME est gérée par le provider, pas besoin de modifier l'état ici
+    case 'UPDATE_PROJECT_NAME':
+      return state;
+    
     default:
       return state;
   }
