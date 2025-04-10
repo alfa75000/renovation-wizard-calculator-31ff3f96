@@ -15,7 +15,7 @@ export const Layout: React.FC<LayoutProps> = ({
   title, 
   subtitle,
   actions,
-  currentProjectName // This prop will be used for the project name
+  currentProjectName
 }) => {
   const { 
     currentProjectId, 
@@ -59,7 +59,7 @@ export const Layout: React.FC<LayoutProps> = ({
         onOpenProject={() => setOpenProjectSheetOpen(true)}
         onSaveProject={handleSaveProject}
         onSaveAsProject={() => setSaveAsDialogOpen(true)}
-        projectDisplayName={displayProjectName} // Pass the current project name
+        projectDisplayName={displayProjectName}
       />
       
       <TitleHeader title={title} subtitle={subtitle} />

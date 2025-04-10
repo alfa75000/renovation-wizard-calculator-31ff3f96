@@ -9,7 +9,7 @@ interface ProjectBarProps {
   onOpenProject: () => void;
   onSaveProject: () => void;
   onSaveAsProject: () => void;
-  projectDisplayName?: string; // Add this new prop
+  projectDisplayName?: string;
 }
 
 export const ProjectBar: React.FC<ProjectBarProps> = ({
@@ -17,9 +17,10 @@ export const ProjectBar: React.FC<ProjectBarProps> = ({
   onOpenProject,
   onSaveProject,
   onSaveAsProject,
-  projectDisplayName // Use the prop
+  projectDisplayName
 }) => {
   const { currentProjectId, projects } = useProject();
+  
   // If no projectDisplayName is provided, fall back to the project from context
   const displayName = projectDisplayName || (() => {
     const currentProject = projects.find(p => p.id === currentProjectId);
