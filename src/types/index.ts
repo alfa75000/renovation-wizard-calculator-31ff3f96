@@ -1,13 +1,24 @@
-// Types principaux pour l'application de rénovation
 
-// Propriété principale
-export interface Property {
-  type: string;
-  floors: number;
-  totalArea: number;
-  rooms: number;
-  ceilingHeight: number;
-}
+// Types principaux pour l'application de rénovation
+import { 
+  Property, 
+  Project, 
+  ProjectState, 
+  ProjetChantier, 
+  ProjetChantierState, 
+  ProjectAction, 
+  ProjetChantierAction 
+} from './project';
+
+export { 
+  Property, 
+  Project, 
+  ProjectState, 
+  ProjetChantier, 
+  ProjetChantierState, 
+  ProjectAction, 
+  ProjetChantierAction 
+};
 
 // Pièce à rénover
 export interface Room {
@@ -123,45 +134,6 @@ export interface Client {
   infosComplementaires?: string;
 }
 
-// Projet Chantier
-export interface ProjetChantier {
-  id: string;
-  nom: string;
-  adresse: string;
-  codePostal: string;
-  ville: string;
-  clientId: string;
-  dateDebut: string;
-  dateFin: string;
-  description: string;
-  statut: "en_attente" | "en_cours" | "termine";
-  montantTotal: number;
-  nomProjet?: string;
-  dateModification?: string;
-  projectData?: any;
-  occupant?: string;
-  infoComplementaire?: string;
-}
-
-// Project Supabase
-export interface Project {
-  id: string;
-  name: string;
-  client_id: string | null;
-  description: string;
-  address: string;
-  postal_code: string;
-  city: string;
-  occupant: string;
-  property_type: string;
-  floors: number;
-  total_area: number;
-  rooms_count: number;
-  ceiling_height: number;
-  created_at: string;
-  updated_at: string;
-}
-
 // Types pour les travaux
 export interface TravauxType {
   id: string;
@@ -240,19 +212,13 @@ export interface Travail {
   personnalisation?: string;
   typeTravaux?: string;
   sousType?: string;
-  surfaceImpactee?: string; // Nouvelle propriété
+  surfaceImpactee?: string;
 }
 
 // Type de pièce pour la compatibilité avec les composants
 export type Piece = Room;
 
 // États du contexte
-export interface ProjectState {
-  property: Property;
-  rooms: Room[];
-  travaux: Travail[];
-}
-
 export interface TravauxTypesState {
   types: TravauxType[];
 }
@@ -268,25 +234,6 @@ export interface AutresSurfacesState {
 export interface ClientsState {
   clients: Client[];
 }
-
-export interface ProjetChantierState {
-  projets: ProjetChantier[];
-  projetActif?: ProjetChantier | null;
-}
-
-// Actions pour ProjectContext
-export type ProjectAction =
-  | { type: 'UPDATE_PROPERTY'; payload: Partial<Property> }
-  | { type: 'ADD_ROOM'; payload: Room }
-  | { type: 'UPDATE_ROOM'; payload: { id: string; room: Room } }
-  | { type: 'DELETE_ROOM'; payload: string }
-  | { type: 'RESET_PROJECT' }
-  | { type: 'LOAD_PROJECT'; payload: ProjectState }
-  | { type: 'ADD_TRAVAIL'; payload: Travail }
-  | { type: 'UPDATE_TRAVAIL'; payload: { id: string; travail: Travail } }
-  | { type: 'DELETE_TRAVAIL'; payload: string }
-  | { type: 'SAVE_PROJECT'; payload?: { projectId?: string } } // Nouvelle action pour sauvegarder dans Supabase
-  | { type: 'LOAD_PROJECT_FROM_SUPABASE'; payload: { projectId: string } }; // Nouvelle action pour charger depuis Supabase
 
 // Actions pour les types de travaux
 export type TravauxTypesAction =
@@ -322,12 +269,3 @@ export type ClientsAction =
   | { type: 'DELETE_CLIENT'; payload: string }
   | { type: 'LOAD_CLIENTS'; payload: Client[] }
   | { type: 'RESET_CLIENTS' };
-
-// Actions pour les projets chantier
-export type ProjetChantierAction =
-  | { type: 'ADD_PROJET'; payload: ProjetChantier }
-  | { type: 'UPDATE_PROJET'; payload: { id: string; projet: ProjetChantier } }
-  | { type: 'DELETE_PROJET'; payload: string }
-  | { type: 'SET_PROJET_ACTIF'; payload: string | null }
-  | { type: 'LOAD_PROJETS'; payload: ProjetChantier[] }
-  | { type: 'RESET_PROJETS' };
