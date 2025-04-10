@@ -10,6 +10,7 @@ import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { getDefaultClient } from '@/services/clientService';
+import { generateDevisNumber } from '@/services/devisService';
 
 const InfosChantier: React.FC = () => {
   const { 
@@ -32,10 +33,11 @@ const InfosChantier: React.FC = () => {
   const [dateDevis, setDateDevis] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [devisNumber, setDevisNumber] = useState<string>('');
   
-  // Chargement du client par défaut dès le démarrage
+  // Chargement du client par défaut et du numéro de devis dès le démarrage
   useEffect(() => {
-    const loadDefaultClient = async () => {
+    const initialSetup = async () => {
       try {
+        // 1. Charger le client par défaut si aucun client n'est sélectionné
         if (!clientId) {
           const defaultClient = await getDefaultClient();
           if (defaultClient && defaultClient.id) {
@@ -43,14 +45,27 @@ const InfosChantier: React.FC = () => {
             console.log('Client par défaut chargé automatiquement:', defaultClient.nom);
           }
         }
+        
+        // 2. Générer automatiquement un numéro de devis si nécessaire
+        if (!devisNumber) {
+          const newDevisNumber = await generateDevisNumber();
+          setDevisNumber(newDevisNumber);
+          console.log('Numéro de devis généré automatiquement:', newDevisNumber);
+        }
+        
+        // 3. Définir la description par défaut si non définie
+        if (!descriptionProjet) {
+          setDescriptionProjet('Projet en cours');
+        }
       } catch (error) {
-        console.error('Erreur lors du chargement du client par défaut:', error);
+        console.error('Erreur lors de l\'initialisation des données du projet:', error);
       }
     };
     
-    loadDefaultClient();
+    initialSetup();
   }, []);
   
+  // Synchronisation des données lorsqu'un projet est chargé
   useEffect(() => {
     if (currentProjectId) {
       const currentProject = projects.find(p => p.id === currentProjectId);
@@ -60,13 +75,13 @@ const InfosChantier: React.FC = () => {
         setDescriptionProjet(currentProject.description || '');
         setAdresseChantier(currentProject.address || '');
         setOccupant(currentProject.occupant || '');
-        if (currentProject.devis_number) {
-          setDevisNumber(currentProject.devis_number);
-        }
+        setDevisNumber(currentProject.devis_number || '');
+        console.log('Projet chargé dans InfosChantier:', currentProject);
       }
     }
   }, [currentProjectId, projects]);
   
+  // Fonction pour charger un projet
   const handleChargerProjet = async (projetId: string) => {
     try {
       await loadProject(projetId);
@@ -76,9 +91,11 @@ const InfosChantier: React.FC = () => {
     }
   };
   
+  // Fonction pour supprimer le projet actuel
   const handleDeleteProject = async () => {
     try {
       await deleteCurrentProject();
+      // Réinitialiser les états locaux
       setClientId('');
       setNomProjet('');
       setDescriptionProjet('');
@@ -92,9 +109,10 @@ const InfosChantier: React.FC = () => {
     }
   };
   
+  // Fonction pour sauvegarder le projet
   const handleSaveProject = async () => {
     try {
-      // S'assurer que le client, la description et le numéro de devis sont définis avant la sauvegarde
+      // Vérifier que les données obligatoires sont présentes
       if (!clientId) {
         try {
           const defaultClient = await getDefaultClient();
@@ -107,12 +125,23 @@ const InfosChantier: React.FC = () => {
         }
       }
       
-      // Si pas de description, utiliser "Projet en cours"
+      // Si pas de numéro de devis, en générer un
+      if (!devisNumber) {
+        try {
+          const newDevisNumber = await generateDevisNumber();
+          setDevisNumber(newDevisNumber);
+          toast.info('Numéro de devis généré automatiquement');
+        } catch (error) {
+          console.error('Erreur lors de la génération du numéro de devis:', error);
+        }
+      }
+      
+      // Si pas de description, utiliser la valeur par défaut
       if (!descriptionProjet) {
         setDescriptionProjet('Projet en cours');
       }
       
-      // Activer la sauvegarde une fois que tout est prêt
+      // Sauvegarder le projet avec toutes les informations
       await saveProject();
       toast.success('Projet enregistré avec succès');
     } catch (error) {

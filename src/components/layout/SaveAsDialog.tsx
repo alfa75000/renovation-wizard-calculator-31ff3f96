@@ -9,7 +9,7 @@ import { Textarea } from '../ui/textarea';
 import { RefreshCw } from 'lucide-react';
 import { useClients } from '@/contexts/ClientsContext';
 import { useProject } from '@/contexts/ProjectContext';
-import { generateDevisNumber } from '@/services/projectService';
+import { generateDevisNumber } from '@/services/devisService';
 import { getDefaultClient } from '@/services/clientService';
 import { toast } from 'sonner';
 
@@ -25,7 +25,11 @@ export const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
   onSaveProject
 }) => {
   const { state: clientsState, dispatch: clientsDispatch } = useClients();
-  const { currentProjectId, projects } = useProject();
+  const { 
+    state: projectState, 
+    currentProjectId, 
+    projects
+  } = useProject();
   
   const [clientId, setClientId] = useState<string>('');
   const [projectName, setProjectName] = useState<string>('');
@@ -34,47 +38,57 @@ export const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
   const [devisNumber, setDevisNumber] = useState<string>('');
   const [isGeneratingDevisNumber, setIsGeneratingDevisNumber] = useState<boolean>(false);
   
+  // Initialiser la date au jour actuel lors du premier rendu
   useEffect(() => {
     const today = new Date();
     const formattedDate = today.toISOString().split('T')[0];
     setProjectDate(formattedDate);
   }, []);
   
+  // Synchroniser les données du projet actuel lorsque le modal s'ouvre
   useEffect(() => {
-    if (currentProjectId) {
-      const currentProject = projects.find(p => p.id === currentProjectId);
-      if (currentProject) {
-        setClientId(currentProject.client_id || '');
-        setProjectName(currentProject.name || '');
-        setProjectDescription(currentProject.description || '');
-        if (currentProject.devis_number) {
-          setDevisNumber(currentProject.devis_number);
+    if (open) {
+      if (currentProjectId) {
+        const currentProject = projects.find(p => p.id === currentProjectId);
+        if (currentProject) {
+          setClientId(currentProject.client_id || '');
+          setProjectName(currentProject.name || '');
+          setProjectDescription(currentProject.description || '');
+          setDevisNumber(currentProject.devis_number || '');
+          console.log('Synchronisation des données du projet dans SaveAsDialog:', currentProject);
+        } else {
+          console.warn('Projet actuel non trouvé dans la liste des projets');
+        }
+      } else {
+        // Si pas de projet courant, utiliser les valeurs de l'état global
+        if (projectState && projectState.property) {
+          setProjectDescription('Projet en cours');
         }
       }
     }
-  }, [currentProjectId, projects, open]);
+  }, [currentProjectId, projects, open, projectState]);
   
-  // Auto-generate project name when client, devis number, or description changes
+  // Génération automatique du nom du projet
   useEffect(() => {
     generateProjectName();
   }, [clientId, devisNumber, projectDescription, clientsState.clients]);
   
-  // Function to generate project name based on available data
+  // Fonction pour générer le nom du projet basé sur les données disponibles
   const generateProjectName = () => {
     let newName = '';
     
-    // Get client info if client is selected
+    // Obtenir les infos du client s'il est sélectionné
     const client = clientsState.clients.find(c => c.id === clientId);
     const clientName = client ? `${client.nom} ${client.prenom || ''}`.trim() : 'Client à définir';
     
-    // Add devis number if available
+    // Ajouter le numéro de devis s'il est disponible
     if (devisNumber) {
       newName = `Devis n° ${devisNumber} - ${clientName}`;
     } else {
       newName = clientName;
     }
     
-    // Add description if available, or use default
+    // Ajouter la description si disponible, ou utiliser la valeur par défaut
     const desc = projectDescription || 'Projet en cours';
     newName += desc.length > 40 
       ? ` - ${desc.substring(0, 40)}...` 
@@ -98,13 +112,13 @@ export const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
   };
   
   const handleSaveProject = async () => {
-    // If no client is selected, get or create a default client
+    // Si aucun client n'est sélectionné, obtenir ou créer un client par défaut
     if (!clientId) {
       try {
         const defaultClient = await getDefaultClient();
         setClientId(defaultClient.id);
         
-        // Ensure client exists in local state
+        // S'assurer que le client existe dans l'état local
         if (!clientsState.clients.some(c => c.id === defaultClient.id)) {
           clientsDispatch({ 
             type: 'ADD_CLIENT', 
@@ -120,7 +134,7 @@ export const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
       }
     }
     
-    // If no devis number, generate one
+    // Si pas de numéro de devis, en générer un
     if (!devisNumber) {
       try {
         const newDevisNumber = await generateDevisNumber();
@@ -130,12 +144,12 @@ export const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
       }
     }
     
-    // Use default description if none provided
+    // Utiliser une description par défaut si aucune n'est fournie
     if (!projectDescription) {
       setProjectDescription('Projet en cours');
     }
     
-    // Call the original save function
+    // Appeler la fonction de sauvegarde originale
     onSaveProject();
   };
   
