@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useClients } from '@/contexts/ClientsContext';
 import { useProject } from '@/contexts/ProjectContext';
@@ -37,32 +38,29 @@ const InfosChantier: React.FC = () => {
   
   // Écouter l'événement personnalisé 'firstRoomAdded' déclenché depuis RenovationEstimator
   useEffect(() => {
-    const handleFirstRoomAdded = async (event: CustomEvent) => {
-      // Récupérer les données de l'événement
-      const data = event.detail || {};
+    console.log("InfosChantier - Mise en place de l'écouteur d'événement");
+    
+    const handleFirstRoomAdded = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      console.log("InfosChantier - Événement firstRoomAdded reçu:", customEvent.detail);
       
-      // Si c'est la première pièce ajoutée
+      // Récupérer les données de l'événement
+      const data = customEvent.detail || {};
+      
+      // Si c'est la première pièce ajoutée et les champs sont vides
       if (isFirstRoom) {
         setIsFirstRoom(false); // Ne plus exécuter cette logique pour les futures mises à jour
         
         // Si pas de client sélectionné, utiliser celui fourni par l'événement ou en chercher un
-        if (!clientId) {
-          const defaultClientId = data.clientId || await findDefaultClientId();
-          if (defaultClientId) {
-            setClientId(defaultClientId);
-            console.log("Client par défaut sélectionné:", defaultClientId);
-          }
+        if (!clientId && data.clientId) {
+          setClientId(data.clientId);
+          console.log("Client par défaut sélectionné:", data.clientId);
         }
         
-        // Si pas de numéro de devis, utiliser celui fourni par l'événement ou en générer un
-        if (!devisNumber) {
-          try {
-            const newDevisNumber = data.devisNumber || await generateDevisNumber();
-            setDevisNumber(newDevisNumber);
-            console.log("Numéro de devis généré:", newDevisNumber);
-          } catch (error) {
-            console.error("Erreur lors de la génération du numéro de devis:", error);
-          }
+        // Si pas de numéro de devis, utiliser celui fourni par l'événement
+        if (!devisNumber && data.devisNumber) {
+          setDevisNumber(data.devisNumber);
+          console.log("Numéro de devis généré:", data.devisNumber);
         }
         
         // Si pas de description, utiliser "Projet en cours"
@@ -70,18 +68,17 @@ const InfosChantier: React.FC = () => {
           setDescriptionProjet("Projet en cours");
           console.log("Description par défaut ajoutée");
         }
+        
+        toast.info("Informations du projet initialisées automatiquement");
       }
     };
 
-    // Convertir l'écouteur d'événement pour TypeScript
-    const typedEventListener = (e: Event) => {
-      handleFirstRoomAdded(e as unknown as CustomEvent);
-    };
-
-    window.addEventListener('firstRoomAdded', typedEventListener);
+    // Ajouter l'écouteur d'événement
+    window.addEventListener('firstRoomAdded', handleFirstRoomAdded);
     
     return () => {
-      window.removeEventListener('firstRoomAdded', typedEventListener);
+      // Retirer l'écouteur d'événement lors du démontage du composant
+      window.removeEventListener('firstRoomAdded', handleFirstRoomAdded);
     };
   }, [clientId, devisNumber, descriptionProjet, isFirstRoom]);
   
@@ -89,6 +86,7 @@ const InfosChantier: React.FC = () => {
   useEffect(() => {
     if (projectState?.rooms?.length === 0 && !isFirstRoom) {
       setIsFirstRoom(true);
+      console.log("InfosChantier - Flag isFirstRoom réinitialisé");
     }
   }, [projectState?.rooms, isFirstRoom]);
   

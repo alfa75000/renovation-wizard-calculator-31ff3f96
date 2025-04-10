@@ -21,6 +21,13 @@ const RenovationEstimator: React.FC = () => {
   
   const roomTypes = ["Salon", "Chambre", "Cuisine", "Salle de bain", "Toilettes", "Bureau", "Entrée", "Couloir", "Autre"];
 
+  // Réinitialiser isFirstRoom si aucune pièce n'est présente
+  useEffect(() => {
+    if (rooms.length === 0) {
+      setIsFirstRoom(true);
+    }
+  }, [rooms]);
+
   const handlePropertyChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     
@@ -59,16 +66,16 @@ const RenovationEstimator: React.FC = () => {
       
       toast.success(`${room.name} ajouté avec succès`);
 
-      // Vérifier si c'est la première pièce ajoutée
+      // Vérifier si c'était la première pièce ajoutée
       if (rooms.length === 0 && isFirstRoom) {
         setIsFirstRoom(false);
         
         try {
-          // Déclencher la génération automatique immédiatement ici
+          // Générer immédiatement les informations automatiques
           const clientId = await findDefaultClientId();
           const devisNumber = await generateDevisNumber();
           
-          // On déclenche aussi l'événement pour la page InfosChantier
+          // Déclencher l'événement pour la page InfosChantier
           const event = new CustomEvent('firstRoomAdded', {
             detail: {
               roomName: room.name,
@@ -76,7 +83,13 @@ const RenovationEstimator: React.FC = () => {
               devisNumber: devisNumber
             }
           });
+          
           window.dispatchEvent(event);
+          console.log("Événement firstRoomAdded déclenché avec:", {
+            roomName: room.name,
+            clientId,
+            devisNumber
+          });
           
           // Toast pour indiquer que la génération automatique a été effectuée
           toast.info("Les informations du projet ont été initialisées automatiquement");
@@ -102,11 +115,6 @@ const RenovationEstimator: React.FC = () => {
     });
     
     toast.success(`${roomName} supprimé avec succès`);
-    
-    // Réinitialiser le flag si toutes les pièces sont supprimées
-    if (rooms.length === 1) { // Si cette pièce est la dernière
-      setIsFirstRoom(true);
-    }
   };
 
   const resetProject = () => {
