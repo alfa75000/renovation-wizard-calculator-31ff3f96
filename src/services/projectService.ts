@@ -182,7 +182,7 @@ export const fetchProjectById = async (projectId: string) => {
         description: travail.description || '',
         quantite: travail.quantite || travail.quantity || 0,
         unite: travail.unite || travail.unit || '',
-        prixFournitures: travail.prix_fournitures || travail.supply_price_override || 0,
+        prixFournitures: travail.prixFournitures || travail.supply_price_override || 0,
         prixMainOeuvre: travail.prix_main_oeuvre || travail.labor_price_override || 0,
         tauxTVA: travail.taux_tva || travail.vat_rate || 20,
         commentaire: travail.commentaire || '',
@@ -770,4 +770,126 @@ export const updateProject = async (projectId: string, projectState: ProjectStat
               description: travail.description,
               quantite: travail.quantite,
               unite: travail.unite,
-              prix_fournitures: travail.prixFournit
+              prix_fournitures: travail.prixFournitures,
+              prix_main_oeuvre: travail.prixMainOeuvre,
+              taux_tva: travail.tauxTVA,
+              commentaire: travail.commentaire || '',
+              personnalisation: travail.personnalisation || '',
+              type_travaux: travail.typeTravaux || '',
+              sous_type: travail.sousType || '',
+              surface_impactee: travail.surfaceImpactee || '',
+              quantity: travail.quantite,
+              unit: travail.unite,
+              supply_price_override: travail.prixFournitures,
+              labor_price_override: travail.prixMainOeuvre,
+              vat_rate: travail.tauxTVA
+            });
+          
+          if (createWorkError) {
+            console.error('Erreur lors de la création du travail:', createWorkError);
+            throw createWorkError;
+          }
+        }
+      }
+    }
+    
+    return {
+      id: projectId,
+      ...projectInfo
+    };
+  } catch (error) {
+    console.error('Exception lors de la mise à jour du projet complet:', error);
+    throw error;
+  }
+};
+
+/**
+ * Supprime un projet de Supabase
+ */
+export const deleteProject = async (projectId: string) => {
+  try {
+    // Récupérer les pièces du projet
+    const { data: rooms, error: roomsError } = await supabase
+      .from('rooms')
+      .select('id')
+      .eq('project_id', projectId);
+    
+    if (roomsError) {
+      console.error('Erreur lors de la récupération des pièces:', roomsError);
+      throw roomsError;
+    }
+    
+    const roomIds = (rooms || []).map(room => room.id);
+    
+    // Supprimer les travaux associés aux pièces
+    if (roomIds.length > 0) {
+      const { error: deleteWorksError } = await supabase
+        .from('room_works')
+        .delete()
+        .in('room_id', roomIds);
+      
+      if (deleteWorksError) {
+        console.error('Erreur lors de la suppression des travaux:', deleteWorksError);
+        throw deleteWorksError;
+      }
+      
+      // Supprimer les menuiseries associées aux pièces
+      const { error: deleteMenuiseriesError } = await supabase
+        .from('room_menuiseries')
+        .delete()
+        .in('room_id', roomIds);
+      
+      if (deleteMenuiseriesError) {
+        console.error('Erreur lors de la suppression des menuiseries:', deleteMenuiseriesError);
+        throw deleteMenuiseriesError;
+      }
+      
+      // Supprimer les surfaces personnalisées associées aux pièces
+      const { error: deleteCustomItemsError } = await supabase
+        .from('room_custom_items')
+        .delete()
+        .in('room_id', roomIds);
+      
+      if (deleteCustomItemsError) {
+        console.error('Erreur lors de la suppression des surfaces personnalisées:', deleteCustomItemsError);
+        throw deleteCustomItemsError;
+      }
+    }
+    
+    // Supprimer les pièces du projet
+    const { error: deleteRoomsError } = await supabase
+      .from('rooms')
+      .delete()
+      .eq('project_id', projectId);
+    
+    if (deleteRoomsError) {
+      console.error('Erreur lors de la suppression des pièces:', deleteRoomsError);
+      throw deleteRoomsError;
+    }
+    
+    // Enfin, supprimer le projet lui-même
+    const { error: deleteProjectError } = await supabase
+      .from('projects')
+      .delete()
+      .eq('id', projectId);
+    
+    if (deleteProjectError) {
+      console.error('Erreur lors de la suppression du projet:', deleteProjectError);
+      throw deleteProjectError;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Exception lors de la suppression du projet:', error);
+    throw error;
+  }
+};
+
+/**
+ * Génère un nom par défaut pour un nouveau projet
+ */
+export const generateDefaultProjectName = () => {
+  const now = new Date();
+  const dateFormat = format(now, 'dd/MM/yyyy à HH:mm');
+  return `Projet du ${dateFormat}`;
+};
