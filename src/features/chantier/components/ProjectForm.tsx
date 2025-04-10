@@ -7,12 +7,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Trash, RefreshCw } from 'lucide-react';
+import { Calendar, Trash, RefreshCw, Wand } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useClients } from '@/contexts/ClientsContext';
 import { ClientDetails } from './ClientDetails';
 import { toast } from 'sonner';
-import { generateDevisNumber } from '@/services/projectService';
+import { generateDevisNumber } from '@/services/devisService';
 
 interface ProjectFormProps {
   clientId: string;
@@ -36,6 +36,7 @@ interface ProjectFormProps {
   onSaveProject: () => void;
   onDeleteProject: () => void;
   isLoading: boolean;
+  onGenerateProjectName: () => void;
 }
 
 export const ProjectForm: React.FC<ProjectFormProps> = ({
@@ -59,11 +60,13 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
   currentProjectId,
   onSaveProject,
   onDeleteProject,
-  isLoading
+  isLoading,
+  onGenerateProjectName
 }) => {
   const navigate = useNavigate();
   const { state: clientsState } = useClients();
   const [isGeneratingDevisNumber, setIsGeneratingDevisNumber] = useState<boolean>(false);
+  const [isGeneratingProjectName, setIsGeneratingProjectName] = useState<boolean>(false);
   
   const handleGenerateDevisNumber = async () => {
     try {
@@ -76,6 +79,19 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
       toast.error('Erreur lors de la génération du numéro de devis');
     } finally {
       setIsGeneratingDevisNumber(false);
+    }
+  };
+  
+  const handleGenerateProjectName = async () => {
+    try {
+      setIsGeneratingProjectName(true);
+      onGenerateProjectName();
+      toast.success('Nom du projet généré avec succès');
+    } catch (error) {
+      console.error('Erreur lors de la génération du nom du projet:', error);
+      toast.error('Erreur lors de la génération du nom du projet');
+    } finally {
+      setIsGeneratingProjectName(false);
     }
   };
   
@@ -118,6 +134,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
             size="icon" 
             onClick={handleGenerateDevisNumber}
             disabled={isGeneratingDevisNumber}
+            title="Générer un numéro de devis"
           >
             <RefreshCw className={`h-4 w-4 ${isGeneratingDevisNumber ? 'animate-spin' : ''}`} />
           </Button>
@@ -126,12 +143,24 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
       
       <div>
         <Label htmlFor="nomProjet">Nom du projet (généré automatiquement)</Label>
-        <Input 
-          id="nomProjet" 
-          value={nomProjet} 
-          readOnly
-          className="bg-gray-50"
-        />
+        <div className="flex gap-2">
+          <Input 
+            id="nomProjet" 
+            value={nomProjet} 
+            readOnly
+            className="bg-gray-50 flex-1"
+          />
+          <Button 
+            type="button" 
+            variant="outline" 
+            size="icon" 
+            onClick={handleGenerateProjectName}
+            disabled={isGeneratingProjectName}
+            title="Générer automatiquement le nom du projet"
+          >
+            <Wand className={`h-4 w-4 ${isGeneratingProjectName ? 'animate-spin' : ''}`} />
+          </Button>
+        </div>
       </div>
       
       <div>

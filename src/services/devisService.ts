@@ -7,6 +7,7 @@ import { format } from 'date-fns';
  * Exemple: 2504-1 pour le premier devis d'avril 2025
  */
 export const generateDevisNumber = async (): Promise<string> => {
+  console.log('Génération d\'un nouveau numéro de devis');
   // Obtenir l'année et le mois courant au format AAMM
   const currentDate = new Date();
   const yearMonth = format(currentDate, 'yyMM');
@@ -39,7 +40,9 @@ export const generateDevisNumber = async (): Promise<string> => {
   
   // Créer un nouveau numéro en incrémentant
   const newNumber = maxNumber + 1;
-  return `${yearMonth}-${newNumber}`;
+  const generatedNumber = `${yearMonth}-${newNumber}`;
+  console.log('Numéro de devis généré:', generatedNumber);
+  return generatedNumber;
 };
 
 /**

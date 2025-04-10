@@ -9,6 +9,7 @@ import { ProjectSummary } from '@/features/chantier/components/ProjectSummary';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { generateDevisNumber } from '@/services/devisService';
 
 const InfosChantier: React.FC = () => {
   const { 
@@ -34,6 +35,12 @@ const InfosChantier: React.FC = () => {
   const { state: clientsState } = useClients();
   const clientSelectionne = clientsState.clients.find(c => c.id === clientId);
   
+  // Trouver l'ID du client "Client à définir"
+  const getDefaultClientId = (): string => {
+    const defaultClient = clientsState.clients.find(c => c.nom === "Client à définir");
+    return defaultClient ? defaultClient.id : '';
+  };
+  
   useEffect(() => {
     if (currentProjectId) {
       const currentProject = projects.find(p => p.id === currentProjectId);
@@ -50,26 +57,71 @@ const InfosChantier: React.FC = () => {
     }
   }, [currentProjectId, projects]);
   
-  useEffect(() => {
-    if (clientSelectionne && descriptionProjet) {
-      const clientName = `${clientSelectionne.nom} ${clientSelectionne.prenom || ''}`.trim();
-      let newName = '';
-      
-      if (devisNumber) {
-        newName = `Devis n° ${devisNumber} - ${clientName}`;
+  // Cette fonction génère le nom du projet en se basant sur le client, le numéro de devis et la description
+  const generateProjectName = async () => {
+    console.log("Génération du nom de projet en cours...");
+    // Si pas de clientId sélectionné, définir le client par défaut
+    let updatedClientId = clientId;
+    if (!clientId) {
+      const defaultClientId = getDefaultClientId();
+      if (defaultClientId) {
+        setClientId(defaultClientId);
+        updatedClientId = defaultClientId;
+        console.log("Client par défaut sélectionné:", defaultClientId);
       } else {
-        newName = clientName;
+        toast.error("Impossible de trouver le client par défaut");
+        return;
       }
-      
-      if (descriptionProjet) {
-        newName += descriptionProjet.length > 40 
-          ? ` - ${descriptionProjet.substring(0, 40)}...` 
-          : ` - ${descriptionProjet}`;
-      }
-      
-      setNomProjet(newName);
     }
-  }, [devisNumber, clientSelectionne, descriptionProjet]);
+    
+    // Si pas de numéro de devis, en générer un
+    let updatedDevisNumber = devisNumber;
+    if (!devisNumber) {
+      try {
+        updatedDevisNumber = await generateDevisNumber();
+        setDevisNumber(updatedDevisNumber);
+        console.log("Numéro de devis généré:", updatedDevisNumber);
+      } catch (error) {
+        console.error("Erreur lors de la génération du numéro de devis:", error);
+        toast.error("Erreur lors de la génération du numéro de devis");
+        return;
+      }
+    }
+    
+    // Si pas de description, utiliser "Projet en cours"
+    let updatedDescription = descriptionProjet;
+    if (!descriptionProjet) {
+      updatedDescription = "Projet en cours";
+      setDescriptionProjet(updatedDescription);
+      console.log("Description par défaut utilisée:", updatedDescription);
+    }
+    
+    // Récupérer le client sélectionné
+    const selectedClient = clientsState.clients.find(c => c.id === updatedClientId);
+    if (!selectedClient) {
+      toast.error("Client non trouvé");
+      return;
+    }
+    
+    // Générer le nom du projet
+    const clientName = `${selectedClient.nom} ${selectedClient.prenom || ''}`.trim();
+    let newName = '';
+    
+    if (updatedDevisNumber) {
+      newName = `Devis n° ${updatedDevisNumber} - ${clientName}`;
+    } else {
+      newName = clientName;
+    }
+    
+    if (updatedDescription) {
+      newName += updatedDescription.length > 40 
+        ? ` - ${updatedDescription.substring(0, 40)}...` 
+        : ` - ${updatedDescription}`;
+    }
+    
+    console.log("Nouveau nom de projet généré:", newName);
+    setNomProjet(newName);
+  };
   
   const handleChargerProjet = async (projetId: string) => {
     try {
@@ -103,8 +155,12 @@ const InfosChantier: React.FC = () => {
     }
     
     try {
-      // Logique de sauvegarde temporairement désactivée
-      // await saveProject();
+      // Si le nom du projet est vide, le générer automatiquement
+      if (!nomProjet) {
+        await generateProjectName();
+      }
+      
+      await saveProject();
       toast.success('Projet enregistré avec succès');
     } catch (error) {
       console.error('Erreur lors de l\'enregistrement du projet:', error);
@@ -150,6 +206,7 @@ const InfosChantier: React.FC = () => {
             onSaveProject={handleSaveProject}
             onDeleteProject={handleDeleteProject}
             isLoading={isLoading}
+            onGenerateProjectName={generateProjectName}
           />
         </div>
         
