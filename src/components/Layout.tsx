@@ -1,4 +1,3 @@
-
 import React, { ReactNode, useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from './ui/button';
@@ -6,7 +5,6 @@ import { useProject } from '@/contexts/ProjectContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from './ui/sheet';
 import { FilePlus2, FolderOpen, Save, SaveAll } from 'lucide-react';
-import { useProjetChantier } from '@/contexts/ProjetChantierContext';
 import { useClients } from '@/contexts/ClientsContext';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Input } from './ui/input';
@@ -21,7 +19,6 @@ interface LayoutProps {
 export const Layout: React.FC<LayoutProps> = ({ children, title, subtitle }) => {
   const location = useLocation();
   const { state: projectState, currentProjectId, projects } = useProject();
-  const { state: chantierState } = useProjetChantier();
   const { state: clientsState } = useClients();
   
   // États pour les modales
