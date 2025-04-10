@@ -15,13 +15,12 @@ export const Layout: React.FC<LayoutProps> = ({
   title, 
   subtitle,
   actions,
-  currentProjectName
+  currentProjectName // Use the prop that's now defined in LayoutProps
 }) => {
   const { 
     currentProjectId, 
     saveProject, 
-    createNewProject,
-    projects 
+    createNewProject 
   } = useProject();
   
   const [newProjectDialogOpen, setNewProjectDialogOpen] = useState(false);
@@ -46,12 +45,6 @@ export const Layout: React.FC<LayoutProps> = ({
     }
   };
   
-  // Use the current project's name from context if no custom name is provided
-  const displayProjectName = currentProjectName || (() => {
-    const currentProject = projects.find(p => p.id === currentProjectId);
-    return currentProject?.name || "";
-  })();
-  
   return (
     <div className="min-h-screen bg-gray-50">
       <ProjectBar 
@@ -59,7 +52,7 @@ export const Layout: React.FC<LayoutProps> = ({
         onOpenProject={() => setOpenProjectSheetOpen(true)}
         onSaveProject={handleSaveProject}
         onSaveAsProject={() => setSaveAsDialogOpen(true)}
-        projectDisplayName={displayProjectName}
+        projectDisplayName={currentProjectName} // Pass the currentProjectName to ProjectBar
       />
       
       <TitleHeader title={title} subtitle={subtitle} />

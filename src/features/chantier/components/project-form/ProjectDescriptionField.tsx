@@ -12,27 +12,23 @@ export const ProjectDescriptionField: React.FC<ProjectDescriptionFieldProps> = (
   descriptionProjet,
   setDescriptionProjet
 }) => {
-  const maxLength = 100;
-  const charactersLeft = maxLength - descriptionProjet.length;
-  const isNearLimit = charactersLeft < 20;
-  
   return (
     <div>
-      <Label htmlFor="descriptionProjet">Description du projet ({maxLength} caractères max)</Label>
+      <Label htmlFor="descriptionProjet">Description du projet (100 caractères max)</Label>
       <Textarea 
         id="descriptionProjet" 
         value={descriptionProjet} 
         onChange={(e) => {
-          if (e.target.value.length <= maxLength) {
+          if (e.target.value.length <= 100) {
             setDescriptionProjet(e.target.value);
           }
         }}
         placeholder="Description détaillée des travaux"
         rows={2}
-        maxLength={maxLength}
+        maxLength={100}
       />
-      <div className={`text-xs text-right mt-1 ${isNearLimit ? 'text-amber-500 font-medium' : 'text-gray-500'}`}>
-        {descriptionProjet.length}/{maxLength} caractères
+      <div className="text-xs text-gray-500 text-right mt-1">
+        {descriptionProjet.length}/100 caractères
       </div>
     </div>
   );

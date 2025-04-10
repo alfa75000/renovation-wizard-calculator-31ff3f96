@@ -1,73 +1,149 @@
 
-import { useCallback, useEffect } from 'react';
-import { useProjectMetadata } from './useProjectMetadata';
-import { useProjectOperations } from './useProjectOperations';
+import { useState, useEffect, useCallback } from 'react';
+import { useClients } from '@/contexts/ClientsContext';
 import { useProject } from '@/contexts/ProjectContext';
+import { toast } from 'sonner';
+import { format } from 'date-fns';
+import { generateDevisNumber } from '@/services/devisService';
 
 export const useProjectInfo = () => {
-  const {
-    clientId,
-    setClientId,
-    nomProjet,
-    setNomProjet,
-    descriptionProjet,
-    setDescriptionProjet,
-    adresseChantier,
-    setAdresseChantier,
-    occupant,
-    setOccupant,
-    infoComplementaire,
-    setInfoComplementaire,
-    dateDevis,
-    setDateDevis,
-    devisNumber,
-    setDevisNumber,
-    generateProjectName
-  } = useProjectMetadata();
-  
-  const {
-    handleChargerProjet,
-    handleDeleteProject: baseHandleDeleteProject,
-    handleSaveProject: baseHandleSaveProject,
-    currentProjectId,
-    projects,
-    hasUnsavedChanges,
+  const { 
+    state: projectState, 
     isLoading,
-    projectState
-  } = useProjectOperations();
+    projects, 
+    currentProjectId,
+    hasUnsavedChanges,
+    loadProject,
+    deleteCurrentProject,
+    saveProject
+  } = useProject();
   
-  const { state: projectStateRaw } = useProject();
+  const [clientId, setClientId] = useState<string>('');
+  const [nomProjet, setNomProjet] = useState<string>('');
+  const [descriptionProjet, setDescriptionProjet] = useState<string>('');
+  const [adresseChantier, setAdresseChantier] = useState<string>('');
+  const [occupant, setOccupant] = useState<string>('');
+  const [infoComplementaire, setInfoComplementaire] = useState<string>('');
+  const [dateDevis, setDateDevis] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
+  const [devisNumber, setDevisNumber] = useState<string>('');
   
-  // Integrate the project data into our local state when project ID changes
-  const loadCurrentProjectData = useCallback(() => {
-    if (!currentProjectId) return;
-    
-    const currentProject = projects.find(p => p.id === currentProjectId);
-    if (currentProject) {
-      console.log("Chargement du projet courant:", currentProject);
-      setClientId(currentProject.client_id || '');
-      setNomProjet(currentProject.name || '');
-      setDescriptionProjet(currentProject.description || '');
-      setAdresseChantier(currentProject.address || '');
-      setOccupant(currentProject.occupant || '');
-      if (currentProject.devis_number) {
-        setDevisNumber(currentProject.devis_number);
+  const { state: clientsState } = useClients();
+  
+  // Update document title when project name changes
+  useEffect(() => {
+    if (nomProjet) {
+      document.title = `${nomProjet} - Infos Chantier`;
+    } else {
+      document.title = 'Infos Chantier / Client';
+    }
+  }, [nomProjet]);
+  
+  // Find the default client ID
+  const getDefaultClientId = useCallback((): string => {
+    console.log("Recherche du client par défaut...");
+    const defaultClient = clientsState.clients.find(c => c.nom === "Client à définir");
+    console.log("Client par défaut trouvé:", defaultClient);
+    return defaultClient ? defaultClient.id : '';
+  }, [clientsState.clients]);
+  
+  // Load current project data when project ID changes
+  useEffect(() => {
+    if (currentProjectId) {
+      const currentProject = projects.find(p => p.id === currentProjectId);
+      if (currentProject) {
+        console.log("Chargement du projet courant:", currentProject);
+        setClientId(currentProject.client_id || '');
+        setNomProjet(currentProject.name || '');
+        setDescriptionProjet(currentProject.description || '');
+        setAdresseChantier(currentProject.address || '');
+        setOccupant(currentProject.occupant || '');
+        if (currentProject.devis_number) {
+          setDevisNumber(currentProject.devis_number);
+        }
       }
     }
-  }, [currentProjectId, projects, setClientId, setNomProjet, setDescriptionProjet, setAdresseChantier, setOccupant, setDevisNumber]);
+  }, [currentProjectId, projects]);
   
-  // Utilisation d'un useEffect pour charger les données du projet lors du montage du composant
-  // et lorsque currentProjectId ou projects changent
-  useEffect(() => {
-    if (currentProjectId && projects.length > 0) {
-      loadCurrentProjectData();
+  // Generate project name based on client, devis number and description
+  const generateProjectName = useCallback(async () => {
+    console.log("Génération du nom de projet en cours...");
+    
+    // Set default client if none selected
+    let updatedClientId = clientId;
+    if (!clientId) {
+      const defaultClientId = getDefaultClientId();
+      if (defaultClientId) {
+        setClientId(defaultClientId);
+        updatedClientId = defaultClientId;
+        console.log("Client par défaut sélectionné:", defaultClientId);
+      } else {
+        console.error("Impossible de trouver le client par défaut");
+        return;
+      }
     }
-  }, [currentProjectId, projects, loadCurrentProjectData]);
+    
+    // Generate devis number if none exists
+    let updatedDevisNumber = devisNumber;
+    if (!devisNumber) {
+      try {
+        updatedDevisNumber = await generateDevisNumber();
+        setDevisNumber(updatedDevisNumber);
+        console.log("Numéro de devis généré:", updatedDevisNumber);
+      } catch (error) {
+        console.error("Erreur lors de la génération du numéro de devis:", error);
+        return;
+      }
+    }
+    
+    // Set default description if none exists
+    let updatedDescription = descriptionProjet;
+    if (!descriptionProjet) {
+      updatedDescription = "Projet en cours";
+      setDescriptionProjet(updatedDescription);
+      console.log("Description par défaut utilisée:", updatedDescription);
+    }
+    
+    // Get the selected client
+    const selectedClient = clientsState.clients.find(c => c.id === updatedClientId);
+    if (!selectedClient) {
+      console.error("Client non trouvé");
+      return;
+    }
+    
+    // Generate project name
+    const clientName = `${selectedClient.nom} ${selectedClient.prenom || ''}`.trim();
+    let newName = '';
+    
+    if (updatedDevisNumber) {
+      newName = `Devis n° ${updatedDevisNumber} - ${clientName}`;
+    } else {
+      newName = clientName;
+    }
+    
+    if (updatedDescription) {
+      newName += updatedDescription.length > 40 
+        ? ` - ${updatedDescription.substring(0, 40)}...` 
+        : ` - ${updatedDescription}`;
+    }
+    
+    console.log("Nouveau nom de projet généré:", newName);
+    setNomProjet(newName);
+  }, [clientId, devisNumber, descriptionProjet, clientsState.clients, getDefaultClientId]);
+
+  // Handler for loading a project
+  const handleChargerProjet = useCallback(async (projetId: string) => {
+    try {
+      await loadProject(projetId);
+    } catch (error) {
+      console.error('Erreur lors du chargement du projet:', error);
+      toast.error('Une erreur est survenue lors du chargement du projet');
+    }
+  }, [loadProject]);
   
-  // Enhanced version of handleDeleteProject that also resets local state
+  // Handler for deleting the current project
   const handleDeleteProject = useCallback(async () => {
-    const success = await baseHandleDeleteProject();
-    if (success) {
+    try {
+      await deleteCurrentProject();
       setClientId('');
       setNomProjet('');
       setDescriptionProjet('');
@@ -75,16 +151,35 @@ export const useProjectInfo = () => {
       setOccupant('');
       setInfoComplementaire('');
       setDevisNumber('');
+    } catch (error) {
+      console.error('Erreur lors de la suppression du projet:', error);
+      toast.error('Une erreur est survenue lors de la suppression du projet');
     }
-  }, [baseHandleDeleteProject, setClientId, setNomProjet, setDescriptionProjet, setAdresseChantier, setOccupant, setInfoComplementaire, setDevisNumber]);
+  }, [deleteCurrentProject]);
   
-  // Enhanced version of handleSaveProject that passes required arguments
+  // Handler for saving the current project
   const handleSaveProject = useCallback(async () => {
-    return await baseHandleSaveProject(clientId, nomProjet, generateProjectName);
-  }, [baseHandleSaveProject, clientId, nomProjet, generateProjectName]);
+    if (!clientId) {
+      toast.error('Veuillez sélectionner un client');
+      return;
+    }
+    
+    try {
+      // Generate project name if it's empty
+      if (!nomProjet) {
+        await generateProjectName();
+      }
+      
+      await saveProject();
+      toast.success('Projet enregistré avec succès');
+    } catch (error) {
+      console.error('Erreur lors de l\'enregistrement du projet:', error);
+      toast.error('Erreur lors de l\'enregistrement du projet');
+    }
+  }, [clientId, nomProjet, generateProjectName, saveProject]);
 
   return {
-    projectState: projectStateRaw,
+    projectState,
     isLoading,
     projects,
     currentProjectId,
