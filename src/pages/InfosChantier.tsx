@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Calendar, PlusCircle, Save, Trash, FileCheck } from 'lucide-react';
+import { Calendar, Trash } from 'lucide-react';
 import { toast } from 'sonner';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
@@ -22,15 +22,11 @@ const InfosChantier: React.FC = () => {
   const { state: clientsState, getClientTypeName } = useClients();
   const { 
     state: projectState, 
-    isLoading, 
-    isSaving,
+    isLoading,
     projects, 
     currentProjectId,
     hasUnsavedChanges,
-    saveProject,
-    saveProjectAsDraft,
     loadProject,
-    createNewProject,
     deleteCurrentProject
   } = useProject();
   
@@ -58,39 +54,6 @@ const InfosChantier: React.FC = () => {
     }
   }, [currentProjectId, projects]);
   
-  const handleSave = async () => {
-    if (!nomProjet) {
-      toast.error('Veuillez saisir un nom de projet');
-      return;
-    }
-    
-    try {
-      // Mettre à jour les informations du projet
-      const projectInfo = {
-        name: nomProjet,
-        clientId: clientId || null,
-        description: descriptionProjet,
-        address: adresseChantier,
-        occupant: occupant,
-        infoComplementaire: infoComplementaire
-      };
-      
-      await saveProject(nomProjet);
-    } catch (error) {
-      console.error('Erreur lors de la sauvegarde du projet:', error);
-      toast.error('Une erreur est survenue lors de la sauvegarde du projet');
-    }
-  };
-  
-  const handleSaveDraft = async () => {
-    try {
-      await saveProjectAsDraft();
-    } catch (error) {
-      console.error('Erreur lors de la sauvegarde du brouillon:', error);
-      toast.error('Une erreur est survenue lors de la sauvegarde du brouillon');
-    }
-  };
-  
   const handleChargerProjet = async (projetId: string) => {
     try {
       await loadProject(projetId);
@@ -98,18 +61,6 @@ const InfosChantier: React.FC = () => {
       console.error('Erreur lors du chargement du projet:', error);
       toast.error('Une erreur est survenue lors du chargement du projet');
     }
-  };
-  
-  const handleNouveauProjet = () => {
-    createNewProject();
-    // Réinitialiser le formulaire
-    setClientId('');
-    setNomProjet('');
-    setDescriptionProjet('');
-    setAdresseChantier('');
-    setOccupant('');
-    setInfoComplementaire('');
-    setDateDevis(format(new Date(), 'yyyy-MM-dd'));
   };
   
   const handleDeleteProject = async () => {
@@ -250,35 +201,6 @@ const InfosChantier: React.FC = () => {
             </div>
             
             <div className="pt-4 flex flex-wrap gap-4">
-              <Button 
-                onClick={handleSave} 
-                disabled={isLoading || isSaving}
-                className="flex items-center gap-2"
-              >
-                <Save className="h-4 w-4" />
-                {isSaving ? 'Enregistrement...' : 'Enregistrer le projet'}
-              </Button>
-              
-              <Button 
-                variant="outline" 
-                onClick={handleSaveDraft}
-                disabled={isLoading || isSaving || !hasUnsavedChanges}
-                className="flex items-center gap-2"
-              >
-                <FileCheck className="h-4 w-4" />
-                Sauvegarder brouillon
-              </Button>
-              
-              <Button 
-                variant="secondary" 
-                onClick={handleNouveauProjet}
-                disabled={isLoading}
-                className="flex items-center gap-2"
-              >
-                <PlusCircle className="h-4 w-4" />
-                Nouveau projet
-              </Button>
-              
               {currentProjectId && (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
