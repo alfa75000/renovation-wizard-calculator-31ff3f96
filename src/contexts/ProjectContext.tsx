@@ -1,6 +1,6 @@
-
 import React, { createContext, useContext, useReducer, useEffect, useState, useCallback } from 'react';
 import { ProjectState, Property, Room, Travail, ProjectAction } from '@/types';
+import { Project as SupabaseProject } from '@/types/supabase';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'sonner';
 import { 
@@ -9,11 +9,9 @@ import {
   fetchProjectById, 
   fetchProjects, 
   deleteProject,
-  generateDefaultProjectName,
-  Project
+  generateDefaultProjectName
 } from '@/services/projectService';
 
-// État initial
 const initialState: ProjectState = {
   property: {
     type: 'Appartement',
@@ -26,13 +24,12 @@ const initialState: ProjectState = {
   travaux: [],
 };
 
-// Créer le contexte
 const ProjectContext = createContext<{
   state: ProjectState;
   dispatch: React.Dispatch<ProjectAction>;
   isLoading: boolean;
   isSaving: boolean;
-  projects: Project[];
+  projects: SupabaseProject[];
   currentProjectId: string | null;
   hasUnsavedChanges: boolean;
   saveProject: (name?: string) => Promise<void>;
@@ -57,20 +54,16 @@ const ProjectContext = createContext<{
   refreshProjects: async () => {},
 });
 
-// Fonction utilitaire pour générer un nom de pièce séquentiel
 const generateRoomName = (rooms: Room[], type: string): string => {
   console.log("generateRoomName - Démarrage pour type:", type);
   console.log("generateRoomName - Toutes les pièces:", rooms);
   
-  // Filtrer les pièces du même type
   const sameTypeRooms = rooms.filter(room => room.type === type);
   console.log("generateRoomName - Pièces du même type:", sameTypeRooms);
   
-  // Trouver le numéro le plus élevé déjà utilisé
   let maxNumber = 0;
   
   sameTypeRooms.forEach(room => {
-    // Extraire le numéro à la fin du nom (ex: "Chambre 1" -> 1)
     const match = room.name.match(/\s(\d+)$/);
     console.log("generateRoomName - Analyse de la pièce:", room.name, "avec match:", match);
     
@@ -84,13 +77,11 @@ const generateRoomName = (rooms: Room[], type: string): string => {
   
   console.log("generateRoomName - Numéro maximal trouvé:", maxNumber);
   
-  // Retourner le nom avec le numéro suivant
   const newName = `${type} ${maxNumber + 1}`;
   console.log("generateRoomName - Nouveau nom généré:", newName);
   return newName;
 };
 
-// Reducer pour gérer les actions
 function projectReducer(state: ProjectState, action: ProjectAction): ProjectState {
   switch (action.type) {
     case 'UPDATE_PROPERTY':
@@ -103,19 +94,12 @@ function projectReducer(state: ProjectState, action: ProjectAction): ProjectStat
       };
     
     case 'ADD_ROOM': {
-      console.log("ADD_ROOM - Action reçue avec payload:", action.payload);
-      
-      // Si le nom n'est pas spécifié, générer un nom séquentiel
       const roomData = {...action.payload};
       if (!roomData.name || roomData.name === '') {
-        console.log("ADD_ROOM - Nom non spécifié, génération automatique");
         roomData.name = generateRoomName(state.rooms, roomData.type);
-        console.log("ADD_ROOM - Nom généré:", roomData.name);
       }
       
       const newRoom = {...roomData, id: roomData.id || uuidv4()};
-      console.log("ADD_ROOM - Nouvelle pièce finale:", newRoom);
-      
       return {
         ...state,
         rooms: [...state.rooms, newRoom],
@@ -134,7 +118,6 @@ function projectReducer(state: ProjectState, action: ProjectAction): ProjectStat
       return {
         ...state,
         rooms: state.rooms.filter((room) => room.id !== action.payload),
-        // Supprimer également les travaux associés à cette pièce
         travaux: state.travaux.filter((travail) => travail.pieceId !== action.payload),
       };
     
@@ -169,23 +152,32 @@ function projectReducer(state: ProjectState, action: ProjectAction): ProjectStat
   }
 }
 
-// Provider component
 export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(projectReducer, initialState);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [projects, setProjects] = useState<SupabaseProject[]>([]);
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
   const [autoSaveTimer, setAutoSaveTimer] = useState<NodeJS.Timeout | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
   const [lastSaveTime, setLastSaveTime] = useState<Date | null>(null);
 
-  // Fonction pour récupérer la liste des projets depuis Supabase
   const refreshProjects = useCallback(async () => {
     try {
       setIsLoading(true);
       const projectsData = await fetchProjects();
-      setProjects(projectsData);
+      
+      const convertedProjects: SupabaseProject[] = projectsData.map(project => ({
+        ...project,
+        description: '',
+        address: '',
+        postal_code: '',
+        city: '',
+        occupant: '',
+        rooms_count: project.rooms_count || 0
+      }));
+      
+      setProjects(convertedProjects);
     } catch (error) {
       console.error('Erreur lors du chargement des projets:', error);
       toast.error('Impossible de charger la liste des projets');
@@ -194,19 +186,15 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, []);
 
-  // Charger la liste des projets au démarrage
   useEffect(() => {
     refreshProjects();
   }, [refreshProjects]);
 
-  // Détecter les changements dans l'état du projet
   useEffect(() => {
     if (currentProjectId && lastSaveTime) {
       const now = new Date();
       const timeSinceLastSave = now.getTime() - lastSaveTime.getTime();
       
-      // Marquer comme non sauvegardé seulement si le dernier enregistrement date de plus de 1 seconde
-      // Cela évite de marquer comme "non sauvegardé" juste après avoir sauvegardé
       if (timeSinceLastSave > 1000) {
         setHasUnsavedChanges(true);
       }
@@ -215,26 +203,22 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, [state, currentProjectId, lastSaveTime]);
 
-  // Configuration de la sauvegarde automatique
   useEffect(() => {
     if (hasUnsavedChanges && currentProjectId) {
-      // Nettoyer l'ancien timer si existant
       if (autoSaveTimer) {
         clearTimeout(autoSaveTimer);
       }
       
-      // Définir un nouveau timer pour sauvegarder après 10 minutes
       const timer = setTimeout(() => {
         saveProjectAsDraft();
         toast.info('Sauvegarde automatique effectuée', {
           duration: 3000,
           position: 'bottom-right'
         });
-      }, 10 * 60 * 1000); // 10 minutes en millisecondes
+      }, 10 * 60 * 1000);
       
       setAutoSaveTimer(timer);
       
-      // Nettoyer le timer lors du démontage du composant
       return () => {
         if (autoSaveTimer) {
           clearTimeout(autoSaveTimer);
@@ -243,7 +227,6 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, [hasUnsavedChanges, currentProjectId]);
 
-  // Fonction pour créer un nouveau projet
   const createNewProject = useCallback(() => {
     dispatch({ type: 'RESET_PROJECT' });
     setCurrentProjectId(null);
@@ -252,23 +235,19 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     toast.success('Nouveau projet créé');
   }, []);
 
-  // Fonction pour sauvegarder le projet actuel
   const saveProject = useCallback(async (name?: string) => {
     try {
       setIsSaving(true);
       toast.loading('Sauvegarde en cours...', { id: 'saving-project' });
       
-      // Préparer les informations du projet
       const projectInfo = {
         name: name || (currentProjectId ? projects.find(p => p.id === currentProjectId)?.name : generateDefaultProjectName()),
       };
       
       if (currentProjectId) {
-        // Mettre à jour un projet existant
         await updateProject(currentProjectId, state, projectInfo);
         toast.success('Projet mis à jour avec succès', { id: 'saving-project' });
       } else {
-        // Créer un nouveau projet
         const result = await createProject(state, projectInfo);
         setCurrentProjectId(result.id);
         toast.success('Projet enregistré avec succès', { id: 'saving-project' });
@@ -285,7 +264,6 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, [state, currentProjectId, projects, refreshProjects]);
 
-  // Fonction pour sauvegarder en tant que brouillon
   const saveProjectAsDraft = useCallback(async () => {
     if (hasUnsavedChanges) {
       try {
@@ -301,12 +279,10 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, [hasUnsavedChanges, saveProject]);
 
-  // Fonction pour charger un projet depuis Supabase
   const loadProject = useCallback(async (projectId: string) => {
     try {
       setIsLoading(true);
       
-      // Sauvegarder les changements non enregistrés du projet actuel si nécessaire
       if (hasUnsavedChanges && currentProjectId) {
         const shouldSave = window.confirm('Voulez-vous sauvegarder les modifications du projet actuel avant d\'en charger un nouveau ?');
         if (shouldSave) {
@@ -329,7 +305,6 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, [hasUnsavedChanges, currentProjectId, saveProject]);
 
-  // Fonction pour supprimer le projet actuel
   const deleteCurrentProject = useCallback(async () => {
     if (!currentProjectId) {
       toast.error('Aucun projet à supprimer');
@@ -340,7 +315,6 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setIsLoading(true);
       await deleteProject(currentProjectId);
       
-      // Réinitialiser l'état après la suppression
       dispatch({ type: 'RESET_PROJECT' });
       setCurrentProjectId(null);
       setHasUnsavedChanges(false);
@@ -356,7 +330,6 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, [currentProjectId, refreshProjects]);
 
-  // Avant de quitter la page, vérifier s'il y a des changements non enregistrés
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (hasUnsavedChanges) {
@@ -393,7 +366,6 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   );
 };
 
-// Hook personnalisé pour utiliser le contexte
 export const useProject = () => {
   const context = useContext(ProjectContext);
   if (!context) {
@@ -402,7 +374,6 @@ export const useProject = () => {
   return context;
 };
 
-// Hook pour la gestion des travaux
 export const useTravaux = () => {
   const { state, dispatch } = useProject();
   

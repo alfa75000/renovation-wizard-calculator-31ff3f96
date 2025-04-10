@@ -120,7 +120,8 @@ export const useRoomCustomItemsWithSupabase = (roomId?: string) => {
       
       const newItem = {
         ...item,
-        room_id: supabaseRoomId
+        room_id: supabaseRoomId,
+        updated_at: new Date().toISOString() // Ajout du champ updated_at manquant
       };
       
       const { data, error } = await supabase
@@ -292,7 +293,8 @@ export const useRoomCustomItemsWithSupabase = (roomId?: string) => {
                       item.surfaceImpactee === 'sol' ? 'Sol' : 'Aucune') as SurfaceImpactee,
         adjustment_type: (item.estDeduction ? 'Déduire' : 'Ajouter') as AdjustmentType,
         impacte_plinthe: item.impactePlinthe,
-        description: item.description || null
+        description: item.description || null,
+        updated_at: new Date().toISOString() // Ajout du champ updated_at manquant
       }));
       
       // Insérer les items un par un pour éviter les problèmes de typage

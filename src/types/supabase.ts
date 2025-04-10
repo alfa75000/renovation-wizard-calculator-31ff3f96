@@ -1,4 +1,3 @@
-
 export type WorkType = {
   id: string;
   created_at: string;
@@ -24,7 +23,7 @@ export type Service = {
   supply_price: number;
   group_id: string;
   surface_impactee: SurfaceImpactee;
-  unit?: string; // Pour compatibilité avec le code existant
+  unit?: string; // Pour compatibilité avec le code existant;
 };
 
 export type MenuiserieType = {
@@ -114,11 +113,11 @@ export type RoomCustomItem = {
   surfaceImpactee?: string;
 };
 
-// Type pour la table projects
+// Project avec tous les champs nécessaires pour la compatibilité
 export type Project = {
   id: string;
   name: string;
-  client_id: string;
+  client_id: string | null;
   property_type: string | null;
   floors: number | null;
   total_area: number | null;

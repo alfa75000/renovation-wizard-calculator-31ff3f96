@@ -4,6 +4,19 @@ import { TypeAutreSurface, AutreSurface } from '@/types';
 import { SurfaceImpactee, AdjustmentType } from '@/types/supabase';
 import { v4 as uuidv4 } from 'uuid';
 
+// Fonction utilitaire pour convertir surface_impactee
+const convertToSupabaseSurfaceImpactee = (surfaceImpactee: string): SurfaceImpactee => {
+  if (surfaceImpactee === 'mur') return 'Mur';
+  if (surfaceImpactee === 'plafond') return 'Plafond';
+  if (surfaceImpactee === 'sol') return 'Sol';
+  return 'Aucune';
+};
+
+// Fonction utilitaire pour convertir adjustment_type
+const convertToSupabaseAdjustmentType = (estDeduction: boolean): AdjustmentType => {
+  return estDeduction ? 'Déduire' : 'Ajouter';
+};
+
 // Récupérer tous les types d'autres surfaces
 export const getAutresSurfacesTypes = async (): Promise<TypeAutreSurface[]> => {
   const { data, error } = await supabase
@@ -75,12 +88,11 @@ export const addAutreSurfaceToRoom = async (
     hauteur: surface.hauteur,
     largeur: surface.largeur,
     quantity: surface.quantity || 1,
-    surface_impactee: (surface.surfaceImpactee === 'mur' ? 'Mur' : 
-                     surface.surfaceImpactee === 'plafond' ? 'Plafond' : 
-                     surface.surfaceImpactee === 'sol' ? 'Sol' : 'Aucune') as SurfaceImpactee,
-    adjustment_type: (surface.estDeduction ? 'Déduire' : 'Ajouter') as AdjustmentType,
+    surface_impactee: convertToSupabaseSurfaceImpactee(surface.surfaceImpactee),
+    adjustment_type: convertToSupabaseAdjustmentType(surface.estDeduction),
     impacte_plinthe: surface.impactePlinthe || false,
-    description: surface.description || null
+    description: surface.description || null,
+    updated_at: new Date().toISOString() // Ajout du champ manquant
   };
 
   const { data, error } = await supabase
@@ -133,7 +145,9 @@ export const updateAutreSurface = async (
   const hauteur = changes.hauteur !== undefined ? changes.hauteur : existingItem.hauteur;
 
   // Préparer les mises à jour
-  const updates: any = {};
+  const updates: any = {
+    updated_at: new Date().toISOString() // Mettre à jour le timestamp
+  };
   
   // Copier les champs qui ont le même nom
   if (changes.name !== undefined) updates.name = changes.name;
@@ -144,13 +158,11 @@ export const updateAutreSurface = async (
 
   // Convertir les champs qui nécessitent une transformation
   if (changes.surfaceImpactee !== undefined) {
-    updates.surface_impactee = (changes.surfaceImpactee === 'mur' ? 'Mur' : 
-                              changes.surfaceImpactee === 'plafond' ? 'Plafond' : 
-                              changes.surfaceImpactee === 'sol' ? 'Sol' : 'Aucune') as SurfaceImpactee;
+    updates.surface_impactee = convertToSupabaseSurfaceImpactee(changes.surfaceImpactee);
   }
   
   if (changes.estDeduction !== undefined) {
-    updates.adjustment_type = (changes.estDeduction ? 'Déduire' : 'Ajouter') as AdjustmentType;
+    updates.adjustment_type = convertToSupabaseAdjustmentType(changes.estDeduction);
   }
   
   if (changes.impactePlinthe !== undefined) {
