@@ -12,7 +12,8 @@ export const useRooms = (
   state: ProjectState,
   dispatch: React.Dispatch<ProjectAction>
 ) => {
-  const { rooms } = state;
+  // Assurons-nous que rooms existe, sinon initialisons-le comme un tableau vide
+  const rooms = state?.rooms || [];
 
   /**
    * Ajoute une nouvelle pièce au projet

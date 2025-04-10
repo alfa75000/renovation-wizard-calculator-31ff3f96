@@ -36,6 +36,7 @@ const ProjectContext = createContext<ProjectContextType>({} as ProjectContextTyp
 
 // Provider component
 export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // S'assurer que l'état initial est correctement défini
   const [state, dispatch] = useReducer(projectReducer, initialProjectState);
   
   // Utiliser les hooks spécialisés
@@ -54,7 +55,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // Hook pour la gestion des avertissements de sauvegarde
   const { hasUnsavedChanges, updateSavedState, resetSavedState } = useSaveLoadWarning(state);
 
-  // Hook pour la gestion des pièces - maintenant avec state et dispatch passés comme arguments
+  // Hook pour la gestion des pièces - passer state et dispatch en arguments
   const roomsManager = useRooms(state, dispatch);
   
   // Fonction améliorée de sauvegarde avec suivi d'état
@@ -77,6 +78,10 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     createNewProject();
     resetSavedState(initialProjectState);
   };
+
+  // Afficher l'état pour le débogage
+  console.log("State in ProjectContext:", state);
+  console.log("RoomsManager dans ProjectContext:", roomsManager);
 
   return (
     <ProjectContext.Provider value={{ 
