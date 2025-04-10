@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useClients } from '@/contexts/ClientsContext';
 import { useProject } from '@/contexts/ProjectContext';
@@ -32,6 +33,16 @@ const InfosChantier: React.FC = () => {
   const [devisNumber, setDevisNumber] = useState<string>('');
   
   const { state: clientsState } = useClients();
+  
+  // Pass the current project name to the Layout component
+  useEffect(() => {
+    // This effect updates the document title with the current project name
+    if (nomProjet) {
+      document.title = `${nomProjet} - Infos Chantier`;
+    } else {
+      document.title = 'Infos Chantier / Client';
+    }
+  }, [nomProjet]);
   
   // Trouver l'ID du client "Client à définir"
   const getDefaultClientId = (): string => {
@@ -173,6 +184,7 @@ const InfosChantier: React.FC = () => {
     <Layout
       title="Infos Chantier / Client"
       subtitle="Gérez les informations du projet et du client"
+      currentProjectName={nomProjet} // Pass the current project name to Layout
     >
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div className="md:col-span-2 bg-white p-6 rounded-lg shadow-md">
@@ -230,6 +242,7 @@ const InfosChantier: React.FC = () => {
             <ProjectSummary 
               projectState={projectState}
               hasUnsavedChanges={hasUnsavedChanges}
+              currentProjectName={nomProjet} // Pass the current project name to ProjectSummary
             />
           </div>
         </div>
