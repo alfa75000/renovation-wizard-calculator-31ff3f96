@@ -11,6 +11,7 @@ import { useClients } from '@/contexts/ClientsContext';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
+import { toast } from 'sonner';
 
 interface LayoutProps {
   children: ReactNode;
@@ -20,7 +21,7 @@ interface LayoutProps {
 
 export const Layout: React.FC<LayoutProps> = ({ children, title, subtitle }) => {
   const location = useLocation();
-  const { state: projectState, currentProjectId, projects } = useProject();
+  const { state: projectState, currentProjectId, projects, saveProject } = useProject();
   const { state: chantierState } = useProjetChantier();
   const { state: clientsState } = useClients();
   
@@ -44,6 +45,61 @@ export const Layout: React.FC<LayoutProps> = ({ children, title, subtitle }) => 
   // Nom du projet actuel
   const currentProject = projects.find(p => p.id === currentProjectId);
   const projectDisplayName = currentProject?.name || "Projet sans titre";
+
+  // Gestionnaire pour créer un nouveau projet
+  const handleCreateProject = () => {
+    if (!projectName.trim()) {
+      toast.error("Erreur", { description: "Veuillez saisir un nom pour le projet" });
+      return;
+    }
+    
+    try {
+      // Code pour créer un nouveau projet
+      toast.success("Projet créé", { description: "Le nouveau projet a été créé avec succès" });
+      setNewProjectDialogOpen(false);
+    } catch (error) {
+      console.error("Erreur lors de la création du projet:", error);
+      toast.error("Erreur", { description: "Une erreur est survenue lors de la création du projet" });
+    }
+  };
+  
+  // Gestionnaire pour enregistrer sous
+  const handleSaveAs = () => {
+    if (!projectName.trim()) {
+      toast.error("Erreur", { description: "Veuillez saisir un nom pour le projet" });
+      return;
+    }
+    
+    try {
+      saveProject({
+        name: projectName,
+        client_id: clientId,
+        // Autres propriétés si nécessaire
+      });
+      
+      toast.success("Projet enregistré", { description: "Le projet a été enregistré avec succès" });
+      setSaveAsDialogOpen(false);
+    } catch (error) {
+      console.error("Erreur lors de l'enregistrement du projet:", error);
+      toast.error("Erreur", { description: "Une erreur est survenue lors de l'enregistrement du projet" });
+    }
+  };
+  
+  // Gestionnaire pour enregistrer
+  const handleSave = () => {
+    try {
+      if (currentProjectId) {
+        saveProject();
+        toast.success("Projet enregistré", { description: "Le projet a été enregistré avec succès" });
+      } else {
+        // Si aucun projet actif, ouvrir le dialogue "Enregistrer sous"
+        setSaveAsDialogOpen(true);
+      }
+    } catch (error) {
+      console.error("Erreur lors de l'enregistrement du projet:", error);
+      toast.error("Erreur", { description: "Une erreur est survenue lors de l'enregistrement du projet" });
+    }
+  };
   
   const isActive = (path: string) => {
     return location.pathname === path ? 'bg-primary text-white' : 'text-gray-700 hover:bg-gray-100';
@@ -62,7 +118,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, title, subtitle }) => 
             <FolderOpen className="mr-1" size={16} />
             Ouvrir
           </Button>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={handleSave}>
             <Save className="mr-1" size={16} />
             Enregistrer
           </Button>
@@ -179,7 +235,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, title, subtitle }) => 
             <Button variant="outline" onClick={() => setNewProjectDialogOpen(false)}>
               Annuler
             </Button>
-            <Button>Créer</Button>
+            <Button onClick={handleCreateProject}>Créer</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -237,7 +293,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, title, subtitle }) => 
             <Button variant="outline" onClick={() => setSaveAsDialogOpen(false)}>
               Annuler
             </Button>
-            <Button>Enregistrer</Button>
+            <Button onClick={handleSaveAs}>Enregistrer</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -13,9 +13,9 @@ export interface RoomCustomItemsProps {
   roomId: string;
   isLocalMode?: boolean;
   autresSurfaces?: AutreSurface[];
-  onAddAutreSurface?: (surface: Omit<AutreSurface, 'id' | 'surface'>, quantity?: number) => AutreSurface[];
-  onUpdateAutreSurface?: (id: string, surface: Partial<Omit<AutreSurface, 'id' | 'surface'>>) => AutreSurface;
-  onDeleteAutreSurface?: (id: string) => void;
+  onAddAutreSurface?: (surface: Omit<AutreSurface, 'id' | 'surface'>, quantity?: number) => Promise<AutreSurface[]> | AutreSurface[];
+  onUpdateAutreSurface?: (id: string, surface: Partial<Omit<AutreSurface, 'id' | 'surface'>>) => Promise<AutreSurface> | AutreSurface;
+  onDeleteAutreSurface?: (id: string) => Promise<void> | void;
 }
 
 const RoomCustomItems: React.FC<RoomCustomItemsProps> = ({
@@ -105,7 +105,7 @@ const RoomCustomItems: React.FC<RoomCustomItemsProps> = ({
             )}
             
             <AutresSurfacesList
-              items={autresSurfaces}
+              surfaces={autresSurfaces}
               onUpdate={handleUpdateSurface}
               onDelete={handleDeleteSurface}
             />

@@ -40,14 +40,28 @@ const AutresSurfacesListWithSupabase: React.FC<AutresSurfacesListWithSupabasePro
     );
   }
 
+  const handleAddSurface = async (surface: any, quantity?: number) => {
+    const result = await addAutreSurface(surface, quantity);
+    return result || [];
+  };
+
+  const handleUpdateSurface = async (id: string, changes: any) => {
+    const result = await updateAutreSurfaceItem(id, changes);
+    return result || {};
+  };
+
+  const handleDeleteSurface = async (id: string) => {
+    await deleteAutreSurfaceItem(id);
+  };
+
   return (
     <div className="mt-4">
       <RoomCustomItems 
         roomId={roomId}
         autresSurfaces={autresSurfaces} 
-        onAddAutreSurface={addAutreSurface}
-        onUpdateAutreSurface={updateAutreSurfaceItem}
-        onDeleteAutreSurface={deleteAutreSurfaceItem}
+        onAddAutreSurface={handleAddSurface}
+        onUpdateAutreSurface={handleUpdateSurface}
+        onDeleteAutreSurface={handleDeleteSurface}
       />
     </div>
   );
