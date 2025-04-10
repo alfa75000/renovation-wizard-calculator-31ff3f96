@@ -9,59 +9,50 @@ import { Textarea } from '../ui/textarea';
 import { RefreshCw } from 'lucide-react';
 import { useClients } from '@/contexts/ClientsContext';
 import { useProject } from '@/contexts/ProjectContext';
-import { generateDevisNumber } from '@/services/devisService';
+import { generateDevisNumber } from '@/services/projectService';
 import { toast } from 'sonner';
 
 interface SaveAsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSaveProject: () => void;
-  // Ajouter les nouvelles props pour la synchronisation
-  clientId: string;
-  projectDescription: string;
-  devisNumber: string;
-  setClientId: (id: string) => void;
-  setProjectDescription: (desc: string) => void;
-  setDevisNumber: (num: string) => void;
 }
 
 export const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
   open,
   onOpenChange,
-  onSaveProject,
-  clientId,
-  projectDescription,
-  devisNumber,
-  setClientId,
-  setProjectDescription,
-  setDevisNumber
+  onSaveProject
 }) => {
   const { state: clientsState } = useClients();
   const { currentProjectId, projects } = useProject();
   
+  const [clientId, setClientId] = useState<string>('');
   const [projectName, setProjectName] = useState<string>('');
+  const [projectDescription, setProjectDescription] = useState<string>('');
   const [projectDate, setProjectDate] = useState<string>('');
+  const [devisNumber, setDevisNumber] = useState<string>('');
   const [isGeneratingDevisNumber, setIsGeneratingDevisNumber] = useState<boolean>(false);
   
-  // Initialiser la date au format actuel
   useEffect(() => {
     const today = new Date();
     const formattedDate = today.toISOString().split('T')[0];
     setProjectDate(formattedDate);
   }, []);
   
-  // Synchroniser avec les données du projet actuel si disponible
   useEffect(() => {
-    if (open && currentProjectId) {
+    if (currentProjectId) {
       const currentProject = projects.find(p => p.id === currentProjectId);
       if (currentProject) {
-        // Ne pas mettre à jour les valeurs déjà définies dans la page InfosChantier
-        // car elles sont maintenant passées en props
+        setClientId(currentProject.client_id || '');
+        setProjectName(currentProject.name || '');
+        setProjectDescription(currentProject.description || '');
+        if (currentProject.devis_number) {
+          setDevisNumber(currentProject.devis_number);
+        }
       }
     }
   }, [currentProjectId, projects, open]);
   
-  // Effet pour générer le nom du projet en fonction des autres champs
   useEffect(() => {
     if (clientId && (devisNumber || projectDescription)) {
       const client = clientsState.clients.find(c => c.id === clientId);
@@ -90,7 +81,23 @@ export const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
     try {
       setIsGeneratingDevisNumber(true);
       const newDevisNumber = await generateDevisNumber();
-      setDevisNumber(newDevisNumber); // Mettre à jour via la prop
+      setDevisNumber(newDevisNumber);
+      
+      if (clientId) {
+        const client = clientsState.clients.find(c => c.id === clientId);
+        if (client) {
+          const clientName = `${client.nom} ${client.prenom || ''}`.trim();
+          let newName = `Devis n° ${newDevisNumber} - ${clientName}`;
+          
+          if (projectDescription) {
+            newName += projectDescription.length > 40 
+              ? ` - ${projectDescription.substring(0, 40)}...` 
+              : ` - ${projectDescription}`;
+          }
+          
+          setProjectName(newName);
+        }
+      }
       
       toast.success('Numéro de devis généré avec succès');
     } catch (error) {

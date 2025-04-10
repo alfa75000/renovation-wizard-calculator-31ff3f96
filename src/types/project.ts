@@ -47,8 +47,7 @@ export interface Project {
   ceiling_height: number;
   created_at: string;
   updated_at: string;
-  devis_number?: string;
-  general_data?: any; // Ajout du champ manquant
+  devis_number?: string; // Ajout du numéro de devis
 }
 
 // On importe Room et Travail pour éviter les erreurs de référence circulaire

@@ -9,7 +9,6 @@ import { ProjectSummary } from '@/features/chantier/components/ProjectSummary';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { SaveAsDialog } from '@/components/layout/SaveAsDialog';
 
 const InfosChantier: React.FC = () => {
   const { 
@@ -31,9 +30,6 @@ const InfosChantier: React.FC = () => {
   const [infoComplementaire, setInfoComplementaire] = useState<string>('');
   const [dateDevis, setDateDevis] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [devisNumber, setDevisNumber] = useState<string>('');
-  
-  // État pour le dialogue "Enregistrer sous"
-  const [saveAsDialogOpen, setSaveAsDialogOpen] = useState(false);
   
   const { state: clientsState } = useClients();
   const clientSelectionne = clientsState.clients.find(c => c.id === clientId);
@@ -110,16 +106,10 @@ const InfosChantier: React.FC = () => {
       // Logique de sauvegarde temporairement désactivée
       // await saveProject();
       toast.success('Projet enregistré avec succès');
-      setSaveAsDialogOpen(false);
     } catch (error) {
       console.error('Erreur lors de l\'enregistrement du projet:', error);
       toast.error('Erreur lors de l\'enregistrement du projet');
     }
-  };
-  
-  // Fonction pour ouvrir le dialogue "Enregistrer sous"
-  const handleOpenSaveAsDialog = () => {
-    setSaveAsDialogOpen(true);
   };
   
   return (
@@ -157,7 +147,7 @@ const InfosChantier: React.FC = () => {
             setDevisNumber={setDevisNumber}
             hasUnsavedChanges={hasUnsavedChanges}
             currentProjectId={currentProjectId}
-            onSaveProject={handleOpenSaveAsDialog}
+            onSaveProject={handleSaveProject}
             onDeleteProject={handleDeleteProject}
             isLoading={isLoading}
           />
@@ -186,19 +176,6 @@ const InfosChantier: React.FC = () => {
           </div>
         </div>
       </div>
-      
-      {/* Dialogue "Enregistrer sous" avec les données synchronisées */}
-      <SaveAsDialog
-        open={saveAsDialogOpen}
-        onOpenChange={setSaveAsDialogOpen}
-        onSaveProject={handleSaveProject}
-        clientId={clientId}
-        projectDescription={descriptionProjet}
-        devisNumber={devisNumber}
-        setClientId={setClientId}
-        setProjectDescription={setDescriptionProjet}
-        setDevisNumber={setDevisNumber}
-      />
     </Layout>
   );
 };
