@@ -31,12 +31,10 @@ export const Layout: React.FC<LayoutProps> = ({ children, title, subtitle }) => 
   } = useProject();
   const { state: clientsState } = useClients();
   
-  // États pour les modales
   const [newProjectDialogOpen, setNewProjectDialogOpen] = useState(false);
   const [saveAsDialogOpen, setSaveAsDialogOpen] = useState(false);
   const [openProjectSheetOpen, setOpenProjectSheetOpen] = useState(false);
   
-  // États pour les formulaires
   const [clientId, setClientId] = useState<string>('');
   const [projectName, setProjectName] = useState<string>('');
   const [projectDescription, setProjectDescription] = useState<string>('');
@@ -44,14 +42,12 @@ export const Layout: React.FC<LayoutProps> = ({ children, title, subtitle }) => 
   const [devisNumber, setDevisNumber] = useState<string>('');
   const [isGeneratingDevisNumber, setIsGeneratingDevisNumber] = useState<boolean>(false);
   
-  // Effet pour définir la date par défaut
   useEffect(() => {
     const today = new Date();
-    const formattedDate = today.toISOString().split('T')[0]; // Format YYYY-MM-DD
+    const formattedDate = today.toISOString().split('T')[0];
     setProjectDate(formattedDate);
   }, []);
   
-  // Effet pour précharger les informations dans le modal
   useEffect(() => {
     if (currentProjectId) {
       const currentProject = projects.find(p => p.id === currentProjectId);
@@ -66,7 +62,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, title, subtitle }) => 
     }
   }, [currentProjectId, projects, saveAsDialogOpen]);
   
-  // Nom du projet actuel
   const currentProject = projects.find(p => p.id === currentProjectId);
   const projectDisplayName = currentProject?.name || "Projet sans titre";
   
@@ -74,14 +69,12 @@ export const Layout: React.FC<LayoutProps> = ({ children, title, subtitle }) => 
     return location.pathname === path ? 'bg-primary text-white' : 'text-gray-700 hover:bg-gray-100';
   };
   
-  // Générer un numéro de devis
   const handleGenerateDevisNumber = async () => {
     try {
       setIsGeneratingDevisNumber(true);
       const newDevisNumber = await generateDevisNumber();
       setDevisNumber(newDevisNumber);
       
-      // Met à jour le nom du projet si un client est sélectionné
       if (clientId) {
         const client = clientsState.clients.find(c => c.id === clientId);
         if (client) {
@@ -107,7 +100,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, title, subtitle }) => 
     }
   };
   
-  // Mettre à jour le nom du projet automatiquement
   useEffect(() => {
     if (clientId && (devisNumber || projectDescription)) {
       const client = clientsState.clients.find(c => c.id === clientId);
@@ -132,7 +124,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, title, subtitle }) => 
     }
   }, [devisNumber, clientId, projectDescription, clientsState.clients]);
   
-  // Enregistrer un projet
   const handleSaveProject = async () => {
     if (!clientId) {
       toast.error('Veuillez sélectionner un client');
@@ -140,12 +131,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, title, subtitle }) => 
     }
     
     try {
-      await saveProject(projectName, {
-        client_id: clientId,
-        description: projectDescription,
-        devis_number: devisNumber,
-        date: projectDate
-      });
+      await saveProject();
       toast.success('Projet enregistré avec succès');
       setSaveAsDialogOpen(false);
     } catch (error) {
@@ -154,7 +140,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, title, subtitle }) => 
     }
   };
   
-  // Créer un nouveau projet
   const handleCreateNewProject = () => {
     createNewProject();
     setClientId('');
@@ -165,7 +150,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, title, subtitle }) => 
     toast.success('Nouveau projet créé');
   };
   
-  // Charger un projet existant
   const handleLoadProject = async (projectId: string) => {
     try {
       await loadProject(projectId);
@@ -179,7 +163,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, title, subtitle }) => 
   
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Barre d'outils projet placée en haut de page */}
       <div className="max-w-6xl mx-auto px-4 py-2 mb-2 flex flex-wrap items-center justify-between border-b">
         <div className="flex space-x-2 mb-2 md:mb-0">
           <Button variant="outline" size="sm" onClick={() => setNewProjectDialogOpen(true)}>
@@ -205,7 +188,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, title, subtitle }) => 
         </div>
       </div>
       
-      {/* Header avec titre et sous-titre optionnels */}
       {(title || subtitle) && (
         <div className="flex flex-col items-center justify-center mb-4 bg-blue-600 text-white p-6 rounded-lg max-w-6xl mx-auto mt-4">
           {title && <h1 className="text-3xl md:text-4xl font-bold">{title}</h1>}
@@ -213,7 +195,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, title, subtitle }) => 
         </div>
       )}
       
-      {/* Barre de navigation */}
       <div className="max-w-6xl mx-auto px-4 mb-6">
         <nav className="flex flex-wrap gap-2 justify-center">
           <Link 
@@ -249,12 +230,10 @@ export const Layout: React.FC<LayoutProps> = ({ children, title, subtitle }) => 
         </nav>
       </div>
       
-      {/* Contenu principal */}
       <main className="max-w-6xl mx-auto px-4 pb-8">
         {children}
       </main>
       
-      {/* Modale Nouveau Projet */}
       <Dialog open={newProjectDialogOpen} onOpenChange={setNewProjectDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
@@ -300,7 +279,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, title, subtitle }) => 
         </DialogContent>
       </Dialog>
       
-      {/* Modale Enregistrer Sous */}
       <Dialog open={saveAsDialogOpen} onOpenChange={setSaveAsDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
@@ -359,7 +337,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, title, subtitle }) => 
                 placeholder="Description du projet (100 caractères max)"
                 value={projectDescription}
                 onChange={(e) => {
-                  // Limiter à 100 caractères
                   if (e.target.value.length <= 100) {
                     setProjectDescription(e.target.value);
                   }
@@ -403,7 +380,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, title, subtitle }) => 
         </DialogContent>
       </Dialog>
       
-      {/* Panneau latéral Ouvrir Projet */}
       <Sheet open={openProjectSheetOpen} onOpenChange={setOpenProjectSheetOpen}>
         <SheetContent>
           <SheetHeader>

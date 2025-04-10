@@ -112,16 +112,7 @@ const InfosChantier: React.FC = () => {
       setDevisNumber(newDevisNumber);
       toast.success('Numéro de devis généré avec succès');
       
-      if (currentProjectId) {
-        await saveProject(nomProjet, {
-          client_id: clientId,
-          description: descriptionProjet,
-          address: adresseChantier,
-          occupant: occupant,
-          devis_number: newDevisNumber
-        });
-        toast.success('Numéro de devis enregistré');
-      }
+      // Pas d'enregistrement pour l'instant
     } catch (error) {
       console.error('Erreur lors de la génération du numéro de devis:', error);
       toast.error('Erreur lors de la génération du numéro de devis');
@@ -137,13 +128,7 @@ const InfosChantier: React.FC = () => {
     }
     
     try {
-      await saveProject(nomProjet, {
-        client_id: clientId,
-        description: descriptionProjet,
-        address: adresseChantier,
-        occupant: occupant,
-        devis_number: devisNumber
-      });
+      await saveProject();
       toast.success('Projet enregistré avec succès');
     } catch (error) {
       console.error('Erreur lors de l\'enregistrement du projet:', error);
