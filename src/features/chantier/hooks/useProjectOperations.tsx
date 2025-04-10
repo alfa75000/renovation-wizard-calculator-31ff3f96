@@ -39,7 +39,7 @@ export const useProjectOperations = () => {
   }, [deleteCurrentProject]);
   
   // Handler for saving the current project
-  const handleSaveProject = useCallback(async (projectInfo = {}) => {
+  const handleSaveProject = useCallback(async (projectInfo?: any) => {
     try {
       // Save project with additional metadata
       await saveProject(projectInfo);
