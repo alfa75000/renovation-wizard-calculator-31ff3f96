@@ -1,4 +1,3 @@
-
 // Types principaux pour l'application de rénovation
 import { 
   Property, 
@@ -10,7 +9,8 @@ import {
   ProjetChantierAction 
 } from './project';
 
-export { 
+// Exports de types avec le mot-clé "type" requis pour 'isolatedModules'
+export type { 
   Property, 
   Project, 
   ProjectState, 
