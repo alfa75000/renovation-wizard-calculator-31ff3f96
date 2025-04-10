@@ -31,9 +31,6 @@ const InfosChantier: React.FC = () => {
   const [dateDevis, setDateDevis] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [devisNumber, setDevisNumber] = useState<string>('');
   
-  const { state: clientsState } = useClients();
-  const clientSelectionne = clientsState.clients.find(c => c.id === clientId);
-  
   useEffect(() => {
     if (currentProjectId) {
       const currentProject = projects.find(p => p.id === currentProjectId);
@@ -49,27 +46,6 @@ const InfosChantier: React.FC = () => {
       }
     }
   }, [currentProjectId, projects]);
-  
-  useEffect(() => {
-    if (clientSelectionne && descriptionProjet) {
-      const clientName = `${clientSelectionne.nom} ${clientSelectionne.prenom || ''}`.trim();
-      let newName = '';
-      
-      if (devisNumber) {
-        newName = `Devis n° ${devisNumber} - ${clientName}`;
-      } else {
-        newName = clientName;
-      }
-      
-      if (descriptionProjet) {
-        newName += descriptionProjet.length > 40 
-          ? ` - ${descriptionProjet.substring(0, 40)}...` 
-          : ` - ${descriptionProjet}`;
-      }
-      
-      setNomProjet(newName);
-    }
-  }, [devisNumber, clientSelectionne, descriptionProjet]);
   
   const handleChargerProjet = async (projetId: string) => {
     try {
@@ -97,13 +73,8 @@ const InfosChantier: React.FC = () => {
   };
   
   const handleSaveProject = async () => {
-    if (!clientId) {
-      toast.error('Veuillez sélectionner un client');
-      return;
-    }
-    
     try {
-      // Logique de sauvegarde temporairement désactivée
+      // Logique de sauvegarde désactivée temporairement
       // await saveProject();
       toast.success('Projet enregistré avec succès');
     } catch (error) {
