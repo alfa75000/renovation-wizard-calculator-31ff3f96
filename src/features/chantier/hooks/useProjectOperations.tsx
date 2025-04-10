@@ -39,20 +39,10 @@ export const useProjectOperations = () => {
   }, [deleteCurrentProject]);
   
   // Handler for saving the current project
-  const handleSaveProject = useCallback(async (clientId: string, nomProjet: string, generateNameFn: () => Promise<void>, additionalInfo = {}) => {
-    if (!clientId) {
-      toast.error('Veuillez sélectionner un client');
-      return false;
-    }
-    
+  const handleSaveProject = useCallback(async (projectInfo = {}) => {
     try {
-      // Generate project name if it's empty
-      if (!nomProjet) {
-        await generateNameFn();
-      }
-      
       // Save project with additional metadata
-      await saveProject(nomProjet, additionalInfo);
+      await saveProject(projectInfo);
       toast.success('Projet enregistré avec succès');
       return true;
     } catch (error) {

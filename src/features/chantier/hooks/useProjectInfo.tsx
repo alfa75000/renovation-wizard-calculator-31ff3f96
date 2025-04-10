@@ -3,6 +3,16 @@ import { useCallback, useEffect } from 'react';
 import { useProjectMetadata } from './useProjectMetadata';
 import { useProjectOperations } from './useProjectOperations';
 import { useProject } from '@/contexts/ProjectContext';
+import { Project } from '@/types/project';
+
+// Extended Project type to include general_data
+interface ProjectWithGeneralData extends Project {
+  general_data?: {
+    infoComplementaire?: string;
+    dateDevis?: string;
+    [key: string]: any;
+  };
+}
 
 export const useProjectInfo = () => {
   const {
@@ -59,7 +69,7 @@ export const useProjectInfo = () => {
   const loadCurrentProjectData = useCallback(() => {
     if (!currentProjectId) return;
     
-    const currentProject = projects.find(p => p.id === currentProjectId);
+    const currentProject = projects.find(p => p.id === currentProjectId) as ProjectWithGeneralData | undefined;
     if (currentProject) {
       console.log("Chargement du projet courant:", currentProject);
       setClientId(currentProject.client_id || '');
@@ -67,10 +77,18 @@ export const useProjectInfo = () => {
       setDescriptionProjet(currentProject.description || '');
       setAdresseChantier(currentProject.address || '');
       setOccupant(currentProject.occupant || '');
-      setInfoComplementaire(currentProject.general_data?.infoComplementaire || '');
+      
+      // Utiliser des valeurs par défaut pour les propriétés potentiellement manquantes
+      if (currentProject.general_data?.infoComplementaire) {
+        setInfoComplementaire(currentProject.general_data.infoComplementaire);
+      } else {
+        setInfoComplementaire('');
+      }
+      
       if (currentProject.devis_number) {
         setDevisNumber(currentProject.devis_number);
       }
+      
       if (currentProject.general_data?.dateDevis) {
         setDateDevis(currentProject.general_data.dateDevis);
       }
@@ -107,8 +125,10 @@ export const useProjectInfo = () => {
       description: descriptionProjet,
       address: adresseChantier,
       occupant: occupant,
-      infoComplementaire: infoComplementaire,
-      dateDevis: dateDevis,
+      general_data: {
+        infoComplementaire: infoComplementaire,
+        dateDevis: dateDevis
+      },
       devis_number: devisNumber,
     };
     
@@ -119,8 +139,8 @@ export const useProjectInfo = () => {
     }
     
     // Sauvegarder le projet avec toutes les métadonnées
-    return await baseHandleSaveProject(clientId, nomProjet, generateProjectName, projectInfo);
-  }, [baseHandleSaveProject, clientId, nomProjet, generateProjectName, descriptionProjet, adresseChantier, occupant, infoComplementaire, dateDevis, devisNumber, saveProjectState]);
+    return await baseHandleSaveProject(projectInfo);
+  }, [baseHandleSaveProject, clientId, nomProjet, descriptionProjet, adresseChantier, occupant, infoComplementaire, dateDevis, devisNumber, saveProjectState]);
 
   // Vérifier si le nom du projet est vide et devrait être généré
   const shouldGenerateProjectName = useCallback(() => {

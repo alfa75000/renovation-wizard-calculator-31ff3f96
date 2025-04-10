@@ -29,7 +29,7 @@ interface ProjectFormProps {
   onSaveProject: () => void;
   onDeleteProject: () => void;
   isLoading: boolean;
-  onGenerateProjectName: () => void;
+  onGenerateProjectName: () => Promise<void>;
 }
 
 export const ProjectForm: React.FC<ProjectFormProps> = ({
@@ -60,7 +60,9 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
   useEffect(() => {
     if (clientId || devisNumber || descriptionProjet) {
       console.log("Critical field changed, updating project name...");
-      onGenerateProjectName();
+      onGenerateProjectName().catch(err => {
+        console.error("Error generating project name:", err);
+      });
     }
   }, [clientId, devisNumber, descriptionProjet, onGenerateProjectName]);
   
@@ -80,6 +82,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
       
       <ProjectNameField
         nomProjet={nomProjet}
+        setNomProjet={setNomProjet}
         onGenerateProjectName={onGenerateProjectName}
       />
       
