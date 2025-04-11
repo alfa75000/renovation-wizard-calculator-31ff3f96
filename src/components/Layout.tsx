@@ -23,7 +23,7 @@ export const Layout: React.FC<LayoutProps> = ({
     hasUnsavedChanges
   } = useProject();
   
-  const { handleSaveProject } = useProjectOperations();
+  const { handleSaveProject, currentProjectId } = useProjectOperations();
   
   // Récupérer directement le nom du projet depuis le contexte global
   const projectName = state.metadata.nomProjet || '';
@@ -38,16 +38,22 @@ export const Layout: React.FC<LayoutProps> = ({
     setNewProjectDialogOpen(false);
   };
   
-  // Fonction pour la sauvegarde rapide directe
-  const handleQuickSaveProject = async () => {
-    // Vérifier d'abord si les données nécessaires sont disponibles
-    if (!state.metadata.clientId) {
-      toast.error('Veuillez sélectionner un client avant de sauvegarder le projet');
+  // Fonction intelligente pour la sauvegarde
+  const handleSmartSaveProject = async () => {
+    // Si nous n'avons pas d'ID de projet actuel, ouvrir le dialogue "Enregistrer sous"
+    if (!currentProjectId) {
+      setSaveAsDialogOpen(true);
       return;
     }
     
+    // Sinon, procéder à la sauvegarde rapide
     try {
-      // Utiliser les données existantes pour sauvegarder directement
+      // Vérifier d'abord si les données nécessaires sont disponibles
+      if (!state.metadata.clientId) {
+        toast.error('Veuillez sélectionner un client avant de sauvegarder le projet');
+        return;
+      }
+      
       await handleSaveProject();
       // Note: Le toast de succès est maintenant affiché dans handleSaveProject
     } catch (error) {
@@ -61,7 +67,7 @@ export const Layout: React.FC<LayoutProps> = ({
       <ProjectBar 
         onNewProject={() => setNewProjectDialogOpen(true)}
         onOpenProject={() => setOpenProjectDialogOpen(true)}
-        onSaveProject={handleQuickSaveProject}
+        onSaveProject={handleSmartSaveProject}
         onSaveAsProject={() => setSaveAsDialogOpen(true)}
         projectDisplayName={projectName}
         hasUnsavedChanges={hasUnsavedChanges}
