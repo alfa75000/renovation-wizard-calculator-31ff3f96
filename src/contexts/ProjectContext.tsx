@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useReducer } from 'react';
 import { ProjectState, ProjectAction, Project } from '@/types';
 import { toast } from 'sonner';
@@ -23,6 +24,8 @@ type ProjectContextType = {
   createNewProject: () => void;
   deleteCurrentProject: () => Promise<void>;
   refreshProjects: () => Promise<void>;
+  updateSavedState: () => void;
+  resetSavedState: (state: ProjectState) => void;
   rooms: {
     rooms: ProjectState['rooms'];
     addRoom: ReturnType<typeof useRooms>['addRoom'];
@@ -144,6 +147,9 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       dispatch({ type: 'LOAD_PROJECT', payload: projectState });
       setCurrentProjectId(projectId);
       
+      // Marquer l'état comme sauvegardé après le chargement
+      updateSavedState();
+      
       toast.success(`Projet "${projectData.name}" chargé avec succès`);
     } catch (error) {
       console.error('Erreur lors du chargement du projet:', error);
@@ -198,6 +204,8 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       createNewProject,
       deleteCurrentProject,
       refreshProjects,
+      updateSavedState,
+      resetSavedState,
       rooms: roomsManager
     }}>
       {children}

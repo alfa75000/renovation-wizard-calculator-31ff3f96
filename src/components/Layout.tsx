@@ -19,7 +19,8 @@ export const Layout: React.FC<LayoutProps> = ({
 }) => {
   const { 
     createNewProject,
-    state 
+    state,
+    hasUnsavedChanges
   } = useProject();
   
   const { handleSaveProject } = useProjectOperations();
@@ -47,13 +48,11 @@ export const Layout: React.FC<LayoutProps> = ({
     
     try {
       // Utiliser les données existantes pour sauvegarder directement
-      const result = await handleSaveProject();
-      if (result) {
-        toast.success('Projet sauvegardé avec succès');
-      }
+      await handleSaveProject();
+      // Note: Le toast de succès est maintenant affiché dans handleSaveProject
     } catch (error) {
       console.error('Erreur lors de la sauvegarde rapide:', error);
-      toast.error('Erreur lors de la sauvegarde du projet');
+      // Note: Le toast d'erreur est maintenant affiché dans handleSaveProject
     }
   };
   
@@ -65,6 +64,7 @@ export const Layout: React.FC<LayoutProps> = ({
         onSaveProject={handleQuickSaveProject}
         onSaveAsProject={() => setSaveAsDialogOpen(true)}
         projectDisplayName={projectName}
+        hasUnsavedChanges={hasUnsavedChanges}
       />
       
       <TitleHeader title={title} subtitle={subtitle} />

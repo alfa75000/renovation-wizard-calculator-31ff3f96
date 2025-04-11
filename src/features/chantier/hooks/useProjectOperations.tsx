@@ -21,7 +21,9 @@ export const useProjectOperations = () => {
     state,
     refreshProjects,
     // Fonction pour mettre à jour l'ID du projet courant
-    setCurrentProjectId
+    setCurrentProjectId,
+    // Importation de la fonction updateSavedState pour mettre à jour l'état de sauvegarde
+    updateSavedState
   } = useProject();
 
   /**
@@ -150,6 +152,9 @@ export const useProjectOperations = () => {
         }
       }
       
+      // Mettre à jour l'état de sauvegarde pour indiquer que le projet est sauvegardé
+      updateSavedState();
+      
       // Rafraîchir la liste des projets après la sauvegarde
       await refreshProjects();
       return true;
@@ -158,7 +163,7 @@ export const useProjectOperations = () => {
       toast.error('Erreur lors de l\'enregistrement du projet', { id: toastId });
       return false;
     }
-  }, [state.metadata, state.property, state.rooms, state.travaux, currentProjectId, refreshProjects, setCurrentProjectId]);
+  }, [state.metadata, state.property, state.rooms, state.travaux, currentProjectId, refreshProjects, setCurrentProjectId, updateSavedState]);
 
   return {
     handleChargerProjet,

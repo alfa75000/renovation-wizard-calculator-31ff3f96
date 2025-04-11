@@ -15,6 +15,7 @@ interface ProjectBarProps {
   onSaveProject: () => void;
   onSaveAsProject: () => void;
   projectDisplayName?: string;
+  hasUnsavedChanges?: boolean;
 }
 
 export const ProjectBar: React.FC<ProjectBarProps> = ({
@@ -22,9 +23,10 @@ export const ProjectBar: React.FC<ProjectBarProps> = ({
   onOpenProject,
   onSaveProject,
   onSaveAsProject,
-  projectDisplayName
+  projectDisplayName,
+  hasUnsavedChanges
 }) => {
-  const { currentProjectId, projects, hasUnsavedChanges } = useProject();
+  const { currentProjectId, projects } = useProject();
   
   // Options d'enregistrement automatique - enabled est maintenant true par défaut
   const [autoSaveOptions, setAutoSaveOptions] = useLocalStorage('autoSaveOptions', {
@@ -60,7 +62,11 @@ export const ProjectBar: React.FC<ProjectBarProps> = ({
             <FolderOpen className="mr-1" size={16} />
             Ouvrir
           </Button>
-          <Button variant="outline" size="sm" onClick={onSaveProject}>
+          <Button 
+            variant={hasUnsavedChanges ? "default" : "outline"} 
+            size="sm" 
+            onClick={onSaveProject}
+          >
             <Save className="mr-1" size={16} />
             Enregistrer
           </Button>
@@ -160,6 +166,11 @@ export const ProjectBar: React.FC<ProjectBarProps> = ({
       <div className="bg-gray-100 px-3 py-2 rounded-md text-gray-800 border w-full text-left">
         <span className="text-gray-500 mr-1">Projet en cours:</span>
         <span className="font-medium">{displayName}</span>
+        {hasUnsavedChanges && (
+          <Badge variant="outline" className="ml-2 text-amber-500 border-amber-500">
+            Non sauvegardé
+          </Badge>
+        )}
       </div>
     </div>
   );
