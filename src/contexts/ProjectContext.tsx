@@ -88,7 +88,13 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   React.useEffect(() => {
     const updateAppStateProjectId = async () => {
+      if (currentProjectId === null) {
+        console.log('Pas de projet en cours à sauvegarder');
+        return;
+      }
+      
       try {
+        console.log('Tentative de mise à jour du project_id dans app_state:', currentProjectId);
         const { data: adminUser, error: userError } = await supabase
           .from('app_users')
           .select('id')
@@ -100,13 +106,18 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
           return;
         }
         
-        const { error } = await supabase
+        console.log('Admin user trouvé:', adminUser);
+        
+        const { data, error } = await supabase
           .from('app_state')
           .update({ current_project_id: currentProjectId })
-          .eq('user_id', adminUser.id);
+          .eq('user_id', adminUser.id)
+          .select();
           
         if (error) {
           console.error('Erreur lors de la mise à jour de l\'ID du projet en cours dans l\'état de l\'application:', error);
+        } else {
+          console.log('Mise à jour réussie de current_project_id dans app_state:', data);
         }
       } catch (error) {
         console.error('Exception lors de la mise à jour de l\'ID du projet en cours dans l\'état de l\'application:', error);
@@ -139,6 +150,26 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const result = await createProject(state, projectInfo);
         if (result?.id) {
           setCurrentProjectId(result.id);
+          setTimeout(async () => {
+            try {
+              const { data: adminUser } = await supabase
+                .from('app_users')
+                .select('id')
+                .eq('username', 'Admin')
+                .single();
+              
+              if (adminUser) {
+                await supabase
+                  .from('app_state')
+                  .update({ current_project_id: result.id })
+                  .eq('user_id', adminUser.id);
+                
+                console.log('Projet ID mis à jour explicitement après création:', result.id);
+              }
+            } catch (e) {
+              console.error('Erreur lors de la mise à jour forcée du current_project_id:', e);
+            }
+          }, 500);
         }
         toast.success('Projet enregistré avec succès', { id: 'saving-project' });
       }
@@ -183,6 +214,30 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       dispatch({ type: 'LOAD_PROJECT', payload: projectState });
       setCurrentProjectId(projectId);
       
+      try {
+        const { data: adminUser } = await supabase
+          .from('app_users')
+          .select('id')
+          .eq('username', 'Admin')
+          .single();
+        
+        if (adminUser) {
+          const { data, error } = await supabase
+            .from('app_state')
+            .update({ current_project_id: projectId })
+            .eq('user_id', adminUser.id)
+            .select();
+          
+          if (error) {
+            console.error('Erreur lors de la mise à jour du current_project_id après chargement:', error);
+          } else {
+            console.log('Mise à jour réussie du current_project_id après chargement:', data);
+          }
+        }
+      } catch (e) {
+        console.error('Exception lors de la mise à jour du current_project_id après chargement:', e);
+      }
+      
       updateSavedState();
       
       toast.success(`Projet "${projectData.name}" chargé avec succès`);
@@ -206,6 +261,25 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       
       dispatch({ type: 'RESET_PROJECT' });
       setCurrentProjectId(null);
+      
+      try {
+        const { data: adminUser } = await supabase
+          .from('app_users')
+          .select('id')
+          .eq('username', 'Admin')
+          .single();
+        
+        if (adminUser) {
+          await supabase
+            .from('app_state')
+            .update({ current_project_id: null })
+            .eq('user_id', adminUser.id);
+          
+          console.log('current_project_id mis à null après suppression');
+        }
+      } catch (e) {
+        console.error('Exception lors de la mise à jour du current_project_id après suppression:', e);
+      }
       
       await refreshProjects();
       toast.success('Projet supprimé avec succès');

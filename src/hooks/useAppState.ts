@@ -160,6 +160,8 @@ export const useAppState = () => {
     if (!appState || !currentUser) return false;
     
     try {
+      console.log('Mise à jour des options d\'auto-sauvegarde:', options);
+      
       const { error } = await supabase
         .from('app_state')
         .update({ 
@@ -188,9 +190,18 @@ export const useAppState = () => {
 
   // Mettre à jour le projet en cours
   const updateCurrentProject = useCallback(async (projectId: string | null) => {
-    if (!appState || !currentUser) return false;
+    if (!currentUser) {
+      console.error("Tentative de mise à jour du projet en cours sans utilisateur");
+      return false;
+    }
     
     try {
+      console.log('Mise à jour du projet en cours:', { 
+        userId: currentUser.id, 
+        projectId, 
+        previousState: appState
+      });
+      
       const { error } = await supabase
         .from('app_state')
         .update({ 
@@ -205,17 +216,21 @@ export const useAppState = () => {
       }
       
       // Mettre à jour l'état local
-      setAppState(prev => prev ? { 
-        ...prev, 
-        current_project_id: projectId 
-      } : null);
+      setAppState(prev => {
+        const updated = prev ? { 
+          ...prev, 
+          current_project_id: projectId 
+        } : null;
+        console.log('État local mis à jour:', updated);
+        return updated;
+      });
       
       return true;
     } catch (error) {
       console.error('Exception lors de la mise à jour du projet en cours:', error);
       return false;
     }
-  }, [appState, currentUser]);
+  }, [currentUser, appState]);
 
   return {
     isLoading,

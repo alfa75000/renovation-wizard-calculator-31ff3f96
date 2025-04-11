@@ -27,7 +27,7 @@ export const useProjectOperations = () => {
   } = useProject();
   
   // Utiliser le hook d'état d'application pour mettre à jour le projet en cours
-  const { updateCurrentProject } = useAppState();
+  const { updateCurrentProject, currentUser } = useAppState();
 
   /**
    * Charger un projet existant
@@ -35,13 +35,40 @@ export const useProjectOperations = () => {
   const handleChargerProjet = useCallback(async (projetId: string) => {
     try {
       await loadProject(projetId);
+      console.log('Projet chargé, mise à jour de current_project_id dans app_state:', projetId);
+      
       // Mettre à jour l'ID du projet en cours dans l'état de l'application
-      await updateCurrentProject(projetId);
+      if (currentUser) {
+        const success = await updateCurrentProject(projetId);
+        if (!success) {
+          console.error('Échec de la mise à jour de current_project_id dans app_state');
+          
+          // Tentative de mise à jour directe
+          try {
+            const { error } = await supabase
+              .from('app_state')
+              .update({ current_project_id: projetId })
+              .eq('user_id', currentUser.id);
+              
+            if (error) {
+              console.error('Échec de la mise à jour directe:', error);
+            } else {
+              console.log('Mise à jour directe réussie');
+            }
+          } catch (e) {
+            console.error('Exception lors de la mise à jour directe:', e);
+          }
+        } else {
+          console.log('Mise à jour de current_project_id réussie');
+        }
+      } else {
+        console.error('Pas d\'utilisateur courant pour la mise à jour de app_state');
+      }
     } catch (error) {
       console.error('Erreur lors du chargement du projet:', error);
       toast.error('Une erreur est survenue lors du chargement du projet');
     }
-  }, [loadProject, updateCurrentProject]);
+  }, [loadProject, updateCurrentProject, currentUser]);
   
   /**
    * Supprimer le projet actuel
@@ -50,14 +77,16 @@ export const useProjectOperations = () => {
     try {
       await deleteCurrentProject();
       // Mettre à jour l'ID du projet en cours dans l'état de l'application
-      await updateCurrentProject(null);
+      if (currentUser) {
+        await updateCurrentProject(null);
+      }
       return true;
     } catch (error) {
       console.error('Erreur lors de la suppression du projet:', error);
       toast.error('Une erreur est survenue lors de la suppression du projet');
       return false;
     }
-  }, [deleteCurrentProject, updateCurrentProject]);
+  }, [deleteCurrentProject, updateCurrentProject, currentUser]);
   
   /**
    * Fonction centralisée de sauvegarde de projet
@@ -202,8 +231,36 @@ export const useProjectOperations = () => {
       }
       
       // Mise à jour du projet courant dans l'état de l'application si c'est un nouveau projet
-      if (!currentProjectId && result && result[0] && result[0].id) {
-        await updateCurrentProject(result[0].id);
+      if (result && result[0] && result[0].id) {
+        const projectId = result[0].id;
+        console.log('Mise à jour de app_state avec new project id:', projectId);
+        
+        if (currentUser) {
+          const success = await updateCurrentProject(projectId);
+          if (!success) {
+            console.error('Échec de updateCurrentProject pour le nouveau projet');
+            
+            // Tentative de mise à jour directe
+            try {
+              const { error } = await supabase
+                .from('app_state')
+                .update({ current_project_id: projectId })
+                .eq('user_id', currentUser.id);
+                
+              if (error) {
+                console.error('Échec de la mise à jour directe pour le nouveau projet:', error);
+              } else {
+                console.log('Mise à jour directe réussie pour le nouveau projet');
+              }
+            } catch (e) {
+              console.error('Exception lors de la mise à jour directe pour le nouveau projet:', e);
+            }
+          } else {
+            console.log('Mise à jour réussie de current_project_id pour le nouveau projet');
+          }
+        } else {
+          console.error('Pas d\'utilisateur courant pour la mise à jour de app_state pour le nouveau projet');
+        }
       }
       
       // Mettre à jour l'état de sauvegarde pour indiquer que le projet est sauvegardé
@@ -219,7 +276,7 @@ export const useProjectOperations = () => {
       }
       return false;
     }
-  }, [state, currentProjectId, refreshProjects, setCurrentProjectId, updateSavedState, updateCurrentProject]);
+  }, [state, currentProjectId, refreshProjects, setCurrentProjectId, updateSavedState, updateCurrentProject, currentUser]);
 
   return {
     handleChargerProjet,
