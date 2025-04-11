@@ -1,10 +1,17 @@
 
 import React, { useState, useEffect } from 'react';
+import { useForm } from "react-hook-form";
 import { 
   DialogFooter
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+import { 
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -32,30 +39,35 @@ const ClientForm: React.FC<ClientFormProps> = ({
   clientToEdit = null
 }) => {
   const { state, dispatch, clientTypes, isLoading } = useClients();
-  const [formData, setFormData] = useState<Client>({
-    id: '',
-    nom: '',
-    prenom: '',
-    adresse: '',
-    telephone: '',
-    codePostal: '',
-    ville: '',
-    email: '',
-    tel1: '',
-    tel2: '',
-    typeClient: DEFAULT_CLIENT_TYPE_ID,
-    autreInfo: '',
-    infosComplementaires: ''
-  });
-  
   const [confirmClose, setConfirmClose] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  // Ajout d'un état pour suivre si le formulaire a été modifié
-  const [isDirty, setIsDirty] = useState(false);
 
+  // Utilisation de react-hook-form pour gérer le formulaire
+  const form = useForm<Client>({
+    defaultValues: {
+      id: '',
+      nom: '',
+      prenom: '',
+      adresse: '',
+      telephone: '',
+      codePostal: '',
+      ville: '',
+      email: '',
+      tel1: '',
+      tel2: '',
+      typeClient: DEFAULT_CLIENT_TYPE_ID,
+      autreInfo: '',
+      infosComplementaires: ''
+    }
+  });
+
+  // Surveiller les changements du formulaire pour détecter s'il est modifié
+  const isDirty = form.formState.isDirty;
+
+  // Charger les données du client à éditer
   useEffect(() => {
     if (clientToEdit) {
-      setFormData({
+      form.reset({
         ...clientToEdit,
         typeClient: clientToEdit.typeClient || DEFAULT_CLIENT_TYPE_ID
       });
@@ -65,7 +77,7 @@ const ClientForm: React.FC<ClientFormProps> = ({
     if (clientId) {
       const client = state.clients.find(c => c.id === clientId);
       if (client) {
-        setFormData({
+        form.reset({
           ...client,
           typeClient: client.typeClient || DEFAULT_CLIENT_TYPE_ID
         });
@@ -73,7 +85,8 @@ const ClientForm: React.FC<ClientFormProps> = ({
       }
     }
     
-    setFormData({
+    // Réinitialiser le formulaire avec les valeurs par défaut
+    form.reset({
       id: '',
       nom: '',
       prenom: '',
@@ -88,25 +101,9 @@ const ClientForm: React.FC<ClientFormProps> = ({
       autreInfo: '',
       infosComplementaires: ''
     });
-    
-    // Réinitialiser l'état du formulaire à chaque changement de client
-    setIsDirty(false);
-  }, [clientId, clientToEdit, state.clients, isOpen]);
+  }, [clientId, clientToEdit, state.clients, isOpen, form]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    setIsDirty(true); // Marquer le formulaire comme modifié
-  };
-
-  const handleTypeClientChange = (value: string) => {
-    setFormData(prev => ({ ...prev, typeClient: value }));
-    setIsDirty(true); // Marquer le formulaire comme modifié
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault(); // Empêcher le comportement par défaut du formulaire
-    
+  const handleFormSubmit = async (data: Client) => {
     if (submitting || isSubmitting || isLoading) {
       return;
     }
@@ -114,10 +111,10 @@ const ClientForm: React.FC<ClientFormProps> = ({
     setSubmitting(true);
     
     const updatedFormData = {
-      ...formData,
-      tel1: formData.tel1 || formData.telephone,
-      telephone: formData.telephone || formData.tel1,
-      typeClient: formData.typeClient || DEFAULT_CLIENT_TYPE_ID
+      ...data,
+      tel1: data.tel1 || data.telephone,
+      telephone: data.telephone || data.tel1,
+      typeClient: data.typeClient || DEFAULT_CLIENT_TYPE_ID
     };
     
     try {
@@ -139,8 +136,7 @@ const ClientForm: React.FC<ClientFormProps> = ({
           });
         }
       }
-      // Réinitialiser l'état du formulaire après la soumission
-      setIsDirty(false);
+      form.reset(form.getValues());
       onClose();
     } catch (error) {
       console.error("Erreur lors de la soumission du formulaire:", error);
@@ -159,202 +155,264 @@ const ClientForm: React.FC<ClientFormProps> = ({
 
   const confirmCloseDialog = () => {
     setConfirmClose(false);
-    setIsDirty(false); // Réinitialiser l'état du formulaire
+    form.reset();
     onClose();
   };
 
-  // Désactiver l'avertissement du navigateur pour les modifications non enregistrées
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      // Si le formulaire est ouvert mais n'a pas été modifié, ne pas afficher l'avertissement
-      if (!isDirty) {
-        return undefined;
-      }
-      
-      // Cette partie ne sera jamais exécutée car nous retournons toujours undefined
-      // mais nous la gardons au cas où nous voudrions réactiver ce comportement plus tard
-      e.preventDefault();
-      e.returnValue = '';
-      return '';
-    };
-    
-    // Désactiver complètement l'avertissement du navigateur
-    const disableBeforeUnload = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-      return undefined;
-    };
-    
-    // Ajouter l'écouteur d'événements pour désactiver l'avertissement
-    window.addEventListener('beforeunload', disableBeforeUnload);
-    
-    return () => {
-      // Supprimer l'écouteur d'événements lors du démontage du composant
-      window.removeEventListener('beforeunload', disableBeforeUnload);
-    };
-  }, [isDirty]);
-
   return (
     <>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="nom">Nom *</Label>
-            <Input 
-              id="nom" 
-              name="nom" 
-              value={formData.nom} 
-              onChange={handleChange} 
-              required 
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="prenom">Prénom</Label>
-            <Input 
-              id="prenom" 
-              name="prenom" 
-              value={formData.prenom} 
-              onChange={handleChange} 
-            />
-          </div>
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="adresse">Adresse</Label>
-          <Textarea 
-            id="adresse" 
-            name="adresse" 
-            value={formData.adresse} 
-            onChange={handleChange} 
-          />
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="codePostal">Code Postal</Label>
-            <Input 
-              id="codePostal" 
-              name="codePostal" 
-              value={formData.codePostal} 
-              onChange={handleChange} 
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="ville">Ville</Label>
-            <Input 
-              id="ville" 
-              name="ville" 
-              value={formData.ville} 
-              onChange={handleChange} 
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="telephone">Téléphone principal</Label>
-            <Input 
-              id="telephone" 
-              name="telephone" 
-              value={formData.telephone} 
-              onChange={handleChange} 
-            />
-          </div>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="tel1">Téléphone secondaire 1</Label>
-            <Input 
-              id="tel1" 
-              name="tel1" 
-              value={formData.tel1} 
-              onChange={handleChange} 
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="tel2">Téléphone secondaire 2</Label>
-            <Input 
-              id="tel2" 
-              name="tel2" 
-              value={formData.tel2} 
-              onChange={handleChange} 
-            />
-          </div>
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input 
-            id="email" 
-            name="email" 
-            type="email" 
-            value={formData.email} 
-            onChange={handleChange} 
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="typeClient">Type de client</Label>
-          <Select 
-            value={formData.typeClient || DEFAULT_CLIENT_TYPE_ID} 
-            onValueChange={handleTypeClientChange}
-          >
-            <SelectTrigger id="typeClient">
-              <SelectValue placeholder="Sélectionnez un type" />
-            </SelectTrigger>
-            <SelectContent>
-              {clientTypes.length > 0 ? (
-                clientTypes.map(type => (
-                  <SelectItem key={type.id} value={type.id}>{type.name}</SelectItem>
-                ))
-              ) : (
-                typesClients.map(type => (
-                  <SelectItem key={type.id} value={type.id}>{type.label}</SelectItem>
-                ))
+      <Form {...form}>
+        <form 
+          onSubmit={form.handleSubmit(handleFormSubmit)} 
+          className="space-y-4" 
+          autoComplete="off" // Désactiver l'autocomplétion pour tout le formulaire
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="nom"
+              render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <FormLabel htmlFor="nom">Nom *</FormLabel>
+                  <FormControl>
+                    <Input 
+                      {...field}
+                      id="nom"
+                      autoComplete="off"
+                      required
+                    />
+                  </FormControl>
+                </FormItem>
               )}
-            </SelectContent>
-          </Select>
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="autreInfo">Autre info</Label>
-          <Input 
-            id="autreInfo" 
-            name="autreInfo" 
-            value={formData.autreInfo} 
-            onChange={handleChange} 
+            />
+            
+            <FormField
+              control={form.control}
+              name="prenom"
+              render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <FormLabel htmlFor="prenom">Prénom</FormLabel>
+                  <FormControl>
+                    <Input 
+                      {...field}
+                      id="prenom"
+                      autoComplete="off"
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </div>
+          
+          <FormField
+            control={form.control}
+            name="adresse"
+            render={({ field }) => (
+              <FormItem className="space-y-2">
+                <FormLabel htmlFor="adresse">Adresse</FormLabel>
+                <FormControl>
+                  <Textarea 
+                    {...field}
+                    id="adresse"
+                    autoComplete="off"
+                  />
+                </FormControl>
+              </FormItem>
+            )}
           />
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="infosComplementaires">Informations complémentaires</Label>
-          <Textarea 
-            id="infosComplementaires" 
-            name="infosComplementaires" 
-            value={formData.infosComplementaires} 
-            onChange={handleChange} 
-            className="h-24"
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <FormField
+              control={form.control}
+              name="codePostal"
+              render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <FormLabel htmlFor="codePostal">Code Postal</FormLabel>
+                  <FormControl>
+                    <Input 
+                      {...field}
+                      id="codePostal"
+                      autoComplete="off"
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="ville"
+              render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <FormLabel htmlFor="ville">Ville</FormLabel>
+                  <FormControl>
+                    <Input 
+                      {...field}
+                      id="ville"
+                      autoComplete="off"
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="telephone"
+              render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <FormLabel htmlFor="telephone">Téléphone principal</FormLabel>
+                  <FormControl>
+                    <Input 
+                      {...field}
+                      id="telephone"
+                      autoComplete="off"
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="tel1"
+              render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <FormLabel htmlFor="tel1">Téléphone secondaire 1</FormLabel>
+                  <FormControl>
+                    <Input 
+                      {...field}
+                      id="tel1"
+                      autoComplete="off"
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="tel2"
+              render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <FormLabel htmlFor="tel2">Téléphone secondaire 2</FormLabel>
+                  <FormControl>
+                    <Input 
+                      {...field}
+                      id="tel2"
+                      autoComplete="off"
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </div>
+          
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem className="space-y-2">
+                <FormLabel htmlFor="email">Email</FormLabel>
+                <FormControl>
+                  <Input 
+                    {...field}
+                    id="email"
+                    type="email"
+                    autoComplete="off"
+                  />
+                </FormControl>
+              </FormItem>
+            )}
           />
-        </div>
-        
-        <DialogFooter>
-          <Button 
-            type="button" 
-            variant="outline" 
-            onClick={handleCloseRequest} 
-            disabled={isSubmitting || submitting || isLoading}
-          >
-            Annuler
-          </Button>
-          <Button 
-            type="submit" 
-            disabled={isSubmitting || submitting || isLoading}
-          >
-            {isSubmitting || submitting || isLoading ? 'Chargement...' : (clientId || clientToEdit) ? 'Mettre à jour' : 'Ajouter'}
-          </Button>
-        </DialogFooter>
-      </form>
+          
+          <FormField
+            control={form.control}
+            name="typeClient"
+            render={({ field }) => (
+              <FormItem className="space-y-2">
+                <FormLabel htmlFor="typeClient">Type de client</FormLabel>
+                <Select 
+                  onValueChange={field.onChange} 
+                  defaultValue={field.value || DEFAULT_CLIENT_TYPE_ID}
+                  value={field.value || DEFAULT_CLIENT_TYPE_ID}
+                >
+                  <FormControl>
+                    <SelectTrigger id="typeClient">
+                      <SelectValue placeholder="Sélectionnez un type" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {clientTypes.length > 0 ? (
+                      clientTypes.map(type => (
+                        <SelectItem key={type.id} value={type.id}>{type.name}</SelectItem>
+                      ))
+                    ) : (
+                      typesClients.map(type => (
+                        <SelectItem key={type.id} value={type.id}>{type.label}</SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="autreInfo"
+            render={({ field }) => (
+              <FormItem className="space-y-2">
+                <FormLabel htmlFor="autreInfo">Autre info</FormLabel>
+                <FormControl>
+                  <Input 
+                    {...field}
+                    id="autreInfo"
+                    autoComplete="off"
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="infosComplementaires"
+            render={({ field }) => (
+              <FormItem className="space-y-2">
+                <FormLabel htmlFor="infosComplementaires">Informations complémentaires</FormLabel>
+                <FormControl>
+                  <Textarea 
+                    {...field}
+                    id="infosComplementaires"
+                    className="h-24"
+                    autoComplete="off"
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+          
+          <DialogFooter>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={handleCloseRequest} 
+              disabled={isSubmitting || submitting || isLoading}
+            >
+              Annuler
+            </Button>
+            <Button 
+              type="submit" 
+              disabled={isSubmitting || submitting || isLoading}
+            >
+              {isSubmitting || submitting || isLoading ? 'Chargement...' : (clientId || clientToEdit) ? 'Mettre à jour' : 'Ajouter'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </Form>
       
       <AlertDialog open={confirmClose} onOpenChange={setConfirmClose}>
         <AlertDialogContent>
