@@ -9,7 +9,6 @@ import { useProject } from '@/contexts/ProjectContext';
 import { Project } from '@/types';
 import { ProjectList } from '@/features/chantier/components/ProjectList';
 import { Loader } from '@/components/ui/loader';
-import { toast } from 'sonner';
 
 interface OpenProjectDialogProps {
   open: boolean;
@@ -24,23 +23,15 @@ export function OpenProjectDialog({ open, onOpenChange }: OpenProjectDialogProps
     key: 'updated_at',
     direction: 'desc'
   });
-  
-  // Raffraîchir les projets quand le dialogue s'ouvre
+
+  // Mettre à jour les projets filtrés
   useEffect(() => {
-    if (open && typeof refreshProjects === 'function') {
-      refreshProjects().catch(error => {
-        console.error('Erreur lors du rafraîchissement des projets:', error);
-        toast.error('Erreur lors du chargement de la liste des projets');
-      });
-    }
+    refreshProjects();
   }, [open, refreshProjects]);
 
   // Filtrer et trier les projets
   useEffect(() => {
-    if (!projects || !projects.length) {
-      setFilteredProjects([]);
-      return;
-    }
+    if (!projects.length) return;
     
     let result = [...projects];
     
@@ -87,18 +78,15 @@ export function OpenProjectDialog({ open, onOpenChange }: OpenProjectDialogProps
   // Fonction pour charger un projet
   const handleLoadProject = async (projectId: string) => {
     try {
-      // Vérifier si loadProject est bien une fonction avant de l'appeler
+      // Utiliser la version correcte de loadProject qui est une fonction
       if (typeof loadProject === 'function') {
         await loadProject(projectId);
         onOpenChange(false);
-        toast.success('Projet chargé avec succès');
       } else {
-        console.error("La fonction loadProject n'est pas disponible:", loadProject);
-        toast.error("Impossible de charger le projet: fonction non disponible");
+        console.error("loadProject n'est pas une fonction:", loadProject);
       }
     } catch (error) {
       console.error("Erreur lors du chargement du projet:", error);
-      toast.error("Erreur lors du chargement du projet");
     }
   };
 
@@ -145,10 +133,6 @@ export function OpenProjectDialog({ open, onOpenChange }: OpenProjectDialogProps
           {isLoading ? (
             <div className="py-8 flex justify-center">
               <Loader />
-            </div>
-          ) : filteredProjects.length === 0 ? (
-            <div className="py-8 text-center text-gray-500">
-              {projects.length === 0 ? 'Aucun projet trouvé' : 'Aucun projet ne correspond à votre recherche'}
             </div>
           ) : (
             <ProjectList
