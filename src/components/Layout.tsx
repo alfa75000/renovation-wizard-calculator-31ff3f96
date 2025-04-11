@@ -9,6 +9,7 @@ import { SaveAsDialog } from './layout/SaveAsDialog';
 import { OpenProjectDialog } from './layout/OpenProjectDialog';
 import { LayoutProps } from './Layout.d';
 import { useProjectOperations } from '@/features/chantier/hooks/useProjectOperations';
+import { toast } from 'sonner';
 
 export const Layout: React.FC<LayoutProps> = ({ 
   children, 
@@ -29,7 +30,6 @@ export const Layout: React.FC<LayoutProps> = ({
   const [newProjectDialogOpen, setNewProjectDialogOpen] = useState(false);
   const [saveAsDialogOpen, setSaveAsDialogOpen] = useState(false);
   const [openProjectDialogOpen, setOpenProjectDialogOpen] = useState(false);
-  const [quickSaveDialogOpen, setQuickSaveDialogOpen] = useState(false);
   
   // Création d'un nouveau projet
   const handleCreateNewProject = () => {
@@ -37,12 +37,32 @@ export const Layout: React.FC<LayoutProps> = ({
     setNewProjectDialogOpen(false);
   };
   
+  // Fonction pour la sauvegarde rapide directe
+  const handleQuickSaveProject = async () => {
+    // Vérifier d'abord si les données nécessaires sont disponibles
+    if (!state.metadata.clientId) {
+      toast.error('Veuillez sélectionner un client avant de sauvegarder le projet');
+      return;
+    }
+    
+    try {
+      // Utiliser les données existantes pour sauvegarder directement
+      const result = await handleSaveProject();
+      if (result) {
+        toast.success('Projet sauvegardé avec succès');
+      }
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde rapide:', error);
+      toast.error('Erreur lors de la sauvegarde du projet');
+    }
+  };
+  
   return (
     <div className="min-h-screen bg-gray-50">
       <ProjectBar 
         onNewProject={() => setNewProjectDialogOpen(true)}
         onOpenProject={() => setOpenProjectDialogOpen(true)}
-        onSaveProject={() => setQuickSaveDialogOpen(true)}
+        onSaveProject={handleQuickSaveProject}
         onSaveAsProject={() => setSaveAsDialogOpen(true)}
         projectDisplayName={projectName}
       />
@@ -65,12 +85,6 @@ export const Layout: React.FC<LayoutProps> = ({
         open={saveAsDialogOpen}
         onOpenChange={setSaveAsDialogOpen}
         dialogTitle="Enregistrer Sous"
-      />
-      
-      <SaveAsDialog 
-        open={quickSaveDialogOpen}
-        onOpenChange={setQuickSaveDialogOpen}
-        dialogTitle="Enregistrer"
       />
       
       <OpenProjectDialog 

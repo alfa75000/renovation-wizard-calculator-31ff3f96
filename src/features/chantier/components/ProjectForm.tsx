@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef } from 'react';
 import { ClientSelection } from './project-form/ClientSelection';
 import { DevisInfoForm } from './project-form/DevisInfoForm';
@@ -106,7 +105,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
     }
   }, [clientId, devisNumber, descriptionProjet, nomProjet, onGenerateProjectName]);
   
-  // Nettoyage lors du démontage du composant
+  // Nettoyage lors du d��montage du composant
   useEffect(() => {
     return () => {
       isMounted.current = false;
@@ -150,7 +149,6 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
       <ProjectActionButtons
         currentProjectId={currentProjectId}
         isLoading={isLoading}
-        onSaveProject={onSaveProject}
         onDeleteProject={onDeleteProject}
       />
     </div>
