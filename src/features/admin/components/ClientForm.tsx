@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   DialogFooter
@@ -49,6 +50,8 @@ const ClientForm: React.FC<ClientFormProps> = ({
   
   const [confirmClose, setConfirmClose] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  // Ajout d'un état pour suivre si le formulaire a été modifié
+  const [isDirty, setIsDirty] = useState(false);
 
   useEffect(() => {
     if (clientToEdit) {
@@ -85,19 +88,24 @@ const ClientForm: React.FC<ClientFormProps> = ({
       autreInfo: '',
       infosComplementaires: ''
     });
+    
+    // Réinitialiser l'état du formulaire à chaque changement de client
+    setIsDirty(false);
   }, [clientId, clientToEdit, state.clients, isOpen]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    setIsDirty(true); // Marquer le formulaire comme modifié
   };
 
   const handleTypeClientChange = (value: string) => {
     setFormData(prev => ({ ...prev, typeClient: value }));
+    setIsDirty(true); // Marquer le formulaire comme modifié
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault(); // Empêcher le comportement par défaut du formulaire
     
     if (submitting || isSubmitting || isLoading) {
       return;
@@ -131,6 +139,8 @@ const ClientForm: React.FC<ClientFormProps> = ({
           });
         }
       }
+      // Réinitialiser l'état du formulaire après la soumission
+      setIsDirty(false);
       onClose();
     } catch (error) {
       console.error("Erreur lors de la soumission du formulaire:", error);
@@ -140,7 +150,7 @@ const ClientForm: React.FC<ClientFormProps> = ({
   };
 
   const handleCloseRequest = () => {
-    if (formData.nom || formData.prenom || formData.adresse || formData.tel1 || formData.email) {
+    if (isDirty) {
       setConfirmClose(true);
     } else {
       onClose();
@@ -149,8 +159,39 @@ const ClientForm: React.FC<ClientFormProps> = ({
 
   const confirmCloseDialog = () => {
     setConfirmClose(false);
+    setIsDirty(false); // Réinitialiser l'état du formulaire
     onClose();
   };
+
+  // Désactiver l'avertissement du navigateur pour les modifications non enregistrées
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      // Si le formulaire est ouvert mais n'a pas été modifié, ne pas afficher l'avertissement
+      if (!isDirty) {
+        return undefined;
+      }
+      
+      // Cette partie ne sera jamais exécutée car nous retournons toujours undefined
+      // mais nous la gardons au cas où nous voudrions réactiver ce comportement plus tard
+      e.preventDefault();
+      e.returnValue = '';
+      return '';
+    };
+    
+    // Désactiver complètement l'avertissement du navigateur
+    const disableBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      return undefined;
+    };
+    
+    // Ajouter l'écouteur d'événements pour désactiver l'avertissement
+    window.addEventListener('beforeunload', disableBeforeUnload);
+    
+    return () => {
+      // Supprimer l'écouteur d'événements lors du démontage du composant
+      window.removeEventListener('beforeunload', disableBeforeUnload);
+    };
+  }, [isDirty]);
 
   return (
     <>
