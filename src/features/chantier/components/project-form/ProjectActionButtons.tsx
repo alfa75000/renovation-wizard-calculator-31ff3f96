@@ -8,14 +8,12 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 interface ProjectActionButtonsProps {
   currentProjectId: string | null;
   isLoading: boolean;
-  onSaveProject: () => void;
   onDeleteProject: () => void;
 }
 
 export const ProjectActionButtons: React.FC<ProjectActionButtonsProps> = ({
   currentProjectId,
   isLoading,
-  onSaveProject,
   onDeleteProject
 }) => {
   const navigate = useNavigate();
@@ -55,17 +53,9 @@ export const ProjectActionButtons: React.FC<ProjectActionButtonsProps> = ({
       )}
       
       <Button 
-        variant="default" 
-        onClick={onSaveProject}
-        className="ml-auto"
-        disabled={isLoading}
-      >
-        Enregistrer
-      </Button>
-      
-      <Button 
         variant="outline" 
         onClick={() => navigate('/travaux')}
+        className="ml-auto"
       >
         Aller aux travaux
       </Button>

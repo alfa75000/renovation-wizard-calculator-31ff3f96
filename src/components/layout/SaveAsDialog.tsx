@@ -16,11 +16,13 @@ import { useProjectOperations } from '@/features/chantier/hooks/useProjectOperat
 interface SaveAsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  dialogTitle?: string;
 }
 
 export const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
   open,
-  onOpenChange
+  onOpenChange,
+  dialogTitle = "Enregistrer Sous"
 }) => {
   const { state, dispatch } = useProject();
   const { state: clientsState } = useClients();
@@ -170,7 +172,7 @@ export const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Enregistrer Sous</DialogTitle>
+          <DialogTitle>{dialogTitle}</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">

@@ -29,6 +29,7 @@ export const Layout: React.FC<LayoutProps> = ({
   const [newProjectDialogOpen, setNewProjectDialogOpen] = useState(false);
   const [saveAsDialogOpen, setSaveAsDialogOpen] = useState(false);
   const [openProjectDialogOpen, setOpenProjectDialogOpen] = useState(false);
+  const [quickSaveDialogOpen, setQuickSaveDialogOpen] = useState(false);
   
   // Création d'un nouveau projet
   const handleCreateNewProject = () => {
@@ -36,17 +37,12 @@ export const Layout: React.FC<LayoutProps> = ({
     setNewProjectDialogOpen(false);
   };
   
-  // Fonction simplifiée pour la sauvegarde rapide
-  const handleQuickSaveProject = async () => {
-    await handleSaveProject();
-  };
-  
   return (
     <div className="min-h-screen bg-gray-50">
       <ProjectBar 
         onNewProject={() => setNewProjectDialogOpen(true)}
         onOpenProject={() => setOpenProjectDialogOpen(true)}
-        onSaveProject={handleQuickSaveProject}
+        onSaveProject={() => setQuickSaveDialogOpen(true)}
         onSaveAsProject={() => setSaveAsDialogOpen(true)}
         projectDisplayName={projectName}
       />
@@ -68,6 +64,13 @@ export const Layout: React.FC<LayoutProps> = ({
       <SaveAsDialog 
         open={saveAsDialogOpen}
         onOpenChange={setSaveAsDialogOpen}
+        dialogTitle="Enregistrer Sous"
+      />
+      
+      <SaveAsDialog 
+        open={quickSaveDialogOpen}
+        onOpenChange={setQuickSaveDialogOpen}
+        dialogTitle="Enregistrer"
       />
       
       <OpenProjectDialog 
