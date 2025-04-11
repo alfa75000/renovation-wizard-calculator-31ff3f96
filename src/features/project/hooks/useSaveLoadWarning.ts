@@ -14,6 +14,7 @@ export const useSaveLoadWarning = (state: ProjectState) => {
     const stateSnapshot = JSON.stringify(state);
     setLastSavedState(stateSnapshot);
     setHasUnsavedChanges(false);
+    console.log('[useSaveLoadWarning] État sauvegardé mis à jour');
   };
 
   // Réinitialiser l'état sauvegardé (par exemple lors de la création d'un nouveau projet)
@@ -21,15 +22,21 @@ export const useSaveLoadWarning = (state: ProjectState) => {
     const stateSnapshot = JSON.stringify(initialState);
     setLastSavedState(stateSnapshot);
     setHasUnsavedChanges(false);
+    console.log('[useSaveLoadWarning] État sauvegardé réinitialisé');
   };
 
   // Détecter les changements non sauvegardés en comparant tout l'état
   useEffect(() => {
     if (lastSavedState) {
       const currentStateSnapshot = JSON.stringify(state);
-      setHasUnsavedChanges(currentStateSnapshot !== lastSavedState);
+      const hasChanges = currentStateSnapshot !== lastSavedState;
+      
+      if (hasChanges !== hasUnsavedChanges) {
+        console.log(`[useSaveLoadWarning] Changement d'état détecté: ${hasChanges ? 'Modifications non sauvegardées' : 'Pas de modifications'}`);
+        setHasUnsavedChanges(hasChanges);
+      }
     }
-  }, [state, lastSavedState]);
+  }, [state, lastSavedState, hasUnsavedChanges]);
 
   // Avertissement avant de quitter la page avec des modifications non sauvegardées
   useEffect(() => {
