@@ -157,33 +157,45 @@ export const useAppState = () => {
 
   // Mettre à jour les options d'auto-sauvegarde
   const updateAutoSaveOptions = useCallback(async (options: AutoSaveOptions) => {
-    if (!appState || !currentUser) return false;
+    if (!appState || !currentUser) {
+      console.error("Tentative de mise à jour des options d'auto-sauvegarde sans utilisateur ou état d'application");
+      return false;
+    }
     
     try {
-      console.log('Mise à jour des options d\'auto-sauvegarde:', options);
+      console.log('Mise à jour des options d\'auto-sauvegarde dans la base de données:', options);
       
-      const { error } = await supabase
+      // Utiliser explicitement last_updated_at pour forcer la mise à jour
+      const now = new Date().toISOString();
+      
+      const { data, error } = await supabase
         .from('app_state')
         .update({ 
           auto_save_options: options,
-          last_updated_at: new Date().toISOString()
+          last_updated_at: now
         })
-        .eq('user_id', currentUser.id);
+        .eq('user_id', currentUser.id)
+        .select();
       
       if (error) {
         console.error('Erreur lors de la mise à jour des options d\'auto-sauvegarde:', error);
+        toast.error('Erreur lors de la mise à jour des options d\'auto-sauvegarde');
         return false;
       }
+      
+      console.log('Options d\'auto-sauvegarde mises à jour avec succès:', data);
       
       // Mettre à jour l'état local
       setAppState(prev => prev ? { 
         ...prev, 
-        auto_save_options: options 
+        auto_save_options: options,
+        last_updated_at: now
       } : null);
       
       return true;
     } catch (error) {
       console.error('Exception lors de la mise à jour des options d\'auto-sauvegarde:', error);
+      toast.error('Erreur lors de la mise à jour des options d\'auto-sauvegarde');
       return false;
     }
   }, [appState, currentUser]);
@@ -196,30 +208,37 @@ export const useAppState = () => {
     }
     
     try {
-      console.log('Mise à jour du projet en cours:', { 
+      console.log('Mise à jour du projet en cours dans la base de données:', { 
         userId: currentUser.id, 
-        projectId, 
-        previousState: appState
+        projectId
       });
       
-      const { error } = await supabase
+      // Utiliser explicitement last_updated_at pour forcer la mise à jour
+      const now = new Date().toISOString();
+      
+      const { data, error } = await supabase
         .from('app_state')
         .update({ 
           current_project_id: projectId,
-          last_updated_at: new Date().toISOString()
+          last_updated_at: now
         })
-        .eq('user_id', currentUser.id);
+        .eq('user_id', currentUser.id)
+        .select();
       
       if (error) {
         console.error('Erreur lors de la mise à jour du projet en cours:', error);
+        toast.error('Erreur lors de la mise à jour du projet en cours');
         return false;
       }
+      
+      console.log('Mise à jour réussie de current_project_id dans app_state:', data);
       
       // Mettre à jour l'état local
       setAppState(prev => {
         const updated = prev ? { 
           ...prev, 
-          current_project_id: projectId 
+          current_project_id: projectId,
+          last_updated_at: now
         } : null;
         console.log('État local mis à jour:', updated);
         return updated;
@@ -228,9 +247,10 @@ export const useAppState = () => {
       return true;
     } catch (error) {
       console.error('Exception lors de la mise à jour du projet en cours:', error);
+      toast.error('Erreur lors de la mise à jour du projet en cours');
       return false;
     }
-  }, [currentUser, appState]);
+  }, [currentUser]);
 
   return {
     isLoading,

@@ -25,6 +25,16 @@ export const useAutoSave = () => {
   const prevRoomsRef = useRef<Room[]>([]);
   const prevTravauxRef = useRef<Travail[]>([]);
   
+  // Afficher l'état de l'auto-sauvegarde au démarrage
+  useEffect(() => {
+    console.log('État de l\'auto-sauvegarde:', {
+      enabled: autoSaveOptions.enabled,
+      currentProjectId,
+      saveOnRoomAdd: autoSaveOptions.saveOnRoomAdd,
+      saveOnWorkAdd: autoSaveOptions.saveOnWorkAdd
+    });
+  }, [autoSaveOptions, currentProjectId]);
+  
   // Effet pour surveiller les changements dans les pièces
   useEffect(() => {
     // S'assurer que state existe

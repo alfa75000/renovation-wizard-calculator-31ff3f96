@@ -9,6 +9,8 @@ import { Badge } from '../ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { useAppState, AutoSaveOptions } from '@/hooks/useAppState';
 import { UserSelector } from '@/components/user/UserSelector';
+import { Switch } from '../ui/switch';
+import { toast } from 'sonner';
 
 interface ProjectBarProps {
   onNewProject: () => void;
@@ -48,6 +50,7 @@ export const ProjectBar: React.FC<ProjectBarProps> = ({
   useEffect(() => {
     if (appState?.auto_save_options) {
       setAutoSaveOptions(appState.auto_save_options);
+      console.log('Options d\'auto-sauvegarde chargées depuis app_state:', appState.auto_save_options);
     }
   }, [appState]);
   
@@ -60,7 +63,14 @@ export const ProjectBar: React.FC<ProjectBarProps> = ({
         enabled: true
       };
       setAutoSaveOptions(newOptions);
-      updateAutoSaveOptions(newOptions);
+      updateAutoSaveOptions(newOptions)
+        .then(success => {
+          if (success) {
+            console.log('Auto-sauvegarde activée automatiquement pour le projet:', currentProjectId);
+          } else {
+            console.error('Échec de l\'activation automatique de l\'auto-sauvegarde');
+          }
+        });
     } else if (!currentProjectId && autoSaveOptions.enabled && appState) {
       // Désactiver l'enregistrement auto si aucun projet n'est chargé
       const newOptions = {
@@ -68,7 +78,14 @@ export const ProjectBar: React.FC<ProjectBarProps> = ({
         enabled: false
       };
       setAutoSaveOptions(newOptions);
-      updateAutoSaveOptions(newOptions);
+      updateAutoSaveOptions(newOptions)
+        .then(success => {
+          if (success) {
+            console.log('Auto-sauvegarde désactivée automatiquement car aucun projet n\'est chargé');
+          } else {
+            console.error('Échec de la désactivation automatique de l\'auto-sauvegarde');
+          }
+        });
     }
   }, [currentProjectId, autoSaveOptions.enabled, updateAutoSaveOptions, appState]);
   
@@ -84,8 +101,20 @@ export const ProjectBar: React.FC<ProjectBarProps> = ({
       ...autoSaveOptions,
       [option]: value
     };
+    console.log('Changement d\'option d\'auto-sauvegarde:', option, value, newOptions);
     setAutoSaveOptions(newOptions);
-    updateAutoSaveOptions(newOptions);
+    
+    // Mettre à jour dans la base de données
+    updateAutoSaveOptions(newOptions)
+      .then(success => {
+        if (success) {
+          console.log('Options d\'auto-sauvegarde mises à jour avec succès');
+        } else {
+          toast.error('Erreur lors de la mise à jour des options d\'auto-sauvegarde');
+          // Restaurer l'ancienne valeur en cas d'échec
+          setAutoSaveOptions(autoSaveOptions);
+        }
+      });
   };
 
   // Gérer le changement d'utilisateur
@@ -163,12 +192,12 @@ export const ProjectBar: React.FC<ProjectBarProps> = ({
               <h4 className="font-medium">Options d'enregistrement</h4>
               
               <div className="flex items-center space-x-2">
-                <Checkbox 
+                <Switch 
                   id="autoSave" 
                   checked={autoSaveOptions.enabled}
-                  disabled={!currentProjectId} // Désactiver la case à cocher si aucun projet n'est en cours
+                  disabled={!currentProjectId}
                   onCheckedChange={(checked) => 
-                    handleAutoSaveOptionChange('enabled', checked === true)
+                    handleAutoSaveOptionChange('enabled', checked)
                   }
                 />
                 <label 
@@ -186,12 +215,12 @@ export const ProjectBar: React.FC<ProjectBarProps> = ({
               
               <div className="pl-6 space-y-3">
                 <div className="flex items-center space-x-2">
-                  <Checkbox 
+                  <Switch 
                     id="saveOnRoomAdd" 
                     checked={autoSaveOptions.saveOnRoomAdd}
                     disabled={!autoSaveOptions.enabled || !currentProjectId}
                     onCheckedChange={(checked) => 
-                      handleAutoSaveOptionChange('saveOnRoomAdd', checked === true)
+                      handleAutoSaveOptionChange('saveOnRoomAdd', checked)
                     }
                   />
                   <label 
@@ -203,12 +232,12 @@ export const ProjectBar: React.FC<ProjectBarProps> = ({
                 </div>
                 
                 <div className="flex items-center space-x-2">
-                  <Checkbox 
+                  <Switch 
                     id="saveOnWorkAdd" 
                     checked={autoSaveOptions.saveOnWorkAdd}
                     disabled={!autoSaveOptions.enabled || !currentProjectId}
                     onCheckedChange={(checked) => 
-                      handleAutoSaveOptionChange('saveOnWorkAdd', checked === true)
+                      handleAutoSaveOptionChange('saveOnWorkAdd', checked)
                     }
                   />
                   <label 
