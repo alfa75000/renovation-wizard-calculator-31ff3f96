@@ -36,21 +36,11 @@ const ProjectContext = createContext<ProjectContextType>({} as ProjectContextTyp
 
 // Provider component
 export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // S'assurer que l'état initial est correctement défini
+  // Utiliser le hook useReducer pour initialiser l'état et le dispatcher
   const [state, dispatch] = useReducer(projectReducer, initialProjectState);
   
-  // Utiliser les hooks spécialisés
-  const {
-    isLoading,
-    isSaving,
-    projects,
-    currentProjectId,
-    saveProject,
-    loadProject,
-    createNewProject,
-    deleteCurrentProject,
-    refreshProjects
-  } = useProjectStorage();
+  // Utiliser les hooks spécialisés pour la gestion du projet
+  const projectStorage = useProjectStorage();
   
   // Hook pour la gestion des avertissements de sauvegarde
   const { hasUnsavedChanges, updateSavedState, resetSavedState } = useSaveLoadWarning(state);
@@ -60,8 +50,21 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   
   // Fonction améliorée de sauvegarde avec suivi d'état
   const enhancedSaveProject = async (name?: string) => {
-    await saveProject(name);
-    updateSavedState();
+    try {
+      if (typeof projectStorage.saveProject === 'function') {
+        await projectStorage.saveProject(name);
+        updateSavedState();
+        return true;
+      } else {
+        console.error('La fonction saveProject n\'est pas disponible');
+        toast.error('Erreur: fonction de sauvegarde non disponible');
+        return false;
+      }
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde:', error);
+      toast.error('Erreur lors de la sauvegarde du projet');
+      return false;
+    }
   };
 
   // Sauvegarde automatique en tant que brouillon
@@ -75,8 +78,31 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   
   // Étendre la fonction de création d'un nouveau projet pour réinitialiser l'état sauvegardé
   const enhancedCreateNewProject = () => {
-    createNewProject();
-    resetSavedState(initialProjectState);
+    if (typeof projectStorage.createNewProject === 'function') {
+      projectStorage.createNewProject();
+      resetSavedState(initialProjectState);
+    } else {
+      console.error('La fonction createNewProject n\'est pas disponible');
+      toast.error('Erreur: fonction de création de projet non disponible');
+    }
+  };
+
+  // Fonction de chargement de projet améliorée
+  const enhancedLoadProject = async (projectId: string) => {
+    try {
+      if (typeof projectStorage.loadProject === 'function') {
+        await projectStorage.loadProject(projectId);
+        return true;
+      } else {
+        console.error('La fonction loadProject n\'est pas disponible');
+        toast.error('Erreur: fonction de chargement non disponible');
+        return false;
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement du projet:', error);
+      toast.error('Erreur lors du chargement du projet');
+      return false;
+    }
   };
 
   // Afficher l'état pour le débogage
@@ -87,17 +113,17 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     <ProjectContext.Provider value={{ 
       state, 
       dispatch,
-      isLoading,
-      isSaving,
-      projects,
-      currentProjectId,
+      isLoading: projectStorage.isLoading,
+      isSaving: projectStorage.isSaving,
+      projects: projectStorage.projects,
+      currentProjectId: projectStorage.currentProjectId,
       hasUnsavedChanges,
       saveProject: enhancedSaveProject,
       saveProjectAsDraft,
-      loadProject,
+      loadProject: enhancedLoadProject,
       createNewProject: enhancedCreateNewProject,
-      deleteCurrentProject,
-      refreshProjects,
+      deleteCurrentProject: projectStorage.deleteCurrentProject,
+      refreshProjects: projectStorage.refreshProjects,
       rooms: roomsManager
     }}>
       {children}

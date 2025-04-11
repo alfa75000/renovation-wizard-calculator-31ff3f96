@@ -87,7 +87,6 @@ export function OpenProjectDialog({ open, onOpenChange }: OpenProjectDialogProps
   // Fonction pour charger un projet
   const handleLoadProject = async (projectId: string) => {
     try {
-      // Vérifier si loadProject est bien une fonction avant de l'appeler
       if (typeof loadProject === 'function') {
         await loadProject(projectId);
         onOpenChange(false);
