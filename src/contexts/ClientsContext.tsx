@@ -147,6 +147,7 @@ export const ClientsProvider: React.FC<{ children: React.ReactNode }> = ({ child
             const clients = await fetchClients();
             dispatch({ type: 'LOAD_CLIENTS', payload: clients });
           } else {
+            // Mettre à jour le state local une seule fois
             dispatch({ type: 'UPDATE_CLIENT', payload: { id, client: result } });
             toast.success('Client mis à jour avec succès');
           }

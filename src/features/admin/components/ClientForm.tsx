@@ -118,23 +118,24 @@ const ClientForm: React.FC<ClientFormProps> = ({
     };
     
     try {
+      // Modification de la logique pour éviter la double mise à jour
+      // Si onSubmit est fourni, utiliser uniquement cette fonction
+      // Sinon, utiliser dispatch pour mettre à jour
       if (onSubmit) {
         await onSubmit(updatedFormData);
-      } else {
-        if (clientId || clientToEdit) {
-          const id = clientId || (clientToEdit ? clientToEdit.id : '');
-          if (id) {
-            await dispatch({
-              type: 'UPDATE_CLIENT',
-              payload: { id, client: updatedFormData }
-            });
-          }
-        } else {
-          await dispatch({ 
-            type: 'ADD_CLIENT', 
-            payload: updatedFormData 
+      } else if (clientId || clientToEdit) {
+        const id = clientId || (clientToEdit ? clientToEdit.id : '');
+        if (id) {
+          await dispatch({
+            type: 'UPDATE_CLIENT',
+            payload: { id, client: updatedFormData }
           });
         }
+      } else {
+        await dispatch({ 
+          type: 'ADD_CLIENT', 
+          payload: updatedFormData 
+        });
       }
       form.reset(form.getValues());
       onClose();
