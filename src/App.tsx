@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from '@/components/ui/sonner';
 import { useEffect, useState } from 'react';
@@ -9,7 +8,6 @@ import { ProjectProvider } from '@/contexts/ProjectContext';
 import { TravauxTypesProvider } from '@/contexts/TravauxTypesContext';
 import { MenuiseriesTypesProvider } from '@/contexts/MenuiseriesTypesContext';
 import { AutresSurfacesProvider } from '@/contexts/AutresSurfacesContext';
-// Suppression de l'import de ProjetChantierProvider
 
 import Index from '@/pages/Index';
 import Travaux from '@/pages/Travaux';
@@ -26,7 +24,6 @@ import SupabaseStatus from './components/SupabaseStatus';
 export default function App() {
   const [isConnected, setIsConnected] = useState(false);
 
-  // Vérifier la connexion Supabase
   useEffect(() => {
     const checkConnection = async () => {
       try {
@@ -41,8 +38,8 @@ export default function App() {
 
     checkConnection();
     
-    const intervalId = setInterval(checkConnection, 30000); // Vérifier toutes les 30 secondes
-    
+    const intervalId = setInterval(checkConnection, 30000);
+
     return () => {
       clearInterval(intervalId);
     };
@@ -55,7 +52,6 @@ export default function App() {
           <AutresSurfacesProvider>
             <ClientsProvider>
               <ProjectProvider>
-                {/* Suppression du Provider ProjetChantierProvider */}
                 <main className="min-h-screen flex flex-col">
                   <div className="flex-1">
                     <Routes>
@@ -72,7 +68,6 @@ export default function App() {
                   <SupabaseStatus />
                 </main>
                 <Toaster richColors position="top-right" />
-                {/* Fin de la suppression du Provider */}
               </ProjectProvider>
             </ClientsProvider>
           </AutresSurfacesProvider>
