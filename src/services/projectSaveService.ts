@@ -166,20 +166,21 @@ export const fetchProjectSaveById = async (projectId: string) => {
 
 /**
  * Crée un nouveau projet complet dans Supabase
+ * Validation stricte: un client_id est obligatoire
  */
 export const createProjectSave = async (projectState: ProjectState, projectInfo: any = {}) => {
   try {
-    // Vérifier que client_id est spécifié et n'est pas une ID nulle
-    if (!projectInfo.client_id) {
+    // Vérification stricte du client_id
+    if (!projectInfo.client_id || projectInfo.client_id === null) {
       throw new Error('Un client doit être spécifié pour créer un projet');
     }
     
     // Créer un objet qui sera stocké dans la base de données
     const projectData = {
       name: projectInfo.name || generateDefaultProjectName(),
-      client_id: projectInfo.client_id, // N'utiliser JAMAIS d'ID par défaut pour client_id
+      client_id: projectInfo.client_id,
       project_data: projectState,
-      general_data: projectInfo,
+      general_data: projectInfo.general_data || {},
       description: projectInfo.description || '',
       address: projectInfo.address || '',
       postal_code: projectInfo.postal_code || '',
@@ -187,8 +188,8 @@ export const createProjectSave = async (projectState: ProjectState, projectInfo:
       occupant: projectInfo.occupant || '',
       property_type: projectState.property.type || 'Appartement',
       floors: projectState.property.floors || 1,
-      total_area: projectState.property.totalArea || 52, // Valeur par défaut mise à jour à 52
-      rooms_count: projectState.rooms.length || 3, // Valeur par défaut mise à jour à 3
+      total_area: projectState.property.totalArea || 52,
+      rooms_count: projectState.rooms.length || 3,
       ceiling_height: projectState.property.ceilingHeight || 2.5,
       status: projectInfo.status || 'Brouillon',
       devis_number: projectInfo.devis_number || null
@@ -222,7 +223,7 @@ export const createProjectSave = async (projectState: ProjectState, projectInfo:
  */
 export const updateProjectSave = async (projectId: string, projectState: ProjectState, projectInfo: any = {}) => {
   try {
-    // Récupérer le projet existant pour conserver les champs que nous ne modifions pas
+    // Vérification préalable du projet existant
     const { data: existingProject, error: fetchError } = await supabase
       .from('projects_save')
       .select('*')
@@ -234,10 +235,15 @@ export const updateProjectSave = async (projectId: string, projectState: Project
       throw fetchError;
     }
     
+    // Protection contre la mise à jour avec un client_id non valide
+    if (projectInfo.client_id === null) {
+      throw new Error('Le client ne peut pas être supprimé d\'un projet existant');
+    }
+    
     // Mettre à jour les champs du projet avec les nouvelles valeurs
     const updatedProjectData = {
       project_data: projectState,
-      general_data: {...(existingProject?.general_data || {}), ...projectInfo},
+      general_data: {...(existingProject?.general_data || {}), ...(projectInfo.general_data || {})},
       property_type: projectState.property.type || existingProject?.property_type,
       floors: projectState.property.floors || existingProject?.floors,
       total_area: projectState.property.totalArea || existingProject?.total_area,
@@ -246,8 +252,8 @@ export const updateProjectSave = async (projectId: string, projectState: Project
     };
     
     // Ajouter les champs de projectInfo seulement s'ils sont définis
-    if (projectInfo.name) updatedProjectData['name'] = projectInfo.name;
-    if (projectInfo.client_id) updatedProjectData['client_id'] = projectInfo.client_id;
+    if (projectInfo.name !== undefined) updatedProjectData['name'] = projectInfo.name;
+    if (projectInfo.client_id !== undefined) updatedProjectData['client_id'] = projectInfo.client_id;
     if (projectInfo.description !== undefined) updatedProjectData['description'] = projectInfo.description;
     if (projectInfo.address !== undefined) updatedProjectData['address'] = projectInfo.address;
     if (projectInfo.postal_code !== undefined) updatedProjectData['postal_code'] = projectInfo.postal_code;

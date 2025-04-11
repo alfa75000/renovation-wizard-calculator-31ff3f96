@@ -16,19 +16,17 @@ import { useProjectOperations } from '@/features/chantier/hooks/useProjectOperat
 interface SaveAsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSaveProject: () => void;
 }
 
 export const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
   open,
-  onOpenChange,
-  onSaveProject
+  onOpenChange
 }) => {
-  const { state: clientsState } = useClients();
   const { state, dispatch } = useProject();
+  const { state: clientsState } = useClients();
   const { handleSaveProject } = useProjectOperations();
   
-  // Initialiser les états locaux avec les valeurs du contexte global
+  // États locaux pour le formulaire
   const [clientId, setClientId] = useState<string>(state.metadata.clientId || '');
   const [projectName, setProjectName] = useState<string>(state.metadata.nomProjet || '');
   const [projectDescription, setProjectDescription] = useState<string>(state.metadata.descriptionProjet || '');
@@ -37,7 +35,7 @@ export const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
   const [isGeneratingDevisNumber, setIsGeneratingDevisNumber] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   
-  // Synchroniser les champs avec les données du projet courant dès l'ouverture du modal
+  // Synchroniser les champs avec les données du projet courant
   useEffect(() => {
     if (open) {
       setClientId(state.metadata.clientId || '');
@@ -56,7 +54,7 @@ export const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
     }
   }, [open, state.metadata]);
   
-  // Générer le nom du projet automatiquement quand le client ou la description change
+  // Générer le nom du projet automatiquement
   useEffect(() => {
     if (clientId && (devisNumber || projectDescription)) {
       const client = clientsState.clients.find(c => c.id === clientId);
@@ -81,6 +79,7 @@ export const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
     }
   }, [devisNumber, clientId, projectDescription, clientsState.clients]);
   
+  // Générer un numéro de devis
   const handleGenerateDevisNumber = async () => {
     try {
       setIsGeneratingDevisNumber(true);
@@ -112,7 +111,7 @@ export const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
     }
   };
   
-  // Fonction pour préparer les données du projet à sauvegarder
+  // Fonction unique de sauvegarde
   const handleSaveProjectData = async () => {
     try {
       setIsSaving(true);
@@ -145,29 +144,20 @@ export const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
           infoComplementaire: state.metadata.infoComplementaire || ''
         },
         devis_number: devisNumber,
-        // Ajouter d'autres champs si nécessaire
         address: state.metadata.adresseChantier || '',
         occupant: state.metadata.occupant || ''
       };
       
       console.log('Données projet à sauvegarder:', projectData);
       
-      // Utiliser handleSaveProject du hook personnalisé
+      // Appel direct à la fonction de sauvegarde centralisée
       const result = await handleSaveProject(projectData);
       
       if (result) {
-        toast.success('Projet enregistré avec succès');
-        // Fermer le modal et aviser le parent du succès
+        // Fermer le modal uniquement si la sauvegarde a réussi
         onOpenChange(false);
-        
-        // Attendre un peu pour s'assurer que le state est bien mis à jour
-        setTimeout(() => {
-          onSaveProject();
-        }, 300); // Délai augmenté pour éviter les problèmes de timing
-      } else {
-        // Si la sauvegarde a échoué, ne pas fermer le modal
-        toast.error('Erreur lors de l\'enregistrement du projet');
       }
+      
     } catch (error) {
       console.error('Erreur lors de l\'enregistrement du projet:', error);
       toast.error('Erreur lors de l\'enregistrement du projet');

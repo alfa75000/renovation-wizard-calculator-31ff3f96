@@ -1,14 +1,16 @@
 
-import { useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 import { useProjectMetadata } from './useProjectMetadata';
 import { useProjectOperations } from './useProjectOperations';
-import { useProject } from '@/contexts/ProjectContext';
 
+/**
+ * Hook combinant les métadonnées et les opérations sur les projets
+ */
 export const useProjectInfo = () => {
-  // Utiliser le hook de métadonnées qui utilise directement le contexte
+  // Utiliser le hook de métadonnées pour accéder aux propriétés du projet
   const metadataHook = useProjectMetadata();
   
-  // Utiliser le hook d'opérations sur le projet
+  // Utiliser le hook d'opérations pour les actions sur les projets
   const {
     handleChargerProjet,
     handleDeleteProject,
@@ -20,7 +22,7 @@ export const useProjectInfo = () => {
     projectState
   } = useProjectOperations();
 
-  // Simplification du hook en réutilisant les hooks spécialisés
+  // Regrouper tous les éléments dans un seul objet
   return {
     // Données de l'état du projet global
     projectState,

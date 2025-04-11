@@ -5,6 +5,9 @@ import { toast } from 'sonner';
 import { ProjectMetadata } from '@/types';
 import { supabase } from '@/lib/supabase';
 
+/**
+ * Hook centralisant toutes les opérations liées aux projets
+ */
 export const useProjectOperations = () => {
   const { 
     loadProject,
@@ -17,11 +20,13 @@ export const useProjectOperations = () => {
     isLoading,
     state,
     refreshProjects,
-    // Ajouter cette fonction pour mettre à jour l'ID du projet courant
+    // Fonction pour mettre à jour l'ID du projet courant
     setCurrentProjectId
   } = useProject();
 
-  // Handler for loading a project
+  /**
+   * Charger un projet existant
+   */
   const handleChargerProjet = useCallback(async (projetId: string) => {
     try {
       await loadProject(projetId);
@@ -31,7 +36,9 @@ export const useProjectOperations = () => {
     }
   }, [loadProject]);
   
-  // Handler for deleting the current project
+  /**
+   * Supprimer le projet actuel
+   */
   const handleDeleteProject = useCallback(async () => {
     try {
       await deleteCurrentProject();
@@ -43,24 +50,30 @@ export const useProjectOperations = () => {
     }
   }, [deleteCurrentProject]);
   
-  // Handler for saving the current project
+  /**
+   * Fonction centralisée de sauvegarde de projet
+   * Cette fonction est le SEUL point de sauvegarde de toute l'application
+   */
   const handleSaveProject = useCallback(async (projectInfo?: any) => {
+    // Identifiant unique pour le toast de sauvegarde
+    const toastId = 'saving-project';
+    
     try {
-      console.log('handleSaveProject appelé avec:', projectInfo);
+      // Afficher un toast de chargement
+      toast.loading('Sauvegarde en cours...', { id: toastId });
       
-      // Prepare project metadata from the state
+      // Valider que le client ID est présent
       const metadata = state.metadata;
-      
-      // S'assurer qu'un client_id valide est toujours présent
       const clientId = metadata.clientId || projectInfo?.client_id;
+      
       if (!clientId) {
-        toast.error('Veuillez sélectionner un client avant de sauvegarder le projet');
+        toast.error('Veuillez sélectionner un client avant de sauvegarder le projet', { id: toastId });
         return false;
       }
       
-      // Combine with any additional project info passed in
+      // Préparer les données du projet
       const combinedProjectInfo = {
-        client_id: clientId, // Utiliser la valeur validée
+        client_id: clientId,
         name: metadata.nomProjet || projectInfo?.name || 'Projet sans nom',
         description: metadata.descriptionProjet || projectInfo?.description || '',
         address: metadata.adresseChantier || projectInfo?.address || '',
@@ -81,15 +94,14 @@ export const useProjectOperations = () => {
           rooms: state.rooms || [],
           travaux: state.travaux || [],
           metadata: metadata
-        },
-        ...projectInfo // This allows overriding defaults if needed
+        }
       };
       
-      console.log('CombinedProjectInfo avant sauvegarde:', combinedProjectInfo);
+      console.log('Données du projet avant sauvegarde:', combinedProjectInfo);
       
       let result;
       
-      // Si nous sommes en mode édition (currentProjectId existe)
+      // Sauvegarde selon qu'on modifie un projet existant ou qu'on en crée un nouveau
       if (currentProjectId) {
         console.log('Mise à jour du projet existant:', currentProjectId);
         const { data, error } = await supabase
@@ -100,21 +112,16 @@ export const useProjectOperations = () => {
           
         if (error) {
           console.error('Erreur lors de la mise à jour du projet:', error);
-          toast.error('Erreur lors de la mise à jour du projet');
+          toast.error('Erreur lors de la mise à jour du projet', { id: toastId });
           return false;
         }
         
         console.log('Projet mis à jour avec succès:', data);
         result = data;
-        
-        // Rafraîchir la liste des projets après la mise à jour
-        await refreshProjects();
-        
-        toast.success('Projet mis à jour avec succès');
-        return true;
+        toast.success('Projet mis à jour avec succès', { id: toastId });
       } else {
-        // Sinon, on crée un nouveau projet
-        console.log('Création d\'un nouveau projet');
+        // Création d'un nouveau projet
+        console.log('Création d\'un nouveau projet avec client_id:', clientId);
         try {
           const { data, error } = await supabase
             .from('projects_save')
@@ -123,33 +130,32 @@ export const useProjectOperations = () => {
             
           if (error) {
             console.error('Erreur lors de la création du projet:', error);
-            toast.error('Erreur lors de la création du projet');
+            toast.error('Erreur lors de la création du projet', { id: toastId });
             return false;
           }
           
           console.log('Projet créé avec succès:', data);
           result = data;
           
-          // IMPORTANT: Mettre à jour l'ID du projet courant pour éviter la double création
+          // Mettre à jour l'ID du projet courant pour éviter les doubles créations
           if (data && data[0] && data[0].id) {
             setCurrentProjectId(data[0].id);
           }
           
-          // Rafraîchir la liste des projets après la création
-          await refreshProjects();
-          
-          toast.success('Projet créé avec succès');
-          return true;
+          toast.success('Projet créé avec succès', { id: toastId });
         } catch (innerError) {
           console.error('Exception lors de la création du projet:', innerError);
-          toast.error(`Erreur lors de la création du projet: ${innerError instanceof Error ? innerError.message : 'Erreur inconnue'}`);
+          toast.error(`Erreur lors de la création du projet: ${innerError instanceof Error ? innerError.message : 'Erreur inconnue'}`, { id: toastId });
           return false;
         }
       }
       
+      // Rafraîchir la liste des projets après la sauvegarde
+      await refreshProjects();
+      return true;
     } catch (error) {
       console.error('Erreur lors de l\'enregistrement du projet:', error);
-      toast.error('Erreur lors de l\'enregistrement du projet');
+      toast.error('Erreur lors de l\'enregistrement du projet', { id: toastId });
       return false;
     }
   }, [state.metadata, state.property, state.rooms, state.travaux, currentProjectId, refreshProjects, setCurrentProjectId]);
