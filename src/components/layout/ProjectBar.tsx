@@ -1,10 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '../ui/button';
 import { FilePlus2, FolderOpen, Save, SaveAll, Check, AlertCircle } from 'lucide-react';
 import { useProject } from '@/contexts/ProjectContext';
 import { Popover, PopoverTrigger, PopoverContent } from '../ui/popover';
-import { Checkbox } from '../ui/checkbox';
 import { Badge } from '../ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { useAppState, AutoSaveOptions } from '@/hooks/useAppState';
