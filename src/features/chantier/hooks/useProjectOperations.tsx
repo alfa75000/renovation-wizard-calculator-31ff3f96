@@ -52,15 +52,15 @@ export const useProjectOperations = () => {
       const metadata = state.metadata;
       
       // S'assurer qu'un client_id valide est toujours présent
-      // Si pas de client_id, ne pas utiliser l'ID nulle, générer une erreur à la place
-      if (!metadata.clientId && !projectInfo?.client_id) {
+      const clientId = metadata.clientId || projectInfo?.client_id;
+      if (!clientId) {
         toast.error('Veuillez sélectionner un client avant de sauvegarder le projet');
         return false;
       }
       
       // Combine with any additional project info passed in
       const combinedProjectInfo = {
-        client_id: metadata.clientId || projectInfo?.client_id,
+        client_id: clientId, // Utiliser la valeur validée
         name: metadata.nomProjet || projectInfo?.name || 'Projet sans nom',
         description: metadata.descriptionProjet || projectInfo?.description || '',
         address: metadata.adresseChantier || projectInfo?.address || '',
@@ -115,30 +115,36 @@ export const useProjectOperations = () => {
       } else {
         // Sinon, on crée un nouveau projet
         console.log('Création d\'un nouveau projet');
-        const { data, error } = await supabase
-          .from('projects_save')
-          .insert(combinedProjectInfo)
-          .select();
+        try {
+          const { data, error } = await supabase
+            .from('projects_save')
+            .insert(combinedProjectInfo)
+            .select();
+            
+          if (error) {
+            console.error('Erreur lors de la création du projet:', error);
+            toast.error('Erreur lors de la création du projet');
+            return false;
+          }
           
-        if (error) {
-          console.error('Erreur lors de la création du projet:', error);
-          toast.error('Erreur lors de la création du projet');
+          console.log('Projet créé avec succès:', data);
+          result = data;
+          
+          // IMPORTANT: Mettre à jour l'ID du projet courant pour éviter la double création
+          if (data && data[0] && data[0].id) {
+            setCurrentProjectId(data[0].id);
+          }
+          
+          // Rafraîchir la liste des projets après la création
+          await refreshProjects();
+          
+          toast.success('Projet créé avec succès');
+          return true;
+        } catch (innerError) {
+          console.error('Exception lors de la création du projet:', innerError);
+          toast.error(`Erreur lors de la création du projet: ${innerError instanceof Error ? innerError.message : 'Erreur inconnue'}`);
           return false;
         }
-        
-        console.log('Projet créé avec succès:', data);
-        result = data;
-        
-        // IMPORTANT: Mettre à jour l'ID du projet courant pour éviter la double création
-        if (data && data[0] && data[0].id) {
-          setCurrentProjectId(data[0].id);
-        }
-        
-        // Rafraîchir la liste des projets après la création
-        await refreshProjects();
-        
-        toast.success('Projet créé avec succès');
-        return true;
       }
       
     } catch (error) {

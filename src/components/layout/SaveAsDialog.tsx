@@ -117,6 +117,12 @@ export const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
     try {
       setIsSaving(true);
       
+      if (!clientId) {
+        toast.error('Veuillez sélectionner un client avant de sauvegarder le projet');
+        setIsSaving(false);
+        return;
+      }
+      
       // Mettre à jour le state global avec les valeurs du formulaire
       dispatch({
         type: 'UPDATE_METADATA',
@@ -146,21 +152,21 @@ export const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
       
       console.log('Données projet à sauvegarder:', projectData);
       
-      // IMPORTANT: Ne pas appeler le saveProject du contexte, seulement utiliser handleSaveProject
-      // pour éviter la double sauvegarde
+      // Utiliser handleSaveProject du hook personnalisé
       const result = await handleSaveProject(projectData);
       
       if (result) {
         toast.success('Projet enregistré avec succès');
-        // Fermer le modal et aviser le parent du succès, mais sans déclencher d'autre sauvegarde
+        // Fermer le modal et aviser le parent du succès
         onOpenChange(false);
         
-        // Rafraîchir l'interface sans sauvegarder à nouveau
-        // Utiliser setTimeout pour s'assurer que le state est bien mis à jour
+        // Attendre un peu pour s'assurer que le state est bien mis à jour
         setTimeout(() => {
-          // Appeler le callback mais ne pas déclencher de sauvegarde dans celui-ci
           onSaveProject();
-        }, 100);
+        }, 300); // Délai augmenté pour éviter les problèmes de timing
+      } else {
+        // Si la sauvegarde a échoué, ne pas fermer le modal
+        toast.error('Erreur lors de l\'enregistrement du projet');
       }
     } catch (error) {
       console.error('Erreur lors de l\'enregistrement du projet:', error);
