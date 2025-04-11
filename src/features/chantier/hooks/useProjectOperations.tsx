@@ -9,12 +9,13 @@ export const useProjectOperations = () => {
   const { 
     loadProject,
     deleteCurrentProject,
-    saveProject,
+    saveProject: contextSaveProject,
     currentProjectId,
     projects,
     hasUnsavedChanges,
     isLoading,
-    state
+    state,
+    refreshProjects
   } = useProject();
 
   // Handler for loading a project
@@ -92,6 +93,10 @@ export const useProjectOperations = () => {
         }
         
         console.log('Projet mis à jour avec succès:', data);
+        
+        // Rafraîchir la liste des projets après la mise à jour
+        await refreshProjects();
+        
         toast.success('Projet mis à jour avec succès');
         return true;
       } else {
@@ -109,6 +114,10 @@ export const useProjectOperations = () => {
         }
         
         console.log('Projet créé avec succès:', data);
+        
+        // Rafraîchir la liste des projets après la création
+        await refreshProjects();
+        
         toast.success('Projet créé avec succès');
         return true;
       }
@@ -118,7 +127,7 @@ export const useProjectOperations = () => {
       toast.error('Erreur lors de l\'enregistrement du projet');
       return false;
     }
-  }, [saveProject, state.metadata, state.property, state.rooms, state.travaux, currentProjectId]);
+  }, [state.metadata, state.property, state.rooms, state.travaux, currentProjectId, refreshProjects]);
 
   return {
     handleChargerProjet,

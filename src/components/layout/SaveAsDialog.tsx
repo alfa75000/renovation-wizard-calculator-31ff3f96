@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog';
 import { Label } from '../ui/label';
@@ -145,15 +146,19 @@ export const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
       
       console.log('Données projet à sauvegarder:', projectData);
       
-      // Sauvegarder le projet dans la base de données
+      // Utiliser seulement handleSaveProject pour la sauvegarde (pas saveProject du contexte)
+      // Ce changement évite la double sauvegarde
       const result = await handleSaveProject(projectData);
       
       if (result) {
         toast.success('Projet enregistré avec succès');
-        // Appeler la fonction de callback
-        onSaveProject();
-        // Fermer le modal
+        // Appeler la fonction de callback mais ne pas déclencher de sauvegarde supplémentaire
         onOpenChange(false);
+        
+        // Rafraîchir l'interface sans sauvegarder à nouveau
+        setTimeout(() => {
+          onSaveProject();
+        }, 100);
       }
     } catch (error) {
       console.error('Erreur lors de l\'enregistrement du projet:', error);
