@@ -7,7 +7,7 @@ import { TitleHeader } from './layout/TitleHeader';
 import { Navigation } from './layout/Navigation';
 import { NewProjectDialog } from './layout/NewProjectDialog';
 import { SaveAsDialog } from './layout/SaveAsDialog';
-import { OpenProjectSheet } from './layout/OpenProjectSheet';
+import { OpenProjectDialog } from './layout/OpenProjectDialog';
 import { LayoutProps } from './Layout.d';
 
 export const Layout: React.FC<LayoutProps> = ({ 
@@ -28,7 +28,7 @@ export const Layout: React.FC<LayoutProps> = ({
   
   const [newProjectDialogOpen, setNewProjectDialogOpen] = useState(false);
   const [saveAsDialogOpen, setSaveAsDialogOpen] = useState(false);
-  const [openProjectSheetOpen, setOpenProjectSheetOpen] = useState(false);
+  const [openProjectDialogOpen, setOpenProjectDialogOpen] = useState(false);
   
   const handleCreateNewProject = () => {
     createNewProject();
@@ -52,7 +52,7 @@ export const Layout: React.FC<LayoutProps> = ({
     <div className="min-h-screen bg-gray-50">
       <ProjectBar 
         onNewProject={() => setNewProjectDialogOpen(true)}
-        onOpenProject={() => setOpenProjectSheetOpen(true)}
+        onOpenProject={() => setOpenProjectDialogOpen(true)}
         onSaveProject={handleSaveProject}
         onSaveAsProject={() => setSaveAsDialogOpen(true)}
         projectDisplayName={projectName} // Utiliser la valeur du state global
@@ -78,9 +78,9 @@ export const Layout: React.FC<LayoutProps> = ({
         onSaveProject={handleSaveProject}
       />
       
-      <OpenProjectSheet 
-        open={openProjectSheetOpen}
-        onOpenChange={setOpenProjectSheetOpen}
+      <OpenProjectDialog 
+        open={openProjectDialogOpen}
+        onOpenChange={setOpenProjectDialogOpen}
       />
     </div>
   );
