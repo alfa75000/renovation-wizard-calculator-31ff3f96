@@ -146,17 +146,19 @@ export const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
       
       console.log('Données projet à sauvegarder:', projectData);
       
-      // Utiliser seulement handleSaveProject pour la sauvegarde (pas saveProject du contexte)
-      // Ce changement évite la double sauvegarde
+      // IMPORTANT: Ne pas appeler le saveProject du contexte, seulement utiliser handleSaveProject
+      // pour éviter la double sauvegarde
       const result = await handleSaveProject(projectData);
       
       if (result) {
         toast.success('Projet enregistré avec succès');
-        // Appeler la fonction de callback mais ne pas déclencher de sauvegarde supplémentaire
+        // Fermer le modal et aviser le parent du succès, mais sans déclencher d'autre sauvegarde
         onOpenChange(false);
         
         // Rafraîchir l'interface sans sauvegarder à nouveau
+        // Utiliser setTimeout pour s'assurer que le state est bien mis à jour
         setTimeout(() => {
+          // Appeler le callback mais ne pas déclencher de sauvegarde dans celui-ci
           onSaveProject();
         }, 100);
       }

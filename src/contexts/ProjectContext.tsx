@@ -16,6 +16,7 @@ type ProjectContextType = {
   isSaving: boolean;
   projects: Project[];
   currentProjectId: string | null;
+  setCurrentProjectId: (id: string | null) => void; // Nouvelle fonction pour mettre à jour l'ID du projet
   hasUnsavedChanges: boolean;
   saveProject: (name?: string) => Promise<void>;
   saveProjectAsDraft: () => Promise<void>;
@@ -190,6 +191,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       isSaving,
       projects,
       currentProjectId,
+      setCurrentProjectId, // Exposer la fonction pour modifier l'ID du projet courant
       hasUnsavedChanges,
       saveProject,
       saveProjectAsDraft,

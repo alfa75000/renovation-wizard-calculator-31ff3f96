@@ -9,13 +9,16 @@ export const useProjectOperations = () => {
   const { 
     loadProject,
     deleteCurrentProject,
+    // Renommer mais ne pas utiliser cette fonction de sauvegarde du contexte
     saveProject: contextSaveProject,
     currentProjectId,
     projects,
     hasUnsavedChanges,
     isLoading,
     state,
-    refreshProjects
+    refreshProjects,
+    // Ajouter cette fonction pour mettre à jour l'ID du projet courant
+    setCurrentProjectId
   } = useProject();
 
   // Handler for loading a project
@@ -77,6 +80,8 @@ export const useProjectOperations = () => {
       
       console.log('CombinedProjectInfo avant sauvegarde:', combinedProjectInfo);
       
+      let result;
+      
       // Si nous sommes en mode édition (currentProjectId existe)
       if (currentProjectId) {
         console.log('Mise à jour du projet existant:', currentProjectId);
@@ -93,6 +98,7 @@ export const useProjectOperations = () => {
         }
         
         console.log('Projet mis à jour avec succès:', data);
+        result = data;
         
         // Rafraîchir la liste des projets après la mise à jour
         await refreshProjects();
@@ -114,6 +120,12 @@ export const useProjectOperations = () => {
         }
         
         console.log('Projet créé avec succès:', data);
+        result = data;
+        
+        // IMPORTANT: Mettre à jour l'ID du projet courant pour éviter la double création
+        if (data && data[0] && data[0].id) {
+          setCurrentProjectId(data[0].id);
+        }
         
         // Rafraîchir la liste des projets après la création
         await refreshProjects();
@@ -127,7 +139,7 @@ export const useProjectOperations = () => {
       toast.error('Erreur lors de l\'enregistrement du projet');
       return false;
     }
-  }, [state.metadata, state.property, state.rooms, state.travaux, currentProjectId, refreshProjects]);
+  }, [state.metadata, state.property, state.rooms, state.travaux, currentProjectId, refreshProjects, setCurrentProjectId]);
 
   return {
     handleChargerProjet,
