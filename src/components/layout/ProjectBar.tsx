@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '../ui/button';
 import { FilePlus2, FolderOpen, Save, SaveAll, Check, AlertCircle } from 'lucide-react';
 import { useProject } from '@/contexts/ProjectContext';
@@ -28,12 +28,29 @@ export const ProjectBar: React.FC<ProjectBarProps> = ({
 }) => {
   const { currentProjectId, projects } = useProject();
   
-  // Options d'enregistrement automatique - enabled est maintenant true par défaut
+  // Options d'enregistrement automatique - enabled est maintenant false par défaut
   const [autoSaveOptions, setAutoSaveOptions] = useLocalStorage('autoSaveOptions', {
-    enabled: true,
+    enabled: false,
     saveOnRoomAdd: false,
     saveOnWorkAdd: true
   });
+  
+  // Effet pour activer automatiquement l'enregistrement auto quand un ID de projet est assigné
+  useEffect(() => {
+    if (currentProjectId && !autoSaveOptions.enabled) {
+      // Activer l'enregistrement auto uniquement si un projet est chargé
+      setAutoSaveOptions(prev => ({
+        ...prev,
+        enabled: true
+      }));
+    } else if (!currentProjectId && autoSaveOptions.enabled) {
+      // Désactiver l'enregistrement auto si aucun projet n'est chargé
+      setAutoSaveOptions(prev => ({
+        ...prev,
+        enabled: false
+      }));
+    }
+  }, [currentProjectId, autoSaveOptions.enabled, setAutoSaveOptions]);
   
   // Si aucun projectDisplayName n'est fourni, revenir au projet du contexte
   const displayName = projectDisplayName || (() => {
@@ -110,15 +127,21 @@ export const ProjectBar: React.FC<ProjectBarProps> = ({
                 <Checkbox 
                   id="autoSave" 
                   checked={autoSaveOptions.enabled}
+                  disabled={!currentProjectId} // Désactiver la case à cocher si aucun projet n'est en cours
                   onCheckedChange={(checked) => 
                     handleAutoSaveOptionChange('enabled', checked === true)
                   }
                 />
                 <label 
                   htmlFor="autoSave" 
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed ${!currentProjectId ? 'text-gray-400' : ''}`}
                 >
                   Enregistrement Auto
+                  {!currentProjectId && (
+                    <span className="block text-xs text-gray-400 mt-1">
+                      (Disponible uniquement avec un projet existant)
+                    </span>
+                  )}
                 </label>
               </div>
               
@@ -127,7 +150,7 @@ export const ProjectBar: React.FC<ProjectBarProps> = ({
                   <Checkbox 
                     id="saveOnRoomAdd" 
                     checked={autoSaveOptions.saveOnRoomAdd}
-                    disabled={!autoSaveOptions.enabled}
+                    disabled={!autoSaveOptions.enabled || !currentProjectId}
                     onCheckedChange={(checked) => 
                       handleAutoSaveOptionChange('saveOnRoomAdd', checked === true)
                     }
@@ -144,7 +167,7 @@ export const ProjectBar: React.FC<ProjectBarProps> = ({
                   <Checkbox 
                     id="saveOnWorkAdd" 
                     checked={autoSaveOptions.saveOnWorkAdd}
-                    disabled={!autoSaveOptions.enabled}
+                    disabled={!autoSaveOptions.enabled || !currentProjectId}
                     onCheckedChange={(checked) => 
                       handleAutoSaveOptionChange('saveOnWorkAdd', checked === true)
                     }
