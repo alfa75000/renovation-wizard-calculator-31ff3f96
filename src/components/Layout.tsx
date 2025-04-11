@@ -30,7 +30,7 @@ export const Layout: React.FC<LayoutProps> = ({
   useAutoSave();
   
   // Récupérer directement le nom du projet depuis le contexte global
-  const projectName = state.metadata.nomProjet || '';
+  const projectName = state?.metadata?.nomProjet || '';
   
   const [newProjectDialogOpen, setNewProjectDialogOpen] = useState(false);
   const [saveAsDialogOpen, setSaveAsDialogOpen] = useState(false);
@@ -52,8 +52,8 @@ export const Layout: React.FC<LayoutProps> = ({
     
     // Sinon, procéder à la sauvegarde rapide
     try {
-      // Vérifier d'abord si les données nécessaires sont disponibles
-      if (!state.metadata.clientId) {
+      // Vérifier d'abord si state et les données nécessaires sont disponibles
+      if (!state || !state.metadata || !state.metadata.clientId) {
         toast.error('Veuillez sélectionner un client avant de sauvegarder le projet');
         return;
       }

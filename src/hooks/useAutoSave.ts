@@ -26,6 +26,12 @@ export const useAutoSave = () => {
   
   // Effet pour surveiller les changements dans les pièces
   useEffect(() => {
+    // S'assurer que state existe
+    if (!state) {
+      console.log('Auto-save: state n\'est pas encore disponible');
+      return;
+    }
+    
     // Vérifier si l'enregistrement auto est activé et si un projet existe
     if (!autoSaveOptions.enabled || !currentProjectId) {
       // Mettre à jour les références même si on ne sauvegarde pas
@@ -38,16 +44,22 @@ export const useAutoSave = () => {
       // Si le nombre de pièces a augmenté, c'est qu'on a ajouté une pièce
       if (state.rooms.length > prevRoomsRef.current.length) {
         console.log('Auto-save: Nouvelle pièce détectée, sauvegarde automatique...');
-        handleSaveProject();
+        handleSaveProject({ isAutoSave: true });
       }
     }
     
     // Mettre à jour la référence
     prevRoomsRef.current = [...state.rooms];
-  }, [state.rooms, autoSaveOptions, currentProjectId, handleSaveProject]);
+  }, [state?.rooms, autoSaveOptions, currentProjectId, handleSaveProject]);
   
   // Effet pour surveiller les changements dans les travaux
   useEffect(() => {
+    // S'assurer que state existe
+    if (!state) {
+      console.log('Auto-save: state n\'est pas encore disponible');
+      return;
+    }
+    
     // Vérifier si l'enregistrement auto est activé et si un projet existe
     if (!autoSaveOptions.enabled || !currentProjectId) {
       // Mettre à jour les références même si on ne sauvegarde pas
@@ -60,15 +72,15 @@ export const useAutoSave = () => {
       // Si le nombre de travaux a augmenté, c'est qu'on a ajouté un travail
       if (state.travaux.length > prevTravauxRef.current.length) {
         console.log('Auto-save: Nouveau travail détecté, sauvegarde automatique...');
-        handleSaveProject();
+        handleSaveProject({ isAutoSave: true });
       }
     }
     
     // Mettre à jour la référence
     prevTravauxRef.current = [...state.travaux];
-  }, [state.travaux, autoSaveOptions, currentProjectId, handleSaveProject]);
+  }, [state?.travaux, autoSaveOptions, currentProjectId, handleSaveProject]);
   
   return {
-    autoSaveEnabled: autoSaveOptions.enabled && !!currentProjectId
+    autoSaveEnabled: autoSaveOptions.enabled && !!currentProjectId && !!state
   };
 };

@@ -70,8 +70,17 @@ export const useProjectOperations = () => {
         toast.loading('Sauvegarde en cours...', { id: toastId });
       }
       
+      // Vérifier que state existe
+      if (!state) {
+        console.error('Erreur: state est undefined dans handleSaveProject');
+        if (!isAutoSave) {
+          toast.error('Erreur lors de la sauvegarde du projet: état non disponible', { id: toastId });
+        }
+        return false;
+      }
+      
       // Valider que le client ID est présent
-      const metadata = state.metadata;
+      const metadata = state.metadata || {};
       const clientId = metadata.clientId || projectInfo?.client_id;
       
       if (!clientId) {
@@ -186,7 +195,7 @@ export const useProjectOperations = () => {
       }
       return false;
     }
-  }, [state.metadata, state.property, state.rooms, state.travaux, currentProjectId, refreshProjects, setCurrentProjectId, updateSavedState]);
+  }, [state, currentProjectId, refreshProjects, setCurrentProjectId, updateSavedState]);
 
   return {
     handleChargerProjet,
