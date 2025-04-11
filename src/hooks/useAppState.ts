@@ -53,6 +53,7 @@ export const useAppState = () => {
   // Charger l'état de l'application pour un utilisateur spécifique
   const loadAppState = useCallback(async (userId: string) => {
     try {
+      console.log('Chargement de l\'état de l\'application pour l\'utilisateur:', userId);
       const { data, error } = await supabase
         .from('app_state')
         .select('*')
@@ -84,6 +85,7 @@ export const useAppState = () => {
             return null;
           }
           
+          console.log('Nouvel état d\'application créé:', newData);
           return newData as AppState;
         }
         
@@ -91,6 +93,7 @@ export const useAppState = () => {
         return null;
       }
       
+      console.log('État de l\'application chargé:', data);
       return data as AppState;
     } catch (error) {
       console.error('Exception lors du chargement de l\'état de l\'application:', error);
@@ -155,7 +158,7 @@ export const useAppState = () => {
     }
   }, [users, loadAppState]);
 
-  // Mettre à jour les options d'auto-sauvegarde
+  // Mettre à jour les options d'auto-sauvegarde de manière fiable
   const updateAutoSaveOptions = useCallback(async (options: AutoSaveOptions) => {
     if (!appState || !currentUser) {
       console.error("Tentative de mise à jour des options d'auto-sauvegarde sans utilisateur ou état d'application");
@@ -165,39 +168,54 @@ export const useAppState = () => {
     try {
       console.log('Mise à jour des options d\'auto-sauvegarde dans la base de données:', options);
       
-      // Utiliser explicitement last_updated_at pour forcer la mise à jour
-      const now = new Date().toISOString();
+      // Mettre à jour l'état local immédiatement pour une réactivité de l'UI
+      setAppState(prev => {
+        if (!prev) return null;
+        return { 
+          ...prev, 
+          auto_save_options: options
+        };
+      });
       
-      // Persister d'abord les changements dans l'état local avant l'appel API
-      setAppState(prev => prev ? { 
-        ...prev, 
-        auto_save_options: options,
-        last_updated_at: now
-      } : null);
-      
-      const { data, error } = await supabase
+      // Persister dans la base de données
+      const { error } = await supabase
         .from('app_state')
         .update({ 
           auto_save_options: options,
-          last_updated_at: now
+          last_updated_at: new Date().toISOString()
         })
-        .eq('user_id', currentUser.id)
-        .select();
+        .eq('user_id', currentUser.id);
       
       if (error) {
         console.error('Erreur lors de la mise à jour des options d\'auto-sauvegarde:', error);
+        
+        // Restaurer l'état précédent en cas d'erreur
         toast.error('Erreur lors de la mise à jour des options d\'auto-sauvegarde');
+        
+        // Recharger l'état depuis la base de données pour être sûr
+        const freshState = await loadAppState(currentUser.id);
+        if (freshState) {
+          setAppState(freshState);
+        }
+        
         return false;
       }
       
-      console.log('Options d\'auto-sauvegarde mises à jour avec succès:', data);
+      console.log('Options d\'auto-sauvegarde mises à jour avec succès');
       return true;
     } catch (error) {
       console.error('Exception lors de la mise à jour des options d\'auto-sauvegarde:', error);
       toast.error('Erreur lors de la mise à jour des options d\'auto-sauvegarde');
+      
+      // Recharger l'état depuis la base de données pour être sûr
+      const freshState = await loadAppState(currentUser.id);
+      if (freshState) {
+        setAppState(freshState);
+      }
+      
       return false;
     }
-  }, [appState, currentUser]);
+  }, [appState, currentUser, loadAppState]);
 
   // Mettre à jour le projet en cours
   const updateCurrentProject = useCallback(async (projectId: string | null) => {
@@ -212,43 +230,55 @@ export const useAppState = () => {
         projectId
       });
       
-      // Utiliser explicitement last_updated_at pour forcer la mise à jour
-      const now = new Date().toISOString();
-      
-      // Persister d'abord les changements dans l'état local avant l'appel API
+      // Mettre à jour l'état local immédiatement avant l'appel API
       setAppState(prev => {
-        const updated = prev ? { 
+        if (!prev) return null;
+        const updated = { 
           ...prev, 
-          current_project_id: projectId,
-          last_updated_at: now
-        } : null;
+          current_project_id: projectId
+        };
         console.log('État local mis à jour:', updated);
         return updated;
       });
       
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('app_state')
         .update({ 
           current_project_id: projectId,
-          last_updated_at: now
+          last_updated_at: new Date().toISOString()
         })
-        .eq('user_id', currentUser.id)
-        .select();
+        .eq('user_id', currentUser.id);
       
       if (error) {
         console.error('Erreur lors de la mise à jour du projet en cours:', error);
+        
+        // Restaurer l'état précédent en cas d'échec
         toast.error('Erreur lors de la mise à jour du projet en cours');
+        
+        // Recharger l'état depuis la base de données pour être sûr
+        const freshState = await loadAppState(currentUser.id);
+        if (freshState) {
+          setAppState(freshState);
+        }
+        
         return false;
       }
       
-      console.log('Mise à jour réussie de current_project_id dans app_state:', data);
+      console.log('Mise à jour réussie de current_project_id dans app_state');
       return true;
     } catch (error) {
       console.error('Exception lors de la mise à jour du projet en cours:', error);
       toast.error('Erreur lors de la mise à jour du projet en cours');
+      
+      // Recharger l'état depuis la base de données pour être sûr
+      const freshState = await loadAppState(currentUser.id);
+      if (freshState) {
+        setAppState(freshState);
+      }
+      
       return false;
     }
-  }, [currentUser]);
+  }, [currentUser, loadAppState]);
 
   return {
     isLoading,

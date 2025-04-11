@@ -48,8 +48,8 @@ export const ProjectBar: React.FC<ProjectBarProps> = ({
   // Mettre à jour les options locales lorsque l'état de l'application change
   useEffect(() => {
     if (appState?.auto_save_options) {
-      setAutoSaveOptions(appState.auto_save_options);
       console.log('Options d\'auto-sauvegarde chargées depuis app_state:', appState.auto_save_options);
+      setAutoSaveOptions(appState.auto_save_options);
     }
   }, [appState]);
   
@@ -60,29 +60,51 @@ export const ProjectBar: React.FC<ProjectBarProps> = ({
   })();
 
   // Fonction pour mettre à jour les options d'enregistrement automatique
-  const handleAutoSaveOptionChange = (option: keyof AutoSaveOptions, value: boolean) => {
-    // Créer une copie des options actuelles pour la mise à jour
-    const newOptions = {
-      ...autoSaveOptions,
-      [option]: value
-    };
-    
-    console.log('Changement d\'option d\'auto-sauvegarde:', option, value, newOptions);
-    
-    // Mettre à jour l'état local immédiatement pour une réactivité de l'UI
-    setAutoSaveOptions(newOptions);
-    
-    // Mettre à jour dans la base de données
-    updateAutoSaveOptions(newOptions)
-      .then(success => {
-        if (success) {
-          console.log('Options d\'auto-sauvegarde mises à jour avec succès');
-        } else {
-          toast.error('Erreur lors de la mise à jour des options d\'auto-sauvegarde');
-          // Restaurer l'ancienne valeur en cas d'échec
-          setAutoSaveOptions(autoSaveOptions);
+  const handleAutoSaveOptionChange = async (option: keyof AutoSaveOptions, value: boolean) => {
+    try {
+      console.log('Changement d\'option d\'auto-sauvegarde:', option, value);
+      
+      // Si on désactive enabled, il faut aussi désactiver les sous-options
+      const newOptions = { ...autoSaveOptions };
+      
+      if (option === 'enabled' && value === false) {
+        // Si on désactive l'auto-save, on désactive aussi les sous-options
+        newOptions.enabled = false;
+        newOptions.saveOnRoomAdd = false;
+        newOptions.saveOnWorkAdd = false;
+      } else if (option === 'enabled' && value === true) {
+        // Si on active l'auto-save, on garde les sous-options telles quelles
+        newOptions.enabled = true;
+      } else {
+        // Pour les sous-options, on met simplement à jour la valeur
+        newOptions[option] = value;
+      }
+      
+      console.log('Nouvelles options d\'auto-sauvegarde:', newOptions);
+      
+      // Mettre à jour l'état local immédiatement pour une réactivité de l'UI
+      setAutoSaveOptions(newOptions);
+      
+      // Envoyer la mise à jour à la base de données
+      const success = await updateAutoSaveOptions(newOptions);
+      
+      if (!success) {
+        // En cas d'échec, recharger l'état depuis appState
+        if (appState?.auto_save_options) {
+          setAutoSaveOptions(appState.auto_save_options);
         }
-      });
+        toast.error('Erreur lors de la mise à jour des options d\'auto-sauvegarde');
+      } else {
+        console.log('Options d\'auto-sauvegarde mises à jour avec succès');
+      }
+    } catch (error) {
+      console.error('Exception lors de la mise à jour des options d\'auto-sauvegarde:', error);
+      // En cas d'exception, recharger l'état depuis appState
+      if (appState?.auto_save_options) {
+        setAutoSaveOptions(appState.auto_save_options);
+      }
+      toast.error('Erreur lors de la mise à jour des options d\'auto-sauvegarde');
+    }
   };
 
   // Gérer le changement d'utilisateur
