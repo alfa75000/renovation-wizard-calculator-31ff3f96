@@ -1,59 +1,59 @@
 
 import { useCallback } from 'react';
 import { Room, ProjectState, ProjectAction } from '@/types';
-import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
-import { generateRoomName } from '../utils/projectUtils';
 
 /**
- * Hook pour la gestion des pièces dans le projet
+ * Hook pour gérer les pièces dans le projet
+ * @param state État actuel du projet
+ * @param dispatch Fonction dispatch pour mettre à jour l'état
  */
 export const useRooms = (
   state: ProjectState,
   dispatch: React.Dispatch<ProjectAction>
 ) => {
-  // Assurons-nous que rooms existe, sinon initialisons-le comme un tableau vide
-  const rooms = state?.rooms || [];
+  const rooms = state.rooms;
 
-  /**
-   * Ajoute une nouvelle pièce au projet
-   */
+  // Ajouter une nouvelle pièce
   const addRoom = useCallback((room: Omit<Room, 'id'>) => {
-    // Utiliser la fonction utilitaire pour générer le nom si non spécifié
-    let roomData = { ...room };
-    if (!roomData.name || roomData.name === '') {
-      roomData.name = generateRoomName(rooms, roomData.type);
-    }
+    const newRoom = {
+      ...room,
+      id: uuidv4()
+    };
     
-    const newRoom = { ...roomData, id: uuidv4() };
-    dispatch({ type: 'ADD_ROOM', payload: newRoom });
-    toast.success(`Pièce "${newRoom.name}" ajoutée avec succès`);
+    dispatch({
+      type: 'ADD_ROOM',
+      payload: newRoom
+    });
+    
+    console.log('Room added:', newRoom);
     return newRoom;
-  }, [dispatch, rooms]);
-
-  /**
-   * Met à jour une pièce existante
-   */
-  const updateRoom = useCallback((id: string, room: Room) => {
-    dispatch({ type: 'UPDATE_ROOM', payload: { id, room } });
-    toast.success(`Pièce "${room.name}" mise à jour avec succès`);
   }, [dispatch]);
 
-  /**
-   * Supprime une pièce et tous les travaux associés
-   */
-  const deleteRoom = useCallback((id: string) => {
-    const roomToDelete = rooms.find(room => room.id === id);
-    if (!roomToDelete) return;
+  // Mettre à jour une pièce existante
+  const updateRoom = useCallback((id: string, room: Partial<Room>) => {
+    dispatch({
+      type: 'UPDATE_ROOM',
+      payload: { id, room: { ...room, id } as Room }
+    });
     
-    dispatch({ type: 'DELETE_ROOM', payload: id });
-    toast.success(`Pièce "${roomToDelete.name}" supprimée avec succès`);
-  }, [dispatch, rooms]);
+    console.log('Room updated:', id);
+  }, [dispatch]);
+
+  // Supprimer une pièce
+  const deleteRoom = useCallback((id: string) => {
+    dispatch({
+      type: 'DELETE_ROOM',
+      payload: id
+    });
+    
+    console.log('Room deleted:', id);
+  }, [dispatch]);
 
   return {
     rooms,
     addRoom,
     updateRoom,
-    deleteRoom,
+    deleteRoom
   };
 };

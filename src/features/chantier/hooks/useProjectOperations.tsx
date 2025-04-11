@@ -55,14 +55,20 @@ export const useProjectOperations = () => {
   /**
    * Fonction centralisée de sauvegarde de projet
    * Cette fonction est le SEUL point de sauvegarde de toute l'application
+   * Elle est également utilisée par l'auto-sauvegarde
    */
   const handleSaveProject = useCallback(async (projectInfo?: any) => {
     // Identifiant unique pour le toast de sauvegarde
     const toastId = 'saving-project';
     
+    // Ne pas afficher de toast pour l'auto-sauvegarde
+    const isAutoSave = projectInfo?.isAutoSave;
+    
     try {
-      // Afficher un toast de chargement
-      toast.loading('Sauvegarde en cours...', { id: toastId });
+      if (!isAutoSave) {
+        // Afficher un toast de chargement uniquement pour les sauvegardes manuelles
+        toast.loading('Sauvegarde en cours...', { id: toastId });
+      }
       
       // Valider que le client ID est présent
       const metadata = state.metadata;
@@ -99,13 +105,17 @@ export const useProjectOperations = () => {
         }
       };
       
-      console.log('Données du projet avant sauvegarde:', combinedProjectInfo);
+      if (!isAutoSave) {
+        console.log('Données du projet avant sauvegarde:', combinedProjectInfo);
+      }
       
       let result;
       
       // Sauvegarde selon qu'on modifie un projet existant ou qu'on en crée un nouveau
       if (currentProjectId) {
-        console.log('Mise à jour du projet existant:', currentProjectId);
+        if (!isAutoSave) {
+          console.log('Mise à jour du projet existant:', currentProjectId);
+        }
         const { data, error } = await supabase
           .from('projects_save')
           .update(combinedProjectInfo)
@@ -114,16 +124,22 @@ export const useProjectOperations = () => {
           
         if (error) {
           console.error('Erreur lors de la mise à jour du projet:', error);
-          toast.error('Erreur lors de la mise à jour du projet', { id: toastId });
+          if (!isAutoSave) {
+            toast.error('Erreur lors de la mise à jour du projet', { id: toastId });
+          }
           return false;
         }
         
-        console.log('Projet mis à jour avec succès:', data);
+        if (!isAutoSave) {
+          console.log('Projet mis à jour avec succès:', data);
+          toast.success('Projet mis à jour avec succès', { id: toastId });
+        }
         result = data;
-        toast.success('Projet mis à jour avec succès', { id: toastId });
       } else {
         // Création d'un nouveau projet
-        console.log('Création d\'un nouveau projet avec client_id:', clientId);
+        if (!isAutoSave) {
+          console.log('Création d\'un nouveau projet avec client_id:', clientId);
+        }
         try {
           const { data, error } = await supabase
             .from('projects_save')
@@ -132,22 +148,27 @@ export const useProjectOperations = () => {
             
           if (error) {
             console.error('Erreur lors de la création du projet:', error);
-            toast.error('Erreur lors de la création du projet', { id: toastId });
+            if (!isAutoSave) {
+              toast.error('Erreur lors de la création du projet', { id: toastId });
+            }
             return false;
           }
           
-          console.log('Projet créé avec succès:', data);
+          if (!isAutoSave) {
+            console.log('Projet créé avec succès:', data);
+            toast.success('Projet créé avec succès', { id: toastId });
+          }
           result = data;
           
           // Mettre à jour l'ID du projet courant pour éviter les doubles créations
           if (data && data[0] && data[0].id) {
             setCurrentProjectId(data[0].id);
           }
-          
-          toast.success('Projet créé avec succès', { id: toastId });
         } catch (innerError) {
           console.error('Exception lors de la création du projet:', innerError);
-          toast.error(`Erreur lors de la création du projet: ${innerError instanceof Error ? innerError.message : 'Erreur inconnue'}`, { id: toastId });
+          if (!isAutoSave) {
+            toast.error(`Erreur lors de la création du projet: ${innerError instanceof Error ? innerError.message : 'Erreur inconnue'}`, { id: toastId });
+          }
           return false;
         }
       }
@@ -160,7 +181,9 @@ export const useProjectOperations = () => {
       return true;
     } catch (error) {
       console.error('Erreur lors de l\'enregistrement du projet:', error);
-      toast.error('Erreur lors de l\'enregistrement du projet', { id: toastId });
+      if (!isAutoSave) {
+        toast.error('Erreur lors de l\'enregistrement du projet', { id: toastId });
+      }
       return false;
     }
   }, [state.metadata, state.property, state.rooms, state.travaux, currentProjectId, refreshProjects, setCurrentProjectId, updateSavedState]);

@@ -10,6 +10,7 @@ import { OpenProjectDialog } from './layout/OpenProjectDialog';
 import { LayoutProps } from './Layout.d';
 import { useProjectOperations } from '@/features/chantier/hooks/useProjectOperations';
 import { toast } from 'sonner';
+import { useAutoSave } from '@/hooks/useAutoSave';
 
 export const Layout: React.FC<LayoutProps> = ({ 
   children, 
@@ -24,6 +25,9 @@ export const Layout: React.FC<LayoutProps> = ({
   } = useProject();
   
   const { handleSaveProject, currentProjectId } = useProjectOperations();
+  
+  // Activer l'auto-sauvegarde au niveau global de l'application
+  useAutoSave();
   
   // Récupérer directement le nom du projet depuis le contexte global
   const projectName = state.metadata.nomProjet || '';

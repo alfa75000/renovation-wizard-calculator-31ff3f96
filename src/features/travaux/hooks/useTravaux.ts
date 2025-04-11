@@ -25,6 +25,8 @@ export const useTravaux = () => {
       payload: newTravail
     });
     
+    console.log('Travail added:', newTravail);
+    
     toast({
       title: "Travail ajouté",
       description: `Le travail "${travail.description}" a été ajouté avec succès.`
@@ -40,6 +42,8 @@ export const useTravaux = () => {
       payload: { id, travail: { ...travail, id } as Travail }
     });
     
+    console.log('Travail updated:', id);
+    
     toast({
       title: "Travail mis à jour",
       description: `Le travail a été mis à jour avec succès.`
@@ -52,6 +56,8 @@ export const useTravaux = () => {
       type: 'DELETE_TRAVAIL',
       payload: id
     });
+    
+    console.log('Travail deleted:', id);
     
     toast({
       title: "Travail supprimé",
