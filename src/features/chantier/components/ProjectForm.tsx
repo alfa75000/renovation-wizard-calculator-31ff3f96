@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { ClientSelection } from './project-form/ClientSelection';
 import { DevisInfoForm } from './project-form/DevisInfoForm';
 import { ProjectNameField } from './project-form/ProjectNameField';
@@ -56,15 +56,62 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
   isLoading,
   onGenerateProjectName
 }) => {
-  // Effect to update project name when client, devis number or description changes
+  // Référence pour suivre si le composant est monté
+  const isMounted = useRef(true);
+  
+  // Référence pour suivre si les valeurs initiales ont déjà déclenché la génération du nom
+  const initialValuesProcessed = useRef(false);
+  
+  // Référence pour stocker les valeurs précédentes
+  const prevValues = useRef({
+    clientId,
+    devisNumber,
+    descriptionProjet
+  });
+  
+  // Effect pour générer le nom du projet seulement lors de changements significatifs
   useEffect(() => {
-    if (clientId || devisNumber || descriptionProjet) {
-      console.log("Critical field changed, updating project name...");
+    // Éviter de lancer la génération si c'est juste le premier rendu
+    if (!initialValuesProcessed.current) {
+      initialValuesProcessed.current = true;
+      
+      // Générer un nom seulement si ces champs ont des valeurs mais que le nom est vide
+      if ((clientId || devisNumber || descriptionProjet) && !nomProjet) {
+        console.log("Premier chargement, génération du nom si nécessaire");
+        onGenerateProjectName().catch(err => {
+          console.error("Erreur lors de la génération initiale du nom du projet:", err);
+        });
+      }
+      return;
+    }
+    
+    // Vérifier si les valeurs ont réellement changé
+    const hasClientChanged = clientId !== prevValues.current.clientId;
+    const hasDevisNumberChanged = devisNumber !== prevValues.current.devisNumber;
+    const hasDescriptionChanged = descriptionProjet !== prevValues.current.descriptionProjet;
+    
+    // Mettre à jour les valeurs précédentes
+    prevValues.current = {
+      clientId,
+      devisNumber,
+      descriptionProjet
+    };
+    
+    // Générer le nom seulement si l'un des champs clés a changé
+    if ((hasClientChanged || hasDevisNumberChanged || hasDescriptionChanged) && isMounted.current) {
+      console.log("Champ critique modifié, mise à jour du nom du projet");
       onGenerateProjectName().catch(err => {
-        console.error("Error generating project name:", err);
+        console.error("Erreur lors de la génération du nom du projet:", err);
       });
     }
-  }, [clientId, devisNumber, descriptionProjet, onGenerateProjectName]);
+  }, [clientId, devisNumber, descriptionProjet, nomProjet, onGenerateProjectName]);
+  
+  // Nettoyage lors du démontage du composant
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
   
   return (
     <div className="space-y-6">

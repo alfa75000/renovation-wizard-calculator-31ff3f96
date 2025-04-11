@@ -3,6 +3,7 @@ import { useCallback } from 'react';
 import { useProject } from '@/contexts/ProjectContext';
 import { toast } from 'sonner';
 import { ProjectMetadata } from '@/types';
+import { supabase } from '@/lib/supabase';
 
 export const useProjectOperations = () => {
   const { 
@@ -41,6 +42,8 @@ export const useProjectOperations = () => {
   // Handler for saving the current project
   const handleSaveProject = useCallback(async (projectInfo?: any) => {
     try {
+      console.log('handleSaveProject appelé avec:', projectInfo);
+      
       // Prepare project metadata from the state
       const metadata = state.metadata;
       
@@ -56,21 +59,66 @@ export const useProjectOperations = () => {
           dateDevis: metadata.dateDevis || projectInfo?.general_data?.dateDevis || new Date().toISOString().split('T')[0]
         },
         devis_number: metadata.devisNumber || projectInfo?.devis_number || '',
+        project_data: {
+          property: state.property || {
+            type: 'Appartement',
+            floors: 1,
+            totalArea: 0,
+            rooms: 0,
+            ceilingHeight: 2.5,
+          },
+          rooms: state.rooms || [],
+          travaux: state.travaux || [],
+          metadata: metadata
+        },
         ...projectInfo // This allows overriding defaults if needed
       };
       
       console.log('CombinedProjectInfo avant sauvegarde:', combinedProjectInfo);
       
-      // Save project with metadata only, don't pass the state itself which could cause errors
-      await saveProject(combinedProjectInfo);
-      toast.success('Projet enregistré avec succès');
-      return true;
+      // Si nous sommes en mode édition (currentProjectId existe)
+      if (currentProjectId) {
+        console.log('Mise à jour du projet existant:', currentProjectId);
+        const { data, error } = await supabase
+          .from('projects_save')
+          .update(combinedProjectInfo)
+          .eq('id', currentProjectId)
+          .select();
+          
+        if (error) {
+          console.error('Erreur lors de la mise à jour du projet:', error);
+          toast.error('Erreur lors de la mise à jour du projet');
+          return false;
+        }
+        
+        console.log('Projet mis à jour avec succès:', data);
+        toast.success('Projet mis à jour avec succès');
+        return true;
+      } else {
+        // Sinon, on crée un nouveau projet
+        console.log('Création d\'un nouveau projet');
+        const { data, error } = await supabase
+          .from('projects_save')
+          .insert(combinedProjectInfo)
+          .select();
+          
+        if (error) {
+          console.error('Erreur lors de la création du projet:', error);
+          toast.error('Erreur lors de la création du projet');
+          return false;
+        }
+        
+        console.log('Projet créé avec succès:', data);
+        toast.success('Projet créé avec succès');
+        return true;
+      }
+      
     } catch (error) {
       console.error('Erreur lors de l\'enregistrement du projet:', error);
       toast.error('Erreur lors de l\'enregistrement du projet');
       return false;
     }
-  }, [saveProject, state.metadata]);
+  }, [saveProject, state.metadata, state.property, state.rooms, state.travaux, currentProjectId]);
 
   return {
     handleChargerProjet,

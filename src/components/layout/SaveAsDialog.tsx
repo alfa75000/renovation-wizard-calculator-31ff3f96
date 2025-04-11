@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog';
 import { Label } from '../ui/label';
@@ -129,8 +128,7 @@ export const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
         }
       });
       
-      // Préparer les données du projet pour la sauvegarde, envoyé uniquement les métadonnées
-      // et ne pas essayer d'accéder à state.property qui pourrait être undefined
+      // Préparer les données du projet pour la sauvegarde
       const projectData = {
         client_id: clientId,
         name: projectName,
