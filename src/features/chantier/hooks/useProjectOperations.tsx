@@ -79,8 +79,20 @@ export const useProjectOperations = () => {
         return false;
       }
       
-      // Valider que le client ID est présent
-      const metadata = state.metadata || {};
+      // Créer un objet metadata par défaut avec la structure appropriée
+      const defaultMetadata: ProjectMetadata = {
+        clientId: '',
+        nomProjet: '',
+        descriptionProjet: '',
+        adresseChantier: '',
+        occupant: '',
+        infoComplementaire: '',
+        dateDevis: '',
+        devisNumber: ''
+      };
+      
+      // Valider que le client ID est présent en utilisant le metadata approprié
+      const metadata = state.metadata || defaultMetadata;
       const clientId = metadata.clientId || projectInfo?.client_id;
       
       if (!clientId) {
