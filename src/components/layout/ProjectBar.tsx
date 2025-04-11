@@ -26,9 +26,9 @@ export const ProjectBar: React.FC<ProjectBarProps> = ({
 }) => {
   const { currentProjectId, projects, hasUnsavedChanges } = useProject();
   
-  // Options d'enregistrement automatique - activer par défaut
+  // Options d'enregistrement automatique
   const [autoSaveOptions, setAutoSaveOptions] = useLocalStorage('autoSaveOptions', {
-    enabled: true,
+    enabled: false,
     saveOnRoomAdd: false,
     saveOnWorkAdd: true
   });
@@ -78,22 +78,15 @@ export const ProjectBar: React.FC<ProjectBarProps> = ({
               size="sm" 
               className="min-w-[200px] justify-between"
             >
-              {currentProjectId ? (
-                hasUnsavedChanges ? (
-                  <>
-                    <AlertCircle size={16} />
-                    <span>Modifications non sauvegardées</span>
-                  </>
-                ) : (
-                  <>
-                    <Check size={16} />
-                    <span>Projet sauvegardé</span>
-                  </>
-                )
-              ) : (
+              {hasUnsavedChanges ? (
                 <>
                   <AlertCircle size={16} />
-                  <span>Pas de Projet en cours</span>
+                  <span>Modifications non sauvegardées</span>
+                </>
+              ) : (
+                <>
+                  <Check size={16} />
+                  <span>Projet sauvegardé</span>
                 </>
               )}
             </Button>
@@ -159,9 +152,9 @@ export const ProjectBar: React.FC<ProjectBarProps> = ({
       </div>
       
       {/* Seconde ligne: informations du projet en cours */}
-      <div className="bg-gray-100 px-3 py-2 rounded-md text-gray-800 border w-full text-left">
+      <div className="bg-gray-100 px-3 py-2 rounded-md text-gray-800 border w-full">
         <span className="text-gray-500 mr-1">Projet en cours:</span>
-        <span className="font-medium">{currentProjectId ? displayName : "Projet sans titre"}</span>
+        <span className="font-medium">{displayName}</span>
       </div>
     </div>
   );
