@@ -5,6 +5,8 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useClients } from '@/contexts/ClientsContext';
 import { ProjectState } from '@/types';
+import { Badge } from '@/components/ui/badge';
+import { FileText, User, Calendar, MapPin } from 'lucide-react';
 
 interface ProjectListProps {
   projects: Project[];
@@ -32,40 +34,75 @@ export const ProjectList: React.FC<ProjectListProps> = ({
   }
   
   if (projects.length === 0) {
-    return <p className="text-gray-500 italic">Aucun projet enregistré</p>;
+    return <p className="text-gray-500 italic p-4">Aucun projet enregistré</p>;
   }
   
   return (
-    <div className="space-y-4">
+    <div className="divide-y">
       {projects.map((projet) => {
         const client = clientsState.clients.find(c => c.id === projet.client_id);
+        const isCurrentProject = currentProjectId === projet.id;
+        const hasRooms = projectState.rooms.length > 0 && isCurrentProject;
+        const updateDate = projet.updated_at 
+          ? new Date(projet.updated_at)
+          : new Date(projet.created_at);
+          
         return (
           <div 
             key={projet.id} 
-            className={`p-3 border rounded-md cursor-pointer hover:bg-gray-50 transition-colors ${currentProjectId === projet.id ? 'border-primary bg-primary/5' : 'border-gray-200'}`}
+            className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${isCurrentProject ? 'bg-primary/5' : ''}`}
             onClick={() => onSelectProject(projet.id)}
           >
-            <h3 className="font-medium">{projet.name}</h3>
-            {projet.devis_number && (
-              <p className="text-xs text-blue-600 font-medium">
-                Devis n° {projet.devis_number}
-              </p>
-            )}
-            {client && (
-              <p className="text-sm text-gray-500">
-                Client: {client.nom} {client.prenom}
-              </p>
-            )}
-            <p className="text-sm text-gray-500">
-              {projet.updated_at 
-                ? format(new Date(projet.updated_at), 'dd/MM/yyyy', { locale: fr }) 
-                : format(new Date(projet.created_at), 'dd/MM/yyyy', { locale: fr })}
-            </p>
-            {projectState.rooms.length > 0 && currentProjectId === projet.id && (
-              <div className="mt-1 text-xs text-green-600">
-                <span className="inline-block px-2 py-1 bg-green-50 rounded-full">
-                  {projectState.rooms.length} pièces | {projectState.travaux.length} travaux
-                </span>
+            <div className="flex justify-between items-start">
+              <div>
+                <h3 className="font-medium text-base">{projet.name}</h3>
+                
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {client && (
+                    <div className="flex items-center text-sm text-gray-600">
+                      <User size={14} className="mr-1" />
+                      {client.nom} {client.prenom}
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center text-sm text-gray-600">
+                    <Calendar size={14} className="mr-1" />
+                    {format(updateDate, 'dd MMM yyyy', { locale: fr })}
+                  </div>
+                  
+                  {projet.address && (
+                    <div className="flex items-center text-sm text-gray-600">
+                      <MapPin size={14} className="mr-1" />
+                      {projet.address}
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              <div className="flex flex-col items-end gap-2">
+                {projet.devis_number && (
+                  <Badge variant="outline" className="flex items-center gap-1 bg-blue-50">
+                    <FileText size={12} />
+                    Devis n° {projet.devis_number}
+                  </Badge>
+                )}
+                
+                {isCurrentProject && (
+                  <Badge variant="secondary" className="bg-green-50 text-green-800 border-green-200">
+                    En cours
+                  </Badge>
+                )}
+              </div>
+            </div>
+            
+            {hasRooms && (
+              <div className="mt-2 flex gap-2">
+                <Badge variant="outline" className="bg-primary/5">
+                  {projectState.rooms.length} pièce{projectState.rooms.length > 1 ? 's' : ''}
+                </Badge>
+                <Badge variant="outline" className="bg-primary/5">
+                  {projectState.travaux.length} travaux
+                </Badge>
               </div>
             )}
           </div>
