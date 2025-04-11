@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Search, SortAsc, SortDesc, CalendarDays, User, X, Check, Filter } from 'lucide-react';
+import { Search, SortAsc, SortDesc, CalendarDays, User, X, Check, Filter, Clock } from 'lucide-react';
 import { useProject } from '@/contexts/ProjectContext';
 import { Project } from '@/types';
 import { ProjectList } from '@/features/chantier/components/ProjectList';
@@ -316,11 +316,23 @@ export function OpenProjectDialog({ open, onOpenChange }: OpenProjectDialogProps
           <Button 
             variant="outline" 
             size="sm" 
+            onClick={() => requestSort('created_at')}
+            className={sortConfig.key === 'created_at' ? 'bg-primary/10' : ''}
+          >
+            <CalendarDays size={16} className="mr-1" />
+            <span>Date création</span>
+            {sortConfig.key === 'created_at' && (
+              sortConfig.direction === 'asc' ? <SortAsc size={16} /> : <SortDesc size={16} />
+            )}
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
             onClick={() => requestSort('updated_at')}
             className={sortConfig.key === 'updated_at' ? 'bg-primary/10' : ''}
           >
-            <CalendarDays size={16} className="mr-1" />
-            <span>Date</span>
+            <Clock size={16} className="mr-1" />
+            <span>Date modification</span>
             {sortConfig.key === 'updated_at' && (
               sortConfig.direction === 'asc' ? <SortAsc size={16} /> : <SortDesc size={16} />
             )}

@@ -6,7 +6,7 @@ import { fr } from 'date-fns/locale';
 import { useClients } from '@/contexts/ClientsContext';
 import { ProjectState } from '@/types';
 import { Badge } from '@/components/ui/badge';
-import { FileText, User, Calendar, MapPin } from 'lucide-react';
+import { FileText, User, Calendar, MapPin, Clock } from 'lucide-react';
 
 interface ProjectListProps {
   projects: Project[];
@@ -43,10 +43,13 @@ export const ProjectList: React.FC<ProjectListProps> = ({
         const client = clientsState.clients.find(c => c.id === projet.client_id);
         const isCurrentProject = currentProjectId === projet.id;
         const hasRooms = projectState.rooms.length > 0 && isCurrentProject;
+        
         const updateDate = projet.updated_at 
           ? new Date(projet.updated_at)
           : new Date(projet.created_at);
           
+        const creationDate = new Date(projet.created_at);
+        
         return (
           <div 
             key={projet.id} 
@@ -67,6 +70,11 @@ export const ProjectList: React.FC<ProjectListProps> = ({
                   
                   <div className="flex items-center text-sm text-gray-600">
                     <Calendar size={14} className="mr-1" />
+                    {format(creationDate, 'dd MMM yyyy', { locale: fr })}
+                  </div>
+                  
+                  <div className="flex items-center text-sm text-gray-600">
+                    <Clock size={14} className="mr-1" />
                     {format(updateDate, 'dd MMM yyyy', { locale: fr })}
                   </div>
                   
