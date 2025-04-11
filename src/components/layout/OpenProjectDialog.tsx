@@ -33,15 +33,28 @@ export function OpenProjectDialog({ open, onOpenChange }: OpenProjectDialogProps
     direction: 'desc'
   });
   
-  // Raffraîchir les projets quand le dialogue s'ouvre
+  // Raffraîchir les projets une seule fois quand le dialogue s'ouvre
+  // Utilisation d'une variable pour suivre si le raffraîchissement a déjà été effectué
+  const [hasRefreshed, setHasRefreshed] = useState(false);
+  
   useEffect(() => {
-    if (open) {
-      refreshProjects().catch(error => {
-        console.error('Erreur lors du rafraîchissement des projets:', error);
-        toast.error('Erreur lors du chargement de la liste des projets');
-      });
+    if (open && !hasRefreshed) {
+      console.log("Rafraîchissement des projets...");
+      refreshProjects()
+        .then(() => {
+          setHasRefreshed(true);
+        })
+        .catch(error => {
+          console.error('Erreur lors du rafraîchissement des projets:', error);
+          toast.error('Erreur lors du chargement de la liste des projets');
+        });
     }
-  }, [open, refreshProjects]);
+    
+    // Réinitialiser le marqueur lorsque le dialogue se ferme
+    if (!open) {
+      setHasRefreshed(false);
+    }
+  }, [open, refreshProjects, hasRefreshed]);
 
   // Filtrer et trier les projets
   useEffect(() => {
@@ -109,6 +122,11 @@ export function OpenProjectDialog({ open, onOpenChange }: OpenProjectDialogProps
       toast.error("Erreur lors du chargement du projet");
     }
   };
+
+  // Reset du searchTerm quand le dialogue s'ouvre ou se ferme
+  useEffect(() => {
+    setSearchTerm('');
+  }, [open]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
