@@ -3,7 +3,7 @@ import React, { createContext, useContext, useReducer } from 'react';
 import { ProjectState, ProjectAction, Project } from '@/types';
 import { toast } from 'sonner';
 import { projectReducer, initialProjectState } from '@/features/project/reducers/projectReducer';
-import { useProjectStorage } from '@/features/project/hooks/useProjectStorage';
+import { fetchProjectById, fetchProjects, createProject, updateProject, deleteProject } from '@/services/projectService';
 import { useRooms } from '@/features/project/hooks/useRooms';
 import { useTravaux } from '@/features/travaux/hooks/useTravaux';
 import { useSaveLoadWarning } from '@/features/project/hooks/useSaveLoadWarning';
@@ -39,8 +39,11 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // Utiliser le hook useReducer pour initialiser l'état et le dispatcher
   const [state, dispatch] = useReducer(projectReducer, initialProjectState);
   
-  // Utiliser les hooks spécialisés pour la gestion du projet
-  const projectStorage = useProjectStorage();
+  // État pour le suivi du chargement et de la sauvegarde
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [isSaving, setIsSaving] = React.useState(false);
+  const [projects, setProjects] = React.useState<Project[]>([]);
+  const [currentProjectId, setCurrentProjectId] = React.useState<string | null>(null);
   
   // Hook pour la gestion des avertissements de sauvegarde
   const { hasUnsavedChanges, updateSavedState, resetSavedState } = useSaveLoadWarning(state);
@@ -48,54 +51,130 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // Hook pour la gestion des pièces - passer state et dispatch en arguments
   const roomsManager = useRooms(state, dispatch);
   
-  // Fonction améliorée de sauvegarde avec suivi d'état
-  const enhancedSaveProject = async (name?: string): Promise<void> => {
+  // Rafraîchir la liste des projets
+  const refreshProjects = async (): Promise<void> => {
     try {
-      if (typeof projectStorage.saveProject === 'function') {
-        await projectStorage.saveProject(name);
-        updateSavedState();
-      } else {
-        console.error('La fonction saveProject n\'est pas disponible');
-        toast.error('Erreur: fonction de sauvegarde non disponible');
-      }
+      setIsLoading(true);
+      const projectsList = await fetchProjects();
+      setProjects(projectsList);
     } catch (error) {
-      console.error('Erreur lors de la sauvegarde:', error);
-      toast.error('Erreur lors de la sauvegarde du projet');
+      console.error('Erreur lors du chargement des projets:', error);
+      toast.error('Erreur lors du chargement des projets');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Charger la liste des projets au démarrage
+  React.useEffect(() => {
+    refreshProjects();
+  }, []);
+  
+  // Fonction pour créer un nouveau projet
+  const createNewProject = (): void => {
+    dispatch({ type: 'RESET_PROJECT' });
+    setCurrentProjectId(null);
+    resetSavedState(initialProjectState);
+    toast.success('Nouveau projet créé');
+  };
+  
+  // Fonction améliorée de sauvegarde avec suivi d'état
+  const saveProject = async (name?: string): Promise<void> => {
+    try {
+      setIsSaving(true);
+      toast.loading('Sauvegarde en cours...', { id: 'saving-project' });
+      
+      // Préparer les informations du projet
+      const projectInfo = {
+        name: name || (currentProjectId ? projects.find(p => p.id === currentProjectId)?.name : undefined)
+      };
+      
+      if (currentProjectId) {
+        // Mettre à jour un projet existant
+        await updateProject(currentProjectId, state, projectInfo);
+        toast.success('Projet mis à jour avec succès', { id: 'saving-project' });
+      } else {
+        // Créer un nouveau projet
+        const result = await createProject(state, projectInfo);
+        if (result?.id) {
+          setCurrentProjectId(result.id);
+        }
+        toast.success('Projet enregistré avec succès', { id: 'saving-project' });
+      }
+      
+      updateSavedState();
+      await refreshProjects();
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde du projet:', error);
+      toast.error('Erreur lors de la sauvegarde du projet', { id: 'saving-project' });
+    } finally {
+      setIsSaving(false);
     }
   };
 
   // Sauvegarde automatique en tant que brouillon
   const saveProjectAsDraft = async (): Promise<void> => {
     try {
-      await enhancedSaveProject();
+      await saveProject();
     } catch (error) {
       console.error('Erreur lors de la sauvegarde automatique:', error);
     }
   };
   
-  // Étendre la fonction de création d'un nouveau projet pour réinitialiser l'état sauvegardé
-  const enhancedCreateNewProject = (): void => {
-    if (typeof projectStorage.createNewProject === 'function') {
-      projectStorage.createNewProject();
-      resetSavedState(initialProjectState);
-    } else {
-      console.error('La fonction createNewProject n\'est pas disponible');
-      toast.error('Erreur: fonction de création de projet non disponible');
+  // Fonction de chargement de projet
+  const loadProject = async (projectId: string): Promise<void> => {
+    if (!projectId) {
+      toast.error('ID de projet invalide');
+      return;
     }
-  };
-
-  // Fonction de chargement de projet améliorée
-  const enhancedLoadProject = async (projectId: string): Promise<void> => {
+    
     try {
-      if (typeof projectStorage.loadProject === 'function') {
-        await projectStorage.loadProject(projectId);
-      } else {
-        console.error('La fonction loadProject n\'est pas disponible');
-        toast.error('Erreur: fonction de chargement non disponible');
+      setIsLoading(true);
+      
+      console.log("Chargement du projet:", projectId);
+      const { projectData, projectState } = await fetchProjectById(projectId);
+      
+      if (!projectState) {
+        throw new Error('Données de projet invalides');
       }
+      
+      console.log("Données du projet chargées:", projectData);
+      console.log("État du projet:", projectState);
+      
+      dispatch({ type: 'LOAD_PROJECT', payload: projectState });
+      setCurrentProjectId(projectId);
+      
+      toast.success(`Projet "${projectData.name}" chargé avec succès`);
     } catch (error) {
       console.error('Erreur lors du chargement du projet:', error);
       toast.error('Erreur lors du chargement du projet');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Suppression du projet actuel
+  const deleteCurrentProject = async (): Promise<void> => {
+    if (!currentProjectId) {
+      toast.error('Aucun projet à supprimer');
+      return;
+    }
+    
+    try {
+      setIsLoading(true);
+      await deleteProject(currentProjectId);
+      
+      // Réinitialiser l'état après la suppression
+      dispatch({ type: 'RESET_PROJECT' });
+      setCurrentProjectId(null);
+      
+      await refreshProjects();
+      toast.success('Projet supprimé avec succès');
+    } catch (error) {
+      console.error('Erreur lors de la suppression du projet:', error);
+      toast.error('Erreur lors de la suppression du projet');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -107,17 +186,17 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     <ProjectContext.Provider value={{ 
       state, 
       dispatch,
-      isLoading: projectStorage.isLoading,
-      isSaving: projectStorage.isSaving,
-      projects: projectStorage.projects,
-      currentProjectId: projectStorage.currentProjectId,
+      isLoading,
+      isSaving,
+      projects,
+      currentProjectId,
       hasUnsavedChanges,
-      saveProject: enhancedSaveProject,
+      saveProject,
       saveProjectAsDraft,
-      loadProject: enhancedLoadProject,
-      createNewProject: enhancedCreateNewProject,
-      deleteCurrentProject: projectStorage.deleteCurrentProject,
-      refreshProjects: projectStorage.refreshProjects,
+      loadProject,
+      createNewProject,
+      deleteCurrentProject,
+      refreshProjects,
       rooms: roomsManager
     }}>
       {children}

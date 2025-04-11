@@ -17,7 +17,15 @@ interface OpenProjectDialogProps {
 }
 
 export function OpenProjectDialog({ open, onOpenChange }: OpenProjectDialogProps) {
-  const { projects, isLoading, loadProject, currentProjectId, refreshProjects, state } = useProject();
+  const { 
+    projects, 
+    isLoading, 
+    loadProject, 
+    currentProjectId, 
+    refreshProjects, 
+    state 
+  } = useProject();
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
   const [sortConfig, setSortConfig] = useState<{ key: keyof Project; direction: 'asc' | 'desc' }>({
@@ -27,7 +35,7 @@ export function OpenProjectDialog({ open, onOpenChange }: OpenProjectDialogProps
   
   // Raffraîchir les projets quand le dialogue s'ouvre
   useEffect(() => {
-    if (open && typeof refreshProjects === 'function') {
+    if (open) {
       refreshProjects().catch(error => {
         console.error('Erreur lors du rafraîchissement des projets:', error);
         toast.error('Erreur lors du chargement de la liste des projets');
@@ -86,15 +94,16 @@ export function OpenProjectDialog({ open, onOpenChange }: OpenProjectDialogProps
 
   // Fonction pour charger un projet
   const handleLoadProject = async (projectId: string) => {
+    if (!projectId) {
+      toast.error("ID de projet invalide");
+      return;
+    }
+    
     try {
-      if (typeof loadProject === 'function') {
-        await loadProject(projectId);
-        onOpenChange(false);
-        toast.success('Projet chargé avec succès');
-      } else {
-        console.error("La fonction loadProject n'est pas disponible:", loadProject);
-        toast.error("Impossible de charger le projet: fonction non disponible");
-      }
+      console.log("Tentative de chargement du projet:", projectId);
+      await loadProject(projectId);
+      onOpenChange(false);
+      toast.success('Projet chargé avec succès');
     } catch (error) {
       console.error("Erreur lors du chargement du projet:", error);
       toast.error("Erreur lors du chargement du projet");

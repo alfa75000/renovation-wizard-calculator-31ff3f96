@@ -38,13 +38,8 @@ export const Layout: React.FC<LayoutProps> = ({
   
   const handleSaveProject = async () => {
     try {
-      if (typeof saveProject === 'function') {
-        await saveProject();
-        toast.success('Projet enregistré avec succès');
-      } else {
-        console.error('La fonction saveProject n\'est pas disponible:', saveProject);
-        toast.error('Erreur: fonction de sauvegarde non disponible');
-      }
+      await saveProject();
+      toast.success('Projet enregistré avec succès');
       setSaveAsDialogOpen(false);
     } catch (error) {
       console.error('Erreur lors de l\'enregistrement du projet:', error);
