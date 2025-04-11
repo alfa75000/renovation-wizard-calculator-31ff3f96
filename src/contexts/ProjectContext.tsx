@@ -49,26 +49,23 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const roomsManager = useRooms(state, dispatch);
   
   // Fonction améliorée de sauvegarde avec suivi d'état
-  const enhancedSaveProject = async (name?: string) => {
+  const enhancedSaveProject = async (name?: string): Promise<void> => {
     try {
       if (typeof projectStorage.saveProject === 'function') {
         await projectStorage.saveProject(name);
         updateSavedState();
-        return true;
       } else {
         console.error('La fonction saveProject n\'est pas disponible');
         toast.error('Erreur: fonction de sauvegarde non disponible');
-        return false;
       }
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error);
       toast.error('Erreur lors de la sauvegarde du projet');
-      return false;
     }
   };
 
   // Sauvegarde automatique en tant que brouillon
-  const saveProjectAsDraft = async () => {
+  const saveProjectAsDraft = async (): Promise<void> => {
     try {
       await enhancedSaveProject();
     } catch (error) {
@@ -77,7 +74,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
   
   // Étendre la fonction de création d'un nouveau projet pour réinitialiser l'état sauvegardé
-  const enhancedCreateNewProject = () => {
+  const enhancedCreateNewProject = (): void => {
     if (typeof projectStorage.createNewProject === 'function') {
       projectStorage.createNewProject();
       resetSavedState(initialProjectState);
@@ -88,20 +85,17 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   // Fonction de chargement de projet améliorée
-  const enhancedLoadProject = async (projectId: string) => {
+  const enhancedLoadProject = async (projectId: string): Promise<void> => {
     try {
       if (typeof projectStorage.loadProject === 'function') {
         await projectStorage.loadProject(projectId);
-        return true;
       } else {
         console.error('La fonction loadProject n\'est pas disponible');
         toast.error('Erreur: fonction de chargement non disponible');
-        return false;
       }
     } catch (error) {
       console.error('Erreur lors du chargement du projet:', error);
       toast.error('Erreur lors du chargement du projet');
-      return false;
     }
   };
 
