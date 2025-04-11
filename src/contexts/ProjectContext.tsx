@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useReducer } from 'react';
 import { ProjectState, ProjectAction, Project } from '@/types';
 import { toast } from 'sonner';
@@ -7,8 +6,8 @@ import { fetchProjectById, fetchProjects, createProject, updateProject, deletePr
 import { useRooms } from '@/features/project/hooks/useRooms';
 import { useTravaux } from '@/features/travaux/hooks/useTravaux';
 import { useSaveLoadWarning } from '@/features/project/hooks/useSaveLoadWarning';
+import { supabase } from '@/lib/supabase';
 
-// Définition du type pour le contexte
 type ProjectContextType = {
   state: ProjectState;
   dispatch: React.Dispatch<ProjectAction>;
@@ -34,27 +33,17 @@ type ProjectContextType = {
   };
 };
 
-// Création du contexte
 const ProjectContext = createContext<ProjectContextType>({} as ProjectContextType);
 
-// Provider component
 export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Utiliser le hook useReducer pour initialiser l'état et le dispatcher
   const [state, dispatch] = useReducer(projectReducer, initialProjectState);
-  
-  // État pour le suivi du chargement et de la sauvegarde
   const [isLoading, setIsLoading] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
   const [projects, setProjects] = React.useState<Project[]>([]);
   const [currentProjectId, setCurrentProjectId] = React.useState<string | null>(null);
-  
-  // Hook pour la gestion des avertissements de sauvegarde
   const { hasUnsavedChanges, updateSavedState, resetSavedState } = useSaveLoadWarning(state);
-
-  // Hook pour la gestion des pièces - passer state et dispatch en arguments
   const roomsManager = useRooms(state, dispatch);
-  
-  // Rafraîchir la liste des projets
+
   const refreshProjects = async (): Promise<void> => {
     try {
       setIsLoading(true);
@@ -67,17 +56,14 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setIsLoading(false);
     }
   };
-  
-  // Charger la liste des projets au démarrage
+
   React.useEffect(() => {
     refreshProjects();
   }, []);
-  
-  // Charger le projet en cours depuis l'état de l'application
+
   React.useEffect(() => {
     const loadCurrentProjectFromAppState = async () => {
       try {
-        // Récupérer l'ID du projet en cours depuis la base de données
         const { data: appStateData, error } = await supabase
           .from('app_state')
           .select('current_project_id')
@@ -85,29 +71,24 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
           .single();
           
         if (error || !appStateData || !appStateData.current_project_id) {
-          // Pas de projet en cours, passer au projet vide par défaut
           console.log('Aucun projet en cours dans l\'état de l\'application');
           return;
         }
         
         console.log('Projet en cours trouvé dans l\'état de l\'application:', appStateData.current_project_id);
         
-        // Charger le projet trouvé
         await loadProject(appStateData.current_project_id);
       } catch (error) {
         console.error('Erreur lors du chargement du projet en cours depuis l\'état de l\'application:', error);
       }
     };
     
-    // Charger le projet en cours au démarrage
     loadCurrentProjectFromAppState();
   }, []);
-  
-  // Mettre à jour l'état de l'application lorsque l'ID du projet en cours change
+
   React.useEffect(() => {
     const updateAppStateProjectId = async () => {
       try {
-        // Récupérer l'ID de l'utilisateur Admin
         const { data: adminUser, error: userError } = await supabase
           .from('app_users')
           .select('id')
@@ -119,7 +100,6 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
           return;
         }
         
-        // Mettre à jour l'ID du projet en cours dans l'état de l'application
         const { error } = await supabase
           .from('app_state')
           .update({ current_project_id: currentProjectId })
@@ -135,32 +115,27 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     
     updateAppStateProjectId();
   }, [currentProjectId]);
-  
-  // Fonction pour créer un nouveau projet
+
   const createNewProject = (): void => {
     dispatch({ type: 'RESET_PROJECT' });
     setCurrentProjectId(null);
     resetSavedState(initialProjectState);
     toast.success('Nouveau projet créé');
   };
-  
-  // Fonction améliorée de sauvegarde avec suivi d'état
+
   const saveProject = async (name?: string): Promise<void> => {
     try {
       setIsSaving(true);
       toast.loading('Sauvegarde en cours...', { id: 'saving-project' });
       
-      // Préparer les informations du projet
       const projectInfo = {
         name: name || (currentProjectId ? projects.find(p => p.id === currentProjectId)?.name : undefined)
       };
       
       if (currentProjectId) {
-        // Mettre à jour un projet existant
         await updateProject(currentProjectId, state, projectInfo);
         toast.success('Projet mis à jour avec succès', { id: 'saving-project' });
       } else {
-        // Créer un nouveau projet
         const result = await createProject(state, projectInfo);
         if (result?.id) {
           setCurrentProjectId(result.id);
@@ -178,7 +153,6 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  // Sauvegarde automatique en tant que brouillon
   const saveProjectAsDraft = async (): Promise<void> => {
     try {
       await saveProject();
@@ -186,8 +160,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       console.error('Erreur lors de la sauvegarde automatique:', error);
     }
   };
-  
-  // Fonction de chargement de projet
+
   const loadProject = async (projectId: string): Promise<void> => {
     if (!projectId) {
       toast.error('ID de projet invalide');
@@ -210,7 +183,6 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       dispatch({ type: 'LOAD_PROJECT', payload: projectState });
       setCurrentProjectId(projectId);
       
-      // Marquer l'état comme sauvegardé après le chargement
       updateSavedState();
       
       toast.success(`Projet "${projectData.name}" chargé avec succès`);
@@ -221,8 +193,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setIsLoading(false);
     }
   };
-  
-  // Suppression du projet actuel
+
   const deleteCurrentProject = async (): Promise<void> => {
     if (!currentProjectId) {
       toast.error('Aucun projet à supprimer');
@@ -233,7 +204,6 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setIsLoading(true);
       await deleteProject(currentProjectId);
       
-      // Réinitialiser l'état après la suppression
       dispatch({ type: 'RESET_PROJECT' });
       setCurrentProjectId(null);
       
@@ -247,7 +217,6 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  // Afficher l'état pour le débogage
   console.log("State in ProjectContext:", state);
   console.log("RoomsManager dans ProjectContext:", roomsManager);
 
@@ -276,7 +245,6 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   );
 };
 
-// Hook personnalisé pour utiliser le contexte
 export const useProject = () => {
   const context = useContext(ProjectContext);
   if (!context) {
@@ -285,5 +253,4 @@ export const useProject = () => {
   return context;
 };
 
-// Exporter useTravaux directement depuis le hook spécialisé
 export { useTravaux };
