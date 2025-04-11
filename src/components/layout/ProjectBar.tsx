@@ -63,7 +63,7 @@ export const ProjectBar: React.FC<ProjectBarProps> = ({
             Ouvrir
           </Button>
           <Button 
-            variant={hasUnsavedChanges ? "default" : "outline"} 
+            variant="outline" 
             size="sm" 
             onClick={onSaveProject}
           >
@@ -80,7 +80,7 @@ export const ProjectBar: React.FC<ProjectBarProps> = ({
         <Popover>
           <PopoverTrigger asChild>
             <Button 
-              variant={hasUnsavedChanges ? "destructive" : "outline"} 
+              variant="outline" 
               size="sm" 
               className="min-w-[200px] justify-between"
             >

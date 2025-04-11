@@ -1,31 +1,22 @@
 
 import React from 'react';
 import { ProjectState } from '@/types';
-import { Badge } from '@/components/ui/badge';
 
 interface ProjectSummaryProps {
   projectState: ProjectState;
   hasUnsavedChanges: boolean;
-  currentProjectName?: string; // Add this new prop
+  currentProjectName?: string;
 }
 
 export const ProjectSummary: React.FC<ProjectSummaryProps> = ({ 
   projectState, 
   hasUnsavedChanges,
-  currentProjectName // Use the prop
+  currentProjectName
 }) => {
   const { property, rooms } = projectState;
   
   return (
     <div className="space-y-4">
-      {hasUnsavedChanges && (
-        <div className="mb-4">
-          <Badge variant="outline" className="text-amber-500 border-amber-500">
-            Modifications non enregistrées
-          </Badge>
-        </div>
-      )}
-      
       <div>
         <h3 className="font-medium">Nom du projet</h3>
         <p className="text-gray-600">{currentProjectName || "Non défini"}</p>

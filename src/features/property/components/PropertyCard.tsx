@@ -4,7 +4,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Home, RefreshCw } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import PropertyForm from "./PropertyForm";
 import { Property } from "@/types";
 
@@ -29,12 +28,6 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
           <h2 className="text-xl font-semibold">Type de bien à rénover</h2>
           
           <div className="flex items-center ml-auto gap-2">
-            {hasUnsavedChanges && (
-              <Badge variant="outline" className="mr-2 text-amber-500 border-amber-500">
-                Modifications non enregistrées
-              </Badge>
-            )}
-            
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="reset" size="sm" className="flex items-center gap-1">

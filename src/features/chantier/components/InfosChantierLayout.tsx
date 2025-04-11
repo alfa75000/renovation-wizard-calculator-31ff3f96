@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { Layout } from '@/components/Layout';
-import { Badge } from '@/components/ui/badge';
 import { ProjectForm } from './ProjectForm';
 import { ProjectList } from './ProjectList';
 import { ProjectSummary } from './ProjectSummary';
@@ -74,11 +73,6 @@ export const InfosChantierLayout: React.FC<InfosChantierLayoutProps> = ({
         <div className="md:col-span-2 bg-white p-6 rounded-lg shadow-md">
           <div className="flex items-center justify-between mb-4 border-b pb-2">
             <h2 className="text-xl font-semibold">Informations du projet</h2>
-            {hasUnsavedChanges && (
-              <Badge variant="outline" className="ml-2 text-amber-500 border-amber-500">
-                Modifications non enregistrées
-              </Badge>
-            )}
           </div>
           
           <ProjectForm 
