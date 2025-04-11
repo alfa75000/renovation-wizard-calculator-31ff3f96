@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -52,14 +51,11 @@ export function OpenProjectDialog({ open, onOpenChange }: OpenProjectDialogProps
     direction: 'desc'
   });
   
-  // État pour le filtrage avancé
   const [clientFilter, setClientFilter] = useState<string | null>(null);
   const [filterPopoverOpen, setFilterPopoverOpen] = useState(false);
   const [showOnlyWithDevis, setShowOnlyWithDevis] = useState(false);
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
   
-  // Raffraîchir les projets une seule fois quand le dialogue s'ouvre
-  // Utilisation d'une variable pour suivre si le raffraîchissement a déjà été effectué
   const [hasRefreshed, setHasRefreshed] = useState(false);
   
   useEffect(() => {
@@ -75,13 +71,11 @@ export function OpenProjectDialog({ open, onOpenChange }: OpenProjectDialogProps
         });
     }
     
-    // Réinitialiser le marqueur lorsque le dialogue se ferme
     if (!open) {
       setHasRefreshed(false);
     }
   }, [open, refreshProjects, hasRefreshed]);
 
-  // Mettre à jour les filtres actifs lorsque les options de filtrage changent
   useEffect(() => {
     const newActiveFilters: string[] = [];
     
@@ -99,7 +93,6 @@ export function OpenProjectDialog({ open, onOpenChange }: OpenProjectDialogProps
     setActiveFilters(newActiveFilters);
   }, [clientFilter, showOnlyWithDevis, clientsState.clients]);
 
-  // Filtrer et trier les projets
   useEffect(() => {
     if (!projects || !projects.length) {
       setFilteredProjects([]);
@@ -108,7 +101,6 @@ export function OpenProjectDialog({ open, onOpenChange }: OpenProjectDialogProps
     
     let result = [...projects];
     
-    // Filtrer selon le terme de recherche
     if (searchTerm) {
       const lowerCaseSearch = searchTerm.toLowerCase();
       result = result.filter(project => 
@@ -116,17 +108,14 @@ export function OpenProjectDialog({ open, onOpenChange }: OpenProjectDialogProps
       );
     }
     
-    // Filtrer par client
     if (clientFilter) {
       result = result.filter(project => project.client_id === clientFilter);
     }
     
-    // Filtrer les projets avec devis uniquement
     if (showOnlyWithDevis) {
       result = result.filter(project => !!project.devis_number);
     }
     
-    // Trier les projets
     result.sort((a, b) => {
       const aValue = a[sortConfig.key];
       const bValue = b[sortConfig.key];
@@ -134,14 +123,12 @@ export function OpenProjectDialog({ open, onOpenChange }: OpenProjectDialogProps
       if (aValue === null) return 1;
       if (bValue === null) return -1;
       
-      // Configuration du tri ascendant/descendant
       if (typeof aValue === 'string' && typeof bValue === 'string') {
         return sortConfig.direction === 'asc' 
           ? aValue.localeCompare(bValue)
           : bValue.localeCompare(aValue);
       }
       
-      // Pour les dates et les nombres
       return sortConfig.direction === 'asc'
         ? (aValue < bValue ? -1 : 1)
         : (aValue > bValue ? -1 : 1);
@@ -150,7 +137,6 @@ export function OpenProjectDialog({ open, onOpenChange }: OpenProjectDialogProps
     setFilteredProjects(result);
   }, [projects, searchTerm, sortConfig, clientFilter, showOnlyWithDevis]);
 
-  // Fonction pour changer le tri
   const requestSort = (key: keyof Project) => {
     setSortConfig(prevConfig => ({
       key,
@@ -158,7 +144,6 @@ export function OpenProjectDialog({ open, onOpenChange }: OpenProjectDialogProps
     }));
   };
 
-  // Fonction pour charger un projet
   const handleLoadProject = async (projectId: string) => {
     if (!projectId) {
       toast.error("ID de projet invalide");
@@ -176,7 +161,6 @@ export function OpenProjectDialog({ open, onOpenChange }: OpenProjectDialogProps
     }
   };
 
-  // Fonction pour supprimer un filtre
   const removeFilter = (filter: string) => {
     if (filter.startsWith('Client:')) {
       setClientFilter(null);
@@ -185,7 +169,6 @@ export function OpenProjectDialog({ open, onOpenChange }: OpenProjectDialogProps
     }
   };
 
-  // Reset des filtres quand le dialogue s'ouvre ou se ferme
   useEffect(() => {
     if (!open) {
       setSearchTerm('');
@@ -196,7 +179,7 @@ export function OpenProjectDialog({ open, onOpenChange }: OpenProjectDialogProps
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] max-h-[80vh] flex flex-col">
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Ouvrir un projet</DialogTitle>
           <DialogDescription>
@@ -204,7 +187,6 @@ export function OpenProjectDialog({ open, onOpenChange }: OpenProjectDialogProps
           </DialogDescription>
         </DialogHeader>
         
-        {/* Barre de recherche avec filtre avancé */}
         <div className="flex gap-2 mb-4">
           <div className="relative flex-1">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -216,7 +198,6 @@ export function OpenProjectDialog({ open, onOpenChange }: OpenProjectDialogProps
             />
           </div>
           
-          {/* Bouton de filtre avancé */}
           <Popover open={filterPopoverOpen} onOpenChange={setFilterPopoverOpen}>
             <PopoverTrigger asChild>
               <Button variant="outline" size="icon" className="relative">
@@ -283,7 +264,6 @@ export function OpenProjectDialog({ open, onOpenChange }: OpenProjectDialogProps
           </Popover>
         </div>
         
-        {/* Affichage des filtres actifs */}
         {activeFilters.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-3">
             {activeFilters.map((filter) => (
@@ -300,7 +280,6 @@ export function OpenProjectDialog({ open, onOpenChange }: OpenProjectDialogProps
           </div>
         )}
         
-        {/* Boutons de tri */}
         <div className="flex gap-2 mb-2 flex-wrap">
           <Button 
             variant="outline" 
@@ -351,12 +330,11 @@ export function OpenProjectDialog({ open, onOpenChange }: OpenProjectDialogProps
           </Button>
         </div>
         
-        {/* Indicateur du nombre de résultats */}
         <div className="text-sm text-muted-foreground mb-2">
           {filteredProjects.length} projet{filteredProjects.length !== 1 ? 's' : ''} trouvé{filteredProjects.length !== 1 ? 's' : ''}
         </div>
         
-        <ScrollArea className="flex-grow border rounded-md">
+        <ScrollArea className="flex-grow border rounded-md h-[400px]">
           {isLoading ? (
             <div className="py-8 flex justify-center">
               <Loader />
