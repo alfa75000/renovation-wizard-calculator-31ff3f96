@@ -51,6 +51,13 @@ export const useProjectOperations = () => {
       // Prepare project metadata from the state
       const metadata = state.metadata;
       
+      // S'assurer qu'un client_id valide est toujours présent
+      // Si pas de client_id, ne pas utiliser l'ID nulle, générer une erreur à la place
+      if (!metadata.clientId && !projectInfo?.client_id) {
+        toast.error('Veuillez sélectionner un client avant de sauvegarder le projet');
+        return false;
+      }
+      
       // Combine with any additional project info passed in
       const combinedProjectInfo = {
         client_id: metadata.clientId || projectInfo?.client_id,

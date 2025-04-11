@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { ProjectState } from '@/types';
 
@@ -168,10 +169,15 @@ export const fetchProjectSaveById = async (projectId: string) => {
  */
 export const createProjectSave = async (projectState: ProjectState, projectInfo: any = {}) => {
   try {
+    // Vérifier que client_id est spécifié et n'est pas une ID nulle
+    if (!projectInfo.client_id) {
+      throw new Error('Un client doit être spécifié pour créer un projet');
+    }
+    
     // Créer un objet qui sera stocké dans la base de données
     const projectData = {
       name: projectInfo.name || generateDefaultProjectName(),
-      client_id: projectInfo.client_id || '00000000-0000-0000-0000-000000000000', // ID par défaut si non fourni
+      client_id: projectInfo.client_id, // N'utiliser JAMAIS d'ID par défaut pour client_id
       project_data: projectState,
       general_data: projectInfo,
       description: projectInfo.description || '',
