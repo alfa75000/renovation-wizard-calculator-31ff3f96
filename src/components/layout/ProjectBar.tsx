@@ -161,7 +161,7 @@ export const ProjectBar: React.FC<ProjectBarProps> = ({
       {/* Seconde ligne: informations du projet en cours */}
       <div className="bg-gray-100 px-3 py-2 rounded-md text-gray-800 border w-full text-left">
         <span className="text-gray-500 mr-1">Projet en cours:</span>
-        <span className="font-medium">{currentProjectId ? displayName : "Pas de projet"}</span>
+        <span className="font-medium">{currentProjectId ? displayName : "Projet sans titre"}</span>
       </div>
     </div>
   );
