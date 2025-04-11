@@ -73,6 +73,69 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     refreshProjects();
   }, []);
   
+  // Charger le projet en cours depuis l'état de l'application
+  React.useEffect(() => {
+    const loadCurrentProjectFromAppState = async () => {
+      try {
+        // Récupérer l'ID du projet en cours depuis la base de données
+        const { data: appStateData, error } = await supabase
+          .from('app_state')
+          .select('current_project_id')
+          .eq('user_id', (await supabase.from('app_users').select('id').eq('username', 'Admin').single()).data?.id || '')
+          .single();
+          
+        if (error || !appStateData || !appStateData.current_project_id) {
+          // Pas de projet en cours, passer au projet vide par défaut
+          console.log('Aucun projet en cours dans l\'état de l\'application');
+          return;
+        }
+        
+        console.log('Projet en cours trouvé dans l\'état de l\'application:', appStateData.current_project_id);
+        
+        // Charger le projet trouvé
+        await loadProject(appStateData.current_project_id);
+      } catch (error) {
+        console.error('Erreur lors du chargement du projet en cours depuis l\'état de l\'application:', error);
+      }
+    };
+    
+    // Charger le projet en cours au démarrage
+    loadCurrentProjectFromAppState();
+  }, []);
+  
+  // Mettre à jour l'état de l'application lorsque l'ID du projet en cours change
+  React.useEffect(() => {
+    const updateAppStateProjectId = async () => {
+      try {
+        // Récupérer l'ID de l'utilisateur Admin
+        const { data: adminUser, error: userError } = await supabase
+          .from('app_users')
+          .select('id')
+          .eq('username', 'Admin')
+          .single();
+          
+        if (userError || !adminUser) {
+          console.error('Erreur lors de la récupération de l\'utilisateur Admin:', userError);
+          return;
+        }
+        
+        // Mettre à jour l'ID du projet en cours dans l'état de l'application
+        const { error } = await supabase
+          .from('app_state')
+          .update({ current_project_id: currentProjectId })
+          .eq('user_id', adminUser.id);
+          
+        if (error) {
+          console.error('Erreur lors de la mise à jour de l\'ID du projet en cours dans l\'état de l\'application:', error);
+        }
+      } catch (error) {
+        console.error('Exception lors de la mise à jour de l\'ID du projet en cours dans l\'état de l\'application:', error);
+      }
+    };
+    
+    updateAppStateProjectId();
+  }, [currentProjectId]);
+  
   // Fonction pour créer un nouveau projet
   const createNewProject = (): void => {
     dispatch({ type: 'RESET_PROJECT' });

@@ -7,7 +7,8 @@ import { Popover, PopoverTrigger, PopoverContent } from '../ui/popover';
 import { Checkbox } from '../ui/checkbox';
 import { Badge } from '../ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { useAppState, AutoSaveOptions } from '@/hooks/useAppState';
+import { UserSelector } from '@/components/user/UserSelector';
 
 interface ProjectBarProps {
   onNewProject: () => void;
@@ -27,30 +28,49 @@ export const ProjectBar: React.FC<ProjectBarProps> = ({
   hasUnsavedChanges
 }) => {
   const { currentProjectId, projects } = useProject();
+  const { 
+    isLoading, 
+    currentUser, 
+    users, 
+    appState, 
+    switchUser, 
+    updateAutoSaveOptions 
+  } = useAppState();
   
-  // Options d'enregistrement automatique - enabled est maintenant false par défaut
-  const [autoSaveOptions, setAutoSaveOptions] = useLocalStorage('autoSaveOptions', {
+  // Options d'enregistrement automatique depuis la base de données
+  const [autoSaveOptions, setAutoSaveOptions] = useState<AutoSaveOptions>({
     enabled: false,
     saveOnRoomAdd: false,
     saveOnWorkAdd: true
   });
   
+  // Mettre à jour les options locales lorsque l'état de l'application change
+  useEffect(() => {
+    if (appState?.auto_save_options) {
+      setAutoSaveOptions(appState.auto_save_options);
+    }
+  }, [appState]);
+  
   // Effet pour activer automatiquement l'enregistrement auto quand un ID de projet est assigné
   useEffect(() => {
-    if (currentProjectId && !autoSaveOptions.enabled) {
+    if (currentProjectId && !autoSaveOptions.enabled && appState) {
       // Activer l'enregistrement auto uniquement si un projet est chargé
-      setAutoSaveOptions(prev => ({
-        ...prev,
+      const newOptions = {
+        ...autoSaveOptions,
         enabled: true
-      }));
-    } else if (!currentProjectId && autoSaveOptions.enabled) {
+      };
+      setAutoSaveOptions(newOptions);
+      updateAutoSaveOptions(newOptions);
+    } else if (!currentProjectId && autoSaveOptions.enabled && appState) {
       // Désactiver l'enregistrement auto si aucun projet n'est chargé
-      setAutoSaveOptions(prev => ({
-        ...prev,
+      const newOptions = {
+        ...autoSaveOptions,
         enabled: false
-      }));
+      };
+      setAutoSaveOptions(newOptions);
+      updateAutoSaveOptions(newOptions);
     }
-  }, [currentProjectId, autoSaveOptions.enabled, setAutoSaveOptions]);
+  }, [currentProjectId, autoSaveOptions.enabled, updateAutoSaveOptions, appState]);
   
   // Si aucun projectDisplayName n'est fourni, revenir au projet du contexte
   const displayName = projectDisplayName || (() => {
@@ -59,18 +79,37 @@ export const ProjectBar: React.FC<ProjectBarProps> = ({
   })();
 
   // Fonction pour mettre à jour les options d'enregistrement automatique
-  const handleAutoSaveOptionChange = (option: keyof typeof autoSaveOptions, value: boolean) => {
-    setAutoSaveOptions(prev => ({
-      ...prev,
+  const handleAutoSaveOptionChange = (option: keyof AutoSaveOptions, value: boolean) => {
+    const newOptions = {
+      ...autoSaveOptions,
       [option]: value
-    }));
+    };
+    setAutoSaveOptions(newOptions);
+    updateAutoSaveOptions(newOptions);
+  };
+
+  // Gérer le changement d'utilisateur
+  const handleUserChange = (userId: string) => {
+    if (hasUnsavedChanges) {
+      if (window.confirm('Vous avez des modifications non sauvegardées. Voulez-vous vraiment changer d\'utilisateur ?')) {
+        switchUser(userId);
+      }
+    } else {
+      switchUser(userId);
+    }
   };
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-2 mb-2 flex flex-col border-b">
-      {/* Première ligne: boutons d'action et indicateur de sauvegarde */}
+      {/* Première ligne: sélecteur d'utilisateur et boutons d'action */}
       <div className="flex flex-wrap items-center justify-between mb-3">
-        <div className="flex space-x-2 mb-2 md:mb-0">
+        <div className="flex space-x-2 mb-2 md:mb-0 items-center">
+          <UserSelector 
+            users={users}
+            currentUser={currentUser}
+            isLoading={isLoading}
+            onSelectUser={handleUserChange}
+          />
           <Button variant="outline" size="sm" onClick={onNewProject}>
             <FilePlus2 className="mr-1" size={16} />
             Nouveau

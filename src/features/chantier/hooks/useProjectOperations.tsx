@@ -1,9 +1,9 @@
-
 import { useCallback } from 'react';
 import { useProject } from '@/contexts/ProjectContext';
 import { toast } from 'sonner';
 import { ProjectMetadata } from '@/types';
 import { supabase } from '@/lib/supabase';
+import { useAppState } from '@/hooks/useAppState';
 
 /**
  * Hook centralisant toutes les opérations liées aux projets
@@ -25,6 +25,9 @@ export const useProjectOperations = () => {
     // Importation de la fonction updateSavedState pour mettre à jour l'état de sauvegarde
     updateSavedState
   } = useProject();
+  
+  // Utiliser le hook d'état d'application pour mettre à jour le projet en cours
+  const { updateCurrentProject } = useAppState();
 
   /**
    * Charger un projet existant
@@ -32,11 +35,13 @@ export const useProjectOperations = () => {
   const handleChargerProjet = useCallback(async (projetId: string) => {
     try {
       await loadProject(projetId);
+      // Mettre à jour l'ID du projet en cours dans l'état de l'application
+      await updateCurrentProject(projetId);
     } catch (error) {
       console.error('Erreur lors du chargement du projet:', error);
       toast.error('Une erreur est survenue lors du chargement du projet');
     }
-  }, [loadProject]);
+  }, [loadProject, updateCurrentProject]);
   
   /**
    * Supprimer le projet actuel
@@ -44,13 +49,15 @@ export const useProjectOperations = () => {
   const handleDeleteProject = useCallback(async () => {
     try {
       await deleteCurrentProject();
+      // Mettre à jour l'ID du projet en cours dans l'état de l'application
+      await updateCurrentProject(null);
       return true;
     } catch (error) {
       console.error('Erreur lors de la suppression du projet:', error);
       toast.error('Une erreur est survenue lors de la suppression du projet');
       return false;
     }
-  }, [deleteCurrentProject]);
+  }, [deleteCurrentProject, updateCurrentProject]);
   
   /**
    * Fonction centralisée de sauvegarde de projet
@@ -194,6 +201,11 @@ export const useProjectOperations = () => {
         }
       }
       
+      // Mise à jour du projet courant dans l'état de l'application si c'est un nouveau projet
+      if (!currentProjectId && result && result[0] && result[0].id) {
+        await updateCurrentProject(result[0].id);
+      }
+      
       // Mettre à jour l'état de sauvegarde pour indiquer que le projet est sauvegardé
       updateSavedState();
       
@@ -207,7 +219,7 @@ export const useProjectOperations = () => {
       }
       return false;
     }
-  }, [state, currentProjectId, refreshProjects, setCurrentProjectId, updateSavedState]);
+  }, [state, currentProjectId, refreshProjects, setCurrentProjectId, updateSavedState, updateCurrentProject]);
 
   return {
     handleChargerProjet,

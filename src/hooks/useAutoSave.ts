@@ -1,9 +1,9 @@
 
 import { useEffect, useRef } from 'react';
-import { useLocalStorage } from './useLocalStorage';
 import { Room, Travail } from '@/types';
 import { useProject } from '@/contexts/ProjectContext';
 import { useProjectOperations } from '@/features/chantier/hooks/useProjectOperations';
+import { useAppState } from './useAppState';
 
 /**
  * Hook qui gère l'enregistrement automatique du projet en fonction des options
@@ -12,13 +12,14 @@ import { useProjectOperations } from '@/features/chantier/hooks/useProjectOperat
 export const useAutoSave = () => {
   const { state, currentProjectId } = useProject();
   const { handleSaveProject } = useProjectOperations();
+  const { appState } = useAppState();
   
-  // Récupérer les options d'enregistrement automatique depuis le localStorage
-  const [autoSaveOptions] = useLocalStorage('autoSaveOptions', {
+  // Récupérer les options d'enregistrement automatique depuis l'état d'application
+  const autoSaveOptions = appState?.auto_save_options || {
     enabled: false,
     saveOnRoomAdd: false,
     saveOnWorkAdd: true
-  });
+  };
   
   // Références pour suivre les modifications
   const prevRoomsRef = useRef<Room[]>([]);

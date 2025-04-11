@@ -9,6 +9,69 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      app_state: {
+        Row: {
+          auto_save_options: Json
+          current_project_id: string | null
+          id: string
+          last_updated_at: string
+          user_id: string
+        }
+        Insert: {
+          auto_save_options?: Json
+          current_project_id?: string | null
+          id?: string
+          last_updated_at?: string
+          user_id: string
+        }
+        Update: {
+          auto_save_options?: Json
+          current_project_id?: string | null
+          id?: string
+          last_updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_state_current_project_id_fkey"
+            columns: ["current_project_id"]
+            isOneToOne: false
+            referencedRelation: "projects_save"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_state_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      app_users: {
+        Row: {
+          created_at: string
+          id: string
+          role: string
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: string
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: string
+          updated_at?: string
+          username?: string
+        }
+        Relationships: []
+      }
       autres_surfaces_types: {
         Row: {
           adjustment_type: Database["public"]["Enums"]["adjustment_enum"]
