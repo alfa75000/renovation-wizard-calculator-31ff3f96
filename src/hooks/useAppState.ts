@@ -168,6 +168,13 @@ export const useAppState = () => {
       // Utiliser explicitement last_updated_at pour forcer la mise à jour
       const now = new Date().toISOString();
       
+      // Persister d'abord les changements dans l'état local avant l'appel API
+      setAppState(prev => prev ? { 
+        ...prev, 
+        auto_save_options: options,
+        last_updated_at: now
+      } : null);
+      
       const { data, error } = await supabase
         .from('app_state')
         .update({ 
@@ -184,14 +191,6 @@ export const useAppState = () => {
       }
       
       console.log('Options d\'auto-sauvegarde mises à jour avec succès:', data);
-      
-      // Mettre à jour l'état local
-      setAppState(prev => prev ? { 
-        ...prev, 
-        auto_save_options: options,
-        last_updated_at: now
-      } : null);
-      
       return true;
     } catch (error) {
       console.error('Exception lors de la mise à jour des options d\'auto-sauvegarde:', error);
@@ -216,6 +215,17 @@ export const useAppState = () => {
       // Utiliser explicitement last_updated_at pour forcer la mise à jour
       const now = new Date().toISOString();
       
+      // Persister d'abord les changements dans l'état local avant l'appel API
+      setAppState(prev => {
+        const updated = prev ? { 
+          ...prev, 
+          current_project_id: projectId,
+          last_updated_at: now
+        } : null;
+        console.log('État local mis à jour:', updated);
+        return updated;
+      });
+      
       const { data, error } = await supabase
         .from('app_state')
         .update({ 
@@ -232,18 +242,6 @@ export const useAppState = () => {
       }
       
       console.log('Mise à jour réussie de current_project_id dans app_state:', data);
-      
-      // Mettre à jour l'état local
-      setAppState(prev => {
-        const updated = prev ? { 
-          ...prev, 
-          current_project_id: projectId,
-          last_updated_at: now
-        } : null;
-        console.log('État local mis à jour:', updated);
-        return updated;
-      });
-      
       return true;
     } catch (error) {
       console.error('Exception lors de la mise à jour du projet en cours:', error);

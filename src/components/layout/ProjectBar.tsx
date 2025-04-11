@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '../ui/button';
 import { FilePlus2, FolderOpen, Save, SaveAll, Check, AlertCircle } from 'lucide-react';
@@ -52,41 +53,6 @@ export const ProjectBar: React.FC<ProjectBarProps> = ({
     }
   }, [appState]);
   
-  // Effet pour activer automatiquement l'enregistrement auto quand un ID de projet est assigné
-  useEffect(() => {
-    if (currentProjectId && !autoSaveOptions.enabled && appState) {
-      // Activer l'enregistrement auto uniquement si un projet est chargé
-      const newOptions = {
-        ...autoSaveOptions,
-        enabled: true
-      };
-      setAutoSaveOptions(newOptions);
-      updateAutoSaveOptions(newOptions)
-        .then(success => {
-          if (success) {
-            console.log('Auto-sauvegarde activée automatiquement pour le projet:', currentProjectId);
-          } else {
-            console.error('Échec de l\'activation automatique de l\'auto-sauvegarde');
-          }
-        });
-    } else if (!currentProjectId && autoSaveOptions.enabled && appState) {
-      // Désactiver l'enregistrement auto si aucun projet n'est chargé
-      const newOptions = {
-        ...autoSaveOptions,
-        enabled: false
-      };
-      setAutoSaveOptions(newOptions);
-      updateAutoSaveOptions(newOptions)
-        .then(success => {
-          if (success) {
-            console.log('Auto-sauvegarde désactivée automatiquement car aucun projet n\'est chargé');
-          } else {
-            console.error('Échec de la désactivation automatique de l\'auto-sauvegarde');
-          }
-        });
-    }
-  }, [currentProjectId, autoSaveOptions.enabled, updateAutoSaveOptions, appState]);
-  
   // Si aucun projectDisplayName n'est fourni, revenir au projet du contexte
   const displayName = projectDisplayName || (() => {
     const currentProject = projects.find(p => p.id === currentProjectId);
@@ -95,11 +61,15 @@ export const ProjectBar: React.FC<ProjectBarProps> = ({
 
   // Fonction pour mettre à jour les options d'enregistrement automatique
   const handleAutoSaveOptionChange = (option: keyof AutoSaveOptions, value: boolean) => {
+    // Créer une copie des options actuelles pour la mise à jour
     const newOptions = {
       ...autoSaveOptions,
       [option]: value
     };
+    
     console.log('Changement d\'option d\'auto-sauvegarde:', option, value, newOptions);
+    
+    // Mettre à jour l'état local immédiatement pour une réactivité de l'UI
     setAutoSaveOptions(newOptions);
     
     // Mettre à jour dans la base de données
