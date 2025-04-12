@@ -1,6 +1,30 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ProjectState } from '@/types';
+
+/**
+ * Utilitaire pour normaliser un objet avant de le convertir en JSON
+ * Cela garantit que l'ordre des propriétés est constant
+ */
+const normalizeObject = (obj: any): any => {
+  if (obj === null || typeof obj !== 'object') {
+    return obj;
+  }
+  
+  if (Array.isArray(obj)) {
+    return obj.map(normalizeObject);
+  }
+  
+  // Trier les clés pour garantir un ordre constant
+  const sortedKeys = Object.keys(obj).sort();
+  const normalized: Record<string, any> = {};
+  
+  for (const key of sortedKeys) {
+    normalized[key] = normalizeObject(obj[key]);
+  }
+  
+  return normalized;
+};
 
 /**
  * Hook pour gérer les avertissements de modifications non sauvegardées
@@ -10,25 +34,31 @@ export const useSaveLoadWarning = (state: ProjectState) => {
   const [lastSavedState, setLastSavedState] = useState<string>('');
 
   // Mettre à jour l'état sauvegardé lors d'une sauvegarde
-  const updateSavedState = () => {
-    const stateSnapshot = JSON.stringify(state);
+  const updateSavedState = useCallback(() => {
+    // Normaliser l'état pour garantir un ordre constant des propriétés
+    const normalizedState = normalizeObject(state);
+    const stateSnapshot = JSON.stringify(normalizedState);
     setLastSavedState(stateSnapshot);
     setHasUnsavedChanges(false);
     console.log('[useSaveLoadWarning] État sauvegardé mis à jour');
-  };
+  }, [state]);
 
   // Réinitialiser l'état sauvegardé (par exemple lors de la création d'un nouveau projet)
-  const resetSavedState = (initialState: ProjectState) => {
-    const stateSnapshot = JSON.stringify(initialState);
+  const resetSavedState = useCallback((initialState: ProjectState) => {
+    // Normaliser l'état initial pour garantir un ordre constant des propriétés
+    const normalizedState = normalizeObject(initialState);
+    const stateSnapshot = JSON.stringify(normalizedState);
     setLastSavedState(stateSnapshot);
     setHasUnsavedChanges(false);
     console.log('[useSaveLoadWarning] État sauvegardé réinitialisé');
-  };
+  }, []);
 
   // Détecter les changements non sauvegardés en comparant tout l'état
   useEffect(() => {
     if (lastSavedState) {
-      const currentStateSnapshot = JSON.stringify(state);
+      // Normaliser l'état actuel avant la comparaison
+      const normalizedState = normalizeObject(state);
+      const currentStateSnapshot = JSON.stringify(normalizedState);
       const hasChanges = currentStateSnapshot !== lastSavedState;
       
       if (hasChanges !== hasUnsavedChanges) {
