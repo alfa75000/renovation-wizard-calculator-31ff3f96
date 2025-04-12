@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from '@/components/ui/sonner';
 import { useEffect, useState } from 'react';
@@ -56,7 +57,8 @@ export default function App() {
     currentProjectId
   } = useProjectOperations();
   
-  const handleNewProject = () => {
+  // Fonction wrapper pour la confirmation avant de créer un nouveau projet
+  const confirmAndCreateNewProject = () => {
     if (hasUnsavedChanges) {
       if (!window.confirm("Des modifications non sauvegardées seront perdues. Voulez-vous continuer ?")) {
         return;
