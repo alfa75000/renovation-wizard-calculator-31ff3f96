@@ -75,11 +75,12 @@ export const useProjectOperations = () => {
     try {
       await loadProject(projetId);
       
-      // Forcer l'état comme sauvegardé après le chargement
+      // Forcer l'état comme sauvegardé après le chargement avec un délai plus important
       setTimeout(() => {
+        // Force une mise à jour explicite du state sauvegardé
         updateSavedState();
         console.log('[handleChargerProjet] Marquage forcé du projet comme sauvegardé après chargement');
-      }, 300);
+      }, 500); // Délai augmenté pour s'assurer que tout est bien chargé
       
       console.log('Projet chargé, mise à jour de current_project_id dans app_state:', projetId);
       

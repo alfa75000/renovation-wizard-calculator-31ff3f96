@@ -4,6 +4,7 @@ import { ProjectState } from '@/types';
 
 /**
  * Hook pour gérer les avertissements de modifications non sauvegardées
+ * avec logique simplifiée et comparaison plus robuste
  */
 export const useSaveLoadWarning = (state: ProjectState) => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
@@ -26,7 +27,35 @@ export const useSaveLoadWarning = (state: ProjectState) => {
     console.log('[useSaveLoadWarning] État sauvegardé réinitialisé');
   };
 
-  // Détecter les changements non sauvegardés en comparant tout l'état
+  // Version simplifiée de la détection des changements
+  // Moins sensible aux différences mineures de formatage JSON
+  const compareStates = (stateA: string, stateB: string): boolean => {
+    if (!stateA || !stateB) return false;
+    
+    try {
+      // Parsing + re-stringify pour normaliser la structure JSON
+      const parsedA = JSON.parse(stateA);
+      const parsedB = JSON.parse(stateB);
+      
+      // Comparaison des propriétés essentielles plutôt que des objets entiers
+      const keysToCompare = ['property', 'rooms', 'travaux', 'metadata'];
+      
+      for (const key of keysToCompare) {
+        const stringA = JSON.stringify(parsedA[key]);
+        const stringB = JSON.stringify(parsedB[key]);
+        
+        if (stringA !== stringB) {
+          return true; // Il y a une différence
+        }
+      }
+      return false; // Pas de différence significative
+    } catch (e) {
+      console.error('[useSaveLoadWarning] Erreur lors de la comparaison des états:', e);
+      return false;
+    }
+  };
+
+  // Détecter les changements non sauvegardés avec la nouvelle méthode de comparaison
   useEffect(() => {
     // Ne pas mettre à jour l'état pendant le chargement d'un projet
     if (isLoadingProject) {
@@ -37,13 +66,12 @@ export const useSaveLoadWarning = (state: ProjectState) => {
     // Protection contre le premier rendu ou l'absence d'état sauvegardé
     if (!lastSavedState) {
       // Si nous avons un état mais pas d'état sauvegardé, ne pas marquer comme non sauvegardé
-      // C'est le cas lors du chargement initial de l'application
       setHasUnsavedChanges(false);
       return;
     }
     
     const currentStateSnapshot = JSON.stringify(state);
-    const hasChanges = currentStateSnapshot !== lastSavedState;
+    const hasChanges = compareStates(currentStateSnapshot, lastSavedState);
     
     if (hasChanges !== hasUnsavedChanges) {
       console.log(`[useSaveLoadWarning] Changement d'état détecté: ${hasChanges ? 'Modifications non sauvegardées' : 'Pas de modifications'}`);
