@@ -800,6 +800,7 @@ export type Database = {
           name: string
           supply_price: number
           surface_impactee: Database["public"]["Enums"]["type_surface_enum"]
+          unit: string | null
         }
         Insert: {
           created_at?: string
@@ -810,6 +811,7 @@ export type Database = {
           name: string
           supply_price: number
           surface_impactee?: Database["public"]["Enums"]["type_surface_enum"]
+          unit?: string | null
         }
         Update: {
           created_at?: string
@@ -820,6 +822,7 @@ export type Database = {
           name?: string
           supply_price?: number
           surface_impactee?: Database["public"]["Enums"]["type_surface_enum"]
+          unit?: string | null
         }
         Relationships: []
       }
