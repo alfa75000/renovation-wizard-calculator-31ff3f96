@@ -8,6 +8,7 @@ import { ProjectState } from '@/types';
 export const useSaveLoadWarning = (state: ProjectState) => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
   const [lastSavedState, setLastSavedState] = useState<string>('');
+  const [isLoadingProject, setIsLoadingProject] = useState<boolean>(false);
 
   // Mettre à jour l'état sauvegardé lors d'une sauvegarde
   const updateSavedState = () => {
@@ -59,6 +60,7 @@ export const useSaveLoadWarning = (state: ProjectState) => {
   return {
     hasUnsavedChanges,
     updateSavedState,
-    resetSavedState
+    resetSavedState,
+    setIsLoadingProject
   };
 };

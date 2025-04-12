@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useReducer } from 'react';
 import { ProjectState, ProjectAction, Project } from '@/types';
 import { toast } from 'sonner';
@@ -238,7 +239,11 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
         console.error('Exception lors de la mise à jour du current_project_id après chargement:', e);
       }
       
-      updateSavedState();
+      // Marquer l'état comme "sauvegardé" après chargement pour éviter le "Non sauvegardé"
+      setTimeout(() => {
+        updateSavedState();
+        console.log('[ProjectContext] État marqué comme sauvegardé après chargement');
+      }, 100);
       
       toast.success(`Projet "${projectData.name}" chargé avec succès`);
     } catch (error) {
