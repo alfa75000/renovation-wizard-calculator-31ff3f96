@@ -41,6 +41,10 @@ const TravailForm: React.FC<TravailFormProps> = ({
   );
   const [tauxTVA, setTauxTVA] = useState<number>(travailAModifier?.tauxTVA || 10);
   const [surfaceImpactee, setSurfaceImpactee] = useState<SurfaceImpactee>('Mur');
+  
+  // Flag pour savoir si l'unité et la surface impactée sont personnalisées
+  const [isCustomUnite, setIsCustomUnite] = useState<boolean>(true);
+  const [isCustomSurface, setIsCustomSurface] = useState<boolean>(true);
 
   useEffect(() => {
     setGroupId("");
@@ -60,9 +64,17 @@ const TravailForm: React.FC<TravailFormProps> = ({
     if (selectedService) {
       setPrixFournitures(selectedService.supply_price || 0);
       setPrixMainOeuvre(selectedService.labor_price || 0);
-      setUnite(selectedService.unit || "m²");
+      
+      // Utiliser l'unité du service si définie, sinon "m²"
+      const serviceUnit = selectedService.unit || "Unité";
+      setUnite(serviceUnit);
+      setIsCustomUnite(selectedService.unit === undefined || selectedService.unit === null);
+      
       setDescription(selectedService.description || "");
+      
+      // Utiliser la surface impactée du service
       setSurfaceImpactee(selectedService.surface_impactee || 'Aucune');
+      setIsCustomSurface(selectedService.surface_impactee === undefined || selectedService.surface_impactee === null);
       
       if (piece) {
         let quantiteInitiale = 0;
@@ -194,6 +206,8 @@ const TravailForm: React.FC<TravailFormProps> = ({
             setUnite={setUnite}
             surfaceImpactee={surfaceImpactee}
             setSurfaceImpactee={setSurfaceImpactee}
+            isCustomUnite={isCustomUnite}
+            isCustomSurface={isCustomSurface}
           />
 
           <PriceSection

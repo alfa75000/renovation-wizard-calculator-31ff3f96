@@ -13,6 +13,8 @@ interface QuantitySectionProps {
   setUnite: (value: string) => void;
   surfaceImpactee: SurfaceImpactee;
   setSurfaceImpactee: (value: SurfaceImpactee) => void;
+  isCustomUnite?: boolean; // Indique si l'unité est personnalisée (non définie dans le service)
+  isCustomSurface?: boolean; // Indique si la surface impactée est personnalisée
 }
 
 const QuantitySection: React.FC<QuantitySectionProps> = ({
@@ -21,16 +23,21 @@ const QuantitySection: React.FC<QuantitySectionProps> = ({
   unite,
   setUnite,
   surfaceImpactee,
-  setSurfaceImpactee
+  setSurfaceImpactee,
+  isCustomUnite = false,
+  isCustomSurface = false
 }) => {
   return (
     <>
       <div>
-        <Label htmlFor="surfaceImpactee">Surface impactée</Label>
+        <Label htmlFor="surfaceImpactee">
+          {isCustomSurface ? "Surface impactée (non définie)" : "Surface impactée"}
+        </Label>
         <SurfaceImpacteeSelect
           value={surfaceImpactee}
           onChange={setSurfaceImpactee}
           className="mt-1"
+          isUndefined={isCustomSurface}
         />
       </div>
 
@@ -48,7 +55,9 @@ const QuantitySection: React.FC<QuantitySectionProps> = ({
           />
         </div>
         <div>
-          <Label htmlFor="unite">Unité</Label>
+          <Label htmlFor="unite">
+            {isCustomUnite ? "Unité (par défaut)" : "Unité"}
+          </Label>
           <UniteSelect
             value={unite}
             onChange={(value) => setUnite(value)}

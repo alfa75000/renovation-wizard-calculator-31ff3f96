@@ -9,6 +9,7 @@ interface SurfaceImpacteeSelectProps {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
+  isUndefined?: boolean; // Nouveau prop pour savoir si la valeur est définie
 }
 
 const surfacesOptions: { value: SurfaceImpactee; label: string }[] = [
@@ -24,6 +25,7 @@ const SurfaceImpacteeSelect: React.FC<SurfaceImpacteeSelectProps> = ({
   placeholder = "Sélectionner une surface",
   disabled = false,
   className = "",
+  isUndefined = false,
 }) => {
   return (
     <Select

@@ -45,7 +45,7 @@ const SousTypeSelect: React.FC<SousTypeSelectProps> = ({
           // Ajouter une valeur par défaut pour l'unité si nécessaire
           const formattedServices = data.map(service => ({
             ...service,
-            unit: service.unit || 'm²' // Valeur par défaut pour compatibilité
+            unit: service.unit || 'Unité' // Valeur par défaut pour unité
           }));
           
           setServices(formattedServices);
@@ -116,7 +116,7 @@ const SousTypeSelect: React.FC<SousTypeSelectProps> = ({
         {services.length > 0 ? (
           services.map((service) => (
             <SelectItem key={service.id} value={service.id}>
-              {service.name} ({(service.labor_price + service.supply_price).toFixed(2)}€/{service.unit || 'm²'})
+              {service.name} ({(service.labor_price + service.supply_price).toFixed(2)}€/{service.unit || 'Unité'})
             </SelectItem>
           ))
         ) : (
