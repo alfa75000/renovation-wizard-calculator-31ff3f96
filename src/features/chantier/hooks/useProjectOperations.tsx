@@ -1,3 +1,4 @@
+
 import { useCallback } from 'react';
 import { useProject } from '@/contexts/ProjectContext';
 import { toast } from 'sonner';
@@ -33,6 +34,7 @@ export const useProjectOperations = () => {
 
   /**
    * Fonction pour créer un nouveau projet vide et réinitialiser l'état
+   * Cette fonction est utilisée par le bouton "Nouveau" dans ProjectBar
    */
   const handleNewProject = useCallback(async () => {
     try {
@@ -64,6 +66,7 @@ export const useProjectOperations = () => {
         }
       }
       
+      toast.success('Nouveau projet créé');
       return true;
     } catch (error) {
       console.error('Erreur lors de la réinitialisation du projet:', error);

@@ -56,17 +56,6 @@ export default function App() {
     hasUnsavedChanges,
     currentProjectId
   } = useProjectOperations();
-  
-  // Fonction wrapper pour la confirmation avant de créer un nouveau projet
-  const confirmAndCreateNewProject = () => {
-    if (hasUnsavedChanges) {
-      if (!window.confirm("Des modifications non sauvegardées seront perdues. Voulez-vous continuer ?")) {
-        return;
-      }
-    }
-    
-    handleNewProject();
-  };
 
   return (
     <Router>

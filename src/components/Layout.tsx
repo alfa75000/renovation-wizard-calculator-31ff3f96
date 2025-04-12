@@ -4,7 +4,6 @@ import { useProject } from '@/contexts/ProjectContext';
 import { ProjectBar } from './layout/ProjectBar';
 import { TitleHeader } from './layout/TitleHeader';
 import { Navigation } from './layout/Navigation';
-import { NewProjectDialog } from './layout/NewProjectDialog';
 import { SaveAsDialog } from './layout/SaveAsDialog';
 import { OpenProjectDialog } from './layout/OpenProjectDialog';
 import { LayoutProps } from './Layout.d';
@@ -19,12 +18,11 @@ export const Layout: React.FC<LayoutProps> = ({
   actions,
 }) => {
   const { 
-    createNewProject,
     state,
     hasUnsavedChanges
   } = useProject();
   
-  const { handleSaveProject, currentProjectId } = useProjectOperations();
+  const { handleSaveProject, handleNewProject, currentProjectId } = useProjectOperations();
   
   // Activer l'auto-sauvegarde au niveau global de l'application
   useAutoSave();
@@ -32,15 +30,8 @@ export const Layout: React.FC<LayoutProps> = ({
   // Récupérer directement le nom du projet depuis le contexte global
   const projectName = state?.metadata?.nomProjet || '';
   
-  const [newProjectDialogOpen, setNewProjectDialogOpen] = useState(false);
   const [saveAsDialogOpen, setSaveAsDialogOpen] = useState(false);
   const [openProjectDialogOpen, setOpenProjectDialogOpen] = useState(false);
-  
-  // Création d'un nouveau projet
-  const handleCreateNewProject = () => {
-    createNewProject();
-    setNewProjectDialogOpen(false);
-  };
   
   // Fonction intelligente pour la sauvegarde
   const handleSmartSaveProject = async () => {
@@ -65,11 +56,23 @@ export const Layout: React.FC<LayoutProps> = ({
       // Note: Le toast d'erreur est maintenant affiché dans handleSaveProject
     }
   };
+
+  // Fonction de confirmation pour la création d'un nouveau projet
+  const confirmAndHandleNewProject = () => {
+    if (hasUnsavedChanges) {
+      if (!window.confirm("Des modifications non sauvegardées seront perdues. Voulez-vous continuer ?")) {
+        return;
+      }
+    }
+    
+    // Appeler la fonction de réinitialisation du projet
+    handleNewProject();
+  };
   
   return (
     <div className="min-h-screen bg-gray-50">
       <ProjectBar 
-        onNewProject={() => setNewProjectDialogOpen(true)}
+        onNewProject={confirmAndHandleNewProject}
         onOpenProject={() => setOpenProjectDialogOpen(true)}
         onSaveProject={handleSmartSaveProject}
         onSaveAsProject={() => setSaveAsDialogOpen(true)}
@@ -84,12 +87,6 @@ export const Layout: React.FC<LayoutProps> = ({
       <main className="max-w-6xl mx-auto px-4 pb-8">
         {children}
       </main>
-      
-      <NewProjectDialog 
-        open={newProjectDialogOpen}
-        onOpenChange={setNewProjectDialogOpen}
-        onCreateProject={handleCreateNewProject}
-      />
       
       <SaveAsDialog 
         open={saveAsDialogOpen}

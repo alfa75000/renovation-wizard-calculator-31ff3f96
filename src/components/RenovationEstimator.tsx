@@ -10,7 +10,6 @@ const RenovationEstimator: React.FC = () => {
   const { 
     state, 
     dispatch, 
-    createNewProject, 
     hasUnsavedChanges 
   } = useProject();
   
@@ -76,18 +75,12 @@ const RenovationEstimator: React.FC = () => {
     toast.success(`${roomName} supprimé avec succès`);
   };
 
-  const resetProject = () => {
-    createNewProject();
-    setEditingRoomId(null);
-  };
-
   return (
     <div className="max-w-6xl mx-auto">
       <PropertyCard 
         property={property}
         hasUnsavedChanges={hasUnsavedChanges}
         onPropertyChange={handlePropertyChange}
-        onResetProject={resetProject}
       />
 
       <RoomsCard 
