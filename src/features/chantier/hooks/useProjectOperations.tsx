@@ -56,6 +56,8 @@ export const useProjectOperations = () => {
           console.log('Mise à jour de current_project_id à NULL réussie');
         }
       }
+
+      toast.success('Initialisation pour un nouveau projet réussie');
       
       return true;
     } catch (error) {
@@ -71,6 +73,13 @@ export const useProjectOperations = () => {
   const handleChargerProjet = useCallback(async (projetId: string) => {
     try {
       await loadProject(projetId);
+      
+      // Forcer l'état comme sauvegardé après le chargement
+      setTimeout(() => {
+        updateSavedState();
+        console.log('[handleChargerProjet] Marquage forcé du projet comme sauvegardé après chargement');
+      }, 300);
+      
       console.log('Projet chargé, mise à jour de current_project_id dans app_state:', projetId);
       
       if (currentUser) {
@@ -102,7 +111,7 @@ export const useProjectOperations = () => {
       console.error('Erreur lors du chargement du projet:', error);
       toast.error('Une erreur est survenue lors du chargement du projet');
     }
-  }, [loadProject, updateCurrentProject, currentUser]);
+  }, [loadProject, updateCurrentProject, currentUser, updateSavedState]);
   
   /**
    * Supprimer le projet actuel

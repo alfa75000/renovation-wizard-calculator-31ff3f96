@@ -34,14 +34,20 @@ export const useSaveLoadWarning = (state: ProjectState) => {
       return;
     }
     
-    if (lastSavedState) {
-      const currentStateSnapshot = JSON.stringify(state);
-      const hasChanges = currentStateSnapshot !== lastSavedState;
-      
-      if (hasChanges !== hasUnsavedChanges) {
-        console.log(`[useSaveLoadWarning] Changement d'état détecté: ${hasChanges ? 'Modifications non sauvegardées' : 'Pas de modifications'}`);
-        setHasUnsavedChanges(hasChanges);
-      }
+    // Protection contre le premier rendu ou l'absence d'état sauvegardé
+    if (!lastSavedState) {
+      // Si nous avons un état mais pas d'état sauvegardé, ne pas marquer comme non sauvegardé
+      // C'est le cas lors du chargement initial de l'application
+      setHasUnsavedChanges(false);
+      return;
+    }
+    
+    const currentStateSnapshot = JSON.stringify(state);
+    const hasChanges = currentStateSnapshot !== lastSavedState;
+    
+    if (hasChanges !== hasUnsavedChanges) {
+      console.log(`[useSaveLoadWarning] Changement d'état détecté: ${hasChanges ? 'Modifications non sauvegardées' : 'Pas de modifications'}`);
+      setHasUnsavedChanges(hasChanges);
     }
   }, [state, lastSavedState, hasUnsavedChanges, isLoadingProject]);
 
