@@ -114,7 +114,11 @@ const RoomForm: React.FC<RoomFormProps> = ({ onAddRoom, editingRoom, roomTypes }
   const generateRoomName = (type: string, customName: string = ""): string => {
     if (editingRoom) return editingRoom.name;
     
-    const sameTypeRooms = projectState.rooms.filter(room => room.type === type);
+    // Add null check for projectState and projectState.rooms
+    const sameTypeRooms = projectState && projectState.rooms 
+      ? projectState.rooms.filter(room => room.type === type)
+      : [];
+    
     let maxNumber = 0;
     
     sameTypeRooms.forEach(room => {
