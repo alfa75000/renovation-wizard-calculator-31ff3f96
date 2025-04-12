@@ -1,5 +1,5 @@
 
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { generateDevisNumber } from '@/services/devisService';
@@ -66,6 +66,29 @@ export const useProjectMetadata = () => {
   const setDevisNumber = useCallback((value: string) => {
     updateMetadata('devisNumber', value);
   }, [updateMetadata]);
+
+  // Reset all metadata fields
+  const resetMetadataFields = useCallback(() => {
+    setClientId('');
+    setNomProjet('');
+    setDescriptionProjet('');
+    setAdresseChantier('');
+    setOccupant('');
+    setInfoComplementaire('');
+    setDateDevis(new Date().toISOString().split('T')[0]);
+    setDevisNumber('');
+  }, [setClientId, setNomProjet, setDescriptionProjet, setAdresseChantier, setOccupant, setInfoComplementaire, setDateDevis, setDevisNumber]);
+
+  // Effect to monitor project state reset and ensure metadata is cleared
+  useEffect(() => {
+    if (!state.metadata.clientId && 
+        !state.metadata.nomProjet && 
+        !state.metadata.descriptionProjet) {
+      // This likely indicates that we've just reset the project state
+      // Make sure all other fields are cleared too
+      resetMetadataFields();
+    }
+  }, [state.metadata, resetMetadataFields]);
 
   // Generate project name based on client, devis number and description
   const generateProjectName = useCallback(async () => {
@@ -167,6 +190,7 @@ export const useProjectMetadata = () => {
     setDevisNumber,
     generateProjectName,
     generateProjectNameIfNeeded,
-    shouldGenerateProjectName
+    shouldGenerateProjectName,
+    resetMetadataFields
   };
 };

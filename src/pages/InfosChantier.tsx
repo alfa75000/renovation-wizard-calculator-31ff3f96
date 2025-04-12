@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useProjectInfo } from '@/features/chantier/hooks/useProjectInfo';
 import { InfosChantierLayout } from '@/features/chantier/components/InfosChantierLayout';
 
@@ -31,8 +31,17 @@ const InfosChantier: React.FC = () => {
     shouldGenerateProjectName,
     handleChargerProjet,
     handleDeleteProject,
-    handleSaveProject
+    handleSaveProject,
+    resetMetadataFields
   } = useProjectInfo();
+  
+  // Effect to ensure all fields are reset when currentProjectId is null (new project)
+  useEffect(() => {
+    if (currentProjectId === null && !projectState.metadata.clientId) {
+      console.log("Réinitialisation des champs de métadonnées (InfosChantier)");
+      resetMetadataFields();
+    }
+  }, [currentProjectId, projectState.metadata.clientId, resetMetadataFields]);
   
   return (
     <InfosChantierLayout

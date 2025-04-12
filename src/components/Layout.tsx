@@ -10,6 +10,7 @@ import { LayoutProps } from './Layout.d';
 import { useProjectOperations } from '@/features/chantier/hooks/useProjectOperations';
 import { toast } from 'sonner';
 import { useAutoSave } from '@/hooks/useAutoSave';
+import { useProjectInfo } from '@/features/chantier/hooks/useProjectInfo';
 
 export const Layout: React.FC<LayoutProps> = ({ 
   children, 
@@ -23,6 +24,9 @@ export const Layout: React.FC<LayoutProps> = ({
   } = useProject();
   
   const { handleSaveProject, handleNewProject, currentProjectId } = useProjectOperations();
+  
+  // On pages that use ProjectInfo, we need to reset metadata fields when creating a new project
+  const projectInfo = useProjectInfo();
   
   // Activer l'auto-sauvegarde au niveau global de l'application
   useAutoSave();
@@ -67,6 +71,11 @@ export const Layout: React.FC<LayoutProps> = ({
     
     // Appeler la fonction de réinitialisation du projet
     handleNewProject();
+    
+    // Si on est sur la page Infos Chantier, réinitialiser explicitement tous les champs
+    if (projectInfo && projectInfo.resetMetadataFields) {
+      projectInfo.resetMetadataFields();
+    }
   };
   
   return (
