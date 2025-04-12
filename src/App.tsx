@@ -21,6 +21,8 @@ import ClientsList from '@/features/admin/pages/ClientsList';
 import './App.css';
 import SupabaseStatus from './components/SupabaseStatus';
 
+import { useProjectOperations } from '@/hooks/useProjectOperations';
+
 export default function App() {
   const [isConnected, setIsConnected] = useState(false);
 
@@ -44,6 +46,25 @@ export default function App() {
       clearInterval(intervalId);
     };
   }, []);
+
+  const { 
+    handleChargerProjet, 
+    handleDeleteProject,
+    handleSaveProject,
+    handleNewProject,
+    hasUnsavedChanges,
+    currentProjectId
+  } = useProjectOperations();
+  
+  const handleNewProject = () => {
+    if (hasUnsavedChanges) {
+      if (!window.confirm("Des modifications non sauvegardées seront perdues. Voulez-vous continuer ?")) {
+        return;
+      }
+    }
+    
+    handleNewProject();
+  };
 
   return (
     <Router>

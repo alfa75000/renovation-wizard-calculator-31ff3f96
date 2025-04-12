@@ -23,11 +23,54 @@ export const useProjectOperations = () => {
     // Fonction pour mettre à jour l'ID du projet courant
     setCurrentProjectId,
     // Importation de la fonction updateSavedState pour mettre à jour l'état de sauvegarde
-    updateSavedState
+    updateSavedState,
+    // Fonction pour réinitialiser le projet
+    createNewProject
   } = useProject();
   
   // Utiliser le hook d'état d'application pour mettre à jour le projet en cours
   const { updateCurrentProject, currentUser } = useAppState();
+
+  /**
+   * Fonction pour créer un nouveau projet vide et réinitialiser l'état
+   */
+  const handleNewProject = useCallback(async () => {
+    try {
+      // Réinitialiser l'état du projet avec la fonction du contexte
+      createNewProject();
+      
+      // Mettre à jour l'ID de projet courant dans app_state à NULL
+      if (currentUser) {
+        const success = await updateCurrentProject(null);
+        if (!success) {
+          console.error('Échec de la mise à jour de current_project_id à NULL dans app_state');
+          // Tentative de mise à jour directe en cas d'échec
+          try {
+            const { error } = await supabase
+              .from('app_state')
+              .update({ current_project_id: null })
+              .eq('user_id', currentUser.id);
+              
+            if (error) {
+              console.error('Échec de la mise à jour directe:', error);
+            } else {
+              console.log('Mise à jour directe réussie');
+            }
+          } catch (e) {
+            console.error('Exception lors de la mise à jour directe:', e);
+          }
+        } else {
+          console.log('Mise à jour de current_project_id à NULL réussie');
+        }
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Erreur lors de la réinitialisation du projet:', error);
+      toast.error('Une erreur est survenue lors de la réinitialisation du projet');
+      return false;
+    }
+  }, [createNewProject, updateCurrentProject, currentUser]);
 
   /**
    * Charger un projet existant
@@ -282,6 +325,7 @@ export const useProjectOperations = () => {
     handleChargerProjet,
     handleDeleteProject,
     handleSaveProject,
+    handleNewProject,
     currentProjectId,
     projects,
     hasUnsavedChanges,
