@@ -175,6 +175,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
         toast.success('Projet enregistré avec succès', { id: 'saving-project' });
       }
       
+      // Très important: mettre à jour l'état sauvegardé pour désactiver hasUnsavedChanges
       updateSavedState();
       await refreshProjects();
     } catch (error) {
@@ -239,15 +240,18 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
         console.error('Exception lors de la mise à jour du current_project_id après chargement:', e);
       }
       
-      // Utiliser setTimeout pour s'assurer que l'état a eu le temps d'être mis à jour
+      // Utiliser un délai plus long pour s'assurer que l'état a eu le temps d'être mis à jour
       setTimeout(() => {
         console.log("Mise à jour de l'état sauvegardé après le chargement complet");
+        
+        // IMPORTANT: D'abord mettre à jour lastSavedState puis forcer hasUnsavedChanges à false
         updateSavedState();
         
-        // Forcer hasUnsavedChanges à false après le chargement complet
+        // Puis forcer hasUnsavedChanges à false de façon plus robuste
         forceNoUnsavedChanges();
+        
         console.log("hasUnsavedChanges forcé à false après chargement");
-      }, 50);
+      }, 100); // Augmenter le délai à 100ms
       
       toast.success(`Projet "${projectData.name}" chargé avec succès`);
     } catch (error) {
