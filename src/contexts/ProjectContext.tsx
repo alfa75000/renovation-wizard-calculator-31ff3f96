@@ -131,7 +131,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     dispatch({ type: 'RESET_PROJECT' });
     setCurrentProjectId(null);
     resetSavedState(initialProjectState);
-    toast.success('Nouveau projet créé');
+    toast.success('Initialisation pour un nouveau projet réussie');
   };
 
   const saveProject = async (name?: string): Promise<void> => {

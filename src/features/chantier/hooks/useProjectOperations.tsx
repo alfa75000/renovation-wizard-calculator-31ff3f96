@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { useProject } from '@/contexts/ProjectContext';
 import { toast } from 'sonner';
@@ -66,7 +65,6 @@ export const useProjectOperations = () => {
         }
       }
       
-      toast.success('Nouveau projet créé');
       return true;
     } catch (error) {
       console.error('Erreur lors de la réinitialisation du projet:', error);

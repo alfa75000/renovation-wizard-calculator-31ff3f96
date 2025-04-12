@@ -34,6 +34,11 @@ const InfosChantier: React.FC = () => {
     handleSaveProject
   } = useProjectInfo();
   
+  // Check if we have all necessary data before rendering the component
+  if (isLoading) {
+    return <div className="flex items-center justify-center h-screen">Chargement...</div>;
+  }
+  
   return (
     <InfosChantierLayout
       clientId={clientId}
@@ -52,7 +57,7 @@ const InfosChantier: React.FC = () => {
       setDateDevis={setDateDevis}
       devisNumber={devisNumber}
       setDevisNumber={setDevisNumber}
-      projects={projects}
+      projects={projects || []}
       currentProjectId={currentProjectId}
       projectState={projectState}
       isLoading={isLoading}
