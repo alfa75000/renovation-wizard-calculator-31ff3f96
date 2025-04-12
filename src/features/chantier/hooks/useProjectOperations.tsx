@@ -66,7 +66,8 @@ export const useProjectOperations = () => {
         }
       }
       
-      toast.success('Nouveau projet créé');
+      // Remplacer le texte du toast pour éviter la duplication et utiliser le nouveau message
+      toast.success('Initialisation pour un nouveau projet réussie');
       return true;
     } catch (error) {
       console.error('Erreur lors de la réinitialisation du projet:', error);

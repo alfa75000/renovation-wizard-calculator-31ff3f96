@@ -131,7 +131,6 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     dispatch({ type: 'RESET_PROJECT' });
     setCurrentProjectId(null);
     resetSavedState(initialProjectState);
-    toast.success('Nouveau projet créé');
   };
 
   const saveProject = async (name?: string): Promise<void> => {
@@ -162,7 +161,8 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 await supabase
                   .from('app_state')
                   .update({ current_project_id: result.id })
-                  .eq('user_id', adminUser.id);
+                  .eq('user_id', adminUser.id)
+                  .select();
                 
                 console.log('Projet ID mis à jour explicitement après création:', result.id);
               }

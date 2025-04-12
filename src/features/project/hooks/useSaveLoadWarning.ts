@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ProjectState } from '@/types';
 
 /**
@@ -8,6 +8,7 @@ import { ProjectState } from '@/types';
 export const useSaveLoadWarning = (state: ProjectState) => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
   const [lastSavedState, setLastSavedState] = useState<string>('');
+  const isInitialLoad = useRef<boolean>(true);
 
   // Mettre à jour l'état sauvegardé lors d'une sauvegarde
   const updateSavedState = () => {
@@ -27,6 +28,12 @@ export const useSaveLoadWarning = (state: ProjectState) => {
 
   // Détecter les changements non sauvegardés en comparant tout l'état
   useEffect(() => {
+    // Si c'est le chargement initial, on ne fait rien et on désactive ce flag
+    if (isInitialLoad.current) {
+      isInitialLoad.current = false;
+      return;
+    }
+
     if (lastSavedState) {
       const currentStateSnapshot = JSON.stringify(state);
       const hasChanges = currentStateSnapshot !== lastSavedState;
