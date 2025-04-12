@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { ProjectState, ProjectAction, Project } from '@/types';
 import { toast } from 'sonner';
@@ -41,7 +42,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [isSaving, setIsSaving] = React.useState(false);
   const [projects, setProjects] = React.useState<Project[]>([]);
   const [currentProjectId, setCurrentProjectId] = React.useState<string | null>(null);
-  const { hasUnsavedChanges, updateSavedState, resetSavedState } = useSaveLoadWarning(state);
+  const { hasUnsavedChanges, updateSavedState, resetSavedState, forceNoUnsavedChanges } = useSaveLoadWarning(state);
   const roomsManager = useRooms(state, dispatch);
 
   const refreshProjects = async (): Promise<void> => {
@@ -238,9 +239,14 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
         console.error('Exception lors de la mise à jour du current_project_id après chargement:', e);
       }
       
+      // Utiliser setTimeout pour s'assurer que l'état a eu le temps d'être mis à jour
       setTimeout(() => {
         console.log("Mise à jour de l'état sauvegardé après le chargement complet");
         updateSavedState();
+        
+        // Forcer hasUnsavedChanges à false après le chargement complet
+        forceNoUnsavedChanges();
+        console.log("hasUnsavedChanges forcé à false après chargement");
       }, 50);
       
       toast.success(`Projet "${projectData.name}" chargé avec succès`);

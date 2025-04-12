@@ -53,6 +53,12 @@ export const useSaveLoadWarning = (state: ProjectState) => {
     console.log('[useSaveLoadWarning] État sauvegardé réinitialisé');
   }, []);
 
+  // Nouvelle fonction pour forcer hasUnsavedChanges à false quand nécessaire
+  const forceNoUnsavedChanges = useCallback(() => {
+    setHasUnsavedChanges(false);
+    console.log('[useSaveLoadWarning] Force hasUnsavedChanges à false');
+  }, []);
+
   // Détecter les changements non sauvegardés en comparant tout l'état
   useEffect(() => {
     if (lastSavedState) {
@@ -89,6 +95,7 @@ export const useSaveLoadWarning = (state: ProjectState) => {
   return {
     hasUnsavedChanges,
     updateSavedState,
-    resetSavedState
+    resetSavedState,
+    forceNoUnsavedChanges
   };
 };
