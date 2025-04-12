@@ -1,3 +1,4 @@
+
 import { useCallback } from 'react';
 import { useProject } from '@/contexts/ProjectContext';
 import { toast } from 'sonner';
@@ -56,8 +57,8 @@ export const useProjectOperations = () => {
           console.log('Mise à jour de current_project_id à NULL réussie');
         }
       }
-
-      toast.success('Initialisation pour un nouveau projet réussie');
+      
+      // On retire le toast d'ici car il sera affiché dans createNewProject()
       
       return true;
     } catch (error) {
