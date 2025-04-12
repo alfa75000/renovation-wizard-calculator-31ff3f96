@@ -88,6 +88,7 @@ const SousTypeSelect: React.FC<SousTypeSelectProps> = ({
     const service = services.find(s => s.id === serviceId);
     if (service) {
       console.log("SousTypeSelect - Service sélectionné:", service.name);
+      console.log("SousTypeSelect - Détails du service:", service);
       setSelectedValue(serviceId); // Mettre à jour l'état local
       onChange(service.id, service.name, service);
     }

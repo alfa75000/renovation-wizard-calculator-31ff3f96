@@ -62,19 +62,27 @@ const TravailForm: React.FC<TravailFormProps> = ({
 
   useEffect(() => {
     if (selectedService) {
+      console.log("Service sélectionné:", selectedService);
+      
       setPrixFournitures(selectedService.supply_price || 0);
       setPrixMainOeuvre(selectedService.labor_price || 0);
       
-      // Utiliser l'unité du service si définie, sinon "m²"
+      // Utiliser l'unité du service si définie, sinon "Unité"
       const serviceUnit = selectedService.unit || "Unité";
       setUnite(serviceUnit);
-      setIsCustomUnite(selectedService.unit === undefined || selectedService.unit === null);
+      
+      // Déterminer si l'unité est personnalisée (non définie dans le service)
+      setIsCustomUnite(!selectedService.unit);
+      console.log("Unité personnalisée:", !selectedService.unit);
       
       setDescription(selectedService.description || "");
       
       // Utiliser la surface impactée du service
       setSurfaceImpactee(selectedService.surface_impactee || 'Aucune');
-      setIsCustomSurface(selectedService.surface_impactee === undefined || selectedService.surface_impactee === null);
+      
+      // Déterminer si la surface impactée est personnalisée
+      setIsCustomSurface(!selectedService.surface_impactee);
+      console.log("Surface impactée personnalisée:", !selectedService.surface_impactee);
       
       if (piece) {
         let quantiteInitiale = 0;

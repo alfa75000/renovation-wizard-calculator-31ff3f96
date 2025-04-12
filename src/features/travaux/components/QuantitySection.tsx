@@ -27,6 +27,15 @@ const QuantitySection: React.FC<QuantitySectionProps> = ({
   isCustomUnite = false,
   isCustomSurface = false
 }) => {
+  // Ajouter des logs pour vérifier les valeurs entrantes
+  console.log("QuantitySection - Props:", { 
+    quantite, 
+    unite, 
+    surfaceImpactee, 
+    isCustomUnite, 
+    isCustomSurface 
+  });
+
   return (
     <>
       <div>
