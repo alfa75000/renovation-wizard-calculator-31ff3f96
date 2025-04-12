@@ -12,7 +12,6 @@ export const useProjectOperations = () => {
   const { 
     loadProject,
     deleteCurrentProject,
-    // Renommer mais ne pas utiliser cette fonction de sauvegarde du contexte
     saveProject: contextSaveProject,
     currentProjectId,
     projects,
@@ -20,15 +19,11 @@ export const useProjectOperations = () => {
     isLoading,
     state,
     refreshProjects,
-    // Fonction pour mettre à jour l'ID du projet courant
     setCurrentProjectId,
-    // Importation de la fonction updateSavedState pour mettre à jour l'état de sauvegarde
     updateSavedState,
-    // Fonction pour réinitialiser le projet
     createNewProject
   } = useProject();
   
-  // Utiliser le hook d'état d'application pour mettre à jour le projet en cours
   const { updateCurrentProject, currentUser } = useAppState();
 
   /**
@@ -37,15 +32,12 @@ export const useProjectOperations = () => {
    */
   const handleNewProject = useCallback(async () => {
     try {
-      // Réinitialiser l'état du projet avec la fonction du contexte
       createNewProject();
       
-      // Mettre à jour l'ID de projet courant dans app_state à NULL
       if (currentUser) {
         const success = await updateCurrentProject(null);
         if (!success) {
           console.error('Échec de la mise à jour de current_project_id à NULL dans app_state');
-          // Tentative de mise à jour directe en cas d'échec
           try {
             const { error } = await supabase
               .from('app_state')
@@ -81,13 +73,11 @@ export const useProjectOperations = () => {
       await loadProject(projetId);
       console.log('Projet chargé, mise à jour de current_project_id dans app_state:', projetId);
       
-      // Mettre à jour l'ID du projet en cours dans l'état de l'application
       if (currentUser) {
         const success = await updateCurrentProject(projetId);
         if (!success) {
           console.error('Échec de la mise à jour de current_project_id dans app_state');
           
-          // Tentative de mise à jour directe
           try {
             const { error } = await supabase
               .from('app_state')
@@ -120,7 +110,6 @@ export const useProjectOperations = () => {
   const handleDeleteProject = useCallback(async () => {
     try {
       await deleteCurrentProject();
-      // Mettre à jour l'ID du projet en cours dans l'état de l'application
       if (currentUser) {
         await updateCurrentProject(null);
       }
@@ -138,19 +127,15 @@ export const useProjectOperations = () => {
    * Elle est également utilisée par l'auto-sauvegarde
    */
   const handleSaveProject = useCallback(async (projectInfo?: any) => {
-    // Identifiant unique pour le toast de sauvegarde
     const toastId = 'saving-project';
     
-    // Ne pas afficher de toast pour l'auto-sauvegarde
     const isAutoSave = projectInfo?.isAutoSave;
     
     try {
       if (!isAutoSave) {
-        // Afficher un toast de chargement uniquement pour les sauvegardes manuelles
         toast.loading('Sauvegarde en cours...', { id: toastId });
       }
       
-      // Vérifier que state existe
       if (!state) {
         console.error('Erreur: state est undefined dans handleSaveProject');
         if (!isAutoSave) {
@@ -159,7 +144,6 @@ export const useProjectOperations = () => {
         return false;
       }
       
-      // Créer un objet metadata par défaut avec la structure appropriée
       const defaultMetadata: ProjectMetadata = {
         clientId: '',
         nomProjet: '',
@@ -171,7 +155,6 @@ export const useProjectOperations = () => {
         devisNumber: ''
       };
       
-      // Valider que le client ID est présent en utilisant le metadata approprié
       const metadata = state.metadata || defaultMetadata;
       const clientId = metadata.clientId || projectInfo?.client_id;
       
@@ -180,7 +163,6 @@ export const useProjectOperations = () => {
         return false;
       }
       
-      // Préparer les données du projet
       const combinedProjectInfo = {
         client_id: clientId,
         name: metadata.nomProjet || projectInfo?.name || 'Projet sans nom',
@@ -212,7 +194,6 @@ export const useProjectOperations = () => {
       
       let result;
       
-      // Sauvegarde selon qu'on modifie un projet existant ou qu'on en crée un nouveau
       if (currentProjectId) {
         if (!isAutoSave) {
           console.log('Mise à jour du projet existant:', currentProjectId);
@@ -237,7 +218,6 @@ export const useProjectOperations = () => {
         }
         result = data;
       } else {
-        // Création d'un nouveau projet
         if (!isAutoSave) {
           console.log('Création d\'un nouveau projet avec client_id:', clientId);
         }
@@ -261,7 +241,6 @@ export const useProjectOperations = () => {
           }
           result = data;
           
-          // Mettre à jour l'ID du projet courant pour éviter les doubles créations
           if (data && data[0] && data[0].id) {
             setCurrentProjectId(data[0].id);
           }
@@ -274,7 +253,6 @@ export const useProjectOperations = () => {
         }
       }
       
-      // Mise à jour du projet courant dans l'état de l'application si c'est un nouveau projet
       if (result && result[0] && result[0].id) {
         const projectId = result[0].id;
         console.log('Mise à jour de app_state avec new project id:', projectId);
@@ -284,7 +262,6 @@ export const useProjectOperations = () => {
           if (!success) {
             console.error('Échec de updateCurrentProject pour le nouveau projet');
             
-            // Tentative de mise à jour directe
             try {
               const { error } = await supabase
                 .from('app_state')
@@ -307,10 +284,8 @@ export const useProjectOperations = () => {
         }
       }
       
-      // Mettre à jour l'état de sauvegarde pour indiquer que le projet est sauvegardé
       updateSavedState();
       
-      // Rafraîchir la liste des projets après la sauvegarde
       await refreshProjects();
       return true;
     } catch (error) {

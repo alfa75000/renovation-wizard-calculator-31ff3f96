@@ -28,6 +28,12 @@ export const useSaveLoadWarning = (state: ProjectState) => {
 
   // Détecter les changements non sauvegardés en comparant tout l'état
   useEffect(() => {
+    // Ne pas mettre à jour l'état pendant le chargement d'un projet
+    if (isLoadingProject) {
+      console.log('[useSaveLoadWarning] Ignoré la détection de changements pendant le chargement');
+      return;
+    }
+    
     if (lastSavedState) {
       const currentStateSnapshot = JSON.stringify(state);
       const hasChanges = currentStateSnapshot !== lastSavedState;
@@ -37,7 +43,7 @@ export const useSaveLoadWarning = (state: ProjectState) => {
         setHasUnsavedChanges(hasChanges);
       }
     }
-  }, [state, lastSavedState, hasUnsavedChanges]);
+  }, [state, lastSavedState, hasUnsavedChanges, isLoadingProject]);
 
   // Avertissement avant de quitter la page avec des modifications non sauvegardées
   useEffect(() => {

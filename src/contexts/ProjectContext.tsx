@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useReducer } from 'react';
 import { ProjectState, ProjectAction, Project } from '@/types';
 import { toast } from 'sonner';
@@ -42,7 +41,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [isSaving, setIsSaving] = React.useState(false);
   const [projects, setProjects] = React.useState<Project[]>([]);
   const [currentProjectId, setCurrentProjectId] = React.useState<string | null>(null);
-  const { hasUnsavedChanges, updateSavedState, resetSavedState } = useSaveLoadWarning(state);
+  const { hasUnsavedChanges, updateSavedState, resetSavedState, setIsLoadingProject } = useSaveLoadWarning(state);
   const roomsManager = useRooms(state, dispatch);
 
   const refreshProjects = async (): Promise<void> => {
@@ -132,7 +131,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     dispatch({ type: 'RESET_PROJECT' });
     setCurrentProjectId(null);
     resetSavedState(initialProjectState);
-    toast.success('Nouveau projet créé');
+    toast.success('Initialisation pour un nouveau projet réussie');
   };
 
   const saveProject = async (name?: string): Promise<void> => {
@@ -201,6 +200,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     
     try {
       setIsLoading(true);
+      setIsLoadingProject(true);
       
       console.log("Chargement du projet:", projectId);
       const { projectData, projectState } = await fetchProjectById(projectId);
@@ -239,9 +239,9 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
         console.error('Exception lors de la mise à jour du current_project_id après chargement:', e);
       }
       
-      // Marquer l'état comme "sauvegardé" après chargement pour éviter le "Non sauvegardé"
       setTimeout(() => {
         updateSavedState();
+        setIsLoadingProject(false);
         console.log('[ProjectContext] État marqué comme sauvegardé après chargement');
       }, 100);
       
@@ -249,6 +249,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     } catch (error) {
       console.error('Erreur lors du chargement du projet:', error);
       toast.error('Erreur lors du chargement du projet');
+      setIsLoadingProject(false);
     } finally {
       setIsLoading(false);
     }
