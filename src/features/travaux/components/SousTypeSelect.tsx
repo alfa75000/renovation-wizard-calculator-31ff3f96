@@ -42,14 +42,8 @@ const SousTypeSelect: React.FC<SousTypeSelectProps> = ({
         console.log("SousTypeSelect - Services récupérés:", data);
         
         if (data && data.length > 0) {
-          // Ajouter une valeur par défaut pour l'unité si nécessaire
-          const formattedServices = data.map(service => ({
-            ...service,
-            unit: service.unit || 'Unité' // Valeur par défaut pour unité
-          }));
-          
-          setServices(formattedServices);
-          console.log("SousTypeSelect - Services formatés:", formattedServices);
+          setServices(data);
+          console.log("SousTypeSelect - Services formatés:", data);
         } else {
           setServices([]);
           console.log("SousTypeSelect - Aucun service disponible");

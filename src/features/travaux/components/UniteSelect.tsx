@@ -3,8 +3,8 @@ import React from 'react';
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-// Unités de mesure disponibles
-export const unites = ["M²", "Ml", "M3", "Unité", "Ens.", "Forfait"];
+// Unités de mesure disponibles, matching our unit_enum in the database
+export const unites = ["M²", "Ml", "M³", "Unité", "Ens.", "Forfait"];
 
 interface UniteSelectProps {
   value: string | null;

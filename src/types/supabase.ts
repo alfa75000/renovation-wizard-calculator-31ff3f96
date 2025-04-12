@@ -15,6 +15,9 @@ export type ServiceGroup = {
 // Type Surface pour Supabase enum type_surface_enum
 export type SurfaceImpactee = 'Mur' | 'Plafond' | 'Sol' | 'Aucune';
 
+// Type Unite pour Supabase enum unit_enum
+export type UniteType = 'M²' | 'Unité' | 'Ens.' | 'Ml' | 'M³' | 'Forfait';
+
 export type Service = {
   id: string;
   created_at: string;
@@ -24,7 +27,7 @@ export type Service = {
   supply_price: number;
   group_id: string;
   surface_impactee: SurfaceImpactee;
-  unit?: string; // Pour compatibilité avec le code existant
+  unit?: UniteType; // Type plus précis pour unit
 };
 
 export type MenuiserieType = {

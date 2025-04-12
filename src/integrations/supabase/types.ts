@@ -800,7 +800,7 @@ export type Database = {
           name: string
           supply_price: number
           surface_impactee: Database["public"]["Enums"]["type_surface_enum"]
-          unit: string | null
+          unit: Database["public"]["Enums"]["unit_enum"] | null
         }
         Insert: {
           created_at?: string
@@ -811,7 +811,7 @@ export type Database = {
           name: string
           supply_price: number
           surface_impactee?: Database["public"]["Enums"]["type_surface_enum"]
-          unit?: string | null
+          unit?: Database["public"]["Enums"]["unit_enum"] | null
         }
         Update: {
           created_at?: string
@@ -822,7 +822,7 @@ export type Database = {
           name?: string
           supply_price?: number
           surface_impactee?: Database["public"]["Enums"]["type_surface_enum"]
-          unit?: string | null
+          unit?: Database["public"]["Enums"]["unit_enum"] | null
         }
         Relationships: []
       }
@@ -858,6 +858,7 @@ export type Database = {
       adjustment_enum: "Ajouter" | "Déduire"
       adjustment_type_enum: "Ajouter" | "Déduire"
       type_surface_enum: "Mur" | "Plafond" | "Sol" | "Aucune"
+      unit_enum: "M²" | "Unité" | "Ens." | "Ml" | "M³" | "Forfait"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -976,6 +977,7 @@ export const Constants = {
       adjustment_enum: ["Ajouter", "Déduire"],
       adjustment_type_enum: ["Ajouter", "Déduire"],
       type_surface_enum: ["Mur", "Plafond", "Sol", "Aucune"],
+      unit_enum: ["M²", "Unité", "Ens.", "Ml", "M³", "Forfait"],
     },
   },
 } as const
