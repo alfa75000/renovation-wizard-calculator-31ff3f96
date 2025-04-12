@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Button } from '../ui/button';
 import { FilePlus2, FolderOpen, Save, SaveAll, Check, AlertCircle } from 'lucide-react';
 import { useProject } from '@/contexts/ProjectContext';
@@ -20,6 +20,13 @@ interface ProjectBarProps {
   hasUnsavedChanges?: boolean;
 }
 
+// Define default auto save options outside the component
+const defaultAutoSaveOptions: AutoSaveOptions = {
+  enabled: false,
+  saveOnRoomAdd: false,
+  saveOnWorkAdd: true
+};
+
 export const ProjectBar: React.FC<ProjectBarProps> = ({
   onNewProject,
   onOpenProject,
@@ -33,24 +40,13 @@ export const ProjectBar: React.FC<ProjectBarProps> = ({
     isLoading, 
     currentUser, 
     users, 
-    appState, 
+    appState,
     switchUser, 
-    updateAutoSaveOptions 
+    updateAutoSaveOptions
   } = useAppState();
   
-  // Options d'enregistrement automatique
-  const [autoSaveOptions, setAutoSaveOptions] = useState<AutoSaveOptions>({
-    enabled: false,
-    saveOnRoomAdd: false,
-    saveOnWorkAdd: true
-  });
-  
-  // Mettre à jour les options locales lorsque l'état de l'application change
-  useEffect(() => {
-    if (appState?.auto_save_options) {
-      setAutoSaveOptions(appState.auto_save_options);
-    }
-  }, [appState]);
+  // Read auto save options directly from appState, providing defaults
+  const autoSaveOptions = appState?.auto_save_options || defaultAutoSaveOptions;
   
   // Si aucun projectDisplayName n'est fourni, revenir au projet du contexte
   const displayName = projectDisplayName || (() => {
@@ -60,8 +56,8 @@ export const ProjectBar: React.FC<ProjectBarProps> = ({
 
   // Fonction simplifiée pour mettre à jour une option d'enregistrement automatique
   const handleAutoSaveOptionChange = async (option: keyof AutoSaveOptions, value: boolean) => {
-    // Créer une copie des options actuelles
-    const newOptions = { ...autoSaveOptions };
+    // Read current options directly from appState (via the derived `autoSaveOptions` const)
+    const newOptions = { ...autoSaveOptions }; 
     
     // Si on désactive enabled, désactiver aussi les sous-options
     if (option === 'enabled') {
@@ -75,25 +71,18 @@ export const ProjectBar: React.FC<ProjectBarProps> = ({
       newOptions[option] = value;
     }
     
-    // Mettre à jour l'état local immédiatement pour une meilleure réactivité
-    setAutoSaveOptions(newOptions);
-    
-    // Enregistrer en base de données
+    // Enregistrer en base de données via la fonction du contexte
     const success = await updateAutoSaveOptions(newOptions);
     
     if (!success) {
-      // En cas d'échec, revenir à l'état précédent
-      toast.error('Erreur lors de la mise à jour des options d\'auto-sauvegarde');
-      if (appState?.auto_save_options) {
-        setAutoSaveOptions(appState.auto_save_options);
-      }
+      toast.error("Erreur lors de la mise à jour des options d'auto-sauvegarde");
     }
   };
 
   // Gérer le changement d'utilisateur
   const handleUserChange = (userId: string) => {
     if (hasUnsavedChanges) {
-      if (window.confirm('Vous avez des modifications non sauvegardées. Voulez-vous vraiment changer d\'utilisateur ?')) {
+      if (window.confirm("Vous avez des modifications non sauvegardées. Voulez-vous vraiment changer d'utilisateur ?")) {
         switchUser(userId);
       }
     } else {
@@ -164,10 +153,11 @@ export const ProjectBar: React.FC<ProjectBarProps> = ({
             <div className="space-y-4">
               <h4 className="font-medium">Options d'enregistrement</h4>
               
+              {/* Switch utilise maintenant autoSaveOptions lu depuis appState */}
               <div className="flex items-center space-x-2">
                 <Switch 
                   id="autoSave" 
-                  checked={autoSaveOptions.enabled}
+                  checked={autoSaveOptions.enabled} 
                   disabled={!currentProjectId}
                   onCheckedChange={(checked) => 
                     handleAutoSaveOptionChange('enabled', checked)
