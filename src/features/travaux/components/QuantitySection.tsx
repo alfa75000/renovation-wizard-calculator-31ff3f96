@@ -5,12 +5,13 @@ import { Input } from "@/components/ui/input";
 import UniteSelect from "./UniteSelect";
 import SurfaceImpacteeSelect from "./SurfaceImpacteeSelect";
 import { SurfaceImpactee } from "@/types";
+import { UniteType } from "@/types/supabase";
 
 interface QuantitySectionProps {
   quantite: number;
   setQuantite: (value: number) => void;
-  unite: string;
-  setUnite: (value: string) => void;
+  unite: UniteType;
+  setUnite: (value: UniteType) => void;
   surfaceImpactee: SurfaceImpactee;
   setSurfaceImpactee: (value: SurfaceImpactee) => void;
   isCustomUnite?: boolean; // Indique si l'unité est personnalisée (non définie dans le service)
@@ -69,7 +70,7 @@ const QuantitySection: React.FC<QuantitySectionProps> = ({
           </Label>
           <UniteSelect
             value={unite}
-            onChange={(value) => setUnite(value)}
+            onChange={setUnite}
             className="mt-1"
           />
         </div>

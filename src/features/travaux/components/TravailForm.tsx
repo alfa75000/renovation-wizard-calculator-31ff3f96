@@ -4,7 +4,7 @@ import TypeTravauxSelect from "./TypeTravauxSelect";
 import ServiceGroupSelect from "./ServiceGroupSelect";
 import SousTypeSelect from "./SousTypeSelect";
 import { Room, Travail, SurfaceImpactee } from "@/types";
-import { Service } from "@/types/supabase";
+import { Service, UniteType } from "@/types/supabase";
 import DescriptionSection from "./DescriptionSection";
 import QuantitySection from "./QuantitySection";
 import PriceSection from "./PriceSection";
@@ -35,7 +35,7 @@ const TravailForm: React.FC<TravailFormProps> = ({
   const [description, setDescription] = useState<string>(travailAModifier?.description || "");
   const [personnalisation, setPersonnalisation] = useState<string>(travailAModifier?.personnalisation || "");
   const [quantite, setQuantite] = useState<number>(travailAModifier?.quantite || 0);
-  const [unite, setUnite] = useState<string>(travailAModifier?.unite || "m²");
+  const [unite, setUnite] = useState<UniteType>("M²");
   const [prixFournitures, setPrixFournitures] = useState<number>(
     travailAModifier?.prixFournitures || 0
   );
@@ -75,7 +75,8 @@ const TravailForm: React.FC<TravailFormProps> = ({
       
       // Utiliser l'unité du service si définie, sinon "Unité"
       const serviceUnit = selectedService.unit || "Unité";
-      setUnite(serviceUnit);
+      // Vérifier que l'unité est conforme au type UniteType
+      setUnite(serviceUnit as UniteType);
       
       // Déterminer si l'unité est personnalisée (non définie dans le service)
       setIsCustomUnite(!selectedService.unit);
@@ -113,7 +114,6 @@ const TravailForm: React.FC<TravailFormProps> = ({
     }
   }, [selectedService, piece]);
 
-  // Mise à jour de la quantité lorsque la surface impactée change
   useEffect(() => {
     if (piece && selectedService) {
       let quantiteAjustee = 0;
@@ -164,7 +164,6 @@ const TravailForm: React.FC<TravailFormProps> = ({
     });
   };
 
-  // Fonction pour ouvrir le modal de mise à jour
   const handleOpenUpdateModal = () => {
     if (!selectedService) {
       toast.error("Veuillez d'abord sélectionner une prestation");
@@ -173,7 +172,6 @@ const TravailForm: React.FC<TravailFormProps> = ({
     setIsUpdateModalOpen(true);
   };
 
-  // Fonction pour gérer la mise à jour du service
   const handleServiceUpdate = async (updateType: 'update' | 'create') => {
     if (!selectedService) return;
     
@@ -280,7 +278,7 @@ const TravailForm: React.FC<TravailFormProps> = ({
             quantite={quantite}
             setQuantite={setQuantite}
             unite={unite}
-            setUnite={setUnite}
+            setUnite={(value) => setUnite(value as UniteType)}
             surfaceImpactee={surfaceImpactee}
             setSurfaceImpactee={setSurfaceImpactee}
             isCustomUnite={isCustomUnite}

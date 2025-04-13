@@ -2,14 +2,15 @@
 import React from 'react';
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { UniteType } from "@/types/supabase";
 
 // Unités de mesure disponibles, matching our unit_enum in the database
-export const unites = ["M²", "Ml", "M³", "Unité", "Ens.", "Forfait"];
+export const unites: UniteType[] = ["M²", "Ml", "M³", "Unité", "Ens.", "Forfait"];
 
 interface UniteSelectProps {
-  value: string | null;
-  onChange: (value: string) => void;
-  defaultValue?: string;
+  value: UniteType;
+  onChange: (value: UniteType) => void;
+  defaultValue?: UniteType;
   label?: string;
   required?: boolean;
   disabled?: boolean;
