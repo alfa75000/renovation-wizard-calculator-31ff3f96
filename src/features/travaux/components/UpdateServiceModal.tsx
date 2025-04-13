@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
@@ -37,13 +36,11 @@ const UpdateServiceModal: React.FC<UpdateServiceModalProps> = ({
   const [updateType, setUpdateType] = useState<'update' | 'create'>('update');
   const [isLoading, setIsLoading] = useState(false);
   
-  // État pour les champs éditables
   const [editedService, setEditedService] = useState<Partial<Service>>(updatedService);
 
   if (!currentService) return null;
 
   const hasChanges = Object.keys(editedService).some(key => {
-    // @ts-ignore - Comparaison dynamique des champs
     return editedService[key] !== currentService[key];
   });
 
@@ -55,12 +52,13 @@ const UpdateServiceModal: React.FC<UpdateServiceModalProps> = ({
   };
 
   const handleUpdate = async () => {
+    console.log("--- DEBUG: Entrée dans handleUpdate ---");
     setIsLoading(true);
     try {
       console.log("Tentative de mise à jour avec:", {
         updateType,
         serviceData: editedService,
-        serviceId: currentService.id
+        serviceId: currentService?.id 
       });
       
       const result = await onConfirmUpdate(updateType, editedService);
@@ -95,9 +93,7 @@ const UpdateServiceModal: React.FC<UpdateServiceModalProps> = ({
     inputType: 'text' | 'number' | 'textarea' | 'select' = 'text',
     options?: {value: string, label: string}[]
   ) => {
-    // @ts-ignore - Accès dynamique aux propriétés
     const initialValue = editedService[fieldName];
-    // @ts-ignore - Accès dynamique aux propriétés
     const hasChanged = initialValue !== undefined && initialValue !== currentService[fieldName];
     
     return (
