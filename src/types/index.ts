@@ -8,7 +8,7 @@ import {
   ProjetChantierState, 
   ProjectAction, 
   ProjetChantierAction,
-  ProjectMetadata // Add this import
+  ProjectMetadata
 } from './project';
 
 import {
@@ -45,6 +45,9 @@ import {
   ClientsAction
 } from './client';
 
+// Import the Service type from supabase.ts
+import { Service } from './supabase';
+
 // Exports de types avec le mot-clé "type" requis pour 'isolatedModules'
 export type { 
   Property, 
@@ -54,7 +57,7 @@ export type {
   ProjetChantierState, 
   ProjectAction, 
   ProjetChantierAction,
-  ProjectMetadata, // Add this export
+  ProjectMetadata,
   Room,
   Piece,
   Menuiserie,
@@ -66,7 +69,9 @@ export type {
   TypeTravauxItem,
   SousTypeTravauxItem,
   Client,
-  SurfaceImpactee
+  SurfaceImpactee,
+  // Export the Service type
+  Service
 };
 
 // Exports d'états et d'actions pour les contextes

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -199,7 +200,7 @@ const TravailForm: React.FC<TravailFormProps> = ({
       <div>
         <Label>Groupe de prestations</Label>
         <ServiceGroupSelect 
-          typeId={selectedType?.id || ''}
+          workTypeId={selectedType?.id || ''}
           value={selectedGroup?.id || ''}
           onChange={handleGroupChange}
           disabled={!selectedType}
