@@ -3,29 +3,14 @@ import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useQuery } from '@tanstack/react-query';
-import { fetchCompanies, Company } from '@/services/companiesService';
-import { CompanyDetails } from '../CompanyDetails';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-
-// Create a client for use in this component
-const queryClient = new QueryClient();
+import { fetchCompanies } from '@/services/companiesService';
 
 interface CompanySelectionProps {
   companyId: string;
   setCompanyId: (id: string) => void;
 }
 
-// Wrap the actual component to ensure QueryClient is available
-export const CompanySelection: React.FC<CompanySelectionProps> = (props) => {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <CompanySelectionContent {...props} />
-    </QueryClientProvider>
-  );
-};
-
-// The actual component content
-const CompanySelectionContent: React.FC<CompanySelectionProps> = ({ 
+export const CompanySelection: React.FC<CompanySelectionProps> = ({ 
   companyId, 
   setCompanyId 
 }) => {
@@ -62,8 +47,7 @@ const CompanySelectionContent: React.FC<CompanySelectionProps> = ({
           </SelectContent>
         </Select>
       </div>
-      
-      {companyId && <CompanyDetails companyId={companyId} />}
     </div>
   );
 };
+

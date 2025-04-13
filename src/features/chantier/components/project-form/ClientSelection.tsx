@@ -3,7 +3,6 @@ import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useClients } from '@/contexts/ClientsContext';
-import { ClientDetails } from '../ClientDetails';
 
 interface ClientSelectionProps {
   clientId: string;
@@ -36,8 +35,7 @@ export const ClientSelection: React.FC<ClientSelectionProps> = ({
           </SelectContent>
         </Select>
       </div>
-      
-      {clientId && <ClientDetails clientId={clientId} />}
     </div>
   );
 };
+
