@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import TypeTravauxSelect from "./TypeTravauxSelect";
@@ -159,8 +158,8 @@ const TravailForm: React.FC<TravailFormProps> = ({
     setIsUpdateModalOpen(true);
   };
 
-  const handleServiceUpdate = async (updateType: 'update' | 'create', serviceData: Partial<Service>) => {
-    if (!selectedService) return;
+  const handleServiceUpdate = async (updateType: 'update' | 'create', serviceData: Partial<Service>): Promise<Service | null> => {
+    if (!selectedService) return null;
     
     try {
       if (updateType === 'update') {

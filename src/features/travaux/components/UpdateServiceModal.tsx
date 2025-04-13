@@ -17,7 +17,7 @@ interface UpdateServiceModalProps {
   onClose: () => void;
   currentService: Service | null;
   updatedService: Partial<Service>;
-  onConfirmUpdate: (updateType: 'update' | 'create', serviceData: Partial<Service>) => Promise<void>;
+  onConfirmUpdate: (updateType: 'update' | 'create', serviceData: Partial<Service>) => Promise<Service | null>;
 }
 
 const formatValue = (value: any): string => {
