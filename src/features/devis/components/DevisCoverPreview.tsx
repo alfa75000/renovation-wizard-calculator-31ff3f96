@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -44,7 +43,7 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
   const [logoError, setLogoError] = useState(false);
   
   // Récupérer les champs individuels
-  const logoContent = company?.logo_url || fields.find(f => f.id === "companyLogo")?.content;
+  const logoContent = "/images/lrs-logo.jpg";
   const devisNumber = fields.find(f => f.id === "devisNumber")?.content;
   const devisDate = fields.find(f => f.id === "devisDate")?.content;
   const validityOffer = fields.find(f => f.id === "validityOffer")?.content;
