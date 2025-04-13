@@ -1,6 +1,6 @@
 
 import React, { useState, useCallback } from 'react';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Service, UniteType, SurfaceImpactee } from "@/types/supabase";
 import { RefreshCw, AlertTriangle, Info } from "lucide-react";
@@ -52,7 +52,7 @@ const UpdateServiceModal: React.FC<UpdateServiceModalProps> = ({
     }));
   };
 
-  // Définir handleUpdate en dehors du JSX pour une meilleure lisibilité
+  // Fonction de mise à jour définie en dehors du JSX
   const handleUpdate = async () => {
     console.log("--- DEBUG: handleUpdate exécuté ---");
     console.log("--- DEBUG: Type d'opération:", updateType);
@@ -238,36 +238,41 @@ const UpdateServiceModal: React.FC<UpdateServiceModalProps> = ({
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
+      {/* Remplacer le AlertDialog par un Dialog standard pour la confirmation */}
+      <Dialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
               {updateType === 'update' ? 'Confirmer le remplacement' : 'Confirmer l\'ajout'}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
+            </DialogTitle>
+            <DialogDescription>
               {updateType === 'update' 
                 ? `Vous êtes sur le point de remplacer la prestation "${currentService.name}". Cette action est irréversible et affectera tous les travaux utilisant cette prestation.`
                 : `Vous êtes sur le point d'ajouter une nouvelle prestation basée sur "${currentService.name}".`
               }
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel 
+            </DialogDescription>
+          </DialogHeader>
+          
+          <DialogFooter className="mt-4">
+            <Button 
+              variant="outline" 
               onClick={() => setIsConfirmDialogOpen(false)}
               disabled={isLoading}
             >
               Annuler
-            </AlertDialogCancel>
+            </Button>
+            
+            {/* Utiliser un Button standard au lieu de AlertDialogAction */}
             <Button 
               onClick={handleUpdate}
               disabled={isLoading}
-              className={updateType === 'update' ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : ""}
+              variant={updateType === 'update' ? 'destructive' : 'default'}
             >
               {isLoading ? "En cours..." : updateType === 'update' ? "Remplacer" : "Ajouter"}
             </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
