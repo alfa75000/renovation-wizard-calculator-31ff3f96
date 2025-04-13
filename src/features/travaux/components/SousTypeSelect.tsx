@@ -1,6 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from "@/components/ui/badge";
 import { Service } from '@/types/supabase';
 import { fetchServices } from '@/services/travauxService';
 import { toast } from 'sonner';
@@ -26,7 +26,6 @@ const SousTypeSelect: React.FC<SousTypeSelectProps> = ({
   const [loading, setLoading] = useState(false);
   const [selectedValue, setSelectedValue] = useState<string>(value);
   
-  // Charger les services quand le groupe change
   useEffect(() => {
     console.log("SousTypeSelect - groupId changé:", groupId);
     if (!groupId) {
@@ -59,14 +58,11 @@ const SousTypeSelect: React.FC<SousTypeSelectProps> = ({
     loadServices();
   }, [groupId]);
   
-  // Mettre à jour la valeur sélectionnée quand value change (pour la synchronisation entre composants)
   useEffect(() => {
     setSelectedValue(value);
   }, [value]);
   
-  // Réinitialiser la valeur si le groupe change
   useEffect(() => {
-    // S'assurer que nous ne réinitialisons pas lors du premier rendu ou quand value est déjà vide
     if (groupId && selectedValue) {
       const serviceExists = services.some(s => s.id === selectedValue);
       if (!serviceExists) {
@@ -83,12 +79,26 @@ const SousTypeSelect: React.FC<SousTypeSelectProps> = ({
     if (service) {
       console.log("SousTypeSelect - Service sélectionné:", service.name);
       console.log("SousTypeSelect - Détails du service:", service);
-      setSelectedValue(serviceId); // Mettre à jour l'état local
+      setSelectedValue(serviceId);
       onChange(service.id, service.name, service);
     }
   };
 
-  // Debug: Affichons l'état du composant
+  const renderServiceUpdateBadge = (service: Service) => {
+    if (service.last_update_date) {
+      return (
+        <Badge variant="secondary" className="ml-2">
+          Mis à jour: {service.last_update_date}
+        </Badge>
+      );
+    }
+    return (
+      <Badge variant="destructive" className="ml-2">
+        Aucune mise à jour récente
+      </Badge>
+    );
+  };
+
   console.log("SousTypeSelect - Rendu avec:", { 
     groupId, 
     value,
@@ -110,8 +120,11 @@ const SousTypeSelect: React.FC<SousTypeSelectProps> = ({
       <SelectContent>
         {services.length > 0 ? (
           services.map((service) => (
-            <SelectItem key={service.id} value={service.id}>
-              {service.name} ({(service.labor_price + service.supply_price).toFixed(2)}€/{service.unit || 'Unité'})
+            <SelectItem key={service.id} value={service.id} className="flex items-center justify-between">
+              <div className="flex items-center">
+                {service.name} ({(service.labor_price + service.supply_price).toFixed(2)}€/{service.unit || 'Unité'})
+                {renderServiceUpdateBadge(service)}
+              </div>
             </SelectItem>
           ))
         ) : (

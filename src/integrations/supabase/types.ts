@@ -797,6 +797,7 @@ export type Database = {
           group_id: string
           id: string
           labor_price: number
+          last_update_date: string | null
           name: string
           supply_price: number
           surface_impactee: Database["public"]["Enums"]["type_surface_enum"]
@@ -808,6 +809,7 @@ export type Database = {
           group_id?: string
           id?: string
           labor_price: number
+          last_update_date?: string | null
           name: string
           supply_price: number
           surface_impactee?: Database["public"]["Enums"]["type_surface_enum"]
@@ -819,6 +821,7 @@ export type Database = {
           group_id?: string
           id?: string
           labor_price?: number
+          last_update_date?: string | null
           name?: string
           supply_price?: number
           surface_impactee?: Database["public"]["Enums"]["type_surface_enum"]
