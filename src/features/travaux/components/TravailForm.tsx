@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import TypeTravauxSelect from "./TypeTravauxSelect";
 import ServiceGroupSelect from "./ServiceGroupSelect";
@@ -48,6 +48,15 @@ const TravailForm: React.FC<TravailFormProps> = ({
   const [isCustomSurface, setIsCustomSurface] = useState<boolean>(true);
   
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState<boolean>(false);
+  
+  const [initialValues, setInitialValues] = useState<{
+    description: string;
+    surfaceImpactee: SurfaceImpactee;
+    quantite: number;
+    unite: UniteType;
+    prixFournitures: number;
+    prixMainOeuvre: number;
+  } | null>(null);
 
   useEffect(() => {
     setGroupId("");
@@ -98,6 +107,15 @@ const TravailForm: React.FC<TravailFormProps> = ({
         
         setQuantite(parseFloat(quantiteInitiale.toFixed(2)));
       }
+      
+      setInitialValues({
+        description: selectedService.description || "",
+        surfaceImpactee: selectedService.surface_impactee || 'Aucune',
+        quantite: parseFloat(quantite.toFixed(2)) || 0,
+        unite: serviceUnit as UniteType,
+        prixFournitures: selectedService.supply_price || 0,
+        prixMainOeuvre: selectedService.labor_price || 0,
+      });
     }
   }, [selectedService, piece]);
 
@@ -122,6 +140,28 @@ const TravailForm: React.FC<TravailFormProps> = ({
       setQuantite(parseFloat(quantiteAjustee.toFixed(2)));
     }
   }, [surfaceImpactee, piece]);
+
+  const hasChanges = useMemo(() => {
+    if (!initialValues || !selectedService) return false;
+    
+    return (
+      description !== initialValues.description ||
+      surfaceImpactee !== initialValues.surfaceImpactee ||
+      quantite !== initialValues.quantite ||
+      unite !== initialValues.unite ||
+      prixFournitures !== initialValues.prixFournitures ||
+      prixMainOeuvre !== initialValues.prixMainOeuvre
+    );
+  }, [
+    initialValues,
+    selectedService,
+    description,
+    surfaceImpactee,
+    quantite,
+    unite,
+    prixFournitures,
+    prixMainOeuvre
+  ]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -250,10 +290,10 @@ const TravailForm: React.FC<TravailFormProps> = ({
           <div className="mt-1 mb-3">
             <Button 
               type="button" 
-              variant="outline" 
+              variant={hasChanges ? "reset" : "outline"} 
               size="sm" 
               onClick={handleOpenUpdateModal}
-              className="flex items-center gap-1 text-xs w-full"
+              className={`flex items-center gap-1 text-xs w-full ${hasChanges ? "bg-orange-500 hover:bg-orange-600 text-white" : ""}`}
             >
               <RefreshCw className="h-3.5 w-3.5" />
               Mettre à jour la base de données
