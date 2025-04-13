@@ -66,14 +66,17 @@ const UpdateServiceModal: React.FC<UpdateServiceModalProps> = ({
       const result = await onConfirmUpdate(updateType, editedService);
       
       if (result) {
+        console.log(`Service ${updateType === 'update' ? 'mis à jour' : 'créé'} avec succès:`, result);
         toast.success(`Service ${updateType === 'update' ? 'mis à jour' : 'créé'} avec succès`);
         onClose();
       } else {
+        console.error(`Échec de la ${updateType === 'update' ? 'mise à jour' : 'création'} du service`);
         toast.error(`Échec de la ${updateType === 'update' ? 'mise à jour' : 'création'} du service`);
       }
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
       console.error("Erreur lors de la mise à jour du service:", error);
-      toast.error(`Échec de la ${updateType === 'update' ? 'mise à jour' : 'création'} du service`);
+      toast.error(`Échec de la ${updateType === 'update' ? 'mise à jour' : 'création'} du service: ${errorMessage}`);
     } finally {
       setIsLoading(false);
       setIsConfirmDialogOpen(false);

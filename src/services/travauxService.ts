@@ -300,7 +300,23 @@ export const updateService = async (
   }
 ): Promise<Service | null> => {
   try {
-    // Générer systématiquement la date de dernière mise à jour au format "mois année"
+    // Validation des données requises
+    if (service.name !== undefined && service.name.trim() === '') {
+      toast.error('Le nom du service ne peut pas être vide');
+      return null;
+    }
+
+    if (service.labor_price !== undefined && (isNaN(service.labor_price) || service.labor_price < 0)) {
+      toast.error('Le prix de main d\'œuvre doit être un nombre positif');
+      return null;
+    }
+
+    if (service.supply_price !== undefined && (isNaN(service.supply_price) || service.supply_price < 0)) {
+      toast.error('Le prix des fournitures doit être un nombre positif');
+      return null;
+    }
+
+    // Générer la date de dernière mise à jour au format "mois année"
     const date = new Date();
     const month = date.toLocaleString('fr-FR', { month: 'long' });
     const year = date.getFullYear();
@@ -311,7 +327,8 @@ export const updateService = async (
       last_update_date: `${month} ${year}`
     };
 
-    console.log("Mise à jour du service:", id, updatedService);
+    console.log("Mise à jour du service avec ID:", id);
+    console.log("Données envoyées:", updatedService);
     
     const { data, error } = await supabase
       .from('services')
@@ -320,16 +337,23 @@ export const updateService = async (
       .select();
     
     if (error) {
-      console.error('Erreur lors de la mise à jour du service:', error);
-      toast.error('Erreur lors de la mise à jour du service');
+      console.error('Erreur Supabase lors de la mise à jour du service:', error);
+      toast.error(`Erreur lors de la mise à jour du service: ${error.message || 'Erreur inconnue'}`);
       return null;
     }
     
-    console.log("Service mis à jour avec succès:", data);
+    if (!data || data.length === 0) {
+      console.warn('Aucune donnée retournée après la mise à jour du service');
+      toast.error('Aucune modification effectuée. Le service n\'existe peut-être plus.');
+      return null;
+    }
+    
+    console.log("Service mis à jour avec succès:", data[0]);
     return data[0];
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
     console.error('Exception lors de la mise à jour du service:', error);
-    toast.error('Erreur lors de la mise à jour du service');
+    toast.error(`Erreur lors de la mise à jour du service: ${errorMessage}`);
     return null;
   }
 };
@@ -365,7 +389,27 @@ export const cloneServiceWithChanges = async (
     // Récupérer le service existant
     const existingService = await fetchServiceById(existingServiceId);
     if (!existingService) {
-      throw new Error('Service non trouvé');
+      toast.error('Service original non trouvé');
+      return null;
+    }
+
+    // Validation des données requises
+    const name = changes.name || existingService.name;
+    if (name.trim() === '') {
+      toast.error('Le nom du service ne peut pas être vide');
+      return null;
+    }
+
+    const labor_price = changes.labor_price ?? existingService.labor_price;
+    if (isNaN(labor_price) || labor_price < 0) {
+      toast.error('Le prix de main d\'œuvre doit être un nombre positif');
+      return null;
+    }
+
+    const supply_price = changes.supply_price ?? existingService.supply_price;
+    if (isNaN(supply_price) || supply_price < 0) {
+      toast.error('Le prix des fournitures doit être un nombre positif');
+      return null;
     }
     
     // Générer la date de mise à jour
@@ -376,10 +420,10 @@ export const cloneServiceWithChanges = async (
     
     // Créer un nouveau service en combinant l'existant avec les changements
     const newService = {
-      name: changes.name || existingService.name,
+      name,
       description: changes.description ?? existingService.description,
-      labor_price: changes.labor_price ?? existingService.labor_price,
-      supply_price: changes.supply_price ?? existingService.supply_price,
+      labor_price,
+      supply_price,
       unit: changes.unit ?? existingService.unit,
       surface_impactee: changes.surface_impactee ?? existingService.surface_impactee,
       group_id: existingService.group_id,
@@ -394,16 +438,23 @@ export const cloneServiceWithChanges = async (
       .select();
     
     if (error) {
-      console.error('Erreur lors de la création du service:', error);
-      toast.error('Erreur lors de la création du service');
+      console.error('Erreur Supabase lors de la création du service:', error);
+      toast.error(`Erreur lors de la création du service: ${error.message || 'Erreur inconnue'}`);
       return null;
     }
     
-    console.log("Nouveau service créé avec succès:", data);
+    if (!data || data.length === 0) {
+      console.warn('Aucune donnée retournée après la création du service');
+      toast.error('Échec de la création du service');
+      return null;
+    }
+    
+    console.log("Nouveau service créé avec succès:", data[0]);
     return data[0];
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
     console.error('Exception lors de la création du service:', error);
-    toast.error('Erreur lors de la création du service');
+    toast.error(`Erreur lors de la création du service: ${errorMessage}`);
     return null;
   }
 };
