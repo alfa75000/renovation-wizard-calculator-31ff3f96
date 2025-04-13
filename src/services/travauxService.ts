@@ -300,19 +300,22 @@ export const updateService = async (
   }
 ): Promise<Service | null> => {
   try {
-    // Si last_update_date n'est pas fourni, ajouter la date actuelle
-    if (!service.last_update_date) {
-      const date = new Date();
-      const month = date.toLocaleString('fr-FR', { month: 'long' });
-      const year = date.getFullYear();
-      service.last_update_date = `${month} ${year}`;
-    }
+    // Générer systématiquement la date de dernière mise à jour au format "mois année"
+    const date = new Date();
+    const month = date.toLocaleString('fr-FR', { month: 'long' });
+    const year = date.getFullYear();
+    
+    // Ajouter la date de mise à jour au service
+    const updatedService = {
+      ...service,
+      last_update_date: `${month} ${year}`
+    };
 
-    console.log("Mise à jour du service:", id, service);
+    console.log("Mise à jour du service:", id, updatedService);
     
     const { data, error } = await supabase
       .from('services')
-      .update(service)
+      .update(updatedService)
       .eq('id', id)
       .select()
       .single();

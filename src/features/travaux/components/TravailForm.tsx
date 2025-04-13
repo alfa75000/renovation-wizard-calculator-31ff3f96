@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import TypeTravauxSelect from "./TypeTravauxSelect";
@@ -253,26 +254,26 @@ const TravailForm: React.FC<TravailFormProps> = ({
 
       {sousTypeId && (
         <>
-          <div className="flex justify-between items-center">
-            <h3 className="text-sm font-medium">Description</h3>
-            <Button 
-              type="button" 
-              variant="outline" 
-              size="sm" 
-              onClick={handleOpenUpdateModal}
-              className="flex items-center gap-1 text-xs"
-            >
-              <RefreshCw className="h-3.5 w-3.5" />
-              Mettre à jour la base de données
-            </Button>
-          </div>
-
           <DescriptionSection 
             description={description}
             setDescription={setDescription}
             personnalisation={personnalisation}
             setPersonnalisation={setPersonnalisation}
           />
+          
+          {/* Bouton de mise à jour sous la description */}
+          <div className="mt-1 mb-3">
+            <Button 
+              type="button" 
+              variant="outline" 
+              size="sm" 
+              onClick={handleOpenUpdateModal}
+              className="flex items-center gap-1 text-xs w-full"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              Mettre à jour la base de données
+            </Button>
+          </div>
 
           <QuantitySection
             quantite={quantite}
