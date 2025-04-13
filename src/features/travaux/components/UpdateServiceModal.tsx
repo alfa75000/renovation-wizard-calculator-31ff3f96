@@ -1,13 +1,15 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Service } from "@/types/supabase";
+import { Service, UniteType, SurfaceImpactee } from "@/types/supabase";
 import { RefreshCw, AlertTriangle, Info } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { updateService } from "@/services/travauxService";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 
 interface UpdateServiceModalProps {
@@ -15,7 +17,7 @@ interface UpdateServiceModalProps {
   onClose: () => void;
   currentService: Service | null;
   updatedService: Partial<Service>;
-  onConfirmUpdate: (updateType: 'update' | 'create') => Promise<void>;
+  onConfirmUpdate: (updateType: 'update' | 'create', serviceData: Partial<Service>) => Promise<void>;
 }
 
 const formatValue = (value: any): string => {
@@ -31,21 +33,31 @@ const UpdateServiceModal: React.FC<UpdateServiceModalProps> = ({
   updatedService,
   onConfirmUpdate
 }) => {
-  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = React.useState(false);
-  const [updateType, setUpdateType] = React.useState<'update' | 'create'>('update');
-  const [isLoading, setIsLoading] = React.useState(false);
+  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+  const [updateType, setUpdateType] = useState<'update' | 'create'>('update');
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // État pour les champs éditables
+  const [editedService, setEditedService] = useState<Partial<Service>>(updatedService);
 
   if (!currentService) return null;
 
-  const hasChanges = Object.keys(updatedService).some(key => {
+  const hasChanges = Object.keys(editedService).some(key => {
     // @ts-ignore - Comparaison dynamique des champs
-    return updatedService[key] !== currentService[key];
+    return editedService[key] !== currentService[key];
   });
+
+  const handleInputChange = (field: keyof Service, value: any) => {
+    setEditedService(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
 
   const handleUpdate = async () => {
     setIsLoading(true);
     try {
-      await onConfirmUpdate(updateType);
+      await onConfirmUpdate(updateType, editedService);
       onClose();
     } catch (error) {
       console.error("Erreur lors de la mise à jour du service:", error);
@@ -61,21 +73,84 @@ const UpdateServiceModal: React.FC<UpdateServiceModalProps> = ({
     setIsConfirmDialogOpen(true);
   };
 
-  const renderComparisonRow = (label: string, currentValue: any, newValue: any, fieldName: string) => {
+  const renderComparisonRow = (
+    label: string, 
+    currentValue: any, 
+    fieldName: keyof Service, 
+    inputType: 'text' | 'number' | 'textarea' | 'select' = 'text',
+    options?: {value: string, label: string}[]
+  ) => {
     // @ts-ignore - Accès dynamique aux propriétés
-    const hasChanged = newValue !== undefined && newValue !== currentService[fieldName];
+    const initialValue = editedService[fieldName];
+    // @ts-ignore - Accès dynamique aux propriétés
+    const hasChanged = initialValue !== undefined && initialValue !== currentService[fieldName];
     
     return (
       <div className="grid grid-cols-3 gap-2 py-2 border-b last:border-0">
         <div className="font-medium">{label}</div>
         <div className="text-gray-700">{formatValue(currentValue)}</div>
-        <div className={`${hasChanged ? 'text-blue-600 font-semibold' : 'text-gray-700'}`}>
-          {hasChanged && <span className="mr-1">→</span>}
-          {formatValue(newValue !== undefined ? newValue : currentValue)}
+        <div className={`${hasChanged ? 'text-blue-600' : 'text-gray-700'}`}>
+          {inputType === 'text' && (
+            <Input 
+              value={editedService[fieldName] as string || ''} 
+              onChange={(e) => handleInputChange(fieldName, e.target.value)}
+              className="h-8 text-sm"
+            />
+          )}
+          {inputType === 'number' && (
+            <Input 
+              type="number"
+              value={editedService[fieldName] as number || 0} 
+              onChange={(e) => handleInputChange(fieldName, parseFloat(e.target.value) || 0)}
+              className="h-8 text-sm"
+              step="0.01"
+            />
+          )}
+          {inputType === 'textarea' && (
+            <Textarea 
+              value={editedService[fieldName] as string || ''} 
+              onChange={(e) => handleInputChange(fieldName, e.target.value)}
+              className="text-sm min-h-[60px]"
+              rows={2}
+            />
+          )}
+          {inputType === 'select' && options && (
+            <Select 
+              value={editedService[fieldName] as string} 
+              onValueChange={(value) => handleInputChange(fieldName, value)}
+            >
+              <SelectTrigger className="h-8 text-sm">
+                <SelectValue placeholder="Sélectionner..." />
+              </SelectTrigger>
+              <SelectContent>
+                {options.map(option => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
       </div>
     );
   };
+
+  const uniteOptions = [
+    { value: 'M²', label: 'M²' },
+    { value: 'Unité', label: 'Unité' },
+    { value: 'Ens.', label: 'Ens.' },
+    { value: 'Ml', label: 'Ml' },
+    { value: 'M³', label: 'M³' },
+    { value: 'Forfait', label: 'Forfait' }
+  ];
+
+  const surfaceOptions = [
+    { value: 'Mur', label: 'Mur' },
+    { value: 'Plafond', label: 'Plafond' },
+    { value: 'Sol', label: 'Sol' },
+    { value: 'Aucune', label: 'Aucune' }
+  ];
 
   return (
     <>
@@ -87,7 +162,7 @@ const UpdateServiceModal: React.FC<UpdateServiceModalProps> = ({
               Mise à jour de la prestation
             </DialogTitle>
             <DialogDescription>
-              Comparez les données actuelles avec les modifications que vous souhaitez appliquer.
+              Comparez et modifiez les données que vous souhaitez mettre à jour.
             </DialogDescription>
           </DialogHeader>
 
@@ -118,12 +193,12 @@ const UpdateServiceModal: React.FC<UpdateServiceModalProps> = ({
               </div>
               
               <div className="p-2 space-y-1">
-                {renderComparisonRow("Nom", currentService.name, updatedService.name, "name")}
-                {renderComparisonRow("Description", currentService.description, updatedService.description, "description")}
-                {renderComparisonRow("Prix fournitures", currentService.supply_price, updatedService.supply_price, "supply_price")}
-                {renderComparisonRow("Prix main d'œuvre", currentService.labor_price, updatedService.labor_price, "labor_price")}
-                {renderComparisonRow("Unité", currentService.unit, updatedService.unit, "unit")}
-                {renderComparisonRow("Surface impactée", currentService.surface_impactee, updatedService.surface_impactee, "surface_impactee")}
+                {renderComparisonRow("Nom", currentService.name, "name", "text")}
+                {renderComparisonRow("Description", currentService.description, "description", "textarea")}
+                {renderComparisonRow("Prix fournitures", currentService.supply_price, "supply_price", "number")}
+                {renderComparisonRow("Prix main d'œuvre", currentService.labor_price, "labor_price", "number")}
+                {renderComparisonRow("Unité", currentService.unit, "unit", "select", uniteOptions)}
+                {renderComparisonRow("Surface impactée", currentService.surface_impactee, "surface_impactee", "select", surfaceOptions)}
               </div>
             </div>
           </div>

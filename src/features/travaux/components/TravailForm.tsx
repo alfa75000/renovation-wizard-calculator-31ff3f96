@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import TypeTravauxSelect from "./TypeTravauxSelect";
@@ -46,11 +45,9 @@ const TravailForm: React.FC<TravailFormProps> = ({
   const [tauxTVA, setTauxTVA] = useState<number>(travailAModifier?.tauxTVA || 10);
   const [surfaceImpactee, setSurfaceImpactee] = useState<SurfaceImpactee>('Mur');
   
-  // Flag pour savoir si l'unité et la surface impactée sont personnalisées
   const [isCustomUnite, setIsCustomUnite] = useState<boolean>(true);
   const [isCustomSurface, setIsCustomSurface] = useState<boolean>(true);
   
-  // État pour le modal de mise à jour
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState<boolean>(false);
 
   useEffect(() => {
@@ -69,33 +66,23 @@ const TravailForm: React.FC<TravailFormProps> = ({
 
   useEffect(() => {
     if (selectedService) {
-      console.log("Service sélectionné:", selectedService);
-      
       setPrixFournitures(selectedService.supply_price || 0);
       setPrixMainOeuvre(selectedService.labor_price || 0);
       
-      // Utiliser l'unité du service si définie, sinon "Unité"
       const serviceUnit = selectedService.unit || "Unité";
-      // Vérifier que l'unité est conforme au type UniteType
       setUnite(serviceUnit as UniteType);
       
-      // Déterminer si l'unité est personnalisée (non définie dans le service)
       setIsCustomUnite(!selectedService.unit);
-      console.log("Unité personnalisée:", !selectedService.unit);
       
       setDescription(selectedService.description || "");
       
-      // Utiliser la surface impactée du service
       setSurfaceImpactee(selectedService.surface_impactee || 'Aucune');
       
-      // Déterminer si la surface impactée est personnalisée
       setIsCustomSurface(!selectedService.surface_impactee);
-      console.log("Surface impactée personnalisée:", !selectedService.surface_impactee);
       
       if (piece) {
         let quantiteInitiale = 0;
         
-        // Définir la quantité initiale en fonction de la surface impactée
         switch (selectedService.surface_impactee) {
           case 'Mur':
             quantiteInitiale = piece.surfaceNetteMurs || piece.wallSurfaceRaw || 0;
@@ -107,7 +94,7 @@ const TravailForm: React.FC<TravailFormProps> = ({
             quantiteInitiale = piece.surfaceNetteSol || piece.surfaceBruteSol || 0;
             break;
           default:
-            quantiteInitiale = 1; // Valeur par défaut pour 'Aucune'
+            quantiteInitiale = 1;
         }
         
         setQuantite(parseFloat(quantiteInitiale.toFixed(2)));
@@ -119,7 +106,6 @@ const TravailForm: React.FC<TravailFormProps> = ({
     if (piece && selectedService) {
       let quantiteAjustee = 0;
       
-      // Ajuster la quantité en fonction de la nouvelle surface sélectionnée
       switch (surfaceImpactee) {
         case 'Mur':
           quantiteAjustee = piece.surfaceNetteMurs || piece.wallSurfaceRaw || 0;
@@ -131,7 +117,6 @@ const TravailForm: React.FC<TravailFormProps> = ({
           quantiteAjustee = piece.surfaceNetteSol || piece.surfaceBruteSol || 0;
           break;
         default:
-          // Ne pas modifier la quantité si 'Aucune' est sélectionné
           return;
       }
       
@@ -173,34 +158,20 @@ const TravailForm: React.FC<TravailFormProps> = ({
     setIsUpdateModalOpen(true);
   };
 
-  const handleServiceUpdate = async (updateType: 'update' | 'create') => {
+  const handleServiceUpdate = async (updateType: 'update' | 'create', serviceData: Partial<Service>) => {
     if (!selectedService) return;
-    
-    // Préparer les mises à jour
-    const serviceUpdates: Partial<Service> = {
-      name: sousTypeLabel,
-      description: description,
-      labor_price: prixMainOeuvre,
-      supply_price: prixFournitures,
-      unit: unite,
-      surface_impactee: surfaceImpactee
-    };
     
     try {
       if (updateType === 'update') {
-        // Mettre à jour le service existant
-        const updatedService = await updateService(selectedService.id, serviceUpdates);
+        const updatedService = await updateService(selectedService.id, serviceData);
         if (updatedService) {
           toast.success("La prestation a été mise à jour avec succès");
-          // Mettre à jour le service sélectionné
           setSelectedService(updatedService);
         }
       } else {
-        // Créer un nouveau service
-        const newService = await cloneServiceWithChanges(selectedService.id, serviceUpdates);
+        const newService = await cloneServiceWithChanges(selectedService.id, serviceData);
         if (newService) {
           toast.success("Nouvelle prestation créée avec succès");
-          // Sélectionner le nouveau service
           setSousTypeId(newService.id);
           setSousTypeLabel(newService.name);
           setSelectedService(newService);
@@ -261,7 +232,6 @@ const TravailForm: React.FC<TravailFormProps> = ({
             setPersonnalisation={setPersonnalisation}
           />
           
-          {/* Bouton de mise à jour sous la description */}
           <div className="mt-1 mb-3">
             <Button 
               type="button" 
