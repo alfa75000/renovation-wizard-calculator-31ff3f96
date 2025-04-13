@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import TypeTravauxSelect from "./TypeTravauxSelect";
@@ -34,7 +33,6 @@ const TravailForm: React.FC<TravailFormProps> = ({
   const [sousTypeLabel, setSousTypeLabel] = useState<string>(travailAModifier?.sousTypeLabel || "");
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [description, setDescription] = useState<string>(travailAModifier?.description || "");
-  const [personnalisation, setPersonnalisation] = useState<string>(travailAModifier?.personnalisation || "");
   const [quantite, setQuantite] = useState<number>(travailAModifier?.quantite || 0);
   const [unite, setUnite] = useState<UniteType>("M²");
   const [prixFournitures, setPrixFournitures] = useState<number>(
@@ -140,7 +138,6 @@ const TravailForm: React.FC<TravailFormProps> = ({
       sousTypeId,
       sousTypeLabel,
       description,
-      personnalisation,
       quantite,
       unite,
       prixFournitures,
@@ -248,8 +245,6 @@ const TravailForm: React.FC<TravailFormProps> = ({
           <DescriptionSection 
             description={description}
             setDescription={setDescription}
-            personnalisation={personnalisation}
-            setPersonnalisation={setPersonnalisation}
           />
           
           <div className="mt-1 mb-3">
