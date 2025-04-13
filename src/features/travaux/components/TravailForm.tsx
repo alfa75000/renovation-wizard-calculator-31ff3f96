@@ -147,7 +147,6 @@ const TravailForm: React.FC<TravailFormProps> = ({
     return (
       description !== initialValues.description ||
       surfaceImpactee !== initialValues.surfaceImpactee ||
-      quantite !== initialValues.quantite ||
       unite !== initialValues.unite ||
       prixFournitures !== initialValues.prixFournitures ||
       prixMainOeuvre !== initialValues.prixMainOeuvre
@@ -157,7 +156,6 @@ const TravailForm: React.FC<TravailFormProps> = ({
     selectedService,
     description,
     surfaceImpactee,
-    quantite,
     unite,
     prixFournitures,
     prixMainOeuvre
