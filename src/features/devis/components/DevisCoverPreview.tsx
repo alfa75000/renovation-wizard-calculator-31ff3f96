@@ -51,6 +51,21 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
   const occupant = fields.find(f => f.id === "occupant")?.content;
   const additionalInfo = fields.find(f => f.id === "additionalInfo")?.content;
 
+  // Formatter la date pour l'affichage "JJ / MM / YYYY"
+  const formatDate = (dateString: string | undefined) => {
+    if (!dateString) return "";
+    
+    try {
+      const date = new Date(dateString);
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const year = date.getFullYear();
+      return `${day} / ${month} / ${year}`;
+    } catch (e) {
+      return dateString; // Si le format n'est pas valide, retourner la chaîne d'origine
+    }
+  };
+
   // Fonction pour gérer l'impression
   const handlePrint = () => {
     const printWindow = window.open('', '_blank');
@@ -64,96 +79,140 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
         <head>
           <title>Devis - Page de Garde</title>
           <style>
+            @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+            
             body { 
-              font-family: Arial, sans-serif; 
-              margin: 40px; 
+              font-family: 'Roboto', Arial, sans-serif; 
+              margin: 0; 
+              padding: 0;
               color: #000;
               line-height: 1.5;
+              box-sizing: border-box;
             }
+            
             .cover-page { 
-              max-width: 210mm; 
-              margin: 0 auto; 
+              width: 210mm;
+              min-height: 297mm;
+              margin: 0 auto;
+              padding: 20px;
               position: relative;
+              border: 1px solid #003366;
+              box-sizing: border-box;
             }
+            
             .header {
               display: flex;
               justify-content: space-between;
+              align-items: flex-start;
               margin-bottom: 40px;
             }
+            
+            .company-logo-container {
+              max-width: 50%;
+            }
+            
             .company-logo { 
-              max-height: 80px; 
-              max-width: 180px; 
-              border: 1px solid #ccc;
-              padding: 5px;
+              max-height: 100px; 
+              max-width: 100%;
             }
-            .company-header {
-              margin-bottom: 15px;
+            
+            .company-tagline {
+              font-size: 14px;
+              color: #003366;
+              margin-top: 5px;
             }
+            
             .assurance {
               text-align: right;
               font-size: 12px;
-              color: #005;
+              color: #003366;
             }
+            
+            .assurance p {
+              margin: 0;
+              line-height: 1.4;
+            }
+            
             .company-info {
-              font-size: 12px;
-              margin-bottom: 40px;
-            }
-            .contact-info {
-              margin-bottom: 5px;
-            }
-            .devis-info {
               margin: 30px 0;
-              border-bottom: 1px solid #ccc;
-              padding-bottom: 5px;
+              line-height: 1.6;
             }
-            .devis-number { 
+            
+            .devis-section {
+              margin: 30px 0;
+              display: flex;
+              align-items: flex-start;
+            }
+            
+            .devis-number-container {
               display: inline-block;
-              border: 1px solid #000;
-              padding: 3px 8px;
+              border: 1px solid #003366;
+              padding: 8px 15px;
+              margin-right: 20px;
+            }
+            
+            .devis-number {
               font-weight: bold;
+              color: #000;
             }
-            .client-section {
-              margin: 30px 0;
+            
+            .devis-date {
+              padding-top: 8px;
             }
-            .client-box {
-              border: 1px solid #000;
+            
+            .validity-offer {
+              margin-top: 10px;
+              font-style: italic;
+              font-size: 13px;
+            }
+            
+            .section-header {
+              background-color: #003366;
+              color: white;
+              padding: 5px 10px;
+              font-weight: normal;
+              margin: 0;
+            }
+            
+            .section-content {
+              border: 1px solid #003366;
               padding: 15px;
-              width: 60%;
               min-height: 100px;
             }
-            .section-title {
-              font-weight: bold;
-              margin-bottom: 10px;
-              color: #005;
-              border-bottom: 1px solid #005;
-              display: inline-block;
+            
+            .client-section, .project-section {
+              margin-bottom: 30px;
             }
-            .project-box {
-              border: 1px solid #000;
-              padding: 15px;
-              margin-top: 10px;
-              min-height: 120px;
-            }
+            
             .project-item {
               margin-bottom: 8px;
             }
+            
             .footer {
               font-size: 9px;
+              text-align: center;
               position: absolute;
               bottom: 20px;
-              width: 100%;
-              text-align: center;
-              border-top: 1px solid #ccc;
-              padding-top: 10px;
+              left: 20px;
+              right: 20px;
+              padding-top: 5px;
             }
+            
             @media print {
               body { margin: 0; }
               .no-print { display: none; }
+              .cover-page {
+                border: 1px solid #003366;
+                height: 100%;
+                width: 100%;
+              }
             }
           </style>
         </head>
         <body>
-          ${content.innerHTML}
+          <div class="cover-page">
+            ${content.innerHTML}
+          </div>
         </body>
       </html>
     `);
@@ -163,8 +222,10 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
     
     setTimeout(() => {
       printWindow.print();
-    }, 300);
+    }, 500);
   };
+
+  console.log("Logo content:", logoContent);
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
@@ -178,73 +239,69 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
           </DialogTitle>
         </DialogHeader>
         
-        <div id="devis-cover-content" className="p-6 border rounded-md my-4 bg-white">
-          {/* En-tête avec logo et informations société */}
-          <div className="header flex justify-between items-start">
-            <div className="company-header">
-              {logoContent && (
-                <div className="border border-gray-300 p-1 inline-block">
+        <div id="devis-cover-content" className="p-6 border border-blue-900 rounded-md my-4 bg-white">
+          {/* En-tête avec logo et informations d'assurance */}
+          <div className="flex justify-between items-start">
+            <div className="max-w-[50%]">
+              {logoContent ? (
+                <div>
                   <img 
                     src={logoContent} 
                     alt="Logo" 
-                    className="company-logo max-h-20"
+                    className="max-h-24 max-w-full"
                     onError={(e) => {
                       console.error("Erreur de chargement du logo:", e);
-                      e.currentTarget.src = "public/placeholder.svg";
+                      e.currentTarget.src = "/placeholder.svg";
                     }}
                   />
+                  {company?.slogan && <p className="text-sm mt-2 text-blue-900">{company.slogan}</p>}
+                </div>
+              ) : (
+                <div className="h-24 w-48 border border-gray-300 flex items-center justify-center text-gray-400">
+                  Logo non disponible
                 </div>
               )}
-              {company?.slogan && <p className="text-sm mt-2">{company.slogan}</p>}
             </div>
             
-            <div className="assurance text-right text-blue-900 text-sm">
-              <p className="font-semibold">Assurance MAAF XXXX</p>
-              <p className="text-xs">Responsabilité civile décennale</p>
-              <p className="text-xs">Responsabilité civile professionnelle</p>
+            <div className="text-right text-blue-900">
+              <p className="font-bold">Assurance MAAF PRO</p>
+              <p>Responsabilité civile</p>
+              <p>Responsabilité civile décennale</p>
             </div>
           </div>
           
           {/* Coordonnées société */}
-          <div className="company-info text-sm">
-            <p className="font-semibold">Société {company?.name}</p>
-            <p>Siège: {company?.address}, {company?.postal_code} {company?.city}</p>
+          <div className="mt-12 mb-8">
+            <p className="font-medium">{company?.name}</p>
+            <p>Siège: {company?.address} - {company?.postal_code} {company?.city}</p>
             
-            <div className="flex mt-2">
-              <div className="w-1/2">
-                <p className="contact-info"><span className="font-semibold">Tél:</span> {company?.tel1}</p>
-                {company?.tel2 && <p className="contact-info">Mob: {company?.tel2}</p>}
-                <p className="contact-info"><span className="font-semibold">Mail:</span> {company?.email}</p>
-              </div>
+            <div className="mt-4">
+              <p><span className="font-medium">Tél:</span> {company?.tel1}</p>
+              {company?.tel2 && <p>{company?.tel2}</p>}
+              <p><span className="font-medium">Mail:</span> {company?.email}</p>
             </div>
           </div>
           
           {/* Numéro et date du devis */}
-          <div className="devis-info">
-            <div className="flex items-center gap-8">
-              {devisNumber && (
-                <div className="devis-number bg-gray-100">
-                  Devis n° {devisNumber}
-                </div>
-              )}
-              {devisDate && (
-                <div className="devis-date">
-                  Du {devisDate}
-                </div>
-              )}
+          <div className="flex items-start mt-10 mb-12">
+            <div className="border border-blue-900 p-2">
+              <p className="font-bold m-0">Devis n°: {devisNumber}</p>
             </div>
             
-            {validityOffer && (
-              <div className="validity mt-3 text-sm italic">
-                {validityOffer}
-              </div>
-            )}
+            <div className="ml-6 pt-2">
+              <p className="m-0">Du {formatDate(devisDate)}</p>
+              {validityOffer && (
+                <p className="mt-4 text-sm italic">
+                  {validityOffer}
+                </p>
+              )}
+            </div>
           </div>
           
           {/* Section client */}
-          <div className="client-section">
-            <div className="section-title">Client / Maître d'ouvrage</div>
-            <div className="client-box">
+          <div className="mb-8">
+            <h3 className="bg-blue-900 text-white p-2 m-0 font-normal">Client / Maître d'ouvrage</h3>
+            <div className="border border-blue-900 p-4 min-h-[100px]">
               {client && (
                 <div>
                   {client}
@@ -254,29 +311,29 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
           </div>
           
           {/* Section chantier */}
-          <div className="project-section">
-            <div className="section-title">Chantier / Travaux</div>
-            <div className="project-box">
+          <div>
+            <h3 className="bg-blue-900 text-white p-2 m-0 font-normal">Chantier / Travaux</h3>
+            <div className="border border-blue-900 p-4 min-h-[150px]">
               {projectDescription && (
-                <div className="project-item">
+                <div className="mb-4">
                   {projectDescription}
                 </div>
               )}
               
               {projectAddress && (
-                <div className="project-item mt-4">
+                <div className="mb-2">
                   <strong>Adresse du chantier:</strong> {projectAddress}
                 </div>
               )}
               
               {occupant && (
-                <div className="project-item">
+                <div className="mb-2">
                   <strong>Occupant:</strong> {occupant}
                 </div>
               )}
               
               {additionalInfo && (
-                <div className="project-item mt-4">
+                <div className="mt-4">
                   <strong>Informations complémentaires:</strong> {additionalInfo}
                 </div>
               )}
@@ -284,10 +341,8 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
           </div>
           
           {/* Pied de page */}
-          <div className="footer mt-16 text-xs text-gray-500 border-t pt-2">
-            <p>
-              {company?.name} - SARL au Capital de {company?.capital_social || "XXX"} € - {company?.address}, {company?.postal_code} {company?.city} - Siret: {company?.siret} - Code APE: {company?.code_ape} - N° TVA intracommunautaire: {company?.tva_intracom}
-            </p>
+          <div className="text-center text-xs mt-24 pt-2 border-t border-gray-300">
+            {company?.name} - SASU au Capital de {company?.capital_social || "10000"} € - {company?.address} {company?.postal_code} {company?.city} - Siret : {company?.siret} - Code APE : {company?.code_ape} - N° TVA Intracommunautaire : {company?.tva_intracom}
           </div>
         </div>
         
