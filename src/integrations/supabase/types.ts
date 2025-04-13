@@ -182,6 +182,66 @@ export type Database = {
           },
         ]
       }
+      companies: {
+        Row: {
+          address: string | null
+          capital_social: string | null
+          city: string | null
+          code_ape: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          postal_code: string | null
+          prenom: string | null
+          siret: string | null
+          slogan: string | null
+          tel1: string | null
+          tel2: string | null
+          tva_intracom: string | null
+          type: string | null
+        }
+        Insert: {
+          address?: string | null
+          capital_social?: string | null
+          city?: string | null
+          code_ape?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          postal_code?: string | null
+          prenom?: string | null
+          siret?: string | null
+          slogan?: string | null
+          tel1?: string | null
+          tel2?: string | null
+          tva_intracom?: string | null
+          type?: string | null
+        }
+        Update: {
+          address?: string | null
+          capital_social?: string | null
+          city?: string | null
+          code_ape?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          postal_code?: string | null
+          prenom?: string | null
+          siret?: string | null
+          slogan?: string | null
+          tel1?: string | null
+          tel2?: string | null
+          tva_intracom?: string | null
+          type?: string | null
+        }
+        Relationships: []
+      }
       menuiseries_types: {
         Row: {
           created_at: string

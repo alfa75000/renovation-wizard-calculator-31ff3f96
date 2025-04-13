@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Layout } from "@/components/Layout";
 import { 
@@ -32,7 +31,9 @@ import {
   Users,
   User,
   Loader2,
-  Database
+  Database,
+  Building2,
+  Briefcase
 } from "lucide-react";
 import { 
   Dialog, 
@@ -63,6 +64,7 @@ import {
 
 import TypeMenuiserieForm from "@/features/admin/components/TypeMenuiserieForm";
 import ClientForm from "@/features/admin/components/ClientForm";
+import CompanyForm from "@/features/admin/components/CompanyForm";
 import SupabaseStatus from "@/components/SupabaseStatus";
 
 import { WorkType, ServiceGroup, Service, MenuiserieType } from "@/types/supabase";
@@ -88,13 +90,20 @@ import {
   deleteMenuiserieType
 } from "@/services/menuiseriesService";
 
+import {
+  fetchCompanies,
+  createCompany,
+  updateCompany,
+  deleteCompany,
+  Company as CompanyType
+} from "@/services/companiesService";
+
 import { useMenuiseriesTypes, surfacesReference as menuiserieSurfacesReference } from "@/contexts/MenuiseriesTypesContext";
 import { Client, useClients, typesClients } from "@/contexts/ClientsContext";
 import { TypeMenuiserie } from "@/types";
 import { surfacesReference } from "@/contexts/TravauxTypesContext";
 import { surfacesMenuiseries } from "@/types";
 
-// Composant pour le formulaire de groupe de services
 const ServiceGroupForm = ({ open, onClose, group, onSubmit }) => {
   const [name, setName] = useState(group ? group.name : "");
 
@@ -140,7 +149,6 @@ const ServiceGroupForm = ({ open, onClose, group, onSubmit }) => {
   );
 };
 
-// Composant pour le formulaire de type de travaux
 const WorkTypeForm = ({ open, onClose, workType, onSubmit }) => {
   const [name, setName] = useState(workType ? workType.name : "");
 
@@ -186,7 +194,6 @@ const WorkTypeForm = ({ open, onClose, workType, onSubmit }) => {
   );
 };
 
-// Composant pour le formulaire de service
 const ServiceForm = ({ open, onClose, service, onSubmit }) => {
   const [formData, setFormData] = useState({
     name: service ? service.name : "",
@@ -306,13 +313,16 @@ const Parametres = () => {
   const [serviceGroups, setServiceGroups] = useState<ServiceGroup[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [menuiserieTypes, setMenuiserieTypes] = useState<MenuiserieType[]>([]);
+  const [companies, setCompanies] = useState<CompanyType[]>([]);
   const [selectedWorkTypeId, setSelectedWorkTypeId] = useState<string | null>(null);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [isLoadingGroups, setIsLoadingGroups] = useState<boolean>(false);
   const [isLoadingServices, setIsLoadingServices] = useState<boolean>(false);
   const [isLoadingMenuiseries, setIsLoadingMenuiseries] = useState<boolean>(false);
+  const [isLoadingCompanies, setIsLoadingCompanies] = useState<boolean>(false);
   const [workTypeFormOpen, setWorkTypeFormOpen] = useState<boolean>(false);
   const [editingWorkType, setEditingWorkType] = useState<WorkType | null>(null);
   const [serviceGroupFormOpen, setServiceGroupFormOpen] = useState<boolean>(false);
@@ -333,6 +343,10 @@ const Parametres = () => {
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [confirmDeleteClientOpen, setConfirmDeleteClientOpen] = useState(false);
   const [clientToDelete, setClientToDelete] = useState<string | null>(null);
+  const [companyFormOpen, setCompanyFormOpen] = useState(false);
+  const [editingCompany, setEditingCompany] = useState<CompanyType | null>(null);
+  const [confirmDeleteCompanyOpen, setConfirmDeleteCompanyOpen] = useState(false);
+  const [companyToDelete, setCompanyToDelete] = useState<string | null>(null);
   const [showDiagnostic, setShowDiagnostic] = useState(true);
 
   useEffect(() => {
@@ -419,6 +433,25 @@ const Parametres = () => {
     
     if (activeTab === "menuiseries") {
       loadMenuiserieTypes();
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
+    const loadCompanies = async () => {
+      setIsLoadingCompanies(true);
+      try {
+        const data = await fetchCompanies();
+        setCompanies(data);
+      } catch (error) {
+        console.error("Erreur lors du chargement des sociétés:", error);
+        toast.error("Impossible de charger les sociétés");
+      } finally {
+        setIsLoadingCompanies(false);
+      }
+    };
+    
+    if (activeTab === "companies") {
+      loadCompanies();
     }
   }, [activeTab]);
 
@@ -841,10 +874,79 @@ const Parametres = () => {
     }
   };
 
+  const handleAddCompany = () => {
+    setEditingCompany(null);
+    setCompanyFormOpen(true);
+  };
+  
+  const handleEditCompany = (company: CompanyType) => {
+    setEditingCompany(company);
+    setCompanyFormOpen(true);
+  };
+  
+  const handleDeleteCompany = (id: string) => {
+    setCompanyToDelete(id);
+    setConfirmDeleteCompanyOpen(true);
+  };
+  
+  const confirmCompanyDelete = async () => {
+    if (companyToDelete) {
+      setIsLoadingCompanies(true);
+      try {
+        const success = await deleteCompany(companyToDelete);
+        
+        if (success) {
+          setCompanies(prev => prev.filter(company => company.id !== companyToDelete));
+          toast.success("Société supprimée avec succès");
+        }
+      } catch (error) {
+        console.error("Erreur lors de la suppression:", error);
+        toast.error("Une erreur est survenue lors de la suppression");
+      } finally {
+        setIsLoadingCompanies(false);
+        setConfirmDeleteCompanyOpen(false);
+        setCompanyToDelete(null);
+      }
+    }
+  };
+  
+  const handleSubmitCompany = async (companyData: CompanyType) => {
+    setIsLoadingCompanies(true);
+    
+    try {
+      if (editingCompany) {
+        const { id, ...rest } = companyData;
+        const updatedCompany = await updateCompany(id, rest);
+        
+        if (updatedCompany) {
+          setCompanies(prev => prev.map(c => 
+            c.id === editingCompany.id ? updatedCompany : c
+          ));
+          toast.success("Société mise à jour avec succès");
+        }
+      } else {
+        const { id, ...rest } = companyData;
+        const newCompany = await createCompany(rest);
+        
+        if (newCompany) {
+          setCompanies(prev => [...prev, newCompany]);
+          toast.success("Société ajoutée avec succès");
+        }
+      }
+    } catch (error) {
+      console.error("Erreur lors de l'opération:", error);
+      toast.error("Une erreur est survenue");
+    } finally {
+      setIsLoadingCompanies(false);
+      setCompanyFormOpen(false);
+      setEditingCompany(null);
+    }
+  };
+
   return (
     <Layout
       title="Paramètres"
-      subtitle="Gérez les types de travaux, de menuiseries, les clients et leurs paramètres"
+      subtitle="Gérez les types de travaux, de menuiseries, les clients, les sociétés et leurs paramètres"
     >
       
       {showDiagnostic && (
@@ -871,6 +973,7 @@ const Parametres = () => {
           <TabsTrigger value="travaux" className="flex-1">Types de Travaux</TabsTrigger>
           <TabsTrigger value="menuiseries" className="flex-1">Types de Menuiseries</TabsTrigger>
           <TabsTrigger value="clients" className="flex-1">Fiches Clients</TabsTrigger>
+          <TabsTrigger value="companies" className="flex-1">Fiches Sociétés</TabsTrigger>
         </TabsList>
         
         <TabsContent value="travaux" className="mt-6">
@@ -1303,9 +1406,91 @@ const Parametres = () => {
             </CardContent>
           </Card>
         </TabsContent>
+        
+        <TabsContent value="companies" className="mt-6">
+          <Card className="shadow-md">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>Fiches Sociétés</span>
+                <Button variant="outline" size="sm" onClick={handleAddCompany} disabled={isLoadingCompanies}>
+                  {isLoadingCompanies ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
+                  Ajouter
+                </Button>
+              </CardTitle>
+              <CardDescription>
+                Gérez les informations des sociétés
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {isLoadingCompanies ? (
+                  <div className="flex justify-center py-4">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  </div>
+                ) : (
+                  <>
+                    {companies.map((company) => (
+                      <div 
+                        key={company.id}
+                        className={`flex items-center justify-between p-2 rounded-md cursor-pointer ${selectedCompanyId === company.id ? 'bg-blue-100' : 'hover:bg-gray-100'}`}
+                        onClick={() => {
+                          setSelectedCompanyId(company.id);
+                        }}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Building2 className="h-5 w-5 text-gray-500" />
+                          <div>
+                            <span className="font-medium">{company.name}</span>
+                            {company.type && (
+                              <span className="text-sm text-gray-500 ml-2">({company.type})</span>
+                            )}
+                            {company.email && (
+                              <div className="text-xs text-gray-500">
+                                {company.email}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex gap-1">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditCompany(company);
+                            }}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteCompany(company.id);
+                            }}
+                          >
+                            <Trash className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {companies.length === 0 && (
+                      <Alert>
+                        <AlertDescription>
+                          Aucune société définie. Utilisez le bouton "Ajouter" pour créer une nouvelle société.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
-      {/* Composants de formulaires et de dialogues de confirmation */}
       <WorkTypeForm
         open={workTypeFormOpen}
         onClose={() => setWorkTypeFormOpen(false)}
@@ -1426,9 +1611,29 @@ const Parametres = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <CompanyForm
+        companyToEdit={editingCompany}
+        onClose={() => setCompanyFormOpen(false)}
+        onSubmit={handleSubmitCompany}
+      />
+      
+      <Dialog open={confirmDeleteCompanyOpen} onOpenChange={setConfirmDeleteCompanyOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Confirmer la suppression</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir supprimer cette société ? Cette action ne peut pas être annulée.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDeleteCompanyOpen(false)}>Annuler</Button>
+            <Button variant="destructive" onClick={confirmCompanyDelete}>Supprimer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 };
 
 export default Parametres;
-
