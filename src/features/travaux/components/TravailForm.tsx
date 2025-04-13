@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import TypeTravauxSelect from "./TypeTravauxSelect";
@@ -13,6 +14,16 @@ import { RefreshCw } from "lucide-react";
 import UpdateServiceModal from "./UpdateServiceModal";
 import { updateService, cloneServiceWithChanges } from "@/services/travauxService";
 import { toast } from "sonner";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface TravailFormProps {
   piece: Room | null;
@@ -48,6 +59,7 @@ const TravailForm: React.FC<TravailFormProps> = ({
   const [isCustomSurface, setIsCustomSurface] = useState<boolean>(true);
   
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState<boolean>(false);
+  const [showDbUpdateConfirm, setShowDbUpdateConfirm] = useState<boolean>(false);
   
   const [initialValues, setInitialValues] = useState<{
     description: string;
@@ -169,7 +181,8 @@ const TravailForm: React.FC<TravailFormProps> = ({
       return;
     }
     
-    onAddTravail({
+    // Ajouter le travail
+    const travailToAdd = {
       pieceId: piece.id,
       typeTravauxId,
       typeTravauxLabel,
@@ -183,7 +196,14 @@ const TravailForm: React.FC<TravailFormProps> = ({
       tauxTVA,
       commentaire: "",
       surfaceImpactee,
-    });
+    };
+    
+    onAddTravail(travailToAdd);
+    
+    // Si des modifications ont été apportées, demander à l'utilisateur s'il souhaite les appliquer à la base de données
+    if (hasChanges && selectedService) {
+      setShowDbUpdateConfirm(true);
+    }
   };
 
   const handleOpenUpdateModal = () => {
@@ -347,6 +367,33 @@ const TravailForm: React.FC<TravailFormProps> = ({
           onConfirmUpdate={handleServiceUpdate}
         />
       )}
+      
+      {/* Dialogue de confirmation pour la mise à jour de la base de données après ajout réussi */}
+      <AlertDialog open={showDbUpdateConfirm} onOpenChange={setShowDbUpdateConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Mettre à jour la base de données</AlertDialogTitle>
+            <AlertDialogDescription>
+              Le travail a été ajouté avec succès. Vous avez également apporté des modifications à la prestation.
+              Souhaitez-vous mettre à jour la base de données avec ces modifications ?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowDbUpdateConfirm(false)}>
+              Non, pas maintenant
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => {
+                setShowDbUpdateConfirm(false);
+                handleOpenUpdateModal();
+              }}
+              className="bg-orange-500 hover:bg-orange-600"
+            >
+              Oui, mettre à jour la base de données
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </form>
   );
 };
