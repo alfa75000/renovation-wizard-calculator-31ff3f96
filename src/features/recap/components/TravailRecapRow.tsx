@@ -4,8 +4,7 @@ import { formaterPrix } from "@/lib/utils";
 import { Travail } from "@/types";
 import { 
   calculerPrixUnitaireHT, 
-  calculerTotalHT, 
-  calculerTotalTTC 
+  calculerTotalHT
 } from "@/features/travaux/utils/travauxUtils";
 import { TableCell, TableRow } from "@/components/ui/table";
 
@@ -16,11 +15,10 @@ interface TravailRecapRowProps {
 const TravailRecapRow: React.FC<TravailRecapRowProps> = ({ travail }) => {
   const prixUnitaireHT = calculerPrixUnitaireHT(travail);
   const totalHT = calculerTotalHT(travail);
-  const totalTTC = calculerTotalTTC(travail);
   
   return (
     <TableRow>
-      <TableCell>
+      <TableCell className="text-left">
         <div>{travail.typeTravauxLabel}: {travail.sousTypeLabel}</div>
         {travail.description && (
           <div className="text-xs text-gray-600 mt-1 italic">
@@ -40,7 +38,7 @@ const TravailRecapRow: React.FC<TravailRecapRowProps> = ({ travail }) => {
       <TableCell className="text-right">{travail.quantite} {travail.unite}</TableCell>
       <TableCell className="text-right">{formaterPrix(prixUnitaireHT)}</TableCell>
       <TableCell className="text-right">{travail.tauxTVA}%</TableCell>
-      <TableCell className="text-right font-medium">{formaterPrix(totalTTC)}</TableCell>
+      <TableCell className="text-right font-medium">{formaterPrix(totalHT)}</TableCell>
     </TableRow>
   );
 };

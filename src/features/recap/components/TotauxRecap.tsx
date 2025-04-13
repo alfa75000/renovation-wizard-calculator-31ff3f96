@@ -60,8 +60,8 @@ const TotauxRecap: React.FC<TotauxRecapProps> = ({
       <div className={`flex justify-between items-center font-medium ${className}`}>
         <span>{label}:</span>
         <div className="space-y-1">
-          <div className="text-sm text-gray-600">HT: {formaterPrix(totalHT)}</div>
-          <div className="text-base">TTC: {formaterPrix(totalTTC)}</div>
+          <div className="text-base font-bold">HT: {formaterPrix(totalHT)}</div>
+          <div className="text-sm text-gray-600">TTC: {formaterPrix(totalTTC)}</div>
         </div>
       </div>
     );
@@ -75,14 +75,14 @@ const TotauxRecap: React.FC<TotauxRecapProps> = ({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Description</TableHead>
+            <TableHead className="text-left">Description</TableHead>
             <TableHead className="text-right">Montant</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           <TableRow>
             <TableCell>Total HT</TableCell>
-            <TableCell className="text-right">{formaterPrix(totalHT)}</TableCell>
+            <TableCell className="text-right font-bold">{formaterPrix(totalHT)}</TableCell>
           </TableRow>
           
           {montantsTVA.map(({ taux, totalHTTaux, montantTVA }) => (

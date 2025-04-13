@@ -2,7 +2,8 @@
 import React from "react";
 import { Room, Travail } from "@/types";
 import TravailRecapRow from "./TravailRecapRow";
-import TotauxRecap from "./TotauxRecap";
+import { formaterPrix } from "@/lib/utils";
+import { calculerTotalHTTravaux } from "@/features/travaux/utils/travauxUtils";
 import {
   Table,
   TableBody,
@@ -27,6 +28,9 @@ const RoomRecapTable: React.FC<RoomRecapTableProps> = ({
     return null;
   }
 
+  // Calculer le total HT pour cette pièce
+  const totalHT = calculerTotalHTTravaux(travaux);
+
   return (
     <div className={`mb-8 ${className}`}>
       <h3 className="text-lg font-semibold mb-2 border-b pb-2">
@@ -37,11 +41,11 @@ const RoomRecapTable: React.FC<RoomRecapTableProps> = ({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Description</TableHead>
+              <TableHead className="text-left">Description</TableHead>
               <TableHead className="text-right">Quantité</TableHead>
               <TableHead className="text-right">Prix unitaire HT</TableHead>
               <TableHead className="text-right">TVA</TableHead>
-              <TableHead className="text-right">Total TTC</TableHead>
+              <TableHead className="text-right">Total HT</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -50,14 +54,11 @@ const RoomRecapTable: React.FC<RoomRecapTableProps> = ({
             ))}
           </TableBody>
           <TableRow className="bg-gray-50 font-medium">
-            <TableCell colSpan={3}>
-              Total pour {room.name}
+            <TableCell colSpan={4} className="text-left">
+              Total HT {room.name}
             </TableCell>
-            <TableCell colSpan={2} className="text-right">
-              <TotauxRecap 
-                travaux={travaux} 
-                className="justify-end"
-              />
+            <TableCell className="text-right">
+              {formaterPrix(totalHT)}
             </TableCell>
           </TableRow>
         </Table>
