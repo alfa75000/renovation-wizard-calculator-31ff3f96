@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
@@ -53,6 +54,9 @@ const UpdateServiceModal: React.FC<UpdateServiceModalProps> = ({
 
   const handleUpdate = async () => {
     console.log("--- DEBUG: Entrée dans handleUpdate ---");
+    console.log("--- DEBUG: Type d'opération:", updateType);
+    console.log("--- DEBUG: Service édité:", editedService);
+    
     setIsLoading(true);
     try {
       console.log("Tentative de mise à jour avec:", {
@@ -82,6 +86,7 @@ const UpdateServiceModal: React.FC<UpdateServiceModalProps> = ({
   };
 
   const confirmUpdate = (type: 'update' | 'create') => {
+    console.log("--- DEBUG: Entrée dans confirmUpdate avec type:", type);
     setUpdateType(type);
     setIsConfirmDialogOpen(true);
   };
