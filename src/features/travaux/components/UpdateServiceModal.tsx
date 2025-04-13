@@ -59,7 +59,11 @@ const UpdateServiceModal: React.FC<UpdateServiceModalProps> = ({
     try {
       // S'assurer que les types sont conformes aux enums
       const serviceData: Partial<Service> = {
-        ...editedService
+        ...editedService,
+        // Vérifier que unit est bien de type UniteType
+        ...(editedService.unit && { unit: editedService.unit as UniteType }),
+        // Vérifier que surface_impactee est bien de type SurfaceImpactee
+        ...(editedService.surface_impactee && { surface_impactee: editedService.surface_impactee as SurfaceImpactee })
       };
       
       console.log("--- DEBUG: Données envoyées à onConfirmUpdate:", serviceData);

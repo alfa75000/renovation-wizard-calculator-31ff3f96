@@ -298,14 +298,11 @@ export const createService = async (
     }
     
     // Vérifier la validité de unit
-    let unitValue = null;
-    if (service.unit) {
-      if (!isValidUniteType(service.unit)) {
-        console.error('Unité invalide:', service.unit);
-        toast.error(`L'unité spécifiée (${service.unit}) est invalide`);
-        return null;
-      }
-      unitValue = service.unit;
+    let unitValue = service.unit;
+    if (unitValue && !isValidUniteType(unitValue)) {
+      console.error('Unité invalide:', unitValue);
+      toast.error(`L'unité spécifiée (${unitValue}) est invalide`);
+      return null;
     }
 
     // Générer la date de dernière mise à jour
@@ -530,12 +527,23 @@ export const cloneServiceWithChanges = async (
     const last_update_date = `${month} ${year}`;
     console.log("Date de mise à jour générée:", last_update_date);
     
-    // Gestion des valeurs enum
+    // Gestion des valeurs enum - S'assurer qu'elles sont du bon type
     const unit = changes.unit !== undefined ? changes.unit : existingService.unit;
+    if (unit && !isValidUniteType(unit)) {
+      console.error("Type d'unité invalide:", unit);
+      toast.error(`Le type d'unité spécifié (${unit}) est invalide`);
+      return null;
+    }
     
     const surface_impactee = changes.surface_impactee !== undefined 
       ? changes.surface_impactee 
       : existingService.surface_impactee;
+    
+    if (!isValidSurfaceImpactee(surface_impactee)) {
+      console.error("Type de surface impactée invalide:", surface_impactee);
+      toast.error(`Le type de surface impactée spécifié (${surface_impactee}) est invalide`);
+      return null;
+    }
     
     // Créer un nouveau service en utilisant la fonction createService
     const newService = {
