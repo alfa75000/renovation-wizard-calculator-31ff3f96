@@ -227,13 +227,19 @@ const UpdateServiceModal: React.FC<UpdateServiceModalProps> = ({
             </div>
             <div className="flex gap-2">
               <Button 
-                onClick={() => confirmUpdate('create')}
+                onClick={() => {
+                  console.log("Bouton 'Ajouter comme nouvelle prestation' cliqué");
+                  confirmUpdate('create');
+                }}
                 variant="secondary"
               >
                 Ajouter comme nouvelle prestation
               </Button>
               <Button 
-                onClick={() => confirmUpdate('update')}
+                onClick={() => {
+                  console.log("Bouton 'Mettre à jour et écraser' cliqué");
+                  confirmUpdate('update');
+                }}
                 variant="destructive"
                 disabled={!hasChanges}
               >
