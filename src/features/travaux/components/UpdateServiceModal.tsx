@@ -258,13 +258,13 @@ const UpdateServiceModal: React.FC<UpdateServiceModalProps> = ({
             >
               Annuler
             </AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleUpdate} 
+            <Button 
+              onClick={handleUpdate}
               disabled={isLoading}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className={updateType === 'update' ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : ""}
             >
               {isLoading ? "En cours..." : updateType === 'update' ? "Remplacer" : "Ajouter"}
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
