@@ -445,31 +445,37 @@ export const cloneServiceWithChanges = async (
     
     console.log("--- DEBUG: Nouveau service à créer:", newService);
     
-    // Tenter de créer le service dans Supabase
-    const { data, error } = await supabase
-      .from('services')
-      .insert([newService])
-      .select();
-    
-    console.log("--- DEBUG: Réponse de Supabase après création:", { data, error });
-    
-    if (error) {
-      console.error('--- DEBUG: Erreur Supabase lors de la création du service:', error);
-      toast.error(`Erreur lors de la création du service: ${error.message || 'Erreur inconnue'}`);
+    try {
+      // Tenter de créer le service dans Supabase
+      const { data, error } = await supabase
+        .from('services')
+        .insert([newService])
+        .select();
+      
+      console.log("--- DEBUG: Réponse de Supabase après création:", { data, error });
+      
+      if (error) {
+        console.error('--- DEBUG: Erreur Supabase lors de la création du service:', error);
+        toast.error(`Erreur lors de la création du service: ${error.message || 'Erreur inconnue'}`);
+        return null;
+      }
+      
+      if (!data || data.length === 0) {
+        console.warn('--- DEBUG: Aucune donnée retournée après la création du service ---');
+        toast.error('Échec de la création du service');
+        return null;
+      }
+      
+      console.log("--- DEBUG: Nouveau service créé avec succès:", data[0]);
+      return data[0];
+    } catch (insertError) {
+      console.error("--- DEBUG: Exception lors de l'insertion dans Supabase:", insertError);
+      toast.error(`Erreur lors de la création du service: ${insertError instanceof Error ? insertError.message : 'Erreur inconnue'}`);
       return null;
     }
-    
-    if (!data || data.length === 0) {
-      console.warn('--- DEBUG: Aucune donnée retournée après la création du service ---');
-      toast.error('Échec de la création du service');
-      return null;
-    }
-    
-    console.log("--- DEBUG: Nouveau service créé avec succès:", data[0]);
-    return data[0];
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
-    console.error('--- DEBUG: Exception lors de la création du service:', error);
+    console.error('--- DEBUG: Exception dans cloneServiceWithChanges:', error);
     toast.error(`Erreur lors de la création du service: ${errorMessage}`);
     return null;
   }

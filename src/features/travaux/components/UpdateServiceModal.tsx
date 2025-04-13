@@ -229,19 +229,13 @@ const UpdateServiceModal: React.FC<UpdateServiceModalProps> = ({
             </div>
             <div className="flex gap-2">
               <Button 
-                onClick={() => {
-                  console.log("Bouton 'Ajouter comme nouvelle prestation' cliqué");
-                  confirmUpdate('create');
-                }}
+                onClick={() => confirmUpdate('create')}
                 variant="secondary"
               >
                 Ajouter comme nouvelle prestation
               </Button>
               <Button 
-                onClick={() => {
-                  console.log("Bouton 'Mettre à jour et écraser' cliqué");
-                  confirmUpdate('update');
-                }}
+                onClick={() => confirmUpdate('update')}
                 variant="destructive"
                 disabled={!hasChanges}
               >
@@ -266,14 +260,22 @@ const UpdateServiceModal: React.FC<UpdateServiceModalProps> = ({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isLoading}>Annuler</AlertDialogCancel>
-            <Button 
-              variant="destructive"
-              onClick={handleUpdate} 
+            <AlertDialogCancel 
+              onClick={() => setIsConfirmDialogOpen(false)}
               disabled={isLoading}
             >
+              Annuler
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => {
+                console.log("AlertDialogAction onClick déclenché");
+                handleUpdate();
+              }} 
+              disabled={isLoading}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               {isLoading ? "En cours..." : updateType === 'update' ? "Remplacer" : "Ajouter"}
-            </Button>
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
