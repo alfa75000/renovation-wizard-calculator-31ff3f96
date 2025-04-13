@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "sonner";
+import { toast } from 'sonner';
 
 interface UpdateServiceModalProps {
   isOpen: boolean;
@@ -63,9 +63,14 @@ const UpdateServiceModal: React.FC<UpdateServiceModalProps> = ({
         serviceId: currentService.id
       });
       
-      await onConfirmUpdate(updateType, editedService);
-      toast.success(`Service ${updateType === 'update' ? 'mis à jour' : 'créé'} avec succès`);
-      onClose();
+      const result = await onConfirmUpdate(updateType, editedService);
+      
+      if (result) {
+        toast.success(`Service ${updateType === 'update' ? 'mis à jour' : 'créé'} avec succès`);
+        onClose();
+      } else {
+        toast.error(`Échec de la ${updateType === 'update' ? 'mise à jour' : 'création'} du service`);
+      }
     } catch (error) {
       console.error("Erreur lors de la mise à jour du service:", error);
       toast.error(`Échec de la ${updateType === 'update' ? 'mise à jour' : 'création'} du service`);

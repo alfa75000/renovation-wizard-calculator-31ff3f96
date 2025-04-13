@@ -162,29 +162,32 @@ const TravailForm: React.FC<TravailFormProps> = ({
     if (!selectedService) return null;
     
     try {
+      let updatedService: Service | null = null;
+      
       if (updateType === 'update') {
-        const updatedService = await updateService(selectedService.id, serviceData);
+        updatedService = await updateService(selectedService.id, serviceData);
         if (updatedService) {
+          console.log("Service mis à jour avec succès:", updatedService);
           toast.success("La prestation a été mise à jour avec succès");
           setSelectedService(updatedService);
-          return updatedService;
         }
       } else {
-        const newService = await cloneServiceWithChanges(selectedService.id, serviceData);
-        if (newService) {
+        updatedService = await cloneServiceWithChanges(selectedService.id, serviceData);
+        if (updatedService) {
+          console.log("Nouvelle prestation créée avec succès:", updatedService);
           toast.success("Nouvelle prestation créée avec succès");
-          setSousTypeId(newService.id);
-          setSousTypeLabel(newService.name);
-          setSelectedService(newService);
-          return newService;
+          setSousTypeId(updatedService.id);
+          setSousTypeLabel(updatedService.name);
+          setSelectedService(updatedService);
         }
       }
+      
+      return updatedService;
     } catch (error) {
       console.error("Erreur lors de la mise à jour du service:", error);
       toast.error("Une erreur est survenue lors de la mise à jour");
+      return null;
     }
-    
-    return null;
   };
 
   return (

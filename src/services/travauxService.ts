@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { WorkType, ServiceGroup, Service } from '@/types/supabase';
 import { toast } from 'sonner';
@@ -318,8 +317,7 @@ export const updateService = async (
       .from('services')
       .update(updatedService)
       .eq('id', id)
-      .select()
-      .single();
+      .select();
     
     if (error) {
       console.error('Erreur lors de la mise à jour du service:', error);
@@ -328,7 +326,7 @@ export const updateService = async (
     }
     
     console.log("Service mis à jour avec succès:", data);
-    return data;
+    return data[0];
   } catch (error) {
     console.error('Exception lors de la mise à jour du service:', error);
     toast.error('Erreur lors de la mise à jour du service');
@@ -393,8 +391,7 @@ export const cloneServiceWithChanges = async (
     const { data, error } = await supabase
       .from('services')
       .insert([newService])
-      .select()
-      .single();
+      .select();
     
     if (error) {
       console.error('Erreur lors de la création du service:', error);
@@ -403,7 +400,7 @@ export const cloneServiceWithChanges = async (
     }
     
     console.log("Nouveau service créé avec succès:", data);
-    return data;
+    return data[0];
   } catch (error) {
     console.error('Exception lors de la création du service:', error);
     toast.error('Erreur lors de la création du service');
