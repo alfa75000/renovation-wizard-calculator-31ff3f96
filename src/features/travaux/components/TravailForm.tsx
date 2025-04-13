@@ -161,10 +161,17 @@ const TravailForm: React.FC<TravailFormProps> = ({
   const handleServiceUpdate = async (updateType: 'update' | 'create', serviceData: Partial<Service>): Promise<Service | null> => {
     if (!selectedService) return null;
     
+    console.log("--- DEBUG: handleServiceUpdate appelé avec:", {
+      updateType,
+      serviceData,
+      selectedServiceId: selectedService.id
+    });
+    
     try {
       let updatedService: Service | null = null;
       
       if (updateType === 'update') {
+        console.log("--- DEBUG: Tentative de mise à jour du service existant");
         updatedService = await updateService(selectedService.id, serviceData);
         if (updatedService) {
           console.log("Service mis à jour avec succès:", updatedService);
@@ -172,6 +179,7 @@ const TravailForm: React.FC<TravailFormProps> = ({
           setSelectedService(updatedService);
         }
       } else {
+        console.log("--- DEBUG: Tentative de création d'un nouveau service");
         updatedService = await cloneServiceWithChanges(selectedService.id, serviceData);
         if (updatedService) {
           console.log("Nouvelle prestation créée avec succès:", updatedService);

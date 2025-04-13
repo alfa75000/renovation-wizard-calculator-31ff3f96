@@ -66,6 +66,7 @@ const UpdateServiceModal: React.FC<UpdateServiceModalProps> = ({
       });
       
       const result = await onConfirmUpdate(updateType, editedService);
+      console.log("--- DEBUG: Résultat de onConfirmUpdate:", result);
       
       if (result) {
         console.log(`Service ${updateType === 'update' ? 'mis à jour' : 'créé'} avec succès:`, result);
@@ -265,7 +266,14 @@ const UpdateServiceModal: React.FC<UpdateServiceModalProps> = ({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isLoading}>Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={handleUpdate} disabled={isLoading}>
+            <AlertDialogAction 
+              onClick={(e) => {
+                console.log("--- DEBUG: Bouton d'action AlertDialog cliqué");
+                e.preventDefault(); // Empêche l'action par défaut
+                handleUpdate(); // Appelle handleUpdate manuellement
+              }} 
+              disabled={isLoading}
+            >
               {isLoading ? "En cours..." : updateType === 'update' ? "Remplacer" : "Ajouter"}
             </AlertDialogAction>
           </AlertDialogFooter>
