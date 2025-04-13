@@ -417,29 +417,36 @@ export const updateService = async (
     console.log("Mise à jour du service avec ID:", id);
     console.log("Données envoyées:", updatedService);
     
-    // S'assurer que les types enum sont correctement traités
-    // On utilise l'API directe de Supabase qui devrait gérer correctement la conversion des types 
-    // si les valeurs sont conformes aux enums
+    // Au lieu d'utiliser l'API directe de Supabase, utilisons la même approche RPC que pour la création
+    // Cela nous permettra de traiter les types enum de la même manière
     const { data, error } = await supabase
-      .from('services')
-      .update(updatedService)
-      .eq('id', id)
-      .select();
+      .rpc('update_service', {
+        p_id: id,
+        p_name: updatedService.name,
+        p_description: updatedService.description || '',
+        p_labor_price: updatedService.labor_price,
+        p_supply_price: updatedService.supply_price,
+        p_unit: updatedService.unit,
+        p_surface_impactee: updatedService.surface_impactee,
+        p_last_update_date: updatedService.last_update_date
+      });
     
     if (error) {
-      console.error('Erreur Supabase lors de la mise à jour du service:', error);
+      console.error('Erreur lors de la mise à jour du service:', error);
       toast.error(`Erreur lors de la mise à jour du service: ${error.message || 'Erreur inconnue'}`);
       return null;
     }
     
-    if (!data || data.length === 0) {
+    // Récupérer le service mis à jour
+    const updatedServiceData = await fetchServiceById(id);
+    if (!updatedServiceData) {
       console.warn('Aucune donnée retournée après la mise à jour du service');
       toast.error('Aucune modification effectuée. Le service n\'existe peut-être plus.');
       return null;
     }
     
-    console.log("Service mis à jour avec succès:", data[0]);
-    return data[0];
+    console.log("Service mis à jour avec succès:", updatedServiceData);
+    return updatedServiceData;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
     console.error('Exception lors de la mise à jour du service:', error);
