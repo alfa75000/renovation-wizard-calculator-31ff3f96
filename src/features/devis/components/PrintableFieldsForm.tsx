@@ -6,11 +6,12 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { fetchCompanies } from "@/services/companiesService";
-import { Printer, Save } from "lucide-react";
+import { Printer, Save, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { useProject } from "@/contexts/ProjectContext";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/lib/supabase";
+import { DevisCoverPreview } from "./DevisCoverPreview";
 
 interface PrintableField {
   id: string;
@@ -27,6 +28,10 @@ export const PrintableFieldsForm: React.FC = () => {
   const [clientName, setClientName] = useState<string>("Chargement...");
   const [companyName, setCompanyName] = useState<string>("LRS Rénovation");
   const [companyLogoUrl, setCompanyLogoUrl] = useState<string | null>(null);
+  const [companyData, setCompanyData] = useState<any>(null);
+  
+  // État pour l'aperçu de la page de garde
+  const [showCoverPreview, setShowCoverPreview] = useState(false);
   
   const [printableFields, setPrintableFields] = useState<PrintableField[]>([
     { id: "companyLogo", name: "Logo société", enabled: true, content: null },
@@ -89,7 +94,7 @@ export const PrintableFieldsForm: React.FC = () => {
       try {
         const { data, error } = await supabase
           .from('companies')
-          .select('name, logo_url')
+          .select('*')
           .eq('id', companyId)
           .single();
         
@@ -98,6 +103,7 @@ export const PrintableFieldsForm: React.FC = () => {
         if (data) {
           setCompanyName(data.name);
           setCompanyLogoUrl(data.logo_url);
+          setCompanyData(data);
           
           // Mettre à jour les champs de société dans printableFields
           setPrintableFields(prev => 
@@ -160,6 +166,10 @@ export const PrintableFieldsForm: React.FC = () => {
   const handlePreviewPrint = () => {
     toast.info("Aperçu avant impression (fonctionnalité à implémenter)");
   };
+  
+  const handleCoverPreview = () => {
+    setShowCoverPreview(true);
+  };
 
   return (
     <div className="space-y-6">
@@ -208,15 +218,29 @@ export const PrintableFieldsForm: React.FC = () => {
       </Card>
 
       <div className="flex justify-between mt-6">
-        <Button variant="outline" onClick={handlePreviewPrint} className="flex items-center gap-2">
-          <Printer className="h-4 w-4" />
-          Aperçu
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handlePreviewPrint} className="flex items-center gap-2">
+            <Printer className="h-4 w-4" />
+            Aperçu
+          </Button>
+          <Button variant="outline" onClick={handleCoverPreview} className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            Aperçu Page de Garde
+          </Button>
+        </div>
         <Button onClick={handleSaveSettings} className="flex items-center gap-2">
           <Save className="h-4 w-4" />
           Enregistrer
         </Button>
       </div>
+      
+      {showCoverPreview && (
+        <DevisCoverPreview 
+          fields={printableFields.filter(field => field.enabled)} 
+          company={companyData}
+          onClose={() => setShowCoverPreview(false)}
+        />
+      )}
     </div>
   );
 };
