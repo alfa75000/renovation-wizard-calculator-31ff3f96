@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { X, Printer, Download } from "lucide-react";
-import { formaterPrix } from "@/lib/utils";
 
 interface PrintableField {
   id: string;
@@ -42,7 +41,6 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
   const printContentRef = useRef<HTMLDivElement>(null);
   const [logoError, setLogoError] = useState(false);
   
-  // Récupérer les champs individuels
   const logoContent = "/images/lrs-logo.jpg";
   const devisNumber = fields.find(f => f.id === "devisNumber")?.content;
   const devisDate = fields.find(f => f.id === "devisDate")?.content;
@@ -53,13 +51,11 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
   const occupant = fields.find(f => f.id === "occupant")?.content;
   const additionalInfo = fields.find(f => f.id === "additionalInfo")?.content;
 
-  // Debug logs
   useEffect(() => {
     console.log("Logo URL:", logoContent);
     console.log("Company data:", company);
   }, [logoContent, company]);
 
-  // Formatter la date pour l'affichage "JJ / MM / YYYY"
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return "";
     
@@ -70,17 +66,15 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
       const year = date.getFullYear();
       return `${day} / ${month} / ${year}`;
     } catch (e) {
-      return dateString; // Si le format n'est pas valide, retourner la chaîne d'origine
+      return dateString;
     }
   };
 
-  // Fonction pour gérer l'impression
   const handlePrint = () => {
     if (!printContentRef.current) return;
     
     const printContent = printContentRef.current.innerHTML;
     
-    // Ajouter des styles CSS pour l'impression
     const printStyles = `
       <style>
         @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
@@ -209,7 +203,6 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
       </style>
     `;
     
-    // Utiliser une approche différente pour imprimer
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
       console.error("Impossible d'ouvrir une nouvelle fenêtre");
@@ -230,7 +223,6 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
       </html>
     `);
     
-    // Attendre que les ressources soient chargées
     printWindow.document.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => {
         printWindow.print();
@@ -238,7 +230,6 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
       }, 500);
     });
     
-    // Si l'événement DOMContentLoaded ne se déclenche pas, imprimer après un délai
     setTimeout(() => {
       printWindow.print();
     }, 1000);
@@ -247,7 +238,7 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     console.error("Erreur de chargement du logo:", e);
     setLogoError(true);
-    e.currentTarget.src = "/placeholder.svg"; // Image de remplacement
+    e.currentTarget.src = "/placeholder.svg";
   };
 
   return (
@@ -262,8 +253,7 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
           </DialogTitle>
         </DialogHeader>
         
-        <div ref={printContentRef} id="devis-cover-content" className="p-6 border border-blue-900 rounded-md my-4 bg-white">
-          {/* En-tête avec logo et informations d'assurance */}
+        <div ref={printContentRef} className="p-6 border border-blue-900 rounded-md my-4 bg-white">
           <div className="flex justify-between items-start">
             <div className="max-w-[50%]">
               {logoContent && !logoError ? (
@@ -301,7 +291,6 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
             </div>
           </div>
           
-          {/* Coordonnées société */}
           <div className="mt-12 mb-8">
             <p className="font-medium">{company?.name}</p>
             <p>Siège: {company?.address} - {company?.postal_code} {company?.city}</p>
@@ -313,7 +302,6 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
             </div>
           </div>
           
-          {/* Numéro et date du devis */}
           <div className="flex items-start mt-10 mb-12">
             <div className="border border-blue-900 p-2">
               <p className="font-bold m-0">Devis n°: {devisNumber}</p>
@@ -329,7 +317,6 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
             </div>
           </div>
           
-          {/* Section client */}
           <div className="mb-8">
             <h3 className="bg-blue-900 text-white p-2 m-0 font-normal">Client / Maître d'ouvrage</h3>
             <div className="border border-blue-900 p-4 min-h-[100px]">
@@ -341,7 +328,6 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
             </div>
           </div>
           
-          {/* Section chantier */}
           <div>
             <h3 className="bg-blue-900 text-white p-2 m-0 font-normal">Chantier / Travaux</h3>
             <div className="border border-blue-900 p-4 min-h-[150px]">
@@ -371,7 +357,6 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
             </div>
           </div>
           
-          {/* Pied de page */}
           <div className="text-center text-xs mt-24 pt-2 border-t border-gray-300">
             {company?.name} - SASU au Capital de {company?.capital_social || "10000"} € - {company?.address} {company?.postal_code} {company?.city} - Siret : {company?.siret} - Code APE : {company?.code_ape} - N° TVA Intracommunautaire : {company?.tva_intracom}
           </div>
