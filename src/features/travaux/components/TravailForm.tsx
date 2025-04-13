@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import TypeTravauxSelect from "./TypeTravauxSelect";
@@ -181,12 +182,16 @@ const TravailForm: React.FC<TravailFormProps> = ({
       } else {
         console.log("--- DEBUG: Tentative de création d'un nouveau service");
         updatedService = await cloneServiceWithChanges(selectedService.id, serviceData);
+        console.log("--- DEBUG: Résultat de cloneServiceWithChanges:", updatedService);
+        
         if (updatedService) {
           console.log("Nouvelle prestation créée avec succès:", updatedService);
           toast.success("Nouvelle prestation créée avec succès");
           setSousTypeId(updatedService.id);
           setSousTypeLabel(updatedService.name);
           setSelectedService(updatedService);
+        } else {
+          console.error("Échec de la création de la prestation");
         }
       }
       

@@ -302,16 +302,19 @@ export const updateService = async (
   try {
     // Validation des données requises
     if (service.name !== undefined && service.name.trim() === '') {
+      console.error("Validation échec: nom vide");
       toast.error('Le nom du service ne peut pas être vide');
       return null;
     }
 
     if (service.labor_price !== undefined && (isNaN(service.labor_price) || service.labor_price < 0)) {
+      console.error("Validation échec: prix main d'oeuvre invalide");
       toast.error('Le prix de main d\'œuvre doit être un nombre positif');
       return null;
     }
 
     if (service.supply_price !== undefined && (isNaN(service.supply_price) || service.supply_price < 0)) {
+      console.error("Validation échec: prix fournitures invalide");
       toast.error('Le prix des fournitures doit être un nombre positif');
       return null;
     }
@@ -442,10 +445,13 @@ export const cloneServiceWithChanges = async (
     
     console.log("--- DEBUG: Nouveau service à créer:", newService);
     
+    // Tenter de créer le service dans Supabase
     const { data, error } = await supabase
       .from('services')
       .insert([newService])
       .select();
+    
+    console.log("--- DEBUG: Réponse de Supabase après création:", { data, error });
     
     if (error) {
       console.error('--- DEBUG: Erreur Supabase lors de la création du service:', error);
