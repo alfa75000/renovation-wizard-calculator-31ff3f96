@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -41,6 +42,7 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
   const printContentRef = useRef<HTMLDivElement>(null);
   const [logoError, setLogoError] = useState(false);
   
+  // Définir le chemin du logo de manière absolue
   const logoContent = "/images/lrs-logo.jpg";
   const devisNumber = fields.find(f => f.id === "devisNumber")?.content;
   const devisDate = fields.find(f => f.id === "devisDate")?.content;
@@ -54,6 +56,15 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
   useEffect(() => {
     console.log("Logo URL:", logoContent);
     console.log("Company data:", company);
+    
+    // Précharger l'image pour vérifier si elle existe
+    const img = new Image();
+    img.onload = () => setLogoError(false);
+    img.onerror = () => {
+      console.error("Erreur de chargement du logo depuis:", logoContent);
+      setLogoError(true);
+    };
+    img.src = logoContent;
   }, [logoContent, company]);
 
   const formatDate = (dateString: string | undefined) => {
@@ -238,6 +249,7 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     console.error("Erreur de chargement du logo:", e);
     setLogoError(true);
+    // Utiliser un placeholder SVG par défaut
     e.currentTarget.src = "/placeholder.svg";
   };
 
@@ -256,12 +268,12 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
         <div ref={printContentRef} className="p-6 border border-blue-900 rounded-md my-4 bg-white">
           <div className="flex justify-between items-start">
             <div className="max-w-[50%]">
-              {logoContent && !logoError ? (
+              {!logoError ? (
                 <div>
                   <img 
                     src={logoContent} 
                     alt="Logo" 
-                    className="max-h-24 max-w-full"
+                    className="max-h-24 max-w-full object-contain"
                     onError={handleImageError}
                   />
                   {company?.slogan ? (
