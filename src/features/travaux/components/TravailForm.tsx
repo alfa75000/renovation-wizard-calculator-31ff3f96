@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import TypeTravauxSelect from "./TypeTravauxSelect";
@@ -10,6 +9,10 @@ import DescriptionSection from "./DescriptionSection";
 import QuantitySection from "./QuantitySection";
 import PriceSection from "./PriceSection";
 import { Label } from "@/components/ui/label";
+import { RefreshCw } from "lucide-react";
+import UpdateServiceModal from "./UpdateServiceModal";
+import { updateService, cloneServiceWithChanges } from "@/services/travauxService";
+import { toast } from "sonner";
 
 interface TravailFormProps {
   piece: Room | null;
@@ -45,6 +48,9 @@ const TravailForm: React.FC<TravailFormProps> = ({
   // Flag pour savoir si l'unité et la surface impactée sont personnalisées
   const [isCustomUnite, setIsCustomUnite] = useState<boolean>(true);
   const [isCustomSurface, setIsCustomSurface] = useState<boolean>(true);
+  
+  // État pour le modal de mise à jour
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState<boolean>(false);
 
   useEffect(() => {
     setGroupId("");
@@ -158,6 +164,55 @@ const TravailForm: React.FC<TravailFormProps> = ({
     });
   };
 
+  // Fonction pour ouvrir le modal de mise à jour
+  const handleOpenUpdateModal = () => {
+    if (!selectedService) {
+      toast.error("Veuillez d'abord sélectionner une prestation");
+      return;
+    }
+    setIsUpdateModalOpen(true);
+  };
+
+  // Fonction pour gérer la mise à jour du service
+  const handleServiceUpdate = async (updateType: 'update' | 'create') => {
+    if (!selectedService) return;
+    
+    // Préparer les mises à jour
+    const serviceUpdates: Partial<Service> = {
+      name: sousTypeLabel,
+      description: description,
+      labor_price: prixMainOeuvre,
+      supply_price: prixFournitures,
+      unit: unite,
+      surface_impactee: surfaceImpactee
+    };
+    
+    try {
+      if (updateType === 'update') {
+        // Mettre à jour le service existant
+        const updatedService = await updateService(selectedService.id, serviceUpdates);
+        if (updatedService) {
+          toast.success("La prestation a été mise à jour avec succès");
+          // Mettre à jour le service sélectionné
+          setSelectedService(updatedService);
+        }
+      } else {
+        // Créer un nouveau service
+        const newService = await cloneServiceWithChanges(selectedService.id, serviceUpdates);
+        if (newService) {
+          toast.success("Nouvelle prestation créée avec succès");
+          // Sélectionner le nouveau service
+          setSousTypeId(newService.id);
+          setSousTypeLabel(newService.name);
+          setSelectedService(newService);
+        }
+      }
+    } catch (error) {
+      console.error("Erreur lors de la mise à jour du service:", error);
+      toast.error("Une erreur est survenue lors de la mise à jour");
+    }
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
@@ -200,6 +255,20 @@ const TravailForm: React.FC<TravailFormProps> = ({
 
       {sousTypeId && (
         <>
+          <div className="flex justify-between items-center">
+            <h3 className="text-sm font-medium">Description</h3>
+            <Button 
+              type="button" 
+              variant="outline" 
+              size="sm" 
+              onClick={handleOpenUpdateModal}
+              className="flex items-center gap-1 text-xs"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              Mettre à jour la base de données
+            </Button>
+          </div>
+
           <DescriptionSection 
             description={description}
             setDescription={setDescription}
@@ -239,6 +308,23 @@ const TravailForm: React.FC<TravailFormProps> = ({
           {travailAModifier ? "Modifier" : "Ajouter"} le travail
         </Button>
       </div>
+
+      {isUpdateModalOpen && selectedService && (
+        <UpdateServiceModal
+          isOpen={isUpdateModalOpen}
+          onClose={() => setIsUpdateModalOpen(false)}
+          currentService={selectedService}
+          updatedService={{
+            name: sousTypeLabel,
+            description: description,
+            labor_price: prixMainOeuvre,
+            supply_price: prixFournitures,
+            unit: unite,
+            surface_impactee: surfaceImpactee
+          }}
+          onConfirmUpdate={handleServiceUpdate}
+        />
+      )}
     </form>
   );
 };

@@ -294,9 +294,22 @@ export const updateService = async (
     description?: string | null;
     labor_price?: number;
     supply_price?: number;
+    unit?: string;
+    surface_impactee?: string;
+    last_update_date?: string;
   }
 ): Promise<Service | null> => {
   try {
+    // Si last_update_date n'est pas fourni, ajouter la date actuelle
+    if (!service.last_update_date) {
+      const date = new Date();
+      const month = date.toLocaleString('fr-FR', { month: 'long' });
+      const year = date.getFullYear();
+      service.last_update_date = `${month} ${year}`;
+    }
+
+    console.log("Mise à jour du service:", id, service);
+    
     const { data, error } = await supabase
       .from('services')
       .update(service)
@@ -337,5 +350,55 @@ export const deleteService = async (id: string): Promise<boolean> => {
     console.error('Exception lors de la suppression du service:', error);
     toast.error('Erreur lors de la suppression du service');
     return false;
+  }
+};
+
+// Créer un service en copiant un existant avec des modifications
+export const cloneServiceWithChanges = async (
+  existingServiceId: string,
+  changes: Partial<Omit<Service, 'id' | 'created_at'>>
+): Promise<Service | null> => {
+  try {
+    // Récupérer le service existant
+    const existingService = await fetchServiceById(existingServiceId);
+    if (!existingService) {
+      throw new Error('Service non trouvé');
+    }
+    
+    // Générer la date de mise à jour
+    const date = new Date();
+    const month = date.toLocaleString('fr-FR', { month: 'long' });
+    const year = date.getFullYear();
+    const last_update_date = `${month} ${year}`;
+    
+    // Créer un nouveau service en combinant l'existant avec les changements
+    const newService = {
+      name: changes.name || existingService.name,
+      description: changes.description ?? existingService.description,
+      labor_price: changes.labor_price ?? existingService.labor_price,
+      supply_price: changes.supply_price ?? existingService.supply_price,
+      unit: changes.unit ?? existingService.unit,
+      surface_impactee: changes.surface_impactee ?? existingService.surface_impactee,
+      group_id: existingService.group_id,
+      last_update_date
+    };
+    
+    const { data, error } = await supabase
+      .from('services')
+      .insert([newService])
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Erreur lors de la création du service:', error);
+      toast.error('Erreur lors de la création du service');
+      return null;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Exception lors de la création du service:', error);
+    toast.error('Erreur lors de la création du service');
+    return null;
   }
 };
