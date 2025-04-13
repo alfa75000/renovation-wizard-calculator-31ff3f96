@@ -8,6 +8,8 @@ import { ProjectSummary } from './ProjectSummary';
 interface InfosChantierLayoutProps {
   clientId: string;
   setClientId: (id: string) => void;
+  companyId: string;  // New prop
+  setCompanyId: (id: string) => void;  // New prop
   nomProjet: string;
   setNomProjet: (nom: string) => void;
   descriptionProjet: string;
@@ -38,6 +40,8 @@ interface InfosChantierLayoutProps {
 export const InfosChantierLayout: React.FC<InfosChantierLayoutProps> = ({
   clientId,
   setClientId,
+  companyId,  // New prop
+  setCompanyId,  // New prop
   nomProjet,
   setNomProjet,
   descriptionProjet,
@@ -78,6 +82,8 @@ export const InfosChantierLayout: React.FC<InfosChantierLayoutProps> = ({
           <ProjectForm 
             clientId={clientId}
             setClientId={setClientId}
+            companyId={companyId}
+            setCompanyId={setCompanyId}
             nomProjet={nomProjet}
             setNomProjet={setNomProjet}
             descriptionProjet={descriptionProjet}

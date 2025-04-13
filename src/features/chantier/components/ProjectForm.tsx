@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { CompanySelection } from './project-form/CompanySelection';
 import { ClientSelection } from './project-form/ClientSelection';
 import { DevisInfoForm } from './project-form/DevisInfoForm';
 import { ProjectNameField } from './project-form/ProjectNameField';
@@ -9,6 +10,8 @@ import { ProjectActionButtons } from './project-form/ProjectActionButtons';
 interface ProjectFormProps {
   clientId: string;
   setClientId: (id: string) => void;
+  companyId: string;  // New prop
+  setCompanyId: (id: string) => void;  // New prop
   nomProjet: string;
   setNomProjet: (nom: string) => void;
   descriptionProjet: string;
@@ -34,6 +37,8 @@ interface ProjectFormProps {
 export const ProjectForm: React.FC<ProjectFormProps> = ({
   clientId,
   setClientId,
+  companyId,  // New prop
+  setCompanyId,  // New prop
   nomProjet,
   setNomProjet,
   descriptionProjet,
@@ -114,6 +119,11 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
   
   return (
     <div className="space-y-6">
+      <CompanySelection
+        companyId={companyId}
+        setCompanyId={setCompanyId}
+      />
+      
       <ClientSelection
         clientId={clientId}
         setClientId={setClientId}

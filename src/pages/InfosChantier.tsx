@@ -1,9 +1,12 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useProjectInfo } from '@/features/chantier/hooks/useProjectInfo';
 import { InfosChantierLayout } from '@/features/chantier/components/InfosChantierLayout';
 
 const InfosChantier: React.FC = () => {
+  // Add company ID state with default value
+  const [companyId, setCompanyId] = useState<string>("c949dd6d-52e8-41c4-99f8-6e84bf4695b9");
+  
   const {
     projectState,
     isLoading,
@@ -43,6 +46,8 @@ const InfosChantier: React.FC = () => {
     <InfosChantierLayout
       clientId={clientId}
       setClientId={setClientId}
+      companyId={companyId}
+      setCompanyId={setCompanyId}
       nomProjet={nomProjet}
       setNomProjet={setNomProjet}
       descriptionProjet={descriptionProjet}
