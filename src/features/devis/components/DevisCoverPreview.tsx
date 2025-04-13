@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { X, Printer, Download } from "lucide-react";
@@ -40,6 +40,9 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
   company, 
   onClose 
 }) => {
+  const printContentRef = useRef<HTMLDivElement>(null);
+  const [logoError, setLogoError] = useState(false);
+  
   // Récupérer les champs individuels
   const logoContent = company?.logo_url || fields.find(f => f.id === "companyLogo")?.content;
   const devisNumber = fields.find(f => f.id === "devisNumber")?.content;
@@ -50,6 +53,12 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
   const projectAddress = fields.find(f => f.id === "projectAddress")?.content;
   const occupant = fields.find(f => f.id === "occupant")?.content;
   const additionalInfo = fields.find(f => f.id === "additionalInfo")?.content;
+
+  // Debug logs
+  useEffect(() => {
+    console.log("Logo URL:", logoContent);
+    console.log("Company data:", company);
+  }, [logoContent, company]);
 
   // Formatter la date pour l'affichage "JJ / MM / YYYY"
   const formatDate = (dateString: string | undefined) => {
@@ -68,164 +77,179 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
 
   // Fonction pour gérer l'impression
   const handlePrint = () => {
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
+    if (!printContentRef.current) return;
     
-    const content = document.getElementById('devis-cover-content');
-    if (!content) return;
+    const printContent = printContentRef.current.innerHTML;
+    
+    // Ajouter des styles CSS pour l'impression
+    const printStyles = `
+      <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+        
+        body { 
+          font-family: 'Roboto', Arial, sans-serif; 
+          margin: 0; 
+          padding: 20px;
+          color: #000;
+          line-height: 1.5;
+          box-sizing: border-box;
+          background-color: white;
+        }
+        
+        .cover-page { 
+          width: 100%;
+          max-width: 210mm;
+          margin: 0 auto;
+          padding: 20px;
+          position: relative;
+          border: 1px solid #003366;
+          box-sizing: border-box;
+        }
+        
+        .header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          margin-bottom: 40px;
+        }
+        
+        .company-logo-container {
+          max-width: 50%;
+        }
+        
+        .company-logo { 
+          max-height: 100px; 
+          max-width: 100%;
+        }
+        
+        .company-tagline {
+          font-size: 14px;
+          color: #003366;
+          margin-top: 5px;
+        }
+        
+        .assurance {
+          text-align: right;
+          font-size: 12px;
+          color: #003366;
+        }
+        
+        .assurance p {
+          margin: 0;
+          line-height: 1.4;
+        }
+        
+        .company-info {
+          margin: 30px 0;
+          line-height: 1.6;
+        }
+        
+        .devis-section {
+          margin: 30px 0;
+          display: flex;
+          align-items: flex-start;
+        }
+        
+        .devis-number-container {
+          display: inline-block;
+          border: 1px solid #003366;
+          padding: 8px 15px;
+          margin-right: 20px;
+        }
+        
+        .devis-number {
+          font-weight: bold;
+          color: #000;
+        }
+        
+        .devis-date {
+          padding-top: 8px;
+        }
+        
+        .validity-offer {
+          margin-top: 10px;
+          font-style: italic;
+          font-size: 13px;
+        }
+        
+        .section-header {
+          background-color: #003366;
+          color: white;
+          padding: 5px 10px;
+          font-weight: normal;
+          margin: 0;
+        }
+        
+        .section-content {
+          border: 1px solid #003366;
+          padding: 15px;
+          min-height: 100px;
+        }
+        
+        .client-section, .project-section {
+          margin-bottom: 30px;
+        }
+        
+        .project-item {
+          margin-bottom: 8px;
+        }
+        
+        .footer {
+          font-size: 9px;
+          text-align: center;
+          position: absolute;
+          bottom: 20px;
+          left: 20px;
+          right: 20px;
+          padding-top: 5px;
+        }
+        
+        button, .dialog-header, .dialog-footer {
+          display: none !important;
+        }
+      </style>
+    `;
+    
+    // Utiliser une approche différente pour imprimer
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      console.error("Impossible d'ouvrir une nouvelle fenêtre");
+      return;
+    }
     
     printWindow.document.write(`
       <html>
         <head>
           <title>Devis - Page de Garde</title>
-          <style>
-            @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
-            
-            body { 
-              font-family: 'Roboto', Arial, sans-serif; 
-              margin: 0; 
-              padding: 0;
-              color: #000;
-              line-height: 1.5;
-              box-sizing: border-box;
-            }
-            
-            .cover-page { 
-              width: 210mm;
-              min-height: 297mm;
-              margin: 0 auto;
-              padding: 20px;
-              position: relative;
-              border: 1px solid #003366;
-              box-sizing: border-box;
-            }
-            
-            .header {
-              display: flex;
-              justify-content: space-between;
-              align-items: flex-start;
-              margin-bottom: 40px;
-            }
-            
-            .company-logo-container {
-              max-width: 50%;
-            }
-            
-            .company-logo { 
-              max-height: 100px; 
-              max-width: 100%;
-            }
-            
-            .company-tagline {
-              font-size: 14px;
-              color: #003366;
-              margin-top: 5px;
-            }
-            
-            .assurance {
-              text-align: right;
-              font-size: 12px;
-              color: #003366;
-            }
-            
-            .assurance p {
-              margin: 0;
-              line-height: 1.4;
-            }
-            
-            .company-info {
-              margin: 30px 0;
-              line-height: 1.6;
-            }
-            
-            .devis-section {
-              margin: 30px 0;
-              display: flex;
-              align-items: flex-start;
-            }
-            
-            .devis-number-container {
-              display: inline-block;
-              border: 1px solid #003366;
-              padding: 8px 15px;
-              margin-right: 20px;
-            }
-            
-            .devis-number {
-              font-weight: bold;
-              color: #000;
-            }
-            
-            .devis-date {
-              padding-top: 8px;
-            }
-            
-            .validity-offer {
-              margin-top: 10px;
-              font-style: italic;
-              font-size: 13px;
-            }
-            
-            .section-header {
-              background-color: #003366;
-              color: white;
-              padding: 5px 10px;
-              font-weight: normal;
-              margin: 0;
-            }
-            
-            .section-content {
-              border: 1px solid #003366;
-              padding: 15px;
-              min-height: 100px;
-            }
-            
-            .client-section, .project-section {
-              margin-bottom: 30px;
-            }
-            
-            .project-item {
-              margin-bottom: 8px;
-            }
-            
-            .footer {
-              font-size: 9px;
-              text-align: center;
-              position: absolute;
-              bottom: 20px;
-              left: 20px;
-              right: 20px;
-              padding-top: 5px;
-            }
-            
-            @media print {
-              body { margin: 0; }
-              .no-print { display: none; }
-              .cover-page {
-                border: 1px solid #003366;
-                height: 100%;
-                width: 100%;
-              }
-            }
-          </style>
+          ${printStyles}
         </head>
         <body>
           <div class="cover-page">
-            ${content.innerHTML}
+            ${printContent}
           </div>
         </body>
       </html>
     `);
     
-    printWindow.document.close();
-    printWindow.focus();
+    // Attendre que les ressources soient chargées
+    printWindow.document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+      }, 500);
+    });
     
+    // Si l'événement DOMContentLoaded ne se déclenche pas, imprimer après un délai
     setTimeout(() => {
       printWindow.print();
-    }, 500);
+    }, 1000);
   };
 
-  console.log("Logo content:", logoContent);
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    console.error("Erreur de chargement du logo:", e);
+    setLogoError(true);
+    e.currentTarget.src = "/placeholder.svg"; // Image de remplacement
+  };
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
@@ -239,26 +263,34 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
           </DialogTitle>
         </DialogHeader>
         
-        <div id="devis-cover-content" className="p-6 border border-blue-900 rounded-md my-4 bg-white">
+        <div ref={printContentRef} id="devis-cover-content" className="p-6 border border-blue-900 rounded-md my-4 bg-white">
           {/* En-tête avec logo et informations d'assurance */}
           <div className="flex justify-between items-start">
             <div className="max-w-[50%]">
-              {logoContent ? (
+              {logoContent && !logoError ? (
                 <div>
                   <img 
                     src={logoContent} 
                     alt="Logo" 
                     className="max-h-24 max-w-full"
-                    onError={(e) => {
-                      console.error("Erreur de chargement du logo:", e);
-                      e.currentTarget.src = "/placeholder.svg";
-                    }}
+                    onError={handleImageError}
                   />
-                  {company?.slogan && <p className="text-sm mt-2 text-blue-900">{company.slogan}</p>}
+                  {company?.slogan ? (
+                    <p className="text-sm mt-2 text-blue-900">{company.slogan}</p>
+                  ) : (
+                    <p className="text-sm mt-2 text-blue-900">Entreprise Générale du Bâtiment</p>
+                  )}
                 </div>
               ) : (
-                <div className="h-24 w-48 border border-gray-300 flex items-center justify-center text-gray-400">
-                  Logo non disponible
+                <div>
+                  <div className="h-24 w-48 border border-gray-300 flex items-center justify-center text-gray-400">
+                    Logo non disponible
+                  </div>
+                  {company?.slogan ? (
+                    <p className="text-sm mt-2 text-blue-900">{company.slogan}</p>
+                  ) : (
+                    <p className="text-sm mt-2 text-blue-900">Entreprise Générale du Bâtiment</p>
+                  )}
                 </div>
               )}
             </div>
