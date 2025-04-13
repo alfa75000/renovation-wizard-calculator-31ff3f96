@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { WorkType, ServiceGroup, Service } from '@/types/supabase';
 import { toast } from 'sonner';
@@ -326,6 +327,7 @@ export const updateService = async (
       return null;
     }
     
+    console.log("Service mis à jour avec succès:", data);
     return data;
   } catch (error) {
     console.error('Exception lors de la mise à jour du service:', error);
@@ -386,6 +388,8 @@ export const cloneServiceWithChanges = async (
       last_update_date
     };
     
+    console.log("Création d'un nouveau service basé sur un existant:", newService);
+    
     const { data, error } = await supabase
       .from('services')
       .insert([newService])
@@ -398,6 +402,7 @@ export const cloneServiceWithChanges = async (
       return null;
     }
     
+    console.log("Nouveau service créé avec succès:", data);
     return data;
   } catch (error) {
     console.error('Exception lors de la création du service:', error);

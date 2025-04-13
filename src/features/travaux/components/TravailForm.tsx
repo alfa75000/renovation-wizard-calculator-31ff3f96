@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import TypeTravauxSelect from "./TypeTravauxSelect";
@@ -167,6 +168,7 @@ const TravailForm: React.FC<TravailFormProps> = ({
         if (updatedService) {
           toast.success("La prestation a été mise à jour avec succès");
           setSelectedService(updatedService);
+          return updatedService;
         }
       } else {
         const newService = await cloneServiceWithChanges(selectedService.id, serviceData);
@@ -175,12 +177,15 @@ const TravailForm: React.FC<TravailFormProps> = ({
           setSousTypeId(newService.id);
           setSousTypeLabel(newService.name);
           setSelectedService(newService);
+          return newService;
         }
       }
     } catch (error) {
       console.error("Erreur lors de la mise à jour du service:", error);
       toast.error("Une erreur est survenue lors de la mise à jour");
     }
+    
+    return null;
   };
 
   return (
