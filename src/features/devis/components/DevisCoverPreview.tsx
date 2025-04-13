@@ -41,7 +41,7 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
   onClose 
 }) => {
   // Récupérer les champs individuels
-  const logoContent = fields.find(f => f.id === "companyLogo")?.content;
+  const logoContent = company?.logo_url || fields.find(f => f.id === "companyLogo")?.content;
   const devisNumber = fields.find(f => f.id === "devisNumber")?.content;
   const devisDate = fields.find(f => f.id === "devisDate")?.content;
   const validityOffer = fields.find(f => f.id === "validityOffer")?.content;
