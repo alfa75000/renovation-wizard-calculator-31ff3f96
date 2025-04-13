@@ -852,6 +852,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_service: {
+        Args: {
+          p_name: string
+          p_description: string
+          p_labor_price: number
+          p_supply_price: number
+          p_unit: string
+          p_surface_impactee: string
+          p_group_id: string
+          p_last_update_date: string
+        }
+        Returns: string
+      }
       get_table_info: {
         Args: { table_name: string }
         Returns: Json

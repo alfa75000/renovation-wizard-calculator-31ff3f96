@@ -1,6 +1,5 @@
-
 import { supabase } from '@/lib/supabase';
-import { WorkType, ServiceGroup, Service } from '@/types/supabase';
+import { WorkType, ServiceGroup, Service, UniteType, SurfaceImpactee } from '@/types/supabase';
 import { toast } from 'sonner';
 
 // Récupérer tous les types de travaux
@@ -446,14 +445,18 @@ export const cloneServiceWithChanges = async (
     const last_update_date = `${month} ${year}`;
     console.log("Date de mise à jour générée:", last_update_date);
     
+    // S'assurer que les valeurs enum sont valides
+    const unit = changes.unit !== undefined ? changes.unit : existingService.unit;
+    const surface_impactee = changes.surface_impactee !== undefined ? changes.surface_impactee : existingService.surface_impactee;
+    
     // Créer un nouveau service en combinant l'existant avec les changements
     const newService = {
       name,
       description: changes.description !== undefined ? changes.description : existingService.description,
       labor_price,
       supply_price,
-      unit: changes.unit !== undefined ? changes.unit : existingService.unit,
-      surface_impactee: changes.surface_impactee !== undefined ? changes.surface_impactee : existingService.surface_impactee,
+      unit,
+      surface_impactee,
       group_id: existingService.group_id,
       last_update_date
     };
@@ -464,75 +467,74 @@ export const cloneServiceWithChanges = async (
     try {
       console.log("Tentative d'insertion dans Supabase...");
       
-      // Utiliser la fonction rpc pour contourner le RLS
-      const { data, error } = await supabase
-        .rpc('create_service', {
-          p_name: newService.name,
-          p_description: newService.description,
-          p_labor_price: newService.labor_price,
-          p_supply_price: newService.supply_price,
-          p_unit: newService.unit,
-          p_surface_impactee: newService.surface_impactee,
-          p_group_id: newService.group_id,
-          p_last_update_date: newService.last_update_date
-        });
-      
-      console.log("Réponse complète de Supabase:", { data, error });
-      
-      if (error) {
-        console.error('Erreur Supabase lors de la création du service:', error);
-        console.error('Code d\'erreur:', error.code);
-        console.error('Message d\'erreur:', error.message);
-        console.error('Détails:', error.details);
-        toast.error(`Erreur lors de la création du service: ${error.message || 'Erreur inconnue'}`);
-        
-        // Si la fonction RPC n'existe pas, essayer l'ancienne méthode en dernier recours
-        if (error.code === '42883') { // Fonction inexistante
-          console.log("La fonction RPC n'existe pas, tentative avec l'insertion directe...");
-          
-          const insertResult = await supabase
-            .from('services')
-            .insert([newService])
-            .select();
-          
-          if (insertResult.error) {
-            console.error('Erreur lors de l\'insertion directe:', insertResult.error);
-            toast.error(`Erreur lors de la création du service: ${insertResult.error.message}`);
-            return null;
-          }
-          
-          if (insertResult.data && insertResult.data.length > 0) {
-            console.log("Service créé avec succès via insertion directe:", insertResult.data[0]);
-            toast.success(`Nouvelle prestation "${name}" créée avec succès`);
-            return insertResult.data[0];
-          }
-        }
-        return null;
-      }
-      
-      if (!data) {
-        console.warn('Aucune donnée retournée après la création du service');
-        toast.error('Échec de la création du service - Aucune donnée retournée');
-        return null;
-      }
-      
-      // Récupérer le service nouvellement créé
-      const newServiceId = data;
-      const { data: newServiceData, error: fetchError } = await supabase
+      // Tentative avec la méthode directe d'abord (plus sûre pour les types enum)
+      const insertResult = await supabase
         .from('services')
-        .select('*')
-        .eq('id', newServiceId)
-        .single();
+        .insert([newService])
+        .select();
       
-      if (fetchError) {
-        console.error('Erreur lors de la récupération du nouveau service:', fetchError);
-        toast.error('Service créé mais impossible de récupérer ses données');
-        return null;
+      if (insertResult.error) {
+        console.error('Erreur lors de l\'insertion directe:', insertResult.error);
+        console.log("Tentative avec la fonction RPC en dernier recours...");
+        
+        // Seconde tentative avec la fonction RPC
+        const { data, error } = await supabase
+          .rpc('create_service', {
+            p_name: newService.name,
+            p_description: newService.description,
+            p_labor_price: newService.labor_price,
+            p_supply_price: newService.supply_price,
+            p_unit: newService.unit || null,
+            p_surface_impactee: newService.surface_impactee || 'Aucune',
+            p_group_id: newService.group_id,
+            p_last_update_date: newService.last_update_date
+          });
+        
+        console.log("Réponse complète de Supabase (RPC):", { data, error });
+        
+        if (error) {
+          console.error('Erreur Supabase lors de la création du service via RPC:', error);
+          console.error('Code d\'erreur:', error.code);
+          console.error('Message d\'erreur:', error.message);
+          console.error('Détails:', error.details);
+          toast.error(`Erreur lors de la création du service: ${error.message || 'Erreur inconnue'}`);
+          return null;
+        }
+        
+        if (!data) {
+          console.warn('Aucune donnée retournée après la création du service');
+          toast.error('Échec de la création du service - Aucune donnée retournée');
+          return null;
+        }
+        
+        // Récupérer le service nouvellement créé
+        const newServiceId = data;
+        const { data: newServiceData, error: fetchError } = await supabase
+          .from('services')
+          .select('*')
+          .eq('id', newServiceId)
+          .single();
+        
+        if (fetchError) {
+          console.error('Erreur lors de la récupération du nouveau service:', fetchError);
+          toast.error('Service créé mais impossible de récupérer ses données');
+          return null;
+        }
+        
+        console.log("Nouveau service créé avec succès (via RPC):", newServiceData);
+        toast.success(`Nouvelle prestation "${name}" créée avec succès`);
+        return newServiceData;
       }
       
-      console.log("Nouveau service créé avec succès:", newServiceData);
-      toast.success(`Nouvelle prestation "${name}" créée avec succès`);
-      return newServiceData;
+      if (insertResult.data && insertResult.data.length > 0) {
+        console.log("Service créé avec succès via insertion directe:", insertResult.data[0]);
+        toast.success(`Nouvelle prestation "${name}" créée avec succès`);
+        return insertResult.data[0];
+      }
+      
+      console.warn('Aucune donnée retournée après la création du service');
+      toast.error('Échec de la création du service - Aucune donnée retournée');
+      return null;
     } catch (insertError) {
       console.error("Exception lors de l'insertion dans Supabase:", insertError);
       console.error("Stack trace:", insertError instanceof Error ? insertError.stack : 'Non disponible');
