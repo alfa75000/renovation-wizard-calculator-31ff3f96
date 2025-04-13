@@ -152,18 +152,18 @@ const TravailForm: React.FC<TravailFormProps> = ({
 
     const travailData: Omit<Travail, 'id'> = {
       pieceId: piece.id,
-      type: selectedType!.label,
-      groupe: selectedGroup!.label,
-      sous_type: selectedService.name,
+      typeTravauxId: selectedType!.id,
+      typeTravauxLabel: selectedType!.label,
+      sousTypeId: selectedService.id,
+      sousTypeLabel: selectedService.name,
       description: selectedService.description || '',
       quantite: quantity,
       unite: selectedService.unit || 'unité',
-      prix_unitaire: selectedService.labor_price + selectedService.supply_price,
-      taux_tva: tauxTva,
-      total_ht: (selectedService.labor_price + selectedService.supply_price) * quantity,
-      total_ttc: (selectedService.labor_price + selectedService.supply_price) * quantity * (1 + tauxTva / 100),
-      service_id: selectedService.id,
+      prixFournitures: selectedService.supply_price,
+      prixMainOeuvre: selectedService.labor_price,
+      tauxTVA: tauxTva,
       commentaire: commentaire,
+      surfaceImpactee: selectedService.surface_impactee
     };
 
     onAddTravail(travailData);
