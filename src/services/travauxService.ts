@@ -308,7 +308,7 @@ export const updateService = async (
     }
 
     if (service.labor_price !== undefined && (isNaN(service.labor_price) || service.labor_price < 0)) {
-      console.error("Validation échec: prix main d'oeuvre invalide");
+      console.error("Validation échec: prix main d'œuvre invalide");
       toast.error('Le prix de main d\'œuvre doit être un nombre positif');
       return null;
     }
