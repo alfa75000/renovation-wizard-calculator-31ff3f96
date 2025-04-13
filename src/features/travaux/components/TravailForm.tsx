@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import TypeTravauxSelect from "./TypeTravauxSelect";
@@ -13,6 +14,16 @@ import { RefreshCw } from "lucide-react";
 import UpdateServiceModal from "./UpdateServiceModal";
 import { updateService, cloneServiceWithChanges } from "@/services/travauxService";
 import { toast } from "sonner";
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle 
+} from "@/components/ui/alert-dialog";
 
 interface TravailFormProps {
   piece: Room | null;
@@ -48,11 +59,11 @@ const TravailForm: React.FC<TravailFormProps> = ({
   const [isCustomSurface, setIsCustomSurface] = useState<boolean>(true);
   
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState<boolean>(false);
+  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState<boolean>(false);
   
   const [initialValues, setInitialValues] = useState<{
     description: string;
     surfaceImpactee: SurfaceImpactee;
-    quantite: number;
     unite: UniteType;
     prixFournitures: number;
     prixMainOeuvre: number;
@@ -111,7 +122,6 @@ const TravailForm: React.FC<TravailFormProps> = ({
       setInitialValues({
         description: selectedService.description || "",
         surfaceImpactee: selectedService.surface_impactee || 'Aucune',
-        quantite: parseFloat(quantite.toFixed(2)) || 0,
         unite: serviceUnit as UniteType,
         prixFournitures: selectedService.supply_price || 0,
         prixMainOeuvre: selectedService.labor_price || 0,
@@ -164,6 +174,21 @@ const TravailForm: React.FC<TravailFormProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!typeTravauxId || !sousTypeId || !piece) {
+      console.error("Données manquantes pour ajouter un travail");
+      return;
+    }
+
+    // Si des modifications ont été effectuées, ouvrir la boîte de dialogue de confirmation
+    if (hasChanges) {
+      setIsConfirmDialogOpen(true);
+    } else {
+      // Si aucune modification, ajouter simplement le travail
+      addTravail();
+    }
+  };
+
+  const addTravail = () => {
     if (!typeTravauxId || !sousTypeId || !piece) {
       console.error("Données manquantes pour ajouter un travail");
       return;
@@ -330,6 +355,31 @@ const TravailForm: React.FC<TravailFormProps> = ({
           {travailAModifier ? "Modifier" : "Ajouter"} le travail
         </Button>
       </div>
+
+      <AlertDialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Modifications détectées</AlertDialogTitle>
+            <AlertDialogDescription>
+              Vous avez modifié certains paramètres de cette prestation. Souhaitez-vous mettre à jour la base de données avec ces modifications?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setIsConfirmDialogOpen(false);
+              addTravail();
+            }}>
+              Non, juste ajouter le travail
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              setIsConfirmDialogOpen(false);
+              setIsUpdateModalOpen(true);
+            }}>
+              Oui, mettre à jour la base de données
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {isUpdateModalOpen && selectedService && (
         <UpdateServiceModal
