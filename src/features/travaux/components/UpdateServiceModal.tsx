@@ -1,11 +1,9 @@
 
 import React, { useState, useCallback } from 'react';
-import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Service, UniteType, SurfaceImpactee } from "@/types/supabase";
 import { RefreshCw, AlertTriangle, Info } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -36,7 +34,6 @@ const UpdateServiceModal: React.FC<UpdateServiceModalProps> = ({
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   const [updateType, setUpdateType] = useState<'update' | 'create'>('update');
   const [isLoading, setIsLoading] = useState(false);
-  
   const [editedService, setEditedService] = useState<Partial<Service>>(updatedService);
 
   if (!currentService) return null;
@@ -238,7 +235,6 @@ const UpdateServiceModal: React.FC<UpdateServiceModalProps> = ({
         </DialogContent>
       </Dialog>
 
-      {/* Remplacer le AlertDialog par un Dialog standard pour la confirmation */}
       <Dialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -262,7 +258,6 @@ const UpdateServiceModal: React.FC<UpdateServiceModalProps> = ({
               Annuler
             </Button>
             
-            {/* Utiliser un Button standard au lieu de AlertDialogAction */}
             <Button 
               onClick={handleUpdate}
               disabled={isLoading}

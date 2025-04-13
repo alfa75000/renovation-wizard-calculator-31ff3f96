@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { WorkType, ServiceGroup, Service, UniteType, SurfaceImpactee } from '@/types/supabase';
 import { toast } from 'sonner';
@@ -115,6 +116,18 @@ export const fetchServiceById = async (serviceId: string): Promise<Service | nul
     console.error('Exception lors de la récupération du service:', error);
     return null;
   }
+};
+
+// Vérifier la validité d'une valeur enum UniteType
+const isValidUniteType = (value: any): value is UniteType => {
+  const validValues: UniteType[] = ['M²', 'Unité', 'Ens.', 'Ml', 'M³', 'Forfait'];
+  return validValues.includes(value as UniteType);
+};
+
+// Vérifier la validité d'une valeur enum SurfaceImpactee
+const isValidSurfaceImpactee = (value: any): value is SurfaceImpactee => {
+  const validValues: SurfaceImpactee[] = ['Mur', 'Plafond', 'Sol', 'Aucune'];
+  return validValues.includes(value as SurfaceImpactee);
 };
 
 // Créer un nouveau type de travaux
@@ -263,22 +276,53 @@ export const createService = async (
     labor_price: number;
     supply_price: number;
     group_id: string;
+    unit?: UniteType;
+    surface_impactee?: SurfaceImpactee;
   }
 ): Promise<Service | null> => {
   try {
+    // Vérifier si la surface_impactee et unit sont des valeurs valides de leur enum respectif
+    const surfaceImpactee = service.surface_impactee || 'Aucune';
+    if (!isValidSurfaceImpactee(surfaceImpactee)) {
+      console.error('Surface impactée invalide:', surfaceImpactee);
+      toast.error('La surface impactée spécifiée est invalide');
+      return null;
+    }
+
+    // Générer la date de dernière mise à jour
+    const date = new Date();
+    const month = date.toLocaleString('fr-FR', { month: 'long' });
+    const year = date.getFullYear();
+    const last_update_date = `${month} ${year}`;
+
+    // Créer un objet pour l'insertion
+    const serviceToInsert = {
+      name: service.name,
+      description: service.description || null,
+      labor_price: service.labor_price,
+      supply_price: service.supply_price,
+      group_id: service.group_id,
+      surface_impactee: surfaceImpactee,
+      unit: service.unit,
+      last_update_date
+    };
+
+    console.log("Service à insérer:", serviceToInsert);
+
+    // Insérer le service directement dans la table
     const { data, error } = await supabase
       .from('services')
-      .insert([service])
-      .select()
-      .single();
-    
+      .insert([serviceToInsert])
+      .select();
+
     if (error) {
       console.error('Erreur lors de la création du service:', error);
       toast.error('Erreur lors de la création du service');
       return null;
     }
-    
-    return data;
+
+    console.log("Service créé avec succès:", data?.[0]);
+    return data?.[0] || null;
   } catch (error) {
     console.error('Exception lors de la création du service:', error);
     toast.error('Erreur lors de la création du service');
@@ -294,8 +338,8 @@ export const updateService = async (
     description?: string | null;
     labor_price?: number;
     supply_price?: number;
-    unit?: string;
-    surface_impactee?: string;
+    unit?: UniteType;
+    surface_impactee?: SurfaceImpactee;
     last_update_date?: string;
   }
 ): Promise<Service | null> => {
@@ -319,6 +363,19 @@ export const updateService = async (
     if (service.supply_price !== undefined && (isNaN(service.supply_price) || service.supply_price < 0)) {
       console.error("Validation échec: prix fournitures invalide");
       toast.error('Le prix des fournitures doit être un nombre positif');
+      return null;
+    }
+
+    // Vérification des valeurs enum si présentes
+    if (service.unit !== undefined && service.unit !== null && !isValidUniteType(service.unit)) {
+      console.error("Validation échec: unité invalide", service.unit);
+      toast.error(`L'unité spécifiée (${service.unit}) est invalide`);
+      return null;
+    }
+
+    if (service.surface_impactee !== undefined && !isValidSurfaceImpactee(service.surface_impactee)) {
+      console.error("Validation échec: surface impactée invalide", service.surface_impactee);
+      toast.error(`La surface impactée spécifiée (${service.surface_impactee}) est invalide`);
       return null;
     }
 
@@ -410,7 +467,7 @@ export const cloneServiceWithChanges = async (
     console.log("Service existant récupéré:", existingService);
     console.log("Type du service existant:", typeof existingService);
 
-    // Validation des données requises
+    // Validation du nom
     const name = changes.name || `${existingService.name}2`; // Ajouter un "2" par défaut si pas de changement de nom
     console.log("Nom pour le nouveau service:", name);
     
@@ -420,6 +477,7 @@ export const cloneServiceWithChanges = async (
       return null;
     }
 
+    // Validation des prix
     const labor_price = changes.labor_price ?? existingService.labor_price;
     console.log("Prix main d'œuvre pour le nouveau service:", labor_price);
     
@@ -447,7 +505,23 @@ export const cloneServiceWithChanges = async (
     
     // S'assurer que les valeurs enum sont valides
     const unit = changes.unit !== undefined ? changes.unit : existingService.unit;
-    const surface_impactee = changes.surface_impactee !== undefined ? changes.surface_impactee : existingService.surface_impactee;
+    const surface_impactee = changes.surface_impactee !== undefined 
+      ? changes.surface_impactee 
+      : existingService.surface_impactee;
+    
+    // S'assurer que unit est une valeur valide
+    if (unit && !isValidUniteType(unit)) {
+      console.error("Validation échouée: unité invalide:", unit);
+      toast.error(`L'unité spécifiée est invalide: ${unit}`);
+      return null;
+    }
+    
+    // S'assurer que surface_impactee est une valeur valide
+    if (!isValidSurfaceImpactee(surface_impactee)) {
+      console.error("Validation échouée: surface impactée invalide:", surface_impactee);
+      toast.error(`La surface impactée spécifiée est invalide: ${surface_impactee}`);
+      return null;
+    }
     
     // Créer un nouveau service en combinant l'existant avec les changements
     const newService = {
@@ -462,85 +536,18 @@ export const cloneServiceWithChanges = async (
     };
     
     console.log("Nouveau service à créer:", newService);
-    console.log("Type du nouveau service:", typeof newService);
     
-    try {
-      console.log("Tentative d'insertion dans Supabase...");
-      
-      // Tentative avec la méthode directe d'abord (plus sûre pour les types enum)
-      const insertResult = await supabase
-        .from('services')
-        .insert([newService])
-        .select();
-      
-      if (insertResult.error) {
-        console.error('Erreur lors de l\'insertion directe:', insertResult.error);
-        console.log("Tentative avec la fonction RPC en dernier recours...");
-        
-        // Seconde tentative avec la fonction RPC
-        const { data, error } = await supabase
-          .rpc('create_service', {
-            p_name: newService.name,
-            p_description: newService.description,
-            p_labor_price: newService.labor_price,
-            p_supply_price: newService.supply_price,
-            p_unit: newService.unit || null,
-            p_surface_impactee: newService.surface_impactee || 'Aucune',
-            p_group_id: newService.group_id,
-            p_last_update_date: newService.last_update_date
-          });
-        
-        console.log("Réponse complète de Supabase (RPC):", { data, error });
-        
-        if (error) {
-          console.error('Erreur Supabase lors de la création du service via RPC:', error);
-          console.error('Code d\'erreur:', error.code);
-          console.error('Message d\'erreur:', error.message);
-          console.error('Détails:', error.details);
-          toast.error(`Erreur lors de la création du service: ${error.message || 'Erreur inconnue'}`);
-          return null;
-        }
-        
-        if (!data) {
-          console.warn('Aucune donnée retournée après la création du service');
-          toast.error('Échec de la création du service - Aucune donnée retournée');
-          return null;
-        }
-        
-        // Récupérer le service nouvellement créé
-        const newServiceId = data;
-        const { data: newServiceData, error: fetchError } = await supabase
-          .from('services')
-          .select('*')
-          .eq('id', newServiceId)
-          .single();
-        
-        if (fetchError) {
-          console.error('Erreur lors de la récupération du nouveau service:', fetchError);
-          toast.error('Service créé mais impossible de récupérer ses données');
-          return null;
-        }
-        
-        console.log("Nouveau service créé avec succès (via RPC):", newServiceData);
-        toast.success(`Nouvelle prestation "${name}" créée avec succès`);
-        return newServiceData;
-      }
-      
-      if (insertResult.data && insertResult.data.length > 0) {
-        console.log("Service créé avec succès via insertion directe:", insertResult.data[0]);
-        toast.success(`Nouvelle prestation "${name}" créée avec succès`);
-        return insertResult.data[0];
-      }
-      
-      console.warn('Aucune donnée retournée après la création du service');
-      toast.error('Échec de la création du service - Aucune donnée retournée');
-      return null;
-    } catch (insertError) {
-      console.error("Exception lors de l'insertion dans Supabase:", insertError);
-      console.error("Stack trace:", insertError instanceof Error ? insertError.stack : 'Non disponible');
-      toast.error(`Erreur lors de la création du service: ${insertError instanceof Error ? insertError.message : 'Erreur inconnue'}`);
-      return null;
+    // Utiliser la fonction createService pour créer le nouveau service
+    const result = await createService(newService);
+    
+    if (result) {
+      console.log("Service cloné avec succès:", result);
+      toast.success(`Nouvelle prestation "${name}" créée avec succès`);
+      return result;
     }
+    
+    console.error("Échec de la création du service cloné");
+    return null;
   } catch (error) {
     console.error('Exception dans cloneServiceWithChanges:', error);
     console.error("Stack trace:", error instanceof Error ? error.stack : 'Non disponible');
