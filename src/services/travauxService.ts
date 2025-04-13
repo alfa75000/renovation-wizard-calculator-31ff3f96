@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { WorkType, ServiceGroup, Service } from '@/types/supabase';
 import { toast } from 'sonner';
@@ -300,6 +301,9 @@ export const updateService = async (
   }
 ): Promise<Service | null> => {
   try {
+    console.log("Début updateService - ID:", id);
+    console.log("Données à mettre à jour:", service);
+    
     // Validation des données requises
     if (service.name !== undefined && service.name.trim() === '') {
       console.error("Validation échec: nom vide");
@@ -388,39 +392,39 @@ export const cloneServiceWithChanges = async (
   existingServiceId: string,
   changes: Partial<Omit<Service, 'id' | 'created_at'>>
 ): Promise<Service | null> => {
+  console.log("========== DÉBUT cloneServiceWithChanges ==========");
+  console.log("ID service existant:", existingServiceId);
+  console.log("Modifications:", changes);
+  
   try {
-    console.log("--- DEBUG: Début cloneServiceWithChanges ---");
-    console.log("--- DEBUG: existingServiceId:", existingServiceId);
-    console.log("--- DEBUG: changes:", changes);
-    
     // Récupérer le service existant
     const existingService = await fetchServiceById(existingServiceId);
     if (!existingService) {
-      console.error("--- DEBUG: Service original non trouvé ---");
+      console.error("Service original non trouvé - ID:", existingServiceId);
       toast.error('Service original non trouvé');
       return null;
     }
     
-    console.log("--- DEBUG: Service existant récupéré:", existingService);
+    console.log("Service existant récupéré:", existingService);
 
     // Validation des données requises
     const name = changes.name || existingService.name;
     if (name.trim() === '') {
-      console.error("--- DEBUG: Nom de service vide ---");
+      console.error("Validation échouée: nom vide");
       toast.error('Le nom du service ne peut pas être vide');
       return null;
     }
 
     const labor_price = changes.labor_price ?? existingService.labor_price;
     if (isNaN(labor_price) || labor_price < 0) {
-      console.error("--- DEBUG: Prix main d'œuvre invalide ---");
+      console.error("Validation échouée: prix main d'œuvre invalide");
       toast.error('Le prix de main d\'œuvre doit être un nombre positif');
       return null;
     }
 
     const supply_price = changes.supply_price ?? existingService.supply_price;
     if (isNaN(supply_price) || supply_price < 0) {
-      console.error("--- DEBUG: Prix fournitures invalide ---");
+      console.error("Validation échouée: prix fournitures invalide");
       toast.error('Le prix des fournitures doit être un nombre positif');
       return null;
     }
@@ -443,7 +447,7 @@ export const cloneServiceWithChanges = async (
       last_update_date
     };
     
-    console.log("--- DEBUG: Nouveau service à créer:", newService);
+    console.log("Nouveau service à créer:", newService);
     
     try {
       // Tenter de créer le service dans Supabase
@@ -452,31 +456,36 @@ export const cloneServiceWithChanges = async (
         .insert([newService])
         .select();
       
-      console.log("--- DEBUG: Réponse de Supabase après création:", { data, error });
+      console.log("Réponse de Supabase après création:", { 
+        data: data && data.length > 0 ? "Données reçues" : "Aucune donnée", 
+        error: error ? error.message : "Pas d'erreur" 
+      });
       
       if (error) {
-        console.error('--- DEBUG: Erreur Supabase lors de la création du service:', error);
+        console.error('Erreur Supabase lors de la création du service:', error);
         toast.error(`Erreur lors de la création du service: ${error.message || 'Erreur inconnue'}`);
         return null;
       }
       
       if (!data || data.length === 0) {
-        console.warn('--- DEBUG: Aucune donnée retournée après la création du service ---');
+        console.warn('Aucune donnée retournée après la création du service');
         toast.error('Échec de la création du service');
         return null;
       }
       
-      console.log("--- DEBUG: Nouveau service créé avec succès:", data[0]);
+      console.log("Nouveau service créé avec succès:", data[0]);
       return data[0];
     } catch (insertError) {
-      console.error("--- DEBUG: Exception lors de l'insertion dans Supabase:", insertError);
+      console.error("Exception lors de l'insertion dans Supabase:", insertError);
       toast.error(`Erreur lors de la création du service: ${insertError instanceof Error ? insertError.message : 'Erreur inconnue'}`);
       return null;
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
-    console.error('--- DEBUG: Exception dans cloneServiceWithChanges:', error);
+    console.error('Exception dans cloneServiceWithChanges:', error);
     toast.error(`Erreur lors de la création du service: ${errorMessage}`);
     return null;
+  } finally {
+    console.log("========== FIN cloneServiceWithChanges ==========");
   }
 };

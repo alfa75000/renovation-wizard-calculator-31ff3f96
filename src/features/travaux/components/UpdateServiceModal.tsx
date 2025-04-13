@@ -52,29 +52,21 @@ const UpdateServiceModal: React.FC<UpdateServiceModalProps> = ({
     }));
   };
 
-  // Extraire handleUpdate dans une fonction non-inline pour éviter les problèmes de re-render
-  const handleUpdate = useCallback(async () => {
-    console.log("--- DEBUG: Entrée dans handleUpdate ---");
+  // Définir handleUpdate en dehors du JSX pour une meilleure lisibilité
+  const handleUpdate = async () => {
+    console.log("--- DEBUG: handleUpdate exécuté ---");
     console.log("--- DEBUG: Type d'opération:", updateType);
     console.log("--- DEBUG: Service édité:", editedService);
     
     setIsLoading(true);
     try {
-      console.log("Tentative de mise à jour avec:", {
-        updateType,
-        serviceData: editedService,
-        serviceId: currentService?.id 
-      });
-      
       const result = await onConfirmUpdate(updateType, editedService);
       console.log("--- DEBUG: Résultat de onConfirmUpdate:", result);
       
       if (result) {
-        console.log(`Service ${updateType === 'update' ? 'mis à jour' : 'créé'} avec succès:`, result);
         toast.success(`Service ${updateType === 'update' ? 'mis à jour' : 'créé'} avec succès`);
         onClose();
       } else {
-        console.error(`Échec de la ${updateType === 'update' ? 'mise à jour' : 'création'} du service`);
         toast.error(`Échec de la ${updateType === 'update' ? 'mise à jour' : 'création'} du service`);
       }
     } catch (error) {
@@ -85,7 +77,7 @@ const UpdateServiceModal: React.FC<UpdateServiceModalProps> = ({
       setIsLoading(false);
       setIsConfirmDialogOpen(false);
     }
-  }, [updateType, editedService, currentService, onConfirmUpdate, onClose]);
+  };
 
   const confirmUpdate = (type: 'update' | 'create') => {
     console.log("--- DEBUG: Entrée dans confirmUpdate avec type:", type);
@@ -267,10 +259,7 @@ const UpdateServiceModal: React.FC<UpdateServiceModalProps> = ({
               Annuler
             </AlertDialogCancel>
             <AlertDialogAction 
-              onClick={() => {
-                console.log("AlertDialogAction onClick déclenché");
-                handleUpdate();
-              }} 
+              onClick={handleUpdate} 
               disabled={isLoading}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
