@@ -182,8 +182,8 @@ const UpdateServiceModal: React.FC<UpdateServiceModalProps> = ({
 
           <div className="space-y-4">
             {!currentService.last_update_date && (
-              <div className="p-3 bg-orange-50 border border-orange-200 rounded-md flex items-start gap-2">
-                <AlertTriangle className="h-5 w-5 text-orange-500 flex-shrink-0 mt-0.5" />
+              <div className="p-3 bg-[#FEC6A1] border border-[#FEC6A1] rounded-md flex items-start gap-2">
+                <AlertTriangle className="h-5 w-5 text-orange-600 flex-shrink-0 mt-0.5" />
                 <p className="text-sm text-orange-800">
                   Valeurs par défaut
                 </p>
@@ -191,8 +191,8 @@ const UpdateServiceModal: React.FC<UpdateServiceModalProps> = ({
             )}
             
             {currentService.last_update_date && (
-              <div className="p-3 bg-green-50 border border-green-200 rounded-md flex items-start gap-2">
-                <Info className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+              <div className="p-3 bg-[#F2FCE2] border border-green-200 rounded-md flex items-start gap-2">
+                <Info className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
                 <p className="text-sm text-green-800">
                   Dernière mise à jour: <Badge variant="outline">{currentService.last_update_date}</Badge>
                 </p>
