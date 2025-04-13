@@ -13,7 +13,6 @@ import { RefreshCw } from "lucide-react";
 import UpdateServiceModal from "./UpdateServiceModal";
 import { updateService, cloneServiceWithChanges } from "@/services/travauxService";
 import { toast } from "sonner";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 interface TravailFormProps {
   piece: Room | null;
@@ -58,8 +57,6 @@ const TravailForm: React.FC<TravailFormProps> = ({
     prixFournitures: number;
     prixMainOeuvre: number;
   } | null>(null);
-
-  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState<boolean>(false);
 
   useEffect(() => {
     setGroupId("");
@@ -171,17 +168,6 @@ const TravailForm: React.FC<TravailFormProps> = ({
       console.error("Données manquantes pour ajouter un travail");
       return;
     }
-    
-    if (hasChanges) {
-      setIsConfirmDialogOpen(true);
-      return;
-    }
-    
-    addTravailToProject();
-  };
-
-  const addTravailToProject = () => {
-    if (!piece) return;
     
     onAddTravail({
       pieceId: piece.id,
@@ -344,31 +330,6 @@ const TravailForm: React.FC<TravailFormProps> = ({
           {travailAModifier ? "Modifier" : "Ajouter"} le travail
         </Button>
       </div>
-
-      <AlertDialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Modifications détectées</AlertDialogTitle>
-            <AlertDialogDescription>
-              Vous avez apporté des modifications à la prestation. Souhaitez-vous mettre à jour la base de données avec ces modifications avant d'ajouter ce travail ?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => {
-              setIsConfirmDialogOpen(false);
-              addTravailToProject();
-            }}>
-              Continuer sans mise à jour
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={() => {
-              setIsConfirmDialogOpen(false);
-              setIsUpdateModalOpen(true);
-            }}>
-              Mettre à jour la base de données
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       {isUpdateModalOpen && selectedService && (
         <UpdateServiceModal
