@@ -417,6 +417,9 @@ export const updateService = async (
     console.log("Mise à jour du service avec ID:", id);
     console.log("Données envoyées:", updatedService);
     
+    // S'assurer que les types enum sont correctement traités
+    // On utilise l'API directe de Supabase qui devrait gérer correctement la conversion des types 
+    // si les valeurs sont conformes aux enums
     const { data, error } = await supabase
       .from('services')
       .update(updatedService)
