@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Service, UniteType, SurfaceImpactee } from "@/types/supabase";
@@ -52,7 +52,8 @@ const UpdateServiceModal: React.FC<UpdateServiceModalProps> = ({
     }));
   };
 
-  const handleUpdate = async () => {
+  // Extraire handleUpdate dans une fonction non-inline pour éviter les problèmes de re-render
+  const handleUpdate = useCallback(async () => {
     console.log("--- DEBUG: Entrée dans handleUpdate ---");
     console.log("--- DEBUG: Type d'opération:", updateType);
     console.log("--- DEBUG: Service édité:", editedService);
@@ -84,7 +85,7 @@ const UpdateServiceModal: React.FC<UpdateServiceModalProps> = ({
       setIsLoading(false);
       setIsConfirmDialogOpen(false);
     }
-  };
+  }, [updateType, editedService, currentService, onConfirmUpdate, onClose]);
 
   const confirmUpdate = (type: 'update' | 'create') => {
     console.log("--- DEBUG: Entrée dans confirmUpdate avec type:", type);
@@ -266,16 +267,13 @@ const UpdateServiceModal: React.FC<UpdateServiceModalProps> = ({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isLoading}>Annuler</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={(e) => {
-                console.log("--- DEBUG: Bouton d'action AlertDialog cliqué");
-                e.preventDefault(); // Empêche l'action par défaut
-                handleUpdate(); // Appelle handleUpdate manuellement
-              }} 
+            <Button 
+              variant="destructive"
+              onClick={handleUpdate} 
               disabled={isLoading}
             >
               {isLoading ? "En cours..." : updateType === 'update' ? "Remplacer" : "Ajouter"}
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
