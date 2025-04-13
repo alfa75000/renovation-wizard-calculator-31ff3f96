@@ -10,6 +10,7 @@ import { Printer, Save } from "lucide-react";
 import { toast } from "sonner";
 import { useProject } from "@/contexts/ProjectContext";
 import { Separator } from "@/components/ui/separator";
+import { supabase } from "@/lib/supabase";
 
 interface PrintableField {
   id: string;
@@ -22,10 +23,15 @@ export const PrintableFieldsForm: React.FC = () => {
   const { state } = useProject();
   const { metadata, property } = state;
   
+  // État pour stocker les informations du client et de la société
+  const [clientName, setClientName] = useState<string>("Chargement...");
+  const [companyName, setCompanyName] = useState<string>("LRS Rénovation");
+  const [companyLogoUrl, setCompanyLogoUrl] = useState<string | null>(null);
+  
   const [printableFields, setPrintableFields] = useState<PrintableField[]>([
     { id: "companyLogo", name: "Logo société", enabled: true, content: null },
-    { id: "companyName", name: "Nom société", enabled: true, content: "LRS Rénovation" },
-    { id: "client", name: "Client", enabled: true, content: metadata?.clientId ? "Client sélectionné" : "Aucun client sélectionné" },
+    { id: "companyName", name: "Nom société", enabled: true, content: companyName },
+    { id: "client", name: "Client", enabled: true, content: clientName },
     { id: "devisNumber", name: "Numéro du devis", enabled: true, content: metadata?.devisNumber || "Non défini" },
     { id: "devisDate", name: "Date du devis", enabled: true, content: metadata?.dateDevis || "Non définie" },
     { id: "validityOffer", name: "Validité de l'offre", enabled: true, content: "Validité de l'offre : 3 mois." },
@@ -36,18 +42,89 @@ export const PrintableFieldsForm: React.FC = () => {
     { id: "summary", name: "Récapitulatif", enabled: true },
   ]);
 
-  const { data: companies = [], isLoading } = useQuery({
-    queryKey: ["companies"],
-    queryFn: fetchCompanies,
-  });
+  // Récupérer les informations du client
+  useEffect(() => {
+    const fetchClientInfo = async () => {
+      if (metadata?.clientId) {
+        try {
+          const { data, error } = await supabase
+            .from('clients')
+            .select('nom, prenom')
+            .eq('id', metadata.clientId)
+            .single();
+          
+          if (error) throw error;
+          
+          if (data) {
+            const fullName = `${data.prenom || ''} ${data.nom}`.trim();
+            setClientName(fullName);
+            
+            // Mettre à jour le champ client dans printableFields
+            setPrintableFields(prev => 
+              prev.map(field => field.id === "client" 
+                ? { ...field, content: fullName } 
+                : field
+              )
+            );
+          }
+        } catch (error) {
+          console.error("Erreur lors de la récupération des informations du client:", error);
+          setClientName("Erreur de chargement");
+        }
+      } else {
+        setClientName("Aucun client sélectionné");
+      }
+    };
+
+    fetchClientInfo();
+  }, [metadata?.clientId]);
+
+  // Récupérer les informations de la société sélectionnée
+  useEffect(() => {
+    const fetchCompanyInfo = async () => {
+      // Récupérer l'ID de la société depuis la page Infos Chantier
+      // Pour l'instant, utilisons un ID fixe puisque c'est comme ça dans InfosChantier.tsx
+      const companyId = "c949dd6d-52e8-41c4-99f8-6e84bf4695b9"; // ID par défaut utilisé dans InfosChantier
+      
+      try {
+        const { data, error } = await supabase
+          .from('companies')
+          .select('name, logo_url')
+          .eq('id', companyId)
+          .single();
+        
+        if (error) throw error;
+        
+        if (data) {
+          setCompanyName(data.name);
+          setCompanyLogoUrl(data.logo_url);
+          
+          // Mettre à jour les champs de société dans printableFields
+          setPrintableFields(prev => 
+            prev.map(field => {
+              if (field.id === "companyName") {
+                return { ...field, content: data.name };
+              } 
+              if (field.id === "companyLogo") {
+                return { ...field, content: data.logo_url };
+              }
+              return field;
+            })
+          );
+        }
+      } catch (error) {
+        console.error("Erreur lors de la récupération des informations de la société:", error);
+      }
+    };
+
+    fetchCompanyInfo();
+  }, []);
 
   useEffect(() => {
     // Update fields content when metadata changes
     setPrintableFields(prev => 
       prev.map(field => {
         switch(field.id) {
-          case "client":
-            return { ...field, content: metadata?.clientId ? "Client sélectionné" : "Aucun client sélectionné" };
           case "devisNumber":
             return { ...field, content: metadata?.devisNumber || "Non défini" };
           case "devisDate":
@@ -105,9 +182,19 @@ export const PrintableFieldsForm: React.FC = () => {
                   </Label>
                 </div>
                 
-                {field.id !== "summary" && field.content && (
+                {field.id === "companyLogo" && companyLogoUrl && (
+                  <div className="ml-6 mt-1">
+                    <img 
+                      src={companyLogoUrl} 
+                      alt="Logo de l'entreprise" 
+                      className="h-12 object-contain"
+                    />
+                  </div>
+                )}
+                
+                {field.id !== "companyLogo" && field.id !== "summary" && field.content && (
                   <div className="ml-6 mt-1 text-sm text-gray-500 italic">
-                    {field.id === "companyLogo" ? "Logo de l'entreprise" : field.content}
+                    {field.content}
                   </div>
                 )}
                 
