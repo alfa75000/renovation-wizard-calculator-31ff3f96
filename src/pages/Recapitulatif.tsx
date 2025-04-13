@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Printer } from "lucide-react";
+import { ArrowLeft, Printer, FileEdit } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Layout } from "@/components/Layout";
 import { useProject } from "@/contexts/ProjectContext";
@@ -29,10 +29,18 @@ const Recapitulatif: React.FC = () => {
           </Link>
         </Button>
 
-        <Button className="flex items-center gap-2">
-          <Printer className="h-4 w-4" />
-          Imprimer le devis
-        </Button>
+        <div className="flex gap-2">
+          <Button asChild variant="outline" className="flex items-center gap-2">
+            <Link to="/edition-devis">
+              <FileEdit className="h-4 w-4" />
+              Éditer le devis
+            </Link>
+          </Button>
+          <Button className="flex items-center gap-2">
+            <Printer className="h-4 w-4" />
+            Imprimer le devis
+          </Button>
+        </div>
       </div>
 
       {/* Informations générales du bien */}

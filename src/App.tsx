@@ -13,6 +13,7 @@ import { AutresSurfacesProvider } from '@/contexts/AutresSurfacesContext';
 import Index from '@/pages/Index';
 import Travaux from '@/pages/Travaux';
 import Recapitulatif from '@/pages/Recapitulatif';
+import EditionDevis from '@/pages/EditionDevis';
 import AdminTravaux from '@/pages/AdminTravaux';
 import Parametres from '@/pages/Parametres';
 import InfosChantier from '@/pages/InfosChantier';
@@ -70,6 +71,7 @@ export default function App() {
                       <Route path="/" element={<Index />} />
                       <Route path="/travaux" element={<Travaux />} />
                       <Route path="/recapitulatif" element={<Recapitulatif />} />
+                      <Route path="/edition-devis" element={<EditionDevis />} />
                       <Route path="/admin/travaux" element={<AdminTravaux />} />
                       <Route path="/parametres" element={<Parametres />} />
                       <Route path="/infos-chantier" element={<InfosChantier />} />

@@ -9,6 +9,7 @@ export const Navigation: React.FC = () => {
         <NavLink to="/">Saisie</NavLink>
         <NavLink to="/travaux">Travaux</NavLink>
         <NavLink to="/recapitulatif">Récapitulatif</NavLink>
+        <NavLink to="/edition-devis">Edition du devis</NavLink>
         <NavLink to="/infos-chantier">Infos Chantier / Client</NavLink>
         <NavLink to="/parametres">Paramètres</NavLink>
       </nav>
