@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -49,7 +48,6 @@ const UpdateServiceModal: React.FC<UpdateServiceModalProps> = ({
     }));
   };
 
-  // Fonction de mise à jour
   const handleUpdate = async () => {
     console.log("--- DEBUG: handleUpdate exécuté ---");
     console.log("--- DEBUG: Type d'opération:", updateType);
@@ -57,12 +55,9 @@ const UpdateServiceModal: React.FC<UpdateServiceModalProps> = ({
     
     setIsLoading(true);
     try {
-      // S'assurer que les types sont conformes aux enums
       const serviceData: Partial<Service> = {
         ...editedService,
-        // Vérifier que unit est bien de type UniteType
         ...(editedService.unit && { unit: editedService.unit as UniteType }),
-        // Vérifier que surface_impactee est bien de type SurfaceImpactee
         ...(editedService.surface_impactee && { surface_impactee: editedService.surface_impactee as SurfaceImpactee })
       };
       
@@ -155,7 +150,6 @@ const UpdateServiceModal: React.FC<UpdateServiceModalProps> = ({
     );
   };
 
-  // Options pour les sélecteurs
   const uniteOptions = [
     { value: 'M²', label: 'M²' },
     { value: 'Unité', label: 'Unité' },
@@ -188,18 +182,18 @@ const UpdateServiceModal: React.FC<UpdateServiceModalProps> = ({
 
           <div className="space-y-4">
             {!currentService.last_update_date && (
-              <div className="p-3 bg-amber-50 border border-amber-200 rounded-md flex items-start gap-2">
-                <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-amber-800">
-                  Cette prestation n'a jamais été mise à jour. Assurez-vous que les modifications sont correctes.
+              <div className="p-3 bg-orange-50 border border-orange-200 rounded-md flex items-start gap-2">
+                <AlertTriangle className="h-5 w-5 text-orange-500 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-orange-800">
+                  Valeurs par défaut
                 </p>
               </div>
             )}
             
             {currentService.last_update_date && (
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded-md flex items-start gap-2">
-                <Info className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-blue-800">
+              <div className="p-3 bg-green-50 border border-green-200 rounded-md flex items-start gap-2">
+                <Info className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-green-800">
                   Dernière mise à jour: <Badge variant="outline">{currentService.last_update_date}</Badge>
                 </p>
               </div>
