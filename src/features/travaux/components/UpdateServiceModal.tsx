@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Service, UniteType, SurfaceImpactee } from "@/types/supabase";
@@ -49,7 +49,7 @@ const UpdateServiceModal: React.FC<UpdateServiceModalProps> = ({
     }));
   };
 
-  // Fonction de mise à jour définie en dehors du JSX
+  // Fonction de mise à jour
   const handleUpdate = async () => {
     console.log("--- DEBUG: handleUpdate exécuté ---");
     console.log("--- DEBUG: Type d'opération:", updateType);
@@ -57,7 +57,15 @@ const UpdateServiceModal: React.FC<UpdateServiceModalProps> = ({
     
     setIsLoading(true);
     try {
-      const result = await onConfirmUpdate(updateType, editedService);
+      // S'assurer que les types sont conformes aux enums
+      const serviceData: Partial<Service> = {
+        ...editedService
+      };
+      
+      console.log("--- DEBUG: Données envoyées à onConfirmUpdate:", serviceData);
+      
+      const result = await onConfirmUpdate(updateType, serviceData);
+      
       console.log("--- DEBUG: Résultat de onConfirmUpdate:", result);
       
       if (result) {
@@ -143,6 +151,7 @@ const UpdateServiceModal: React.FC<UpdateServiceModalProps> = ({
     );
   };
 
+  // Options pour les sélecteurs
   const uniteOptions = [
     { value: 'M²', label: 'M²' },
     { value: 'Unité', label: 'Unité' },
