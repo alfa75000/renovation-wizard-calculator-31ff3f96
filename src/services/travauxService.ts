@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { WorkType, ServiceGroup, Service, UniteType, SurfaceImpactee } from '@/types/supabase';
 import { toast } from 'sonner';
@@ -417,8 +418,18 @@ export const updateService = async (
     console.log("Mise à jour du service avec ID:", id);
     console.log("Données envoyées:", updatedService);
     
-    // Au lieu d'utiliser l'API directe de Supabase, utilisons la même approche RPC que pour la création
-    // Cela nous permettra de traiter les types enum de la même manière
+    // Utiliser la fonction RPC update_service pour la mise à jour du service
+    console.log("Appel de la fonction RPC update_service avec les paramètres:", {
+      p_id: id,
+      p_name: updatedService.name,
+      p_description: updatedService.description || '',
+      p_labor_price: updatedService.labor_price,
+      p_supply_price: updatedService.supply_price,
+      p_unit: updatedService.unit,
+      p_surface_impactee: updatedService.surface_impactee,
+      p_last_update_date: updatedService.last_update_date
+    });
+    
     const { data, error } = await supabase
       .rpc('update_service', {
         p_id: id,
@@ -433,9 +444,14 @@ export const updateService = async (
     
     if (error) {
       console.error('Erreur lors de la mise à jour du service:', error);
+      console.error('Code d\'erreur:', error.code);
+      console.error('Message d\'erreur:', error.message);
+      console.error('Détails:', error.details);
       toast.error(`Erreur lors de la mise à jour du service: ${error.message || 'Erreur inconnue'}`);
       return null;
     }
+    
+    console.log("Résultat de la fonction RPC update_service:", data);
     
     // Récupérer le service mis à jour
     const updatedServiceData = await fetchServiceById(id);
@@ -446,10 +462,12 @@ export const updateService = async (
     }
     
     console.log("Service mis à jour avec succès:", updatedServiceData);
+    toast.success('Service mis à jour avec succès');
     return updatedServiceData;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
     console.error('Exception lors de la mise à jour du service:', error);
+    console.error('Stack trace:', error instanceof Error ? error.stack : 'Non disponible');
     toast.error(`Erreur lors de la mise à jour du service: ${errorMessage}`);
     return null;
   }

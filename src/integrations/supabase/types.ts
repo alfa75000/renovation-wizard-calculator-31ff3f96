@@ -869,6 +869,19 @@ export type Database = {
         Args: { table_name: string }
         Returns: Json
       }
+      update_service: {
+        Args: {
+          p_id: string
+          p_name: string
+          p_description: string
+          p_labor_price: number
+          p_supply_price: number
+          p_unit: string
+          p_surface_impactee: string
+          p_last_update_date: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       adjustment_enum: "Ajouter" | "Déduire"
