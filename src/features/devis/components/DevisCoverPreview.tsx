@@ -62,20 +62,90 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
     printWindow.document.write(`
       <html>
         <head>
-          <title>Aperçu Devis - Page de Garde</title>
+          <title>Devis - Page de Garde</title>
           <style>
-            body { font-family: Arial, sans-serif; margin: 40px; }
-            .cover-page { max-width: 210mm; margin: 0 auto; }
-            .company-header { text-align: center; margin-bottom: 30px; }
-            .company-logo { max-height: 100px; max-width: 250px; margin-bottom: 10px; }
-            .company-info { margin-bottom: 30px; }
-            .company-name { font-size: 24px; font-weight: bold; margin-bottom: 5px; }
-            .devis-number { font-size: 18px; font-weight: bold; margin: 20px 0; }
-            .section { margin-bottom: 20px; }
-            .section-title { font-weight: bold; margin-bottom: 5px; }
-            .section-content { margin-left: 20px; }
-            .validity { font-style: italic; margin: 15px 0; }
-            .contact-info { display: flex; justify-content: space-between; }
+            body { 
+              font-family: Arial, sans-serif; 
+              margin: 40px; 
+              color: #000;
+              line-height: 1.5;
+            }
+            .cover-page { 
+              max-width: 210mm; 
+              margin: 0 auto; 
+              position: relative;
+            }
+            .header {
+              display: flex;
+              justify-content: space-between;
+              margin-bottom: 40px;
+            }
+            .company-logo { 
+              max-height: 80px; 
+              max-width: 180px; 
+              border: 1px solid #ccc;
+              padding: 5px;
+            }
+            .company-header {
+              margin-bottom: 15px;
+            }
+            .assurance {
+              text-align: right;
+              font-size: 12px;
+              color: #005;
+            }
+            .company-info {
+              font-size: 12px;
+              margin-bottom: 40px;
+            }
+            .contact-info {
+              margin-bottom: 5px;
+            }
+            .devis-info {
+              margin: 30px 0;
+              border-bottom: 1px solid #ccc;
+              padding-bottom: 5px;
+            }
+            .devis-number { 
+              display: inline-block;
+              border: 1px solid #000;
+              padding: 3px 8px;
+              font-weight: bold;
+            }
+            .client-section {
+              margin: 30px 0;
+            }
+            .client-box {
+              border: 1px solid #000;
+              padding: 15px;
+              width: 60%;
+              min-height: 100px;
+            }
+            .section-title {
+              font-weight: bold;
+              margin-bottom: 10px;
+              color: #005;
+              border-bottom: 1px solid #005;
+              display: inline-block;
+            }
+            .project-box {
+              border: 1px solid #000;
+              padding: 15px;
+              margin-top: 10px;
+              min-height: 120px;
+            }
+            .project-item {
+              margin-bottom: 8px;
+            }
+            .footer {
+              font-size: 9px;
+              position: absolute;
+              bottom: 20px;
+              width: 100%;
+              text-align: center;
+              border-top: 1px solid #ccc;
+              padding-top: 10px;
+            }
             @media print {
               body { margin: 0; }
               .no-print { display: none; }
@@ -98,7 +168,7 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex justify-between items-center">
             <span>Aperçu de la page de garde</span>
@@ -109,93 +179,116 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
         </DialogHeader>
         
         <div id="devis-cover-content" className="p-6 border rounded-md my-4 bg-white">
-          {/* En-tête avec logo et informations de la société */}
-          <div className="company-header text-center mb-6">
-            {logoContent && (
-              <img src={logoContent} alt="Logo" className="max-h-24 mx-auto mb-2" />
-            )}
-            <h2 className="text-xl font-bold">{company?.name}</h2>
-            {company?.slogan && <p className="text-sm italic">{company.slogan}</p>}
+          {/* En-tête avec logo et informations société */}
+          <div className="header flex justify-between items-start">
+            <div className="company-header">
+              {logoContent && (
+                <div className="border border-gray-300 p-1 inline-block">
+                  <img 
+                    src={logoContent} 
+                    alt="Logo" 
+                    className="company-logo max-h-20"
+                    onError={(e) => {
+                      console.error("Erreur de chargement du logo:", e);
+                      e.currentTarget.src = "public/placeholder.svg";
+                    }}
+                  />
+                </div>
+              )}
+              {company?.slogan && <p className="text-sm mt-2">{company.slogan}</p>}
+            </div>
+            
+            <div className="assurance text-right text-blue-900 text-sm">
+              <p className="font-semibold">Assurance MAAF XXXX</p>
+              <p className="text-xs">Responsabilité civile décennale</p>
+              <p className="text-xs">Responsabilité civile professionnelle</p>
+            </div>
           </div>
           
-          {/* Informations de la société */}
-          <div className="company-info mb-8 text-sm">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p>{company?.address}</p>
-                <p>{company?.postal_code} {company?.city}</p>
-                {company?.tel1 && <p>Tél: {company.tel1}</p>}
-                {company?.tel2 && <p>Mobile: {company.tel2}</p>}
-                {company?.email && <p>Email: {company.email}</p>}
-              </div>
-              <div className="text-right">
-                {company?.siret && <p>SIRET: {company.siret}</p>}
-                {company?.tva_intracom && <p>TVA: {company.tva_intracom}</p>}
-                {company?.code_ape && <p>Code APE: {company.code_ape}</p>}
-                {company?.capital_social && <p>Capital: {company.capital_social}</p>}
+          {/* Coordonnées société */}
+          <div className="company-info text-sm">
+            <p className="font-semibold">Société {company?.name}</p>
+            <p>Siège: {company?.address}, {company?.postal_code} {company?.city}</p>
+            
+            <div className="flex mt-2">
+              <div className="w-1/2">
+                <p className="contact-info"><span className="font-semibold">Tél:</span> {company?.tel1}</p>
+                {company?.tel2 && <p className="contact-info">Mob: {company?.tel2}</p>}
+                <p className="contact-info"><span className="font-semibold">Mail:</span> {company?.email}</p>
               </div>
             </div>
           </div>
           
           {/* Numéro et date du devis */}
-          {(devisNumber || devisDate) && (
-            <div className="devis-number text-center my-8">
-              <h3 className="text-lg font-bold">
-                {devisNumber && `Devis n°: ${devisNumber}`} 
-                {devisDate && ` du ${devisDate}`}
-              </h3>
+          <div className="devis-info">
+            <div className="flex items-center gap-8">
+              {devisNumber && (
+                <div className="devis-number bg-gray-100">
+                  Devis n° {devisNumber}
+                </div>
+              )}
+              {devisDate && (
+                <div className="devis-date">
+                  Du {devisDate}
+                </div>
+              )}
             </div>
-          )}
-          
-          {/* Validité de l'offre */}
-          {validityOffer && (
-            <div className="validity text-center my-6 italic">
-              {validityOffer}
-            </div>
-          )}
-          
-          {/* Informations client et projet */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-8">
-            {/* Client */}
-            {client && (
-              <div className="section">
-                <h4 className="section-title font-semibold mb-2">Client:</h4>
-                <div className="section-content ml-4">{client}</div>
-              </div>
-            )}
             
-            {/* Description du projet */}
-            {projectDescription && (
-              <div className="section">
-                <h4 className="section-title font-semibold mb-2">Description du projet:</h4>
-                <div className="section-content ml-4">{projectDescription}</div>
-              </div>
-            )}
-            
-            {/* Adresse du chantier */}
-            {projectAddress && (
-              <div className="section">
-                <h4 className="section-title font-semibold mb-2">Adresse du chantier:</h4>
-                <div className="section-content ml-4">{projectAddress}</div>
-              </div>
-            )}
-            
-            {/* Occupant */}
-            {occupant && (
-              <div className="section">
-                <h4 className="section-title font-semibold mb-2">Occupant:</h4>
-                <div className="section-content ml-4">{occupant}</div>
+            {validityOffer && (
+              <div className="validity mt-3 text-sm italic">
+                {validityOffer}
               </div>
             )}
           </div>
           
-          {/* Informations complémentaires */}
-          {additionalInfo && (
-            <div className="section mt-8 border-t pt-4">
-              <h4 className="section-title font-semibold mb-2">Informations complémentaires:</h4>
-              <div className="section-content ml-4">{additionalInfo}</div>
+          {/* Section client */}
+          <div className="client-section">
+            <div className="section-title">Client / Maître d'ouvrage</div>
+            <div className="client-box">
+              {client && (
+                <div>
+                  {client}
+                </div>
+              )}
             </div>
-          )}
+          </div>
+          
+          {/* Section chantier */}
+          <div className="project-section">
+            <div className="section-title">Chantier / Travaux</div>
+            <div className="project-box">
+              {projectDescription && (
+                <div className="project-item">
+                  {projectDescription}
+                </div>
+              )}
+              
+              {projectAddress && (
+                <div className="project-item mt-4">
+                  <strong>Adresse du chantier:</strong> {projectAddress}
+                </div>
+              )}
+              
+              {occupant && (
+                <div className="project-item">
+                  <strong>Occupant:</strong> {occupant}
+                </div>
+              )}
+              
+              {additionalInfo && (
+                <div className="project-item mt-4">
+                  <strong>Informations complémentaires:</strong> {additionalInfo}
+                </div>
+              )}
+            </div>
+          </div>
+          
+          {/* Pied de page */}
+          <div className="footer mt-16 text-xs text-gray-500 border-t pt-2">
+            <p>
+              {company?.name} - SARL au Capital de {company?.capital_social || "XXX"} € - {company?.address}, {company?.postal_code} {company?.city} - Siret: {company?.siret} - Code APE: {company?.code_ape} - N° TVA intracommunautaire: {company?.tva_intracom}
+            </p>
+          </div>
         </div>
         
         <DialogFooter className="flex justify-between gap-2">
