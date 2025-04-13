@@ -1,307 +1,316 @@
 
-import React, { useState, useEffect } from 'react';
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, RefreshCw } from "lucide-react";
-import { toast } from 'sonner';
-import { Service, Travail } from '@/types';
-import TypeTravauxSelect from './TypeTravauxSelect';
-import ServiceGroupSelect from './ServiceGroupSelect';
-import SousTypeSelect from './SousTypeSelect';
-import UpdateServiceModal from './UpdateServiceModal';
-import { Input } from "@/components/ui/input";
+import TypeTravauxSelect from "./TypeTravauxSelect";
+import ServiceGroupSelect from "./ServiceGroupSelect";
+import SousTypeSelect from "./SousTypeSelect";
+import { Room, Travail, SurfaceImpactee } from "@/types";
+import { Service, UniteType } from "@/types/supabase";
+import DescriptionSection from "./DescriptionSection";
+import QuantitySection from "./QuantitySection";
+import PriceSection from "./PriceSection";
+import { Label } from "@/components/ui/label";
+import { RefreshCw } from "lucide-react";
+import UpdateServiceModal from "./UpdateServiceModal";
+import { updateService, cloneServiceWithChanges } from "@/services/travauxService";
+import { toast } from "sonner";
 
 interface TravailFormProps {
-  piece: { id: string; name: string; surface: number } | null;
-  onAddTravail: (travailData: Omit<Travail, 'id'>) => void;
-  travailAModifier?: Travail | null;
+  piece: Room | null;
+  onAddTravail: (travail: Omit<Travail, "id">) => void;
+  travailAModifier: Travail | null;
 }
 
-const DescriptionSection: React.FC<{ service: Service; onChange: (updatedService: Service) => void }> = ({ service }) => (
-  <div>
-    <Label>Description</Label>
-    <Textarea 
-      value={service.description || ''} 
-      readOnly
-      className="bg-gray-100 text-gray-700"
-    />
-  </div>
-);
-
-const QuantitySection: React.FC<{ 
-  service: Service; 
-  onChange: (updatedService: Service) => void; 
-  quantity: number; 
-  onQuantityChange: (quantity: number) => void; 
-}> = ({ service, quantity, onQuantityChange }) => (
-  <div>
-    <Label>Quantité ({service.unit})</Label>
-    <Input
-      type="number"
-      value={quantity}
-      onChange={(e) => onQuantityChange(parseFloat(e.target.value))}
-      className="w-24"
-    />
-  </div>
-);
-
-const PriceSection: React.FC<{ service: Service; onChange: (updatedService: Service) => void }> = ({ service }) => (
-  <div>
-    <Label>Prix total</Label>
-    <Input
-      type="number"
-      value={(service.labor_price + service.supply_price).toFixed(2)}
-      readOnly
-      className="bg-gray-100 text-gray-700"
-    />
-  </div>
-);
-
-const TvaSelect: React.FC<{ value: number; onChange: (tva: number) => void }> = ({ value, onChange }) => (
-  <select 
-    value={value}
-    onChange={(e) => onChange(parseFloat(e.target.value))}
-    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-  >
-    <option value={5.5}>5.5% - Travaux de rénovation énergétique</option>
-    <option value={10}>10% - Travaux de rénovation</option>
-    <option value={20}>20% - Taux normal</option>
-  </select>
-);
-
-const TravailForm: React.FC<TravailFormProps> = ({ 
-  piece, 
-  onAddTravail, 
-  travailAModifier = null 
+const TravailForm: React.FC<TravailFormProps> = ({
+  piece,
+  onAddTravail,
+  travailAModifier,
 }) => {
-  const [selectedType, setSelectedType] = useState<{ id: string; label: string } | null>(null);
-  const [selectedGroup, setSelectedGroup] = useState<{ id: string; label: string } | null>(null);
+  const [typeTravauxId, setTypeTravauxId] = useState<string>(travailAModifier?.typeTravauxId || "");
+  const [typeTravauxLabel, setTypeTravauxLabel] = useState<string>(travailAModifier?.typeTravauxLabel || "");
+  const [groupId, setGroupId] = useState<string>("");
+  const [groupLabel, setGroupLabel] = useState<string>("");
+  const [sousTypeId, setSousTypeId] = useState<string>(travailAModifier?.sousTypeId || "");
+  const [sousTypeLabel, setSousTypeLabel] = useState<string>(travailAModifier?.sousTypeLabel || "");
   const [selectedService, setSelectedService] = useState<Service | null>(null);
-  const [quantity, setQuantity] = useState<number>(1);
-  const [tauxTva, setTauxTva] = useState<number>(10);
-  const [commentaire, setCommentaire] = useState<string>('');
-  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [description, setDescription] = useState<string>(travailAModifier?.description || "");
+  const [personnalisation, setPersonnalisation] = useState<string>(travailAModifier?.personnalisation || "");
+  const [quantite, setQuantite] = useState<number>(travailAModifier?.quantite || 0);
+  const [unite, setUnite] = useState<UniteType>("M²");
+  const [prixFournitures, setPrixFournitures] = useState<number>(
+    travailAModifier?.prixFournitures || 0
+  );
+  const [prixMainOeuvre, setPrixMainOeuvre] = useState<number>(
+    travailAModifier?.prixMainOeuvre || 0
+  );
+  const [tauxTVA, setTauxTVA] = useState<number>(travailAModifier?.tauxTVA || 10);
+  const [surfaceImpactee, setSurfaceImpactee] = useState<SurfaceImpactee>('Mur');
+  
+  const [isCustomUnite, setIsCustomUnite] = useState<boolean>(true);
+  const [isCustomSurface, setIsCustomSurface] = useState<boolean>(true);
+  
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState<boolean>(false);
 
-  const handleTypeChange = (id: string, label: string) => {
-    setSelectedType({ id, label });
-    setSelectedGroup(null);
-    setSelectedService(null);
-  };
-
-  const handleGroupChange = (id: string, label: string) => {
-    setSelectedGroup({ id, label });
-    setSelectedService(null);
-  };
-
-  const handleSousTypeChange = (id: string, label: string, service: Service) => {
-    setSelectedService(service);
-  };
-
-  // Détection des modifications apportées au service sélectionné
-  const [hasServiceChanges, setHasServiceChanges] = useState(false);
-  const [initialService, setInitialService] = useState<Service | null>(null);
-
-  // Ajout de la logique pour détecter les changements dans le service
   useEffect(() => {
-    if (selectedService && initialService && 
-      (selectedService.name !== initialService.name || 
-       selectedService.description !== initialService.description ||
-       selectedService.labor_price !== initialService.labor_price ||
-       selectedService.supply_price !== initialService.supply_price ||
-       selectedService.unit !== initialService.unit ||
-       selectedService.surface_impactee !== initialService.surface_impactee)) {
-      setHasServiceChanges(true);
-    } else {
-      setHasServiceChanges(false);
-    }
-  }, [selectedService, initialService]);
+    setGroupId("");
+    setGroupLabel("");
+    setSousTypeId("");
+    setSousTypeLabel("");
+    setSelectedService(null);
+  }, [typeTravauxId]);
 
-  // Sauvegarde du service initial pour comparaison
   useEffect(() => {
-    if (selectedService && !initialService) {
-      setInitialService({...selectedService});
+    setSousTypeId("");
+    setSousTypeLabel("");
+    setSelectedService(null);
+  }, [groupId]);
+
+  useEffect(() => {
+    if (selectedService) {
+      setPrixFournitures(selectedService.supply_price || 0);
+      setPrixMainOeuvre(selectedService.labor_price || 0);
+      
+      const serviceUnit = selectedService.unit || "Unité";
+      setUnite(serviceUnit as UniteType);
+      
+      setIsCustomUnite(!selectedService.unit);
+      
+      setDescription(selectedService.description || "");
+      
+      setSurfaceImpactee(selectedService.surface_impactee || 'Aucune');
+      
+      setIsCustomSurface(!selectedService.surface_impactee);
+      
+      if (piece) {
+        let quantiteInitiale = 0;
+        
+        switch (selectedService.surface_impactee) {
+          case 'Mur':
+            quantiteInitiale = piece.surfaceNetteMurs || piece.wallSurfaceRaw || 0;
+            break;
+          case 'Plafond':
+            quantiteInitiale = piece.surfaceNettePlafond || piece.surfaceBrutePlafond || 0;
+            break;
+          case 'Sol':
+            quantiteInitiale = piece.surfaceNetteSol || piece.surfaceBruteSol || 0;
+            break;
+          default:
+            quantiteInitiale = 1;
+        }
+        
+        setQuantite(parseFloat(quantiteInitiale.toFixed(2)));
+      }
     }
-  }, [selectedService, initialService]);
+  }, [selectedService, piece]);
+
+  useEffect(() => {
+    if (piece && selectedService) {
+      let quantiteAjustee = 0;
+      
+      switch (surfaceImpactee) {
+        case 'Mur':
+          quantiteAjustee = piece.surfaceNetteMurs || piece.wallSurfaceRaw || 0;
+          break;
+        case 'Plafond':
+          quantiteAjustee = piece.surfaceNettePlafond || piece.surfaceBrutePlafond || 0;
+          break;
+        case 'Sol':
+          quantiteAjustee = piece.surfaceNetteSol || piece.surfaceBruteSol || 0;
+          break;
+        default:
+          return;
+      }
+      
+      setQuantite(parseFloat(quantiteAjustee.toFixed(2)));
+    }
+  }, [surfaceImpactee, piece]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedType || !selectedGroup || !selectedService) {
-      toast.error("Veuillez sélectionner un type, un groupe et une prestation");
+    if (!typeTravauxId || !sousTypeId || !piece) {
+      console.error("Données manquantes pour ajouter un travail");
       return;
     }
-
-    // Si des modifications ont été apportées au service, proposer la mise à jour
-    if (hasServiceChanges) {
-      const confirmUpdate = window.confirm(
-        "Des modifications ont été apportées à la prestation. Souhaitez-vous mettre à jour la base de données avec ces changements?"
-      );
-      
-      if (confirmUpdate) {
-        setShowUpdateModal(true);
-        return; // Ne pas soumettre le travail tout de suite
-      }
-    }
     
-    submitTravail();
-  };
-
-  const submitTravail = () => {
-    if (!selectedService || !piece) return;
-
-    const travailData: Omit<Travail, 'id'> = {
+    onAddTravail({
       pieceId: piece.id,
-      typeTravauxId: selectedType!.id,
-      typeTravauxLabel: selectedType!.label,
-      sousTypeId: selectedService.id,
-      sousTypeLabel: selectedService.name,
-      description: selectedService.description || '',
-      quantite: quantity,
-      unite: selectedService.unit || 'unité',
-      prixFournitures: selectedService.supply_price,
-      prixMainOeuvre: selectedService.labor_price,
-      tauxTVA: tauxTva,
-      commentaire: commentaire,
-      surfaceImpactee: selectedService.surface_impactee
-    };
-
-    onAddTravail(travailData);
-    toast.success("Le travail a été ajouté avec succès.");
+      typeTravauxId,
+      typeTravauxLabel,
+      sousTypeId,
+      sousTypeLabel,
+      description,
+      personnalisation,
+      quantite,
+      unite,
+      prixFournitures,
+      prixMainOeuvre,
+      tauxTVA,
+      commentaire: "",
+      surfaceImpactee,
+    });
   };
 
-  const handleServiceUpdate = async (updateType: 'update' | 'create', serviceData: Partial<Service>) => {
-    return new Promise<Service | null>((resolve) => {
-      console.log("Mise à jour du service:", updateType, serviceData);
-      
-      setTimeout(() => {
-        toast.success(`Service ${updateType === 'update' ? 'mis à jour' : 'créé'} avec succès (Mock)`);
-        setShowUpdateModal(false);
-        resolve({
-          ...selectedService!,
-          ...serviceData,
-        });
-      }, 1000);
+  const handleOpenUpdateModal = () => {
+    if (!selectedService) {
+      toast.error("Veuillez d'abord sélectionner une prestation");
+      return;
+    }
+    setIsUpdateModalOpen(true);
+  };
+
+  const handleServiceUpdate = async (updateType: 'update' | 'create', serviceData: Partial<Service>): Promise<Service | null> => {
+    if (!selectedService) return null;
+    
+    console.log("--- DEBUG: handleServiceUpdate appelé avec:", {
+      updateType,
+      serviceData,
+      selectedServiceId: selectedService.id
     });
+    
+    try {
+      let updatedService: Service | null = null;
+      
+      if (updateType === 'update') {
+        console.log("--- DEBUG: Tentative de mise à jour du service existant");
+        updatedService = await updateService(selectedService.id, serviceData);
+        if (updatedService) {
+          console.log("Service mis à jour avec succès:", updatedService);
+          toast.success("La prestation a été mise à jour avec succès");
+          setSelectedService(updatedService);
+        }
+      } else {
+        console.log("--- DEBUG: Tentative de création d'un nouveau service");
+        updatedService = await cloneServiceWithChanges(selectedService.id, serviceData);
+        console.log("--- DEBUG: Résultat de cloneServiceWithChanges:", updatedService);
+        
+        if (updatedService) {
+          console.log("Nouvelle prestation créée avec succès:", updatedService);
+          toast.success("Nouvelle prestation créée avec succès");
+          setSousTypeId(updatedService.id);
+          setSousTypeLabel(updatedService.name);
+          setSelectedService(updatedService);
+        } else {
+          console.error("Échec de la création de la prestation");
+        }
+      }
+      
+      return updatedService;
+    } catch (error) {
+      console.error("Erreur lors de la mise à jour du service:", error);
+      toast.error("Une erreur est survenue lors de la mise à jour");
+      return null;
+    }
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {/* Section Type de Travaux */}
       <div>
-        <Label>Type de travaux</Label>
-        <TypeTravauxSelect 
-          value={selectedType?.id || ''}
-          onChange={handleTypeChange}
+        <TypeTravauxSelect
+          value={typeTravauxId}
+          onChange={(id: string, label: string) => {
+            setTypeTravauxId(id);
+            setTypeTravauxLabel(label);
+          }}
         />
       </div>
-      
-      {/* Section Groupe de prestations */}
-      <div>
-        <Label>Groupe de prestations</Label>
-        <ServiceGroupSelect 
-          workTypeId={selectedType?.id || ''}
-          value={selectedGroup?.id || ''}
-          onChange={handleGroupChange}
-          disabled={!selectedType}
-        />
-      </div>
-      
-      {/* Section Prestation */}
-      <div>
-        <Label>Prestation</Label>
-        <SousTypeSelect 
-          groupId={selectedGroup?.id || ''}
-          value={selectedService?.id || ''}
-          onChange={handleSousTypeChange}
-          disabled={!selectedGroup}
-        />
-      </div>
-      
-      {/* Description */}
-      {selectedService && (
-        <DescriptionSection 
-          service={selectedService} 
-          onChange={(updatedService) => setSelectedService(updatedService)}
-        />
+
+      {typeTravauxId && (
+        <div>
+          <ServiceGroupSelect
+            workTypeId={typeTravauxId}
+            value={groupId}
+            onChange={(id: string, label: string) => {
+              setGroupId(id);
+              setGroupLabel(label);
+            }}
+          />
+        </div>
       )}
-      
-      {/* Quantité et Surface impactée */}
-      {selectedService && (
-        <QuantitySection 
-          service={selectedService}
-          onChange={(updatedService) => setSelectedService(updatedService)}
-          quantity={quantity}
-          onQuantityChange={setQuantity}
-        />
+
+      {groupId && (
+        <div>
+          <Label htmlFor="sousType">Prestation</Label>
+          <SousTypeSelect
+            groupId={groupId}
+            value={sousTypeId}
+            onChange={(id: string, label: string, service: Service) => {
+              setSousTypeId(id);
+              setSousTypeLabel(label);
+              setSelectedService(service);
+            }}
+          />
+        </div>
       )}
-      
-      {/* Prix */}
-      {selectedService && (
-        <PriceSection 
-          service={selectedService}
-          onChange={(updatedService) => setSelectedService(updatedService)}
-        />
+
+      {sousTypeId && (
+        <>
+          <DescriptionSection 
+            description={description}
+            setDescription={setDescription}
+            personnalisation={personnalisation}
+            setPersonnalisation={setPersonnalisation}
+          />
+          
+          <div className="mt-1 mb-3">
+            <Button 
+              type="button" 
+              variant="outline" 
+              size="sm" 
+              onClick={handleOpenUpdateModal}
+              className="flex items-center gap-1 text-xs w-full"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              Mettre à jour la base de données
+            </Button>
+          </div>
+
+          <QuantitySection
+            quantite={quantite}
+            setQuantite={setQuantite}
+            unite={unite}
+            setUnite={(value) => setUnite(value as UniteType)}
+            surfaceImpactee={surfaceImpactee}
+            setSurfaceImpactee={setSurfaceImpactee}
+            isCustomUnite={isCustomUnite}
+            isCustomSurface={isCustomSurface}
+          />
+
+          <PriceSection
+            prixFournitures={prixFournitures}
+            setPrixFournitures={setPrixFournitures}
+            prixMainOeuvre={prixMainOeuvre}
+            setPrixMainOeuvre={setPrixMainOeuvre}
+            tauxTVA={tauxTVA}
+            setTauxTVA={setTauxTVA}
+            unite={unite}
+          />
+        </>
       )}
-      
-      {/* Section TVA */}
-      <div>
-        <Label>Taux de TVA</Label>
-        <TvaSelect 
-          value={tauxTva}
-          onChange={setTauxTva}
-        />
-      </div>
-      
-      {/* Commentaires */}
-      <div>
-        <Label htmlFor="comment">Commentaires</Label>
-        <Textarea 
-          id="comment" 
-          placeholder="Commentaires sur ce travail (optionnel)"
-          value={commentaire}
-          onChange={(e) => setCommentaire(e.target.value)}
-        />
-      </div>
-      
-      {/* Note: Le champ "Personnalisation" a été supprimé comme demandé */}
-      
-      <div className="pt-4 flex justify-end space-x-2">
-        <Button 
-          type="button" 
-          variant="outline" 
-          onClick={() => setShowUpdateModal(false)}
-        >
-          Annuler
-        </Button>
-        
-        {hasServiceChanges && (
-          <Button 
-            type="button" 
-            variant="reset" 
-            onClick={() => setShowUpdateModal(true)}
-            className="flex items-center gap-2"
-          >
-            <RefreshCw className="h-4 w-4" />
-            Mettre à jour la base de données
-          </Button>
-        )}
-        
-        <Button 
+
+      <div className="pt-4">
+        <Button
           type="submit"
-          className="flex items-center gap-2"
+          disabled={!typeTravauxId || !sousTypeId || !piece}
+          className="w-full"
         >
-          <Plus className="h-4 w-4" />
-          Ajouter le travail
+          {travailAModifier ? "Modifier" : "Ajouter"} le travail
         </Button>
       </div>
 
-      {showUpdateModal && selectedService && (
+      {isUpdateModalOpen && selectedService && (
         <UpdateServiceModal
-          isOpen={showUpdateModal}
-          onClose={() => setShowUpdateModal(false)}
-          currentService={initialService || selectedService}
-          updatedService={selectedService}
+          isOpen={isUpdateModalOpen}
+          onClose={() => setIsUpdateModalOpen(false)}
+          currentService={selectedService}
+          updatedService={{
+            name: sousTypeLabel,
+            description: description,
+            labor_price: prixMainOeuvre,
+            supply_price: prixFournitures,
+            unit: unite,
+            surface_impactee: surfaceImpactee
+          }}
           onConfirmUpdate={handleServiceUpdate}
         />
       )}

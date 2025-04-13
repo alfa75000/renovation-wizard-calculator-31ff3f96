@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from "@/components/ui/badge";
@@ -88,14 +87,14 @@ const SousTypeSelect: React.FC<SousTypeSelectProps> = ({
   const renderServiceUpdateBadge = (service: Service) => {
     if (service.last_update_date) {
       return (
-        <Badge variant="outline" className="ml-2 bg-green-100 text-green-800 border-green-200">
+        <Badge variant="secondary" className="ml-2">
           Mis à jour: {service.last_update_date}
         </Badge>
       );
     }
     return (
-      <Badge variant="outline" className="ml-2 bg-orange-100 text-orange-800 border-orange-200">
-        Valeurs par défaut
+      <Badge variant="destructive" className="ml-2">
+        Aucune mise à jour récente
       </Badge>
     );
   };
