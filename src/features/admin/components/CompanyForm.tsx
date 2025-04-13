@@ -116,9 +116,24 @@ const CompanyForm: React.FC<CompanyFormProps> = ({ companyToEdit, onClose, onSub
   }, [companyToEdit, form]);
 
   const handleSubmit = (data: z.infer<typeof companySchema>) => {
+    // Ensure the name property is always a string (not undefined)
     const companyData: Company = {
       id: companyToEdit?.id || crypto.randomUUID(),
-      ...data,
+      name: data.name || "", // Ensure name is always a string
+      prenom: data.prenom || "",
+      email: data.email || "",
+      tel1: data.tel1 || "",
+      tel2: data.tel2 || "",
+      address: data.address || "",
+      city: data.city || "",
+      postal_code: data.postal_code || "",
+      type: data.type || "",
+      capital_social: data.capital_social || "",
+      siret: data.siret || "",
+      tva_intracom: data.tva_intracom || "",
+      code_ape: data.code_ape || "",
+      slogan: data.slogan || "",
+      notes: data.notes || ""
     };
     onSubmit(companyData);
   };

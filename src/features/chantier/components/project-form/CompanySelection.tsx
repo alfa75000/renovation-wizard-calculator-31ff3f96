@@ -5,13 +5,27 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useQuery } from '@tanstack/react-query';
 import { fetchCompanies, Company } from '@/services/companiesService';
 import { CompanyDetails } from '../CompanyDetails';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+// Create a client for use in this component
+const queryClient = new QueryClient();
 
 interface CompanySelectionProps {
   companyId: string;
   setCompanyId: (id: string) => void;
 }
 
-export const CompanySelection: React.FC<CompanySelectionProps> = ({ 
+// Wrap the actual component to ensure QueryClient is available
+export const CompanySelection: React.FC<CompanySelectionProps> = (props) => {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <CompanySelectionContent {...props} />
+    </QueryClientProvider>
+  );
+};
+
+// The actual component content
+const CompanySelectionContent: React.FC<CompanySelectionProps> = ({ 
   companyId, 
   setCompanyId 
 }) => {

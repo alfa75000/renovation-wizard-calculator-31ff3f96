@@ -2,6 +2,10 @@
 import React, { useState } from 'react';
 import { useProjectInfo } from '@/features/chantier/hooks/useProjectInfo';
 import { InfosChantierLayout } from '@/features/chantier/components/InfosChantierLayout';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+// Create a client for this page
+const queryClient = new QueryClient();
 
 const InfosChantier: React.FC = () => {
   // Add company ID state with default value
@@ -43,37 +47,39 @@ const InfosChantier: React.FC = () => {
   }
   
   return (
-    <InfosChantierLayout
-      clientId={clientId}
-      setClientId={setClientId}
-      companyId={companyId}
-      setCompanyId={setCompanyId}
-      nomProjet={nomProjet}
-      setNomProjet={setNomProjet}
-      descriptionProjet={descriptionProjet}
-      setDescriptionProjet={setDescriptionProjet}
-      adresseChantier={adresseChantier}
-      setAdresseChantier={setAdresseChantier}
-      occupant={occupant}
-      setOccupant={setOccupant}
-      infoComplementaire={infoComplementaire}
-      setInfoComplementaire={setInfoComplementaire}
-      dateDevis={dateDevis}
-      setDateDevis={setDateDevis}
-      devisNumber={devisNumber}
-      setDevisNumber={setDevisNumber}
-      projects={projects || []}
-      currentProjectId={currentProjectId}
-      projectState={projectState}
-      isLoading={isLoading}
-      hasUnsavedChanges={hasUnsavedChanges}
-      onGenerateProjectName={generateProjectName}
-      generateProjectNameIfNeeded={generateProjectNameIfNeeded}
-      shouldGenerateProjectName={shouldGenerateProjectName}
-      onSaveProject={handleSaveProject}
-      onDeleteProject={handleDeleteProject}
-      onSelectProject={handleChargerProjet}
-    />
+    <QueryClientProvider client={queryClient}>
+      <InfosChantierLayout
+        clientId={clientId}
+        setClientId={setClientId}
+        companyId={companyId}
+        setCompanyId={setCompanyId}
+        nomProjet={nomProjet}
+        setNomProjet={setNomProjet}
+        descriptionProjet={descriptionProjet}
+        setDescriptionProjet={setDescriptionProjet}
+        adresseChantier={adresseChantier}
+        setAdresseChantier={setAdresseChantier}
+        occupant={occupant}
+        setOccupant={setOccupant}
+        infoComplementaire={infoComplementaire}
+        setInfoComplementaire={setInfoComplementaire}
+        dateDevis={dateDevis}
+        setDateDevis={setDateDevis}
+        devisNumber={devisNumber}
+        setDevisNumber={setDevisNumber}
+        projects={projects || []}
+        currentProjectId={currentProjectId}
+        projectState={projectState}
+        isLoading={isLoading}
+        hasUnsavedChanges={hasUnsavedChanges}
+        onGenerateProjectName={generateProjectName}
+        generateProjectNameIfNeeded={generateProjectNameIfNeeded}
+        shouldGenerateProjectName={shouldGenerateProjectName}
+        onSaveProject={handleSaveProject}
+        onDeleteProject={handleDeleteProject}
+        onSelectProject={handleChargerProjet}
+      />
+    </QueryClientProvider>
   );
 };
 

@@ -3,12 +3,26 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchCompanies, Company } from '@/services/companiesService';
 import { Card, CardContent } from '@/components/ui/card';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+// Create a client for use in this component
+const queryClient = new QueryClient();
 
 interface CompanyDetailsProps {
   companyId: string;
 }
 
-export const CompanyDetails: React.FC<CompanyDetailsProps> = ({ companyId }) => {
+// Wrap the actual component to ensure QueryClient is available
+export const CompanyDetails: React.FC<CompanyDetailsProps> = (props) => {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <CompanyDetailsContent {...props} />
+    </QueryClientProvider>
+  );
+};
+
+// The actual component content
+const CompanyDetailsContent: React.FC<CompanyDetailsProps> = ({ companyId }) => {
   const { data: companies = [] } = useQuery({
     queryKey: ['companies'],
     queryFn: fetchCompanies
