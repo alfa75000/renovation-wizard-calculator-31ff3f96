@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useProjectInfo } from '@/features/chantier/hooks/useProjectInfo';
 import { InfosChantierLayout } from '@/features/chantier/components/InfosChantierLayout';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -9,9 +9,7 @@ const queryClient = new QueryClient();
 
 const InfosChantier: React.FC = () => {
   // Add company ID state with default value
-  const [companyId, setCompanyId] = useState<string>("c949dd6d-52e8-41c4-99f8-6e84bf4695b9");
-  // Add clientsData state
-  const [clientsData, setClientsData] = useState<string>("");
+  const [companyId, setCompanyId] = React.useState<string>("c949dd6d-52e8-41c4-99f8-6e84bf4695b9");
   
   const {
     projectState,
@@ -35,6 +33,8 @@ const InfosChantier: React.FC = () => {
     setDateDevis,
     devisNumber,
     setDevisNumber,
+    clientsData,
+    setClientsData,
     generateProjectName,
     generateProjectNameIfNeeded,
     shouldGenerateProjectName,

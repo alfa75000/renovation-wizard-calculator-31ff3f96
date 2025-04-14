@@ -22,6 +22,7 @@ export const useProjectMetadata = () => {
 
   // Update metadata helper
   const updateMetadata = useCallback((field: string, value: string) => {
+    console.log(`Mise à jour du champ ${field} avec la valeur:`, value);
     dispatch({
       type: 'UPDATE_METADATA',
       payload: { [field]: value }
@@ -67,8 +68,9 @@ export const useProjectMetadata = () => {
     updateMetadata('devisNumber', value);
   }, [updateMetadata]);
   
-  // Add setter for clientsData
+  // Add setter for clientsData with explicit logging
   const setClientsData = useCallback((value: string) => {
+    console.log("setClientsData appelé avec:", value);
     updateMetadata('clientsData', value);
   }, [updateMetadata]);
 

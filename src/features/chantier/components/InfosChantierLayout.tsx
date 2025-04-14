@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Layout } from '@/components/Layout';
 import { ProjectForm } from './ProjectForm';
@@ -41,8 +42,8 @@ interface InfosChantierLayoutProps {
 export const InfosChantierLayout: React.FC<InfosChantierLayoutProps> = ({
   clientId,
   setClientId,
-  companyId,  // New prop
-  setCompanyId,  // New prop
+  companyId,
+  setCompanyId,
   nomProjet,
   setNomProjet,
   descriptionProjet,
@@ -71,6 +72,9 @@ export const InfosChantierLayout: React.FC<InfosChantierLayoutProps> = ({
   onDeleteProject,
   onSelectProject
 }) => {
+  console.log("InfosChantierLayout - hasUnsavedChanges:", hasUnsavedChanges);
+  console.log("InfosChantierLayout - clientsData:", clientsData);
+  
   return (
     <Layout
       title="Infos Chantier / Client"
@@ -101,6 +105,8 @@ export const InfosChantierLayout: React.FC<InfosChantierLayoutProps> = ({
             setDateDevis={setDateDevis}
             devisNumber={devisNumber}
             setDevisNumber={setDevisNumber}
+            clientsData={clientsData}
+            setClientsData={setClientsData}
             hasUnsavedChanges={hasUnsavedChanges}
             currentProjectId={currentProjectId}
             onSaveProject={onSaveProject}

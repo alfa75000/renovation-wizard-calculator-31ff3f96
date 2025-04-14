@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import { CompanySelection } from './project-form/CompanySelection';
 import { ClientSelection } from './project-form/ClientSelection';
@@ -29,6 +30,8 @@ interface ProjectFormProps {
   setDateDevis: (date: string) => void;
   devisNumber: string;
   setDevisNumber: (number: string) => void;
+  clientsData: string;
+  setClientsData: (data: string) => void;
   hasUnsavedChanges: boolean;
   currentProjectId: string | null;
   onSaveProject: () => void;
@@ -56,6 +59,8 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
   setDateDevis,
   devisNumber,
   setDevisNumber,
+  clientsData,
+  setClientsData,
   hasUnsavedChanges,
   currentProjectId,
   onSaveProject,
@@ -70,8 +75,6 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
     devisNumber,
     descriptionProjet
   });
-
-  const [clientsData, setClientsData] = useState<string>('');
   
   const { state: clientsState, getClientTypeName } = useClients();
 
@@ -129,7 +132,13 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
       const clientAddress = `${selectedClient.adresse || ''}-${selectedClient.codePostal || ''}-${selectedClient.ville || ''}`.replace(/^-+|-+$/g, '');
       
       const newClientData = `${clientName}\n${clientAddress}\n\n`;
-      setClientsData(prev => prev + newClientData);
+      
+      // Mise à jour du state en utilisant la fonction de callback pour garantir l'accès à la dernière valeur
+      setClientsData(prev => {
+        const updatedData = prev + newClientData;
+        console.log("Mise à jour des données client:", updatedData);
+        return updatedData;
+      });
       
       toast.success("Client ajouté à la liste");
     } else {

@@ -91,6 +91,12 @@ export const useSaveLoadWarning = (state: ProjectState) => {
       if (hasChanges !== hasUnsavedChanges) {
         console.log(`[useSaveLoadWarning] Changement d'état détecté: ${hasChanges ? 'Modifications non sauvegardées' : 'Pas de modifications'}`);
         console.log(`[useSaveLoadWarning] État actuel (${currentStateSnapshot.length} chars) vs sauvegardé (${lastSavedState.length} chars)`);
+        
+        // Ajouter des logs pour aider au débogage
+        if (state.metadata?.clientsData) {
+          console.log(`[useSaveLoadWarning] clientsData actuel: "${state.metadata.clientsData}"`);
+        }
+        
         setHasUnsavedChanges(hasChanges);
       }
     }
