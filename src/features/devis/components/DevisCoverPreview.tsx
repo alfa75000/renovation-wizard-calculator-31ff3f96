@@ -1,10 +1,12 @@
+
 import React, { useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { X, Printer, Download } from "lucide-react";
 import html2pdf from 'html2pdf.js';
 
-const logoBase64 = "data:image/jpeg;base64,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";
+// Couleur bleu foncée unifiée pour toute la page
+const DARK_BLUE = "#002855"; // Bleu marine plus foncé que #003366
 
 interface PrintableField {
   id: string;
@@ -71,7 +73,7 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
     if (!printContentRef.current) return;
     
     const opt = {
-      margin: 10,
+      margin: 20, // Marges uniformes de 20mm
       filename: `devis-${devisNumber || 'preview'}.pdf`,
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: { scale: 2, useCORS: true },
@@ -120,7 +122,6 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
           margin: 0 auto;
           padding: 20px;
           position: relative;
-          border: 1px solid #003366;
           box-sizing: border-box;
         }
         
@@ -141,15 +142,15 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
         }
         
         .company-tagline {
-          font-size: 14px;
-          color: #003366;
+          font-size: 12px;
+          color: ${DARK_BLUE};
           margin-top: 5px;
         }
         
         .assurance {
           text-align: right;
-          font-size: 12px;
-          color: #003366;
+          font-size: 10px;
+          color: ${DARK_BLUE};
         }
         
         .assurance p {
@@ -160,6 +161,7 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
         .company-info {
           margin: 30px 0;
           line-height: 1.6;
+          font-size: 12px;
         }
         
         .devis-section {
@@ -168,40 +170,44 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
           align-items: flex-start;
         }
         
-        .devis-number-container {
-          display: inline-block;
-          border: 1px solid #003366;
-          padding: 8px 15px;
-          margin-right: 20px;
-        }
-        
         .devis-number {
           font-weight: bold;
           color: #000;
+          font-size: 12px;
         }
         
         .devis-date {
           padding-top: 8px;
+          font-size: 12px;
         }
         
         .validity-offer {
           margin-top: 10px;
           font-style: italic;
-          font-size: 13px;
+          font-size: 11px;
         }
         
-        .section-header {
-          background-color: #003366;
-          color: white;
-          padding: 5px 10px;
-          font-weight: normal;
-          margin: 0;
+        .section-title {
+          color: ${DARK_BLUE};
+          position: relative;
+          display: flex;
+          align-items: center;
+          font-size: 14px;
+          margin: 0 0 5px 0;
+        }
+        
+        .section-title:before, .section-title:after {
+          content: '';
+          flex: 1;
+          border-bottom: 1px solid ${DARK_BLUE};
+          margin: 0 10px;
         }
         
         .section-content {
-          border: 1px solid #003366;
+          border: 1px solid ${DARK_BLUE};
           padding: 15px;
           min-height: 100px;
+          font-size: 12px;
         }
         
         .client-section, .project-section {
@@ -213,13 +219,12 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
         }
         
         .footer {
-          font-size: 9px;
+          font-size: 8px;
           text-align: center;
           position: absolute;
           bottom: 20px;
           left: 20px;
           right: 20px;
-          padding-top: 5px;
         }
         
         button, .dialog-header, .dialog-footer {
@@ -278,21 +283,22 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
           </DialogTitle>
         </DialogHeader>
         
-        <div ref={printContentRef} className="p-6 border border-blue-900 rounded-md my-4 bg-white">
+        {/* Contenu principal - Retiré la bordure externe */}
+        <div ref={printContentRef} className="p-6 rounded-md my-4 bg-white">
           <div className="flex justify-between items-start">
             <div className="max-w-[50%]">
               {!logoError ? (
                 <div>
                   <img 
-                    src={logoBase64} 
+                    src={company?.logo_url || ""} 
                     alt="Logo" 
                     className="max-h-24 max-w-full object-contain"
                     onError={() => setLogoError(true)}
                   />
                   {company?.slogan ? (
-                    <p className="text-sm mt-2 text-blue-900">{company.slogan}</p>
+                    <p className="text-xs mt-2" style={{ color: DARK_BLUE }}>{company.slogan}</p>
                   ) : (
-                    <p className="text-sm mt-2 text-blue-900">Entreprise Générale du Bâtiment</p>
+                    <p className="text-xs mt-2" style={{ color: DARK_BLUE }}>Entreprise Générale du Bâtiment</p>
                   )}
                 </div>
               ) : (
@@ -301,22 +307,24 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
                     Logo non disponible
                   </div>
                   {company?.slogan ? (
-                    <p className="text-sm mt-2 text-blue-900">{company.slogan}</p>
+                    <p className="text-xs mt-2" style={{ color: DARK_BLUE }}>{company.slogan}</p>
                   ) : (
-                    <p className="text-sm mt-2 text-blue-900">Entreprise Générale du Bâtiment</p>
+                    <p className="text-xs mt-2" style={{ color: DARK_BLUE }}>Entreprise Générale du Bâtiment</p>
                   )}
                 </div>
               )}
             </div>
             
-            <div className="text-right text-blue-900">
-              <p className="font-bold">Assurance MAAF PRO</p>
+            {/* Information d'assurance - Taille réduite et sans gras */}
+            <div className="text-right text-xs" style={{ color: DARK_BLUE }}>
+              <p>Assurance MAAF PRO</p>
               <p>Responsabilité civile</p>
               <p>Responsabilité civile décennale</p>
             </div>
           </div>
           
-          <div className="mt-12 mb-8">
+          {/* Coordonnées société - Taille réduite */}
+          <div className="mt-12 mb-8 text-sm">
             <p className="font-medium">{company?.name}</p>
             <p>Siège: {company?.address} - {company?.postal_code} {company?.city}</p>
             
@@ -327,24 +335,28 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
             </div>
           </div>
           
-          <div className="flex items-start mt-10 mb-12">
-            <div className="border border-blue-900 p-2">
-              <p className="font-bold m-0">Devis n°: {devisNumber}</p>
-            </div>
+          {/* Numéro et date du devis - Supprimé le cadre */}
+          <div className="flex items-start mt-10 mb-12 text-sm">
+            <div className="font-bold">Devis n°: {devisNumber}</div>
             
-            <div className="ml-6 pt-2">
+            <div className="ml-6">
               <p className="m-0">Du {formatDate(devisDate)}</p>
               {validityOffer && (
-                <p className="mt-4 text-sm italic">
+                <p className="mt-4 text-xs italic">
                   {validityOffer}
                 </p>
               )}
             </div>
           </div>
           
+          {/* Section client - Titre avec tirets */}
           <div className="mb-8">
-            <h3 className="bg-blue-900 text-white p-2 m-0 font-normal">Client / Maître d'ouvrage</h3>
-            <div className="border border-blue-900 p-4 min-h-[100px]">
+            <h3 className="text-sm font-normal flex items-center mb-1">
+              <span className="mr-2 flex-grow border-t border-current" style={{ borderColor: DARK_BLUE }}></span>
+              <span style={{ color: DARK_BLUE }}>Client / Maître d'ouvrage</span>
+              <span className="ml-2 flex-grow border-t border-current" style={{ borderColor: DARK_BLUE }}></span>
+            </h3>
+            <div className="border text-xs" style={{ borderColor: DARK_BLUE, padding: "15px", minHeight: "100px" }}>
               {client && (
                 <div>
                   {client}
@@ -353,9 +365,14 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
             </div>
           </div>
           
+          {/* Section chantier - Titre avec tirets */}
           <div>
-            <h3 className="bg-blue-900 text-white p-2 m-0 font-normal">Chantier / Travaux</h3>
-            <div className="border border-blue-900 p-4 min-h-[150px]">
+            <h3 className="text-sm font-normal flex items-center mb-1">
+              <span className="mr-2 flex-grow border-t border-current" style={{ borderColor: DARK_BLUE }}></span>
+              <span style={{ color: DARK_BLUE }}>Chantier / Travaux</span>
+              <span className="ml-2 flex-grow border-t border-current" style={{ borderColor: DARK_BLUE }}></span>
+            </h3>
+            <div className="border text-xs" style={{ borderColor: DARK_BLUE, padding: "15px", minHeight: "150px" }}>
               {projectDescription && (
                 <div className="mb-4">
                   {projectDescription}
@@ -364,25 +381,29 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
               
               {projectAddress && (
                 <div className="mb-2">
-                  <strong>Adresse du chantier:</strong> {projectAddress}
+                  <strong>Adresse du chantier:</strong><br />
+                  {projectAddress}
                 </div>
               )}
               
               {occupant && (
                 <div className="mb-2">
-                  <strong>Occupant:</strong> {occupant}
+                  <strong>Occupant:</strong><br />
+                  {occupant}
                 </div>
               )}
               
               {additionalInfo && (
                 <div className="mt-4">
-                  <strong>Informations complémentaires:</strong> {additionalInfo}
+                  <strong>Informations complémentaires:</strong><br />
+                  {additionalInfo}
                 </div>
               )}
             </div>
           </div>
           
-          <div className="text-center text-xs mt-24 pt-2 border-t border-gray-300">
+          {/* Pied de page - Supprimé la bordure supérieure et réduit la taille */}
+          <div className="text-center text-[8px] mt-24">
             {company?.name} - SASU au Capital de {company?.capital_social || "10000"} € - {company?.address} {company?.postal_code} {company?.city} - Siret : {company?.siret} - Code APE : {company?.code_ape} - N° TVA Intracommunautaire : {company?.tva_intracom}
           </div>
         </div>
