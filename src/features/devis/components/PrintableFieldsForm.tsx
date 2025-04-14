@@ -47,42 +47,56 @@ export const PrintableFieldsForm: React.FC = () => {
     { id: "summary", name: "Récapitulatif", enabled: true },
   ]);
 
-  // Récupérer les informations du client
+  // Utiliser les données clients de clientsData au lieu de chercher les infos du client
   useEffect(() => {
-    const fetchClientInfo = async () => {
+    // Si nous avons des données clients dans metadata, utilisez-les
+    if (metadata?.clientsData) {
+      setClientName(metadata.clientsData);
+      
+      // Mettre à jour le champ client dans printableFields
+      setPrintableFields(prev => 
+        prev.map(field => field.id === "client" 
+          ? { ...field, content: metadata.clientsData } 
+          : field
+        )
+      );
+    } else {
+      // Si nous n'avons pas de données clients, mais que nous avons un clientId, cherchez le client
       if (metadata?.clientId) {
-        try {
-          const { data, error } = await supabase
-            .from('clients')
-            .select('nom, prenom')
-            .eq('id', metadata.clientId)
-            .single();
-          
-          if (error) throw error;
-          
-          if (data) {
-            const fullName = `${data.prenom || ''} ${data.nom}`.trim();
-            setClientName(fullName);
+        const fetchClientInfo = async () => {
+          try {
+            const { data, error } = await supabase
+              .from('clients')
+              .select('nom, prenom')
+              .eq('id', metadata.clientId)
+              .single();
             
-            // Mettre à jour le champ client dans printableFields
-            setPrintableFields(prev => 
-              prev.map(field => field.id === "client" 
-                ? { ...field, content: fullName } 
-                : field
-              )
-            );
+            if (error) throw error;
+            
+            if (data) {
+              const fullName = `${data.prenom || ''} ${data.nom}`.trim();
+              setClientName(fullName);
+              
+              // Mettre à jour le champ client dans printableFields
+              setPrintableFields(prev => 
+                prev.map(field => field.id === "client" 
+                  ? { ...field, content: fullName } 
+                  : field
+                )
+              );
+            }
+          } catch (error) {
+            console.error("Erreur lors de la récupération des informations du client:", error);
+            setClientName("Erreur de chargement");
           }
-        } catch (error) {
-          console.error("Erreur lors de la récupération des informations du client:", error);
-          setClientName("Erreur de chargement");
-        }
+        };
+        
+        fetchClientInfo();
       } else {
         setClientName("Aucun client sélectionné");
       }
-    };
-
-    fetchClientInfo();
-  }, [metadata?.clientId]);
+    }
+  }, [metadata?.clientId, metadata?.clientsData]);
 
   // Récupérer les informations de la société sélectionnée
   useEffect(() => {

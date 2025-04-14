@@ -62,6 +62,15 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
   const occupant = fields.find(f => f.id === "occupant")?.content;
   const additionalInfo = fields.find(f => f.id === "additionalInfo")?.content;
 
+  // Formater les données client pour l'affichage et le PDF
+  const formatClientData = (clientData: string | null | undefined) => {
+    if (!clientData) return "";
+    // Divise les lignes et filtre les lignes vides
+    return clientData.split('\n').filter(line => line.trim().length > 0);
+  };
+  
+  const clientLines = formatClientData(client);
+
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return "";
     
@@ -86,6 +95,14 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
       width: 120,
       height: 60
     };
+    
+    // Préparer les lignes des données client pour le PDF
+    const clientContent = clientLines.map(line => ({
+      text: line,
+      fontSize: DEFAULT_FONT_SIZE,
+      color: DARK_BLUE,
+      margin: [0, 2, 0, 0]
+    }));
     
     return {
       pageSize: 'A4',
@@ -210,9 +227,7 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
           columns: [
             { width: 55, text: '', fontSize: DEFAULT_FONT_SIZE },
             { 
-              text: client || '',
-              fontSize: DEFAULT_FONT_SIZE,
-              color: DARK_BLUE
+              stack: clientContent.length > 0 ? clientContent : [{ text: "Aucun client sélectionné", fontSize: DEFAULT_FONT_SIZE, color: DARK_BLUE }]
             }
           ],
           lineHeight: 1.3
@@ -440,7 +455,13 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
           <div className="mb-2">
             <p className="text-xs mb-1" style={{ color: DARK_BLUE }}>Client / Maître d'ouvrage</p>
             <div className="text-xs leading-relaxed pl-14" style={{ color: DARK_BLUE }}>
-              {client && client}
+              {clientLines.length > 0 ? (
+                clientLines.map((line, index) => (
+                  <div key={index} className="whitespace-pre-wrap">{line}</div>
+                ))
+              ) : (
+                <div>Aucun client sélectionné</div>
+              )}
             </div>
           </div>
           
