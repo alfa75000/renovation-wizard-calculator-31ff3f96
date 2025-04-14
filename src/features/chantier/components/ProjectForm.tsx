@@ -133,12 +133,10 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
       
       const newClientData = `${clientName}\n${clientAddress}\n\n`;
       
-      // Mise à jour du state en utilisant la fonction de callback pour garantir l'accès à la dernière valeur
-      setClientsData(prev => {
-        const updatedData = prev + newClientData;
-        console.log("Mise à jour des données client:", updatedData);
-        return updatedData;
-      });
+      // Fix: We need to directly update the state with a string, not a callback function
+      const updatedData = clientsData + newClientData;
+      console.log("Mise à jour des données client:", updatedData);
+      setClientsData(updatedData);
       
       toast.success("Client ajouté à la liste");
     } else {
