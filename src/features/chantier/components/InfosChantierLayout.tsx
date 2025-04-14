@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Layout } from '@/components/Layout';
 import { ProjectForm } from './ProjectForm';
@@ -24,6 +23,8 @@ interface InfosChantierLayoutProps {
   setDateDevis: (date: string) => void;
   devisNumber: string;
   setDevisNumber: (number: string) => void;
+  clientsData: string;
+  setClientsData: (data: string) => void;
   projects: any[];
   currentProjectId: string | null;
   projectState: any;
@@ -56,6 +57,8 @@ export const InfosChantierLayout: React.FC<InfosChantierLayoutProps> = ({
   setDateDevis,
   devisNumber,
   setDevisNumber,
+  clientsData,
+  setClientsData,
   projects,
   currentProjectId,
   projectState,

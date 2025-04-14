@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { CompanySelection } from './project-form/CompanySelection';
 import { ClientSelection } from './project-form/ClientSelection';
@@ -64,32 +63,22 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
   isLoading,
   onGenerateProjectName
 }) => {
-  // Référence pour suivre si le composant est monté
   const isMounted = useRef(true);
-  
-  // Référence pour suivre si les valeurs initiales ont déjà déclenché la génération du nom
   const initialValuesProcessed = useRef(false);
-  
-  // Référence pour stocker les valeurs précédentes
   const prevValues = useRef({
     clientId,
     devisNumber,
     descriptionProjet
   });
 
-  // État pour les données des clients
   const [clientsData, setClientsData] = useState<string>('');
   
-  // Récupérer les infos des clients
   const { state: clientsState, getClientTypeName } = useClients();
-  
-  // Effect pour générer le nom du projet seulement lors de changements significatifs
+
   useEffect(() => {
-    // Éviter de lancer la génération si c'est juste le premier rendu
     if (!initialValuesProcessed.current) {
       initialValuesProcessed.current = true;
       
-      // Générer un nom seulement si ces champs ont des valeurs mais que le nom est vide
       if ((clientId || devisNumber || descriptionProjet) && !nomProjet) {
         console.log("Premier chargement, génération du nom si nécessaire");
         onGenerateProjectName().catch(err => {
@@ -99,19 +88,16 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
       return;
     }
     
-    // Vérifier si les valeurs ont réellement changé
     const hasClientChanged = clientId !== prevValues.current.clientId;
     const hasDevisNumberChanged = devisNumber !== prevValues.current.devisNumber;
     const hasDescriptionChanged = descriptionProjet !== prevValues.current.descriptionProjet;
     
-    // Mettre à jour les valeurs précédentes
     prevValues.current = {
       clientId,
       devisNumber,
       descriptionProjet
     };
     
-    // Générer le nom seulement si l'un des champs clés a changé
     if ((hasClientChanged || hasDevisNumberChanged || hasDescriptionChanged) && isMounted.current) {
       console.log("Champ critique modifié, mise à jour du nom du projet");
       onGenerateProjectName().catch(err => {
@@ -120,14 +106,12 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
     }
   }, [clientId, devisNumber, descriptionProjet, nomProjet, onGenerateProjectName]);
   
-  // Nettoyage lors du démontage du composant
   useEffect(() => {
     return () => {
       isMounted.current = false;
     };
   }, []);
 
-  // Fonction pour ajouter le client sélectionné à la liste des clients
   const handleAddClientToList = () => {
     if (!clientId) {
       toast.error("Veuillez sélectionner un client d'abord");
@@ -137,16 +121,13 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
     const selectedClient = clientsState.clients.find(client => client.id === clientId);
     
     if (selectedClient) {
-      // Obtenir le type de client réel au lieu de l'ID
       const clientTypeLabel = selectedClient.typeClient 
         ? getClientTypeName(selectedClient.typeClient)
         : "Non spécifié";
         
-      // Formatter les données du client à ajouter
       const clientName = `${clientTypeLabel} ${selectedClient.nom} ${selectedClient.prenom || ''}`.trim();
       const clientAddress = `${selectedClient.adresse || ''}-${selectedClient.codePostal || ''}-${selectedClient.ville || ''}`.replace(/^-+|-+$/g, '');
       
-      // Ajouter les données client au texte existant
       const newClientData = `${clientName}\n${clientAddress}\n\n`;
       setClientsData(prev => prev + newClientData);
       
