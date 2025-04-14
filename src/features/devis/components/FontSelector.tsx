@@ -2,7 +2,12 @@
 import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { AVAILABLE_FONTS } from './DevisCoverPreview';
+
+// Utilisation des polices configurées dans fontConfig.ts
+interface FontOption {
+  name: string;
+  label: string;
+}
 
 interface FontSelectorProps {
   selectedFont: string;
@@ -13,6 +18,14 @@ export const FontSelector: React.FC<FontSelectorProps> = ({
   selectedFont, 
   onFontChange 
 }) => {
+  // Définition des polices disponibles, correspondant à celles configurées dans fontConfig.ts
+  const AVAILABLE_FONTS: FontOption[] = [
+    { name: 'Roboto', label: 'Roboto (par défaut)' },
+    { name: 'Times', label: 'Times New Roman' },
+    { name: 'Helvetica', label: 'Helvetica' },
+    { name: 'Courier', label: 'Courier' }
+  ];
+
   return (
     <div className="flex flex-col space-y-1">
       <Label htmlFor="font-selector">Police d'impression</Label>
