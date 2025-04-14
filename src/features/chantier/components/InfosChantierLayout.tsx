@@ -8,8 +8,8 @@ import { ProjectSummary } from './ProjectSummary';
 interface InfosChantierLayoutProps {
   clientId: string;
   setClientId: (id: string) => void;
-  companyId: string;  // New prop
-  setCompanyId: (id: string) => void;  // New prop
+  companyId: string;
+  setCompanyId: (id: string) => void;
   nomProjet: string;
   setNomProjet: (nom: string) => void;
   descriptionProjet: string;

@@ -1,4 +1,3 @@
-
 // Types liés aux projets et propriétés
 
 // Propriété principale
@@ -68,6 +67,7 @@ export interface ProjectMetadata {
   infoComplementaire: string;
   dateDevis: string;
   devisNumber: string;
+  clientsData?: string; // Ajout du nouveau champ
 }
 
 // On importe Room et Travail pour éviter les erreurs de référence circulaire

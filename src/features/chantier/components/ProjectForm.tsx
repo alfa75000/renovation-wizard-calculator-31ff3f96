@@ -1,5 +1,5 @@
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { CompanySelection } from './project-form/CompanySelection';
 import { ClientSelection } from './project-form/ClientSelection';
 import { DevisInfoForm } from './project-form/DevisInfoForm';
@@ -7,6 +7,9 @@ import { ProjectNameField } from './project-form/ProjectNameField';
 import { ProjectDescriptionField } from './project-form/ProjectDescriptionField';
 import { ProjectAddressFields } from './project-form/ProjectAddressFields';
 import { ProjectActionButtons } from './project-form/ProjectActionButtons';
+import { ClientsDataField } from './project-form/ClientsDataField';
+import { useClients } from '@/contexts/ClientsContext';
+import { toast } from 'sonner';
 
 interface ProjectFormProps {
   clientId: string;
@@ -73,6 +76,12 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
     devisNumber,
     descriptionProjet
   });
+
+  // État pour les données des clients
+  const [clientsData, setClientsData] = useState<string>('');
+  
+  // Récupérer les infos des clients
+  const { state: clientsState } = useClients();
   
   // Effect pour générer le nom du projet seulement lors de changements significatifs
   useEffect(() => {
@@ -111,12 +120,37 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
     }
   }, [clientId, devisNumber, descriptionProjet, nomProjet, onGenerateProjectName]);
   
-  // Nettoyage lors du d��montage du composant
+  // Nettoyage lors du démontage du composant
   useEffect(() => {
     return () => {
       isMounted.current = false;
     };
   }, []);
+
+  // Fonction pour ajouter le client sélectionné à la liste des clients
+  const handleAddClientToList = () => {
+    if (!clientId) {
+      toast.error("Veuillez sélectionner un client d'abord");
+      return;
+    }
+
+    const selectedClient = clientsState.clients.find(client => client.id === clientId);
+    
+    if (selectedClient) {
+      // Formatter les données du client à ajouter
+      const clientType = selectedClient.typeClient || "Non spécifié";
+      const clientName = `${clientType} ${selectedClient.nom} ${selectedClient.prenom || ''}`.trim();
+      const clientAddress = `${selectedClient.adresse || ''}-${selectedClient.codePostal || ''}-${selectedClient.ville || ''}`.replace(/^-+|-+$/g, '');
+      
+      // Ajouter les données client au texte existant
+      const newClientData = `${clientName}\n${clientAddress}\n\n`;
+      setClientsData(prev => prev + newClientData);
+      
+      toast.success("Client ajouté à la liste");
+    } else {
+      toast.error("Client non trouvé");
+    }
+  };
   
   return (
     <div className="space-y-6">
@@ -128,6 +162,12 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
       <ClientSelection
         clientId={clientId}
         setClientId={setClientId}
+        onAddClientToList={handleAddClientToList}
+      />
+      
+      <ClientsDataField 
+        clientsData={clientsData}
+        setClientsData={setClientsData}
       />
       
       <DevisInfoForm
@@ -165,4 +205,3 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
     </div>
   );
 };
-
