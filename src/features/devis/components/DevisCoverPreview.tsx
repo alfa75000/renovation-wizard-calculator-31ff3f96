@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -42,7 +41,6 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
   const printContentRef = useRef<HTMLDivElement>(null);
   const [logoError, setLogoError] = useState(false);
   
-  // Définir le chemin du logo de manière absolue
   const logoContent = "/images/lrs-logo.jpg";
   const devisNumber = fields.find(f => f.id === "devisNumber")?.content;
   const devisDate = fields.find(f => f.id === "devisDate")?.content;
@@ -57,11 +55,15 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
     console.log("Logo URL:", logoContent);
     console.log("Company data:", company);
     
-    // Précharger l'image pour vérifier si elle existe
+    console.log("Image existence check:");
     const img = new Image();
-    img.onload = () => setLogoError(false);
+    img.onload = () => {
+      console.log("Logo chargé avec succès");
+      setLogoError(false);
+    };
     img.onerror = () => {
-      console.error("Erreur de chargement du logo depuis:", logoContent);
+      console.error("ERREUR: Logo non chargé depuis:", logoContent);
+      console.error("Vérifiez le chemin et les permissions");
       setLogoError(true);
     };
     img.src = logoContent;
@@ -249,7 +251,6 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     console.error("Erreur de chargement du logo:", e);
     setLogoError(true);
-    // Utiliser un placeholder SVG par défaut
     e.currentTarget.src = "/placeholder.svg";
   };
 
