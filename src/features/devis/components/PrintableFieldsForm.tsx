@@ -1,8 +1,8 @@
+
 import React, { useState, useEffect } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { useCompany } from "@/hooks/useCompany";
 import { DevisCoverPreview } from "./DevisCoverPreview";
 import { Button } from "@/components/ui/button";
 
@@ -13,7 +13,6 @@ interface PrintableField {
   content?: string | null;
 }
 
-// Mise à jour de l'interface des props pour accepter defaultSelectedFont
 interface PrintableFieldsFormProps {
   defaultSelectedFont?: string;
 }
@@ -32,7 +31,13 @@ export const PrintableFieldsForm: React.FC<PrintableFieldsFormProps> = ({
     { id: "additionalInfo", name: "Informations complémentaires", enabled: false, content: "Informations spécifiques" },
   ]);
   const [showPreview, setShowPreview] = useState(false);
-  const { company } = useCompany();
+  const [company, setCompany] = useState({
+    name: "Votre Entreprise",
+    address: "Adresse de l'entreprise",
+    phone: "Téléphone de l'entreprise",
+    email: "Email de l'entreprise",
+    logo: "/images/lrs-logo.jpg"
+  });
 
   useEffect(() => {
     // Mise à jour des contenus des champs (simulé)
