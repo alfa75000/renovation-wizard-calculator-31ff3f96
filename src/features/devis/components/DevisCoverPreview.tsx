@@ -1,7 +1,11 @@
+
 import React, { useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { X, Printer, Download } from "lucide-react";
+
+// Import direct du logo pour s'assurer qu'il soit inclus dans le build
+import logoSrc from "/images/lrs-logo.jpg";
 
 interface PrintableField {
   id: string;
@@ -41,7 +45,8 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
   const printContentRef = useRef<HTMLDivElement>(null);
   const [logoError, setLogoError] = useState(false);
   
-  const logoContent = "/images/lrs-logo.jpg";
+  // Utiliser l'import direct
+  const logoContent = logoSrc;
   const devisNumber = fields.find(f => f.id === "devisNumber")?.content;
   const devisDate = fields.find(f => f.id === "devisDate")?.content;
   const validityOffer = fields.find(f => f.id === "validityOffer")?.content;
@@ -52,17 +57,13 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
   const additionalInfo = fields.find(f => f.id === "additionalInfo")?.content;
 
   useEffect(() => {
-    console.log("Tentative de chargement du logo:");
-    console.log("Chemin exact du logo:", logoContent);
-    console.log("Vérification de l'existence du fichier");
-    console.log("Contenu du dossier public:", {
-      files: import.meta.glob('/public/images/*')
-    });
+    console.log("Méthode de chargement du logo modifiée:");
+    console.log("Chemin du logo via import:", logoContent);
     
-    console.log("Image existence check:");
+    // Test du chargement du logo
     const img = new Image();
     img.onload = () => {
-      console.log("Logo chargé avec succès");
+      console.log("Logo chargé avec succès via import");
       console.log("Propriétés de l'image:", {
         width: img.width,
         height: img.height,
@@ -70,16 +71,13 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
       });
       setLogoError(false);
     };
-    img.onerror = () => {
-      console.error("ERREUR CRITIQUE: Logo non chargé depuis:", logoContent);
-      console.error("Vérifiez les points suivants :");
-      console.error("1. Le fichier existe-t-il réellement ?");
-      console.error("2. Le chemin est-il correct ?");
-      console.error("3. Les permissions sont-elles correctes ?");
+    img.onerror = (e) => {
+      console.error("ERREUR CRITIQUE: Logo toujours non chargé après import direct:", e);
+      console.error("Détails de l'erreur:", e);
       setLogoError(true);
     };
     img.src = logoContent;
-  }, [logoContent, company]);
+  }, [logoContent]);
 
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return "";
@@ -261,14 +259,16 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
   };
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-    console.error("Erreur de chargement du logo:", e);
+    console.error("Erreur d'affichage du logo dans le composant:", e);
     setLogoError(true);
-    e.currentTarget.src = "/placeholder.svg";
   };
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" aria-describedby="devis-preview-description">
+        <div id="devis-preview-description" className="sr-only">
+          Aperçu de la page de garde du devis
+        </div>
         <DialogHeader>
           <DialogTitle className="flex justify-between items-center">
             <span>Aperçu de la page de garde</span>
