@@ -2,10 +2,11 @@
 import React, { useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { X, Printer, Download } from "lucide-react";
+import { X, Printer, Download, FilePdf } from "lucide-react";
+import html2pdf from 'html2pdf.js';
 
 // Logo en base64 directement intégré pour éviter les problèmes de chargement
-const logoBase64 = "data:image/jpeg;base64,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";
+const logoBase64 = "data:image/jpeg;base64,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";
 
 interface PrintableField {
   id: string;
@@ -45,7 +46,6 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
   const printContentRef = useRef<HTMLDivElement>(null);
   const [logoError, setLogoError] = useState(false);
   
-  // Utiliser directement le base64
   const devisNumber = fields.find(f => f.id === "devisNumber")?.content;
   const devisDate = fields.find(f => f.id === "devisDate")?.content;
   const validityOffer = fields.find(f => f.id === "validityOffer")?.content;
@@ -69,6 +69,40 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
     }
   };
 
+  // Fonction pour l'export PDF avec html2pdf.js
+  const handleExportPDF = () => {
+    if (!printContentRef.current) return;
+    
+    // Options de configuration pour html2pdf
+    const opt = {
+      margin: 10,
+      filename: `devis-${devisNumber || 'preview'}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    
+    // Clone l'élément pour éviter de modifier l'original
+    const element = printContentRef.current.cloneNode(true) as HTMLElement;
+    
+    // Ajoute des styles spécifiques pour le PDF
+    const styleElement = document.createElement('style');
+    styleElement.textContent = `
+      body { 
+        font-family: 'Roboto', Arial, sans-serif; 
+        margin: 0; 
+        padding: 20px;
+        color: #000;
+        line-height: 1.5;
+      }
+    `;
+    element.prepend(styleElement);
+    
+    // Génère et télécharge le PDF
+    html2pdf().set(opt).from(element).save();
+  };
+
+  // Fonction pour l'impression classique
   const handlePrint = () => {
     if (!printContentRef.current) return;
     
@@ -236,7 +270,10 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" aria-describedby="devis-preview-description">
+      <DialogContent 
+        className="max-w-4xl max-h-[90vh] overflow-y-auto" 
+        aria-describedby="devis-preview-description"
+      >
         <div id="devis-preview-description" className="sr-only">
           Aperçu de la page de garde du devis
         </div>
@@ -367,9 +404,9 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
               <Printer className="h-4 w-4" />
               Imprimer
             </Button>
-            <Button onClick={handlePrint} className="flex items-center gap-2">
-              <Download className="h-4 w-4" />
-              Télécharger PDF
+            <Button onClick={handleExportPDF} className="flex items-center gap-2">
+              <FilePdf className="h-4 w-4" />
+              Exporter PDF
             </Button>
           </div>
         </DialogFooter>
@@ -377,4 +414,3 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
     </Dialog>
   );
 };
-
