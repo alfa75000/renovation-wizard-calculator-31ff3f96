@@ -1,12 +1,12 @@
 
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { X, Printer, Download } from "lucide-react";
 import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
 
-// Initialiser pdfMake avec les polices par défaut
+// Initialiser pdfMake avec les polices
 pdfMake.vfs = pdfFonts.pdfMake ? pdfFonts.pdfMake.vfs : pdfFonts.vfs;
 
 // Couleur bleu foncée unifiée pour toute la page
@@ -14,15 +14,6 @@ const DARK_BLUE = "#002855"; // Bleu marine plus foncé que #003366
 
 // Taille de police standard
 const DEFAULT_FONT_SIZE = 10;
-
-// Liste des polices disponibles (à compléter selon les polices disponibles)
-export const AVAILABLE_FONTS = [
-  { name: 'Roboto', label: 'Roboto (par défaut)' },
-  { name: 'Times', label: 'Times New Roman' },
-  { name: 'Helvetica', label: 'Helvetica' },
-  { name: 'Courier', label: 'Courier' }
-  // D'autres polices pourront être ajoutées ici
-];
 
 interface PrintableField {
   id: string;
@@ -52,14 +43,12 @@ interface DevisCoverPreviewProps {
   fields: PrintableField[];
   company: Company | null;
   onClose: () => void;
-  selectedFont?: string; // Nouvelle prop pour la police sélectionnée
 }
 
 export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({ 
   fields, 
   company, 
-  onClose,
-  selectedFont = 'Roboto' // Police par défaut si non spécifiée
+  onClose 
 }) => {
   const printContentRef = useRef<HTMLDivElement>(null);
   const [logoError, setLogoError] = useState(false);
@@ -89,13 +78,13 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
 
   // Création du PDF avec pdfMake
   const createDocDefinition = () => {
-    // Définition d'un espace réservé plus grand pour le logo (4cm x 3cm)
-    const logoSpace = {
+    // Définition d'un espace réservé vide pour le logo
+    const logoPlaceholder = {
       stack: [
-        { text: '', margin: [0, 40, 0, 0] } // Espace réservé agrandi pour le logo
+        { text: '', margin: [0, 30, 0, 0] } // Espace réservé pour le logo
       ],
-      width: 150,  // ~4cm
-      height: 112  // ~3cm
+      width: 120,
+      height: 60
     };
     
     return {
@@ -111,8 +100,8 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
               width: '60%',
               stack: [
                 company?.logo_url && !logoError
-                  ? { image: company.logo_url, width: 150, height: 112, fit: [150, 112] }
-                  : logoSpace,
+                  ? { image: company.logo_url, width: 120, height: 60, fit: [120, 60] }
+                  : logoPlaceholder,
                 { 
                   text: company?.slogan || 'Entreprise Générale du Bâtiment', 
                   fontSize: DEFAULT_FONT_SIZE, 
@@ -137,99 +126,107 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
         // Espacement
         { text: '', margin: [0, 20, 0, 0] },
         
-        // Section société - avec étiquettes
+        // Coordonnées société - espacement réduit
         {
-          text: [
-            { text: 'Société ', fontSize: DEFAULT_FONT_SIZE, color: DARK_BLUE },
+          columns: [
+            { width: 55, text: 'Société', fontSize: DEFAULT_FONT_SIZE, color: DARK_BLUE },
             { text: company?.name || '', fontSize: DEFAULT_FONT_SIZE, color: DARK_BLUE }
           ],
-          lineHeight: 1.3
+          lineHeight: 1.3 // Augmentation de l'interligne
         },
         {
-          text: [
-            { text: 'Siège: ', fontSize: DEFAULT_FONT_SIZE, color: DARK_BLUE },
+          columns: [
+            { width: 55, text: 'Siège:', fontSize: DEFAULT_FONT_SIZE, color: DARK_BLUE },
             { text: `${company?.address || ''} - ${company?.postal_code || ''} ${company?.city || ''}`, fontSize: DEFAULT_FONT_SIZE, color: DARK_BLUE }
           ],
+          margin: [0, 0, 0, 0],
           lineHeight: 1.3
         },
         
         // Espacement
         { text: '', margin: [0, 5, 0, 0] },
         
-        // Contact - avec étiquettes
+        // Contact avec interligne augmenté
         {
-          text: [
-            { text: 'Tél: ', fontSize: DEFAULT_FONT_SIZE, color: DARK_BLUE },
+          columns: [
+            { width: 55, text: 'Tél:', fontSize: DEFAULT_FONT_SIZE, color: DARK_BLUE },
             { text: company?.tel1 || '', fontSize: DEFAULT_FONT_SIZE, color: DARK_BLUE }
           ],
           lineHeight: 1.3
         },
         company?.tel2 ? {
-          text: company?.tel2,
-          fontSize: DEFAULT_FONT_SIZE,
-          color: DARK_BLUE,
+          columns: [
+            { width: 55, text: '', fontSize: DEFAULT_FONT_SIZE },
+            { text: company?.tel2, fontSize: DEFAULT_FONT_SIZE, color: DARK_BLUE }
+          ],
           margin: [0, 0, 0, 0],
           lineHeight: 1.3
-        } : null,
+        } : {},
         
         // Espace entre téléphone et mail
         { text: '', margin: [0, 3, 0, 0] },
         
-        // Mail - sans étiquette, directement l'adresse
         {
-          text: company?.email || '',
-          fontSize: DEFAULT_FONT_SIZE,
-          color: DARK_BLUE,
-          lineHeight: 1.3
-        },
-        
-        // Double espacement entre mail et devis
-        { text: '', margin: [0, 10, 0, 0] },
-        { text: '', margin: [0, 10, 0, 0] },
-        
-        // Numéro et date du devis - sans étiquette Devis n°
-        {
-          text: [
-            { text: `Devis n°: ${devisNumber || ''} Du ${formatDate(devisDate)}`, fontSize: DEFAULT_FONT_SIZE, color: DARK_BLUE },
-            { text: ` (Validité de l'offre : 3 mois.)`, fontSize: 9, italics: true, color: DARK_BLUE }
+          columns: [
+            { width: 55, text: 'Mail:', fontSize: DEFAULT_FONT_SIZE, color: DARK_BLUE },
+            { text: company?.email || '', fontSize: DEFAULT_FONT_SIZE, color: DARK_BLUE }
           ],
           lineHeight: 1.3
         },
         
-        // Double espacement avant Client / Maître d'ouvrage
-        { text: '', margin: [0, 10, 0, 0] },
-        { text: '', margin: [0, 10, 0, 0] },
+        // Espacement entre mail et devis
+        { text: '', margin: [0, 15, 0, 0] },
         
-        // Titre Client / Maître d'ouvrage - sans étiquette
+        // Numéro et date du devis - aligné avec les coordonnées société
+        {
+          columns: [
+            { 
+              width: 55, 
+              text: 'Devis n°:', 
+              fontSize: DEFAULT_FONT_SIZE, 
+              color: DARK_BLUE
+            },
+            { 
+              text: [
+                { text: `${devisNumber || ''} Du ${formatDate(devisDate)}`, fontSize: DEFAULT_FONT_SIZE, color: DARK_BLUE },
+                { text: ` (Validité de l'offre : 3 mois.)`, fontSize: 9, italics: true, color: DARK_BLUE }
+              ]
+            }
+          ],
+          lineHeight: 1.3
+        },
+        
+        // Espacement
+        { text: '', margin: [0, 15, 0, 0] },
+        
+        // Section client sans cadre - aligné avec les autres sections
         {
           text: 'Client / Maître d\'ouvrage',
           fontSize: DEFAULT_FONT_SIZE,
           color: DARK_BLUE,
           margin: [0, 0, 0, 5]
         },
-        
-        // Contenu client - indentation alignée
         {
-          text: client || '',
-          fontSize: DEFAULT_FONT_SIZE,
-          color: DARK_BLUE,
-          margin: [0, 5, 0, 0],
+          columns: [
+            { width: 55, text: '', fontSize: DEFAULT_FONT_SIZE },
+            { 
+              text: client || '',
+              fontSize: DEFAULT_FONT_SIZE,
+              color: DARK_BLUE
+            }
+          ],
           lineHeight: 1.3
         },
         
-        // 10 espaces/lignes comme demandé
-        { text: '', margin: [0, 5, 0, 0] },
-        { text: '', margin: [0, 5, 0, 0] },
-        { text: '', margin: [0, 5, 0, 0] },
-        { text: '', margin: [0, 5, 0, 0] },
-        { text: '', margin: [0, 5, 0, 0] },
-        { text: '', margin: [0, 5, 0, 0] },
-        { text: '', margin: [0, 5, 0, 0] },
-        { text: '', margin: [0, 5, 0, 0] },
-        { text: '', margin: [0, 5, 0, 0] },
-        { text: '', margin: [0, 5, 0, 0] },
+        // Espacement (6 retours à la ligne comme demandé)
+        { text: '', margin: [0, 3, 0, 0] },
+        { text: '', margin: [0, 3, 0, 0] },
+        { text: '', margin: [0, 3, 0, 0] },
+        { text: '', margin: [0, 3, 0, 0] },
+        { text: '', margin: [0, 3, 0, 0] },
+        { text: '', margin: [0, 3, 0, 0] },
         
-        // Titre Chantier / Travaux
+        // Section chantier sans cadre - aligné avec les autres sections
         {
           text: 'Chantier / Travaux',
           fontSize: DEFAULT_FONT_SIZE,
@@ -239,10 +236,14 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
         
         // Occupant en premier comme demandé - si présent
         occupant ? {
-          text: occupant,
-          fontSize: DEFAULT_FONT_SIZE,
-          color: DARK_BLUE,
-          margin: [0, 5, 0, 0],
+          columns: [
+            { width: 55, text: '', fontSize: DEFAULT_FONT_SIZE },
+            { 
+              text: occupant,
+              fontSize: DEFAULT_FONT_SIZE,
+              color: DARK_BLUE
+            }
+          ],
           lineHeight: 1.3
         } : null,
         
@@ -251,33 +252,32 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
         
         // Adresse du chantier - si présente
         projectAddress ? {
-          text: [
-            { text: 'Adresse du chantier / lieu d\'intervention: ', fontSize: DEFAULT_FONT_SIZE, color: DARK_BLUE },
-            { text: projectAddress, fontSize: DEFAULT_FONT_SIZE, color: DARK_BLUE }
+          columns: [
+            { width: 55, text: '', fontSize: DEFAULT_FONT_SIZE },
+            {
+              text: [
+                { text: 'Adresse du chantier / lieu d\'intervention: ', fontSize: DEFAULT_FONT_SIZE, color: DARK_BLUE },
+                { text: projectAddress, fontSize: DEFAULT_FONT_SIZE, color: DARK_BLUE }
+              ]
+            }
           ],
-          margin: [0, 0, 0, 0],
           lineHeight: 1.3
         } : null,
         
-        // Espacement entre adresse et descriptif comme demandé
-        projectAddress ? { text: '', margin: [0, 5, 0, 0] } : null,
+        // Espacement si adresse est présente
+        projectAddress ? { text: '', margin: [0, 3, 0, 0] } : null,
         
         // Description du projet - si présente
         projectDescription ? {
-          stack: [
-            { 
-              text: 'Descriptif:',
-              fontSize: DEFAULT_FONT_SIZE,
-              color: DARK_BLUE
-            },
-            { 
-              text: projectDescription,
-              fontSize: DEFAULT_FONT_SIZE,
-              color: DARK_BLUE,
-              margin: [0, 3, 0, 0]
+          columns: [
+            { width: 55, text: '', fontSize: DEFAULT_FONT_SIZE },
+            {
+              stack: [
+                { text: 'Descriptif:', fontSize: DEFAULT_FONT_SIZE, color: DARK_BLUE },
+                { text: projectDescription, fontSize: DEFAULT_FONT_SIZE, color: DARK_BLUE, margin: [0, 3, 0, 0] }
+              ]
             }
           ],
-          margin: [0, 0, 0, 0],
           lineHeight: 1.3
         } : null,
         
@@ -286,10 +286,14 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
         
         // Informations complémentaires sans titre - si présent
         additionalInfo ? {
-          text: additionalInfo,
-          fontSize: DEFAULT_FONT_SIZE,
-          color: DARK_BLUE,
-          margin: [0, 0, 0, 0],
+          columns: [
+            { width: 55, text: '', fontSize: DEFAULT_FONT_SIZE },
+            { 
+              text: additionalInfo,
+              fontSize: DEFAULT_FONT_SIZE,
+              color: DARK_BLUE
+            }
+          ],
           lineHeight: 1.3
         } : null,
         
@@ -305,7 +309,7 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
       ].filter(Boolean), // Filtre les éléments null (champs vides)
       
       defaultStyle: {
-        font: selectedFont, // Utiliser la police sélectionnée
+        font: 'Roboto',
         fontSize: DEFAULT_FONT_SIZE,
         color: DARK_BLUE, // Couleur par défaut pour tout le document
         lineHeight: 1.3 // Interligne par défaut pour tout le document
@@ -351,7 +355,7 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
                   <img 
                     src={company?.logo_url || ""} 
                     alt="" 
-                    className="w-[150px] h-[112px] object-contain"
+                    className="max-h-24 max-w-full object-contain"
                     onError={() => setLogoError(true)}
                   />
                   {company?.slogan ? (
@@ -362,7 +366,7 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
                 </div>
               ) : (
                 <div>
-                  <div className="w-[150px] h-[112px]">
+                  <div className="h-24 w-48 flex items-center justify-center">
                     {/* Espace réservé vide pour le logo */}
                   </div>
                   {company?.slogan ? (
@@ -382,68 +386,71 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
             </div>
           </div>
           
-          {/* Coordonnées société avec interligne augmenté */}
-          <div className="mt-8 text-xs leading-relaxed" style={{ color: DARK_BLUE }}>
+          {/* Coordonnées société avec espacement réduit et interligne augmenté */}
+          <div className="mt-12 mb-4 text-xs leading-relaxed" style={{ color: DARK_BLUE }}>
             <p>
-              <span>Société </span>
+              <span style={{ display: 'inline-block', width: '55px' }}>Société</span>
               <span>{company?.name}</span>
             </p>
             <p>
-              <span>Siège: </span>
+              <span style={{ display: 'inline-block', width: '55px' }}>Siège:</span>
               <span>{company?.address} - {company?.postal_code} {company?.city}</span>
             </p>
             
             <div className="mt-2">
               <p>
-                <span>Tél: </span>
+                <span style={{ display: 'inline-block', width: '55px' }}>Tél:</span>
                 <span>{company?.tel1}</span>
               </p>
               {company?.tel2 && (
                 <p>
+                  <span style={{ display: 'inline-block', width: '55px' }}></span>
                   <span>{company?.tel2}</span>
                 </p>
               )}
             </div>
             
-            {/* Mail sans étiquette */}
+            {/* Espace entre téléphone et mail */}
             <div className="mt-3">
               <p>
-                {company?.email}
+                <span style={{ display: 'inline-block', width: '55px' }}>Mail:</span>
+                <span>{company?.email}</span>
               </p>
             </div>
           </div>
           
-          {/* Double espace entre mail et devis */}
-          <div className="mt-6"></div>
+          {/* Espace entre mail et devis */}
           <div className="mt-6"></div>
           
-          {/* Numéro et date du devis sans étiquette "Devis n°:" incluse dans la valeur */}
+          {/* Numéro et date du devis aligné avec autres éléments */}
           <div className="text-xs leading-relaxed" style={{ color: DARK_BLUE }}>
             <p>
-              Devis n°: {devisNumber} Du {formatDate(devisDate)}
-              <span className="text-[9px] italic ml-1">(Validité de l'offre : 3 mois.)</span>
+              <span style={{ display: 'inline-block', width: '55px' }}>Devis n°:</span>
+              <span>
+                {devisNumber} Du {formatDate(devisDate)}
+                <span className="text-[9px] italic ml-1">(Validité de l'offre : 3 mois.)</span>
+              </span>
             </p>
           </div>
           
-          {/* Double espace avant section client */}
-          <div className="mt-6"></div>
+          {/* Espace avant section client */}
           <div className="mt-6"></div>
           
-          {/* Section client sans indentation */}
+          {/* Section client sans cadre - aligné avec les autres sections */}
           <div className="mb-2">
             <p className="text-xs mb-1" style={{ color: DARK_BLUE }}>Client / Maître d'ouvrage</p>
-            <div className="text-xs leading-relaxed" style={{ color: DARK_BLUE }}>
+            <div className="text-xs leading-relaxed pl-14" style={{ color: DARK_BLUE }}>
               {client && client}
             </div>
           </div>
           
-          {/* 10 retours à la ligne */}
-          <div className="h-40"></div>
+          {/* 6 retours à la ligne */}
+          <div className="h-24"></div>
           
-          {/* Section chantier sans indentation pour le titre */}
+          {/* Section chantier sans cadre - aligné avec les autres sections */}
           <div>
             <p className="text-xs mb-1" style={{ color: DARK_BLUE }}>Chantier / Travaux</p>
-            <div className="text-xs leading-relaxed" style={{ color: DARK_BLUE }}>
+            <div className="text-xs leading-relaxed pl-14" style={{ color: DARK_BLUE }}>
               {/* Occupant en premier */}
               {occupant && (
                 <div className="mb-2">
@@ -456,11 +463,6 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
                 <div className="mb-2">
                   Adresse du chantier / lieu d'intervention: {projectAddress}
                 </div>
-              )}
-              
-              {/* Espace entre adresse et descriptif */}
-              {projectAddress && projectDescription && (
-                <div className="mb-3"></div>
               )}
               
               {/* Description */}
