@@ -73,7 +73,7 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
     if (!printContentRef.current) return;
     
     const opt = {
-      margin: 20, // Marges uniformes de 20mm
+      margin: 5, // Marges réduites à 5mm comme demandé
       filename: `devis-${devisNumber || 'preview'}.pdf`,
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: { scale: 2, useCORS: true },
@@ -87,7 +87,7 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
       body { 
         font-family: 'Roboto', Arial, sans-serif; 
         margin: 0; 
-        padding: 20px;
+        padding: 5mm;
         color: #000;
         line-height: 1.5;
       }
@@ -109,7 +109,7 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
         body { 
           font-family: 'Roboto', Arial, sans-serif; 
           margin: 0; 
-          padding: 20px;
+          padding: 5mm;
           color: #000;
           line-height: 1.5;
           box-sizing: border-box;
@@ -120,7 +120,7 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
           width: 100%;
           max-width: 210mm;
           margin: 0 auto;
-          padding: 20px;
+          padding: 5mm;
           position: relative;
           box-sizing: border-box;
         }
@@ -162,6 +162,11 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
           margin: 30px 0;
           line-height: 1.6;
           font-size: 12px;
+        }
+        
+        .aligned-data {
+          padding-left: 40px;
+          text-indent: -40px;
         }
         
         .devis-section {
@@ -219,7 +224,7 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
         }
         
         .footer {
-          font-size: 8px;
+          font-size: 9px; /* Augmenté de 1pt */
           text-align: center;
           position: absolute;
           bottom: 20px;
@@ -283,8 +288,8 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
           </DialogTitle>
         </DialogHeader>
         
-        {/* Contenu principal - Retiré la bordure externe */}
-        <div ref={printContentRef} className="p-6 rounded-md my-4 bg-white">
+        {/* Contenu principal avec marges réduites */}
+        <div ref={printContentRef} className="p-5 rounded-md my-4 bg-white">
           <div className="flex justify-between items-start">
             <div className="max-w-[50%]">
               {!logoError ? (
@@ -323,29 +328,44 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
             </div>
           </div>
           
-          {/* Coordonnées société - Taille réduite */}
+          {/* Coordonnées société avec alignement amélioré */}
           <div className="mt-12 mb-8 text-sm">
-            <p className="font-medium">{company?.name}</p>
-            <p>Siège: {company?.address} - {company?.postal_code} {company?.city}</p>
+            <p>
+              <span style={{ display: 'inline-block', width: '70px' }}>Société</span>
+              <span>{company?.name}</span>
+            </p>
+            <p>
+              <span style={{ display: 'inline-block', width: '70px' }}>Siège:</span>
+              <span>{company?.address} - {company?.postal_code} {company?.city}</span>
+            </p>
             
             <div className="mt-4">
-              <p><span className="font-medium">Tél:</span> {company?.tel1}</p>
-              {company?.tel2 && <p>{company?.tel2}</p>}
-              <p><span className="font-medium">Mail:</span> {company?.email}</p>
+              <p>
+                <span style={{ display: 'inline-block', width: '70px' }}>Tél:</span>
+                <span>{company?.tel1}</span>
+              </p>
+              {company?.tel2 && (
+                <p>
+                  <span style={{ display: 'inline-block', width: '70px' }}></span>
+                  <span>{company?.tel2}</span>
+                </p>
+              )}
+              <p>
+                <span style={{ display: 'inline-block', width: '70px' }}>Mail:</span>
+                <span>{company?.email}</span>
+              </p>
             </div>
           </div>
           
-          {/* Numéro et date du devis - Supprimé le cadre */}
+          {/* Numéro et date du devis avec la validité en ligne */}
           <div className="flex items-start mt-10 mb-12 text-sm">
             <div className="font-bold">Devis n°: {devisNumber}</div>
             
             <div className="ml-6">
-              <p className="m-0">Du {formatDate(devisDate)}</p>
-              {validityOffer && (
-                <p className="mt-4 text-xs italic">
-                  {validityOffer}
-                </p>
-              )}
+              <p className="m-0">
+                Du {formatDate(devisDate)}
+                <span className="text-[10px] italic ml-3">(Validité de l'offre : 3 mois.)</span>
+              </p>
             </div>
           </div>
           
@@ -402,8 +422,8 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
             </div>
           </div>
           
-          {/* Pied de page - Supprimé la bordure supérieure et réduit la taille */}
-          <div className="text-center text-[8px] mt-24">
+          {/* Pied de page avec taille légèrement augmentée */}
+          <div className="text-center text-[9px] mt-24">
             {company?.name} - SASU au Capital de {company?.capital_social || "10000"} € - {company?.address} {company?.postal_code} {company?.city} - Siret : {company?.siret} - Code APE : {company?.code_ape} - N° TVA Intracommunautaire : {company?.tva_intracom}
           </div>
         </div>
