@@ -2,7 +2,7 @@
 import React, { useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { X, Printer, Download, FilePdf } from "lucide-react";
+import { X, Printer, Download } from "lucide-react";
 import html2pdf from 'html2pdf.js';
 
 // Logo en base64 directement intégré pour éviter les problèmes de chargement
@@ -405,7 +405,7 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
               Imprimer
             </Button>
             <Button onClick={handleExportPDF} className="flex items-center gap-2">
-              <FilePdf className="h-4 w-4" />
+              <Download className="h-4 w-4" />
               Exporter PDF
             </Button>
           </div>
