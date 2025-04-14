@@ -1,4 +1,3 @@
-
 // Types liés aux projets et propriétés
 
 // Propriété principale
@@ -55,7 +54,7 @@ export interface Project {
 export interface ProjectGeneralData {
   infoComplementaire?: string;
   dateDevis?: string;
-  clientsData?: string; // Ajout du champ pour les données clients
+  clientsData?: string; // Nouveau champ pour les données clients
   [key: string]: any;
 }
 
