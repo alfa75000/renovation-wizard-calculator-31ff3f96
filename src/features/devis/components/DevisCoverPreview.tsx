@@ -3,7 +3,11 @@ import React, { useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { X, Printer, Download } from "lucide-react";
-import html2pdf from 'html2pdf.js';
+import pdfMake from 'pdfmake/build/pdfmake';
+import pdfFonts from 'pdfmake/build/vfs_fonts';
+
+// Initialiser pdfMake avec les polices
+pdfMake.vfs = pdfFonts.pdfMake.vfs;
 
 // Couleur bleu foncée unifiée pour toute la page
 const DARK_BLUE = "#002855"; // Bleu marine plus foncé que #003366
@@ -69,207 +73,381 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
     }
   };
 
+  // Fonction pour créer un titre avec des tirets de chaque côté
+  const createSectionTitle = (title: string) => {
+    return {
+      stack: [
+        {
+          canvas: [
+            {
+              type: 'line',
+              x1: 0, y1: 5,
+              x2: 515, y2: 5,
+              lineWidth: 0.5,
+              lineColor: DARK_BLUE
+            }
+          ]
+        },
+        {
+          text: title,
+          absolutePosition: { x: 200, y: 0 },
+          fontSize: 11,
+          color: DARK_BLUE,
+          background: 'white',
+          padding: [5, 0, 5, 0]
+        }
+      ],
+      margin: [0, 10, 0, 5]
+    };
+  };
+
   const handleExportPDF = () => {
-    if (!printContentRef.current) return;
+    // Image placeholder pour le logo (à remplacer par le vrai logo si disponible)
+    // Dans un cas réel, vous devriez charger dynamiquement l'image du logo
+    const logoPlaceholder = logoError || !company?.logo_url 
+      ? null 
+      : { image: company.logo_url, width: 100, height: 50 };
     
-    const opt = {
-      margin: 5, // Marges réduites à 5mm comme demandé
-      filename: `devis-${devisNumber || 'preview'}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    // Définition du document
+    const docDefinition = {
+      pageSize: 'A4',
+      pageMargins: [20, 20, 20, 20], // [left, top, right, bottom]
+      
+      content: [
+        // En-tête avec logo et informations d'assurance
+        {
+          columns: [
+            {
+              // Colonne de gauche (logo et slogan)
+              width: '60%',
+              stack: [
+                logoPlaceholder || { text: 'Logo non disponible', fontSize: 10, color: 'gray' },
+                { 
+                  text: company?.slogan || 'Entreprise Générale du Bâtiment', 
+                  fontSize: 10, 
+                  color: DARK_BLUE,
+                  margin: [0, 5, 0, 0]
+                }
+              ]
+            },
+            {
+              // Colonne de droite (assurance)
+              width: '40%',
+              stack: [
+                { text: 'Assurance MAAF PRO', fontSize: 10, color: DARK_BLUE },
+                { text: 'Responsabilité civile', fontSize: 9, color: DARK_BLUE },
+                { text: 'Responsabilité civile décennale', fontSize: 9, color: DARK_BLUE }
+              ],
+              alignment: 'right'
+            }
+          ]
+        },
+        
+        // Espace
+        { text: '', margin: [0, 20, 0, 0] },
+        
+        // Coordonnées société
+        {
+          columns: [
+            { width: 70, text: 'Société', fontSize: 11 },
+            { text: company?.name || '', fontSize: 11 }
+          ]
+        },
+        {
+          columns: [
+            { width: 70, text: 'Siège:', fontSize: 11 },
+            { text: `${company?.address || ''} - ${company?.postal_code || ''} ${company?.city || ''}`, fontSize: 11 }
+          ],
+          margin: [0, 2, 0, 0]
+        },
+        
+        // Espace
+        { text: '', margin: [0, 15, 0, 0] },
+        
+        // Contact
+        {
+          columns: [
+            { width: 70, text: 'Tél:', fontSize: 11 },
+            { text: company?.tel1 || '', fontSize: 11 }
+          ]
+        },
+        company?.tel2 ? {
+          columns: [
+            { width: 70, text: '', fontSize: 11 },
+            { text: company?.tel2, fontSize: 11 }
+          ],
+          margin: [0, 2, 0, 0]
+        } : {},
+        {
+          columns: [
+            { width: 70, text: 'Mail:', fontSize: 11 },
+            { text: company?.email || '', fontSize: 11 }
+          ],
+          margin: [0, 2, 0, 0]
+        },
+        
+        // Espace
+        { text: '', margin: [0, 30, 0, 0] },
+        
+        // Numéro et date du devis
+        {
+          columns: [
+            { text: `Devis n°: ${devisNumber || ''}`, bold: true, fontSize: 11, width: 150 },
+            { 
+              text: [
+                { text: `Du ${formatDate(devisDate)}`, fontSize: 11 },
+                { text: ` (Validité de l'offre : 3 mois.)`, fontSize: 9, italics: true }
+              ]
+            }
+          ]
+        },
+        
+        // Espace
+        { text: '', margin: [0, 30, 0, 0] },
+        
+        // Section client
+        createSectionTitle('Client / Maître d\'ouvrage'),
+        {
+          table: {
+            widths: ['*'],
+            body: [
+              [{ text: client || '', fontSize: 10, margin: [0, 5, 0, 5] }]
+            ]
+          },
+          layout: {
+            hLineWidth: function(i: number) { return 0.5; },
+            vLineWidth: function(i: number) { return 0.5; },
+            hLineColor: function() { return DARK_BLUE; },
+            vLineColor: function() { return DARK_BLUE; },
+            paddingLeft: function() { return 10; },
+            paddingRight: function() { return 10; },
+            paddingTop: function() { return 5; },
+            paddingBottom: function() { return 5; }
+          }
+        },
+        
+        // Espace
+        { text: '', margin: [0, 20, 0, 0] },
+        
+        // Section chantier
+        createSectionTitle('Chantier / Travaux'),
+        {
+          table: {
+            widths: ['*'],
+            body: [
+              [{
+                stack: [
+                  { text: projectDescription || '', fontSize: 10, margin: [0, 0, 0, 10] },
+                  projectAddress ? { text: ['Adresse du chantier:\n', { text: projectAddress, margin: [0, 2, 0, 0] }], fontSize: 10, margin: [0, 5, 0, 0] } : {},
+                  occupant ? { text: ['Occupant:\n', { text: occupant, margin: [0, 2, 0, 0] }], fontSize: 10, margin: [0, 5, 0, 0] } : {},
+                  additionalInfo ? { text: ['Informations complémentaires:\n', { text: additionalInfo, margin: [0, 2, 0, 0] }], fontSize: 10, margin: [0, 5, 0, 0] } : {}
+                ],
+                margin: [0, 5, 0, 5]
+              }]
+            ]
+          },
+          layout: {
+            hLineWidth: function(i: number) { return 0.5; },
+            vLineWidth: function(i: number) { return 0.5; },
+            hLineColor: function() { return DARK_BLUE; },
+            vLineColor: function() { return DARK_BLUE; },
+            paddingLeft: function() { return 10; },
+            paddingRight: function() { return 10; },
+            paddingTop: function() { return 5; },
+            paddingBottom: function() { return 5; }
+          }
+        },
+        
+        // Pied de page
+        {
+          text: `${company?.name || ''} - SASU au Capital de ${company?.capital_social || '10000'} € - ${company?.address || ''} ${company?.postal_code || ''} ${company?.city || ''} - Siret : ${company?.siret || ''} - Code APE : ${company?.code_ape || ''} - N° TVA Intracommunautaire : ${company?.tva_intracom || ''}`,
+          fontSize: 9,
+          alignment: 'center',
+          margin: [0, 50, 0, 0]
+        }
+      ],
+      
+      defaultStyle: {
+        font: 'Roboto',
+        fontSize: 11
+      }
     };
     
-    const element = printContentRef.current.cloneNode(true) as HTMLElement;
-    
-    const styleElement = document.createElement('style');
-    styleElement.textContent = `
-      body { 
-        font-family: 'Roboto', Arial, sans-serif; 
-        margin: 0; 
-        padding: 5mm;
-        color: #000;
-        line-height: 1.5;
-      }
-    `;
-    element.prepend(styleElement);
-    
-    html2pdf().set(opt).from(element).save();
+    // Génération du PDF
+    pdfMake.createPdf(docDefinition).download(`devis-${devisNumber || 'preview'}.pdf`);
   };
 
   const handlePrint = () => {
-    if (!printContentRef.current) return;
-    
-    const printContent = printContentRef.current.innerHTML;
-    
-    const printStyles = `
-      <style>
-        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
-        
-        body { 
-          font-family: 'Roboto', Arial, sans-serif; 
-          margin: 0; 
-          padding: 5mm;
-          color: #000;
-          line-height: 1.5;
-          box-sizing: border-box;
-          background-color: white;
-        }
-        
-        .cover-page { 
-          width: 100%;
-          max-width: 210mm;
-          margin: 0 auto;
-          padding: 5mm;
-          position: relative;
-          box-sizing: border-box;
-        }
-        
-        .header {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          margin-bottom: 40px;
-        }
-        
-        .company-logo-container {
-          max-width: 50%;
-        }
-        
-        .company-logo { 
-          max-height: 100px; 
-          max-width: 100%;
-        }
-        
-        .company-tagline {
-          font-size: 12px;
-          color: ${DARK_BLUE};
-          margin-top: 5px;
-        }
-        
-        .assurance {
-          text-align: right;
-          font-size: 10px;
-          color: ${DARK_BLUE};
-        }
-        
-        .assurance p {
-          margin: 0;
-          line-height: 1.4;
-        }
-        
-        .company-info {
-          margin: 30px 0;
-          line-height: 1.6;
-          font-size: 12px;
-        }
-        
-        .aligned-data {
-          padding-left: 40px;
-          text-indent: -40px;
-        }
-        
-        .devis-section {
-          margin: 30px 0;
-          display: flex;
-          align-items: flex-start;
-        }
-        
-        .devis-number {
-          font-weight: bold;
-          color: #000;
-          font-size: 12px;
-        }
-        
-        .devis-date {
-          padding-top: 8px;
-          font-size: 12px;
-        }
-        
-        .validity-offer {
-          margin-top: 10px;
-          font-style: italic;
-          font-size: 11px;
-        }
-        
-        .section-title {
-          color: ${DARK_BLUE};
-          position: relative;
-          display: flex;
-          align-items: center;
-          font-size: 14px;
-          margin: 0 0 5px 0;
-        }
-        
-        .section-title:before, .section-title:after {
-          content: '';
-          flex: 1;
-          border-bottom: 1px solid ${DARK_BLUE};
-          margin: 0 10px;
-        }
-        
-        .section-content {
-          border: 1px solid ${DARK_BLUE};
-          padding: 15px;
-          min-height: 100px;
-          font-size: 12px;
-        }
-        
-        .client-section, .project-section {
-          margin-bottom: 30px;
-        }
-        
-        .project-item {
-          margin-bottom: 8px;
-        }
-        
-        .footer {
-          font-size: 9px; /* Augmenté de 1pt */
-          text-align: center;
-          position: absolute;
-          bottom: 20px;
-          left: 20px;
-          right: 20px;
-        }
-        
-        button, .dialog-header, .dialog-footer {
-          display: none !important;
-        }
-      </style>
-    `;
-    
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-      console.error("Impossible d'ouvrir une nouvelle fenêtre");
-      return;
-    }
-    
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Devis - Page de Garde</title>
-          ${printStyles}
-        </head>
-        <body>
-          <div class="cover-page">
-            ${printContent}
-          </div>
-        </body>
-      </html>
-    `);
-    
-    printWindow.document.addEventListener('DOMContentLoaded', () => {
-      setTimeout(() => {
-        printWindow.print();
-        printWindow.close();
-      }, 500);
-    });
-    
-    setTimeout(() => {
-      printWindow.print();
-    }, 1000);
+    // Utiliser la même fonction pour l'impression
+    // PDFMake peut ouvrir le PDF directement pour impression
+    pdfMake.createPdf(createDocDefinition()).open();
   };
 
+  // Fonction pour créer la définition du document PDF
+  const createDocDefinition = () => {
+    const logoPlaceholder = logoError || !company?.logo_url 
+      ? null 
+      : { image: company.logo_url, width: 100, height: 50 };
+    
+    return {
+      pageSize: 'A4',
+      pageMargins: [20, 20, 20, 20],
+      
+      content: [
+        // En-tête avec logo et informations d'assurance
+        {
+          columns: [
+            {
+              width: '60%',
+              stack: [
+                logoPlaceholder || { text: 'Logo non disponible', fontSize: 10, color: 'gray' },
+                { 
+                  text: company?.slogan || 'Entreprise Générale du Bâtiment', 
+                  fontSize: 10, 
+                  color: DARK_BLUE,
+                  margin: [0, 5, 0, 0]
+                }
+              ]
+            },
+            {
+              width: '40%',
+              stack: [
+                { text: 'Assurance MAAF PRO', fontSize: 10, color: DARK_BLUE },
+                { text: 'Responsabilité civile', fontSize: 9, color: DARK_BLUE },
+                { text: 'Responsabilité civile décennale', fontSize: 9, color: DARK_BLUE }
+              ],
+              alignment: 'right'
+            }
+          ]
+        },
+        
+        { text: '', margin: [0, 20, 0, 0] },
+        
+        // Coordonnées société
+        {
+          columns: [
+            { width: 70, text: 'Société', fontSize: 11 },
+            { text: company?.name || '', fontSize: 11 }
+          ]
+        },
+        {
+          columns: [
+            { width: 70, text: 'Siège:', fontSize: 11 },
+            { text: `${company?.address || ''} - ${company?.postal_code || ''} ${company?.city || ''}`, fontSize: 11 }
+          ],
+          margin: [0, 2, 0, 0]
+        },
+        
+        { text: '', margin: [0, 15, 0, 0] },
+        
+        // Contact
+        {
+          columns: [
+            { width: 70, text: 'Tél:', fontSize: 11 },
+            { text: company?.tel1 || '', fontSize: 11 }
+          ]
+        },
+        company?.tel2 ? {
+          columns: [
+            { width: 70, text: '', fontSize: 11 },
+            { text: company?.tel2, fontSize: 11 }
+          ],
+          margin: [0, 2, 0, 0]
+        } : {},
+        {
+          columns: [
+            { width: 70, text: 'Mail:', fontSize: 11 },
+            { text: company?.email || '', fontSize: 11 }
+          ],
+          margin: [0, 2, 0, 0]
+        },
+        
+        { text: '', margin: [0, 30, 0, 0] },
+        
+        // Numéro et date du devis
+        {
+          columns: [
+            { text: `Devis n°: ${devisNumber || ''}`, bold: true, fontSize: 11, width: 150 },
+            { 
+              text: [
+                { text: `Du ${formatDate(devisDate)}`, fontSize: 11 },
+                { text: ` (Validité de l'offre : 3 mois.)`, fontSize: 9, italics: true }
+              ]
+            }
+          ]
+        },
+        
+        { text: '', margin: [0, 30, 0, 0] },
+        
+        // Section client
+        createSectionTitle('Client / Maître d\'ouvrage'),
+        {
+          table: {
+            widths: ['*'],
+            body: [
+              [{ text: client || '', fontSize: 10, margin: [0, 5, 0, 5] }]
+            ]
+          },
+          layout: {
+            hLineWidth: function(i: number) { return 0.5; },
+            vLineWidth: function(i: number) { return 0.5; },
+            hLineColor: function() { return DARK_BLUE; },
+            vLineColor: function() { return DARK_BLUE; },
+            paddingLeft: function() { return 10; },
+            paddingRight: function() { return 10; },
+            paddingTop: function() { return 5; },
+            paddingBottom: function() { return 5; }
+          }
+        },
+        
+        { text: '', margin: [0, 20, 0, 0] },
+        
+        // Section chantier
+        createSectionTitle('Chantier / Travaux'),
+        {
+          table: {
+            widths: ['*'],
+            body: [
+              [{
+                stack: [
+                  { text: projectDescription || '', fontSize: 10, margin: [0, 0, 0, 10] },
+                  projectAddress ? { text: ['Adresse du chantier:\n', { text: projectAddress, margin: [0, 2, 0, 0] }], fontSize: 10, margin: [0, 5, 0, 0] } : {},
+                  occupant ? { text: ['Occupant:\n', { text: occupant, margin: [0, 2, 0, 0] }], fontSize: 10, margin: [0, 5, 0, 0] } : {},
+                  additionalInfo ? { text: ['Informations complémentaires:\n', { text: additionalInfo, margin: [0, 2, 0, 0] }], fontSize: 10, margin: [0, 5, 0, 0] } : {}
+                ],
+                margin: [0, 5, 0, 5]
+              }]
+            ]
+          },
+          layout: {
+            hLineWidth: function(i: number) { return 0.5; },
+            vLineWidth: function(i: number) { return 0.5; },
+            hLineColor: function() { return DARK_BLUE; },
+            vLineColor: function() { return DARK_BLUE; },
+            paddingLeft: function() { return 10; },
+            paddingRight: function() { return 10; },
+            paddingTop: function() { return 5; },
+            paddingBottom: function() { return 5; }
+          }
+        },
+        
+        // Pied de page
+        {
+          text: `${company?.name || ''} - SASU au Capital de ${company?.capital_social || '10000'} € - ${company?.address || ''} ${company?.postal_code || ''} ${company?.city || ''} - Siret : ${company?.siret || ''} - Code APE : ${company?.code_ape || ''} - N° TVA Intracommunautaire : ${company?.tva_intracom || ''}`,
+          fontSize: 9,
+          alignment: 'center',
+          margin: [0, 50, 0, 0]
+        }
+      ],
+      
+      defaultStyle: {
+        font: 'Roboto',
+        fontSize: 11
+      }
+    };
+  };
+
+  // Aperçu HTML pour affichage dans l'interface
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent 
@@ -288,7 +466,7 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
           </DialogTitle>
         </DialogHeader>
         
-        {/* Contenu principal avec marges réduites */}
+        {/* Contenu principal avec marges réduites - Pour l'aperçu uniquement */}
         <div ref={printContentRef} className="p-5 rounded-md my-4 bg-white">
           <div className="flex justify-between items-start">
             <div className="max-w-[50%]">
