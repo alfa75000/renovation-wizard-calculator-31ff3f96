@@ -63,8 +63,8 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
   const additionalInfo = fields.find(f => f.id === "additionalInfo")?.content;
 
   // Formater les données client pour l'affichage et le PDF
-  const formatClientData = (clientData: string | null | undefined) => {
-    if (!clientData) return "";
+  const formatClientData = (clientData: string | null | undefined): string[] => {
+    if (!clientData) return [];
     // Divise les lignes et filtre les lignes vides
     return clientData.split('\n').filter(line => line.trim().length > 0);
   };

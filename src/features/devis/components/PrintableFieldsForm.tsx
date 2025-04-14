@@ -47,11 +47,10 @@ export const PrintableFieldsForm: React.FC = () => {
     { id: "summary", name: "Récapitulatif", enabled: true },
   ]);
 
-  // Utiliser les données clients de clientsData au lieu de chercher les infos du client
+  // Utiliser directement les données de clientsData au lieu de chercher les infos du client
   useEffect(() => {
-    // Si nous avons des données clients dans metadata, utilisez-les
-    if (metadata?.clientsData) {
-      setClientName(metadata.clientsData);
+    if (metadata?.clientsData && metadata.clientsData.trim() !== '') {
+      console.log("Utilisation des données clients de clientsData:", metadata.clientsData);
       
       // Mettre à jour le champ client dans printableFields
       setPrintableFields(prev => 
@@ -61,42 +60,17 @@ export const PrintableFieldsForm: React.FC = () => {
         )
       );
     } else {
-      // Si nous n'avons pas de données clients, mais que nous avons un clientId, cherchez le client
-      if (metadata?.clientId) {
-        const fetchClientInfo = async () => {
-          try {
-            const { data, error } = await supabase
-              .from('clients')
-              .select('nom, prenom')
-              .eq('id', metadata.clientId)
-              .single();
-            
-            if (error) throw error;
-            
-            if (data) {
-              const fullName = `${data.prenom || ''} ${data.nom}`.trim();
-              setClientName(fullName);
-              
-              // Mettre à jour le champ client dans printableFields
-              setPrintableFields(prev => 
-                prev.map(field => field.id === "client" 
-                  ? { ...field, content: fullName } 
-                  : field
-                )
-              );
-            }
-          } catch (error) {
-            console.error("Erreur lors de la récupération des informations du client:", error);
-            setClientName("Erreur de chargement");
-          }
-        };
-        
-        fetchClientInfo();
-      } else {
-        setClientName("Aucun client sélectionné");
-      }
+      console.log("Aucune donnée client disponible dans clientsData");
+      
+      // Si aucune donnée cliente n'est disponible, afficher un message par défaut
+      setPrintableFields(prev => 
+        prev.map(field => field.id === "client" 
+          ? { ...field, content: "Aucun client sélectionné" } 
+          : field
+        )
+      );
     }
-  }, [metadata?.clientId, metadata?.clientsData]);
+  }, [metadata?.clientsData]);
 
   // Récupérer les informations de la société sélectionnée
   useEffect(() => {

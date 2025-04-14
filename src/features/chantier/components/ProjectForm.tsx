@@ -129,11 +129,14 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
         : "Non spécifié";
         
       const clientName = `${clientTypeLabel} ${selectedClient.nom} ${selectedClient.prenom || ''}`.trim();
-      const clientAddress = `${selectedClient.adresse || ''}-${selectedClient.codePostal || ''}-${selectedClient.ville || ''}`.replace(/^-+|-+$/g, '');
       
+      // Mise à jour du format de l'adresse avec des espaces avant et après les tirets
+      const clientAddress = `${selectedClient.adresse || ''} - ${selectedClient.codePostal || ''} - ${selectedClient.ville || ''}`.replace(/^\s*-\s*|-\s*-|\s*-\s*$/g, '');
+      
+      // Création de la nouvelle chaîne de données client avec le format amélioré
       const newClientData = `${clientName}\n${clientAddress}\n\n`;
       
-      // Fix: We need to directly update the state with a string, not a callback function
+      // Mise à jour directe de l'état
       const updatedData = clientsData + newClientData;
       console.log("Mise à jour des données client:", updatedData);
       setClientsData(updatedData);
