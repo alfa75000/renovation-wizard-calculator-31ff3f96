@@ -7,7 +7,7 @@ import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
 
 // Initialiser pdfMake avec les polices
-pdfMake.vfs = pdfFonts.pdfMake.vfs;
+pdfMake.vfs = pdfFonts.pdfMake ? pdfFonts.pdfMake.vfs : pdfFonts.vfs;
 
 // Couleur bleu foncée unifiée pour toute la page
 const DARK_BLUE = "#002855"; // Bleu marine plus foncé que #003366
