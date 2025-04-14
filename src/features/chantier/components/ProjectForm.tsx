@@ -81,7 +81,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
   const [clientsData, setClientsData] = useState<string>('');
   
   // Récupérer les infos des clients
-  const { state: clientsState } = useClients();
+  const { state: clientsState, getClientTypeName } = useClients();
   
   // Effect pour générer le nom du projet seulement lors de changements significatifs
   useEffect(() => {
@@ -137,9 +137,13 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
     const selectedClient = clientsState.clients.find(client => client.id === clientId);
     
     if (selectedClient) {
+      // Obtenir le type de client réel au lieu de l'ID
+      const clientTypeLabel = selectedClient.typeClient 
+        ? getClientTypeName(selectedClient.typeClient)
+        : "Non spécifié";
+        
       // Formatter les données du client à ajouter
-      const clientType = selectedClient.typeClient || "Non spécifié";
-      const clientName = `${clientType} ${selectedClient.nom} ${selectedClient.prenom || ''}`.trim();
+      const clientName = `${clientTypeLabel} ${selectedClient.nom} ${selectedClient.prenom || ''}`.trim();
       const clientAddress = `${selectedClient.adresse || ''}-${selectedClient.codePostal || ''}-${selectedClient.ville || ''}`.replace(/^-+|-+$/g, '');
       
       // Ajouter les données client au texte existant

@@ -17,7 +17,7 @@ export const ClientSelection: React.FC<ClientSelectionProps> = ({
   setClientId,
   onAddClientToList
 }) => {
-  const { state: clientsState } = useClients();
+  const { state: clientsState, getClientTypeName } = useClients();
   
   return (
     <div className="space-y-3">

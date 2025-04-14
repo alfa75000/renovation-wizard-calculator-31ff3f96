@@ -66,6 +66,11 @@ export const useProjectMetadata = () => {
   const setDevisNumber = useCallback((value: string) => {
     updateMetadata('devisNumber', value);
   }, [updateMetadata]);
+  
+  // Add setter for clientsData
+  const setClientsData = useCallback((value: string) => {
+    updateMetadata('clientsData', value);
+  }, [updateMetadata]);
 
   // Generate project name based on client, devis number and description
   const generateProjectName = useCallback(async () => {
@@ -165,6 +170,8 @@ export const useProjectMetadata = () => {
     setDateDevis,
     devisNumber: metadata.devisNumber,
     setDevisNumber,
+    clientsData: metadata.clientsData || '',
+    setClientsData,
     generateProjectName,
     generateProjectNameIfNeeded,
     shouldGenerateProjectName

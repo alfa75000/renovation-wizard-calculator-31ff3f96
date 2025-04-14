@@ -10,6 +10,8 @@ const queryClient = new QueryClient();
 const InfosChantier: React.FC = () => {
   // Add company ID state with default value
   const [companyId, setCompanyId] = useState<string>("c949dd6d-52e8-41c4-99f8-6e84bf4695b9");
+  // Add clientsData state
+  const [clientsData, setClientsData] = useState<string>("");
   
   const {
     projectState,
@@ -67,6 +69,8 @@ const InfosChantier: React.FC = () => {
         setDateDevis={setDateDevis}
         devisNumber={devisNumber}
         setDevisNumber={setDevisNumber}
+        clientsData={clientsData}
+        setClientsData={setClientsData}
         projects={projects || []}
         currentProjectId={currentProjectId}
         projectState={projectState}
