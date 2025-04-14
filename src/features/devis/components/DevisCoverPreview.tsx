@@ -52,18 +52,30 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
   const additionalInfo = fields.find(f => f.id === "additionalInfo")?.content;
 
   useEffect(() => {
-    console.log("Logo URL:", logoContent);
-    console.log("Company data:", company);
+    console.log("Tentative de chargement du logo:");
+    console.log("Chemin exact du logo:", logoContent);
+    console.log("Vérification de l'existence du fichier");
+    console.log("Contenu du dossier public:", {
+      files: import.meta.glob('/public/images/*')
+    });
     
     console.log("Image existence check:");
     const img = new Image();
     img.onload = () => {
       console.log("Logo chargé avec succès");
+      console.log("Propriétés de l'image:", {
+        width: img.width,
+        height: img.height,
+        src: img.src
+      });
       setLogoError(false);
     };
     img.onerror = () => {
-      console.error("ERREUR: Logo non chargé depuis:", logoContent);
-      console.error("Vérifiez le chemin et les permissions");
+      console.error("ERREUR CRITIQUE: Logo non chargé depuis:", logoContent);
+      console.error("Vérifiez les points suivants :");
+      console.error("1. Le fichier existe-t-il réellement ?");
+      console.error("2. Le chemin est-il correct ?");
+      console.error("3. Les permissions sont-elles correctes ?");
       setLogoError(true);
     };
     img.src = logoContent;
