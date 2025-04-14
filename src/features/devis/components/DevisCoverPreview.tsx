@@ -1,5 +1,4 @@
-
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { X, Printer, Download } from "lucide-react";
@@ -52,6 +51,8 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
 }) => {
   const printContentRef = useRef<HTMLDivElement>(null);
   const [logoError, setLogoError] = useState(false);
+  const [logoLoaded, setLogoLoaded] = useState(false);
+  const [logoBase64, setLogoBase64] = useState<string | null>(null);
   
   const devisNumber = fields.find(f => f.id === "devisNumber")?.content;
   const devisDate = fields.find(f => f.id === "devisDate")?.content;
@@ -85,12 +86,56 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
     }
   };
 
+  // Fonction pour convertir une URL d'image en base64
+  useEffect(() => {
+    if (company?.logo_url) {
+      const img = new Image();
+      
+      img.crossOrigin = "anonymous";  // Important pour les images de différentes origines
+      
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0);
+            const dataURL = canvas.toDataURL('image/jpeg');
+            setLogoBase64(dataURL);
+            setLogoLoaded(true);
+            setLogoError(false);
+            console.log("Logo chargé avec succès et converti en base64");
+          }
+        } catch (error) {
+          console.error("Erreur lors de la conversion du logo en base64:", error);
+          setLogoError(true);
+        }
+      };
+      
+      img.onerror = () => {
+        console.error("Erreur lors du chargement du logo:", company.logo_url);
+        setLogoError(true);
+        setLogoLoaded(false);
+      };
+      
+      // Ajouter un timestamp à l'URL pour éviter la mise en cache
+      const timestamp = new Date().getTime();
+      const logoUrl = company.logo_url.includes('?') 
+        ? `${company.logo_url}&t=${timestamp}` 
+        : `${company.logo_url}?t=${timestamp}`;
+        
+      img.src = logoUrl;
+    }
+  }, [company?.logo_url]);
+
   // Création du PDF avec pdfMake
   const createDocDefinition = () => {
     // Définition d'un espace réservé vide pour le logo
     const logoPlaceholder = {
       stack: [
-        { text: '', margin: [0, 30, 0, 0] } // Espace réservé pour le logo
+        { text: '[Emplacement réservé pour le logo]', color: '#aaaaaa', fontSize: 8, margin: [0, 20, 0, 0] }
       ],
       width: 120,
       height: 60
@@ -104,6 +149,10 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
       margin: [0, 2, 0, 0]
     }));
     
+    const logoContent = logoBase64 && logoLoaded
+      ? { image: logoBase64, width: 120, height: 60, fit: [120, 60] }
+      : logoPlaceholder;
+    
     return {
       pageSize: 'A4',
       pageMargins: [20, 20, 20, 20],
@@ -116,9 +165,7 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
               // Colonne de gauche (logo et slogan)
               width: '60%',
               stack: [
-                company?.logo_url && !logoError
-                  ? { image: company.logo_url, width: 120, height: 60, fit: [120, 60] }
-                  : logoPlaceholder,
+                logoContent,
                 { 
                   text: company?.slogan || 'Entreprise Générale du Bâtiment', 
                   fontSize: DEFAULT_FONT_SIZE, 
@@ -365,13 +412,12 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
         <div ref={printContentRef} className="p-5 rounded-md my-4 bg-white">
           <div className="flex justify-between items-start">
             <div className="max-w-[50%]">
-              {!logoError ? (
+              {logoLoaded && logoBase64 ? (
                 <div>
                   <img 
-                    src={company?.logo_url || ""} 
+                    src={logoBase64} 
                     alt="" 
                     className="max-h-24 max-w-full object-contain"
-                    onError={() => setLogoError(true)}
                   />
                   {company?.slogan ? (
                     <p className="text-xs mt-2" style={{ color: DARK_BLUE }}>{company.slogan}</p>
@@ -381,8 +427,8 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
                 </div>
               ) : (
                 <div>
-                  <div className="h-24 w-48 flex items-center justify-center">
-                    {/* Espace réservé vide pour le logo */}
+                  <div className="h-24 w-48 flex items-center justify-center border border-gray-200 bg-gray-50">
+                    <span className="text-gray-400 text-xs">Emplacement réservé pour le logo</span>
                   </div>
                   {company?.slogan ? (
                     <p className="text-xs mt-2" style={{ color: DARK_BLUE }}>{company.slogan}</p>
