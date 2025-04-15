@@ -1,3 +1,4 @@
+
 import React, { useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -69,22 +70,28 @@ export const DevisCompletPreview: React.FC<DevisCompletPreviewProps> = ({
     const styles = {
       header: {
         fontSize: 10,
-        margin: [0, 0, 0, 10],
         color: PDF_CONFIG.DARK_BLUE
       },
       subheader: {
         fontSize: 10,
-        margin: [0, 10, 0, 5],
         color: PDF_CONFIG.DARK_BLUE
       },
       tableHeader: {
         fontSize: 9,
         color: PDF_CONFIG.DARK_BLUE
       },
+      tableContent: {
+        fontSize: 9,
+        color: PDF_CONFIG.DARK_BLUE
+      },
       totalRow: {
-        fontSize: 10
+        fontSize: 10,
+        color: PDF_CONFIG.DARK_BLUE
       }
     };
+    
+    // Déterminer le nombre total de pages
+    const totalPages = 3; // 1 page de garde + 1 pour les détails + 1 pour le récapitulatif
     
     // Contenu du document - Page de garde
     const coverPageContent = [
@@ -98,18 +105,17 @@ export const DevisCompletPreview: React.FC<DevisCompletPreviewProps> = ({
               logoDataUrl ? {
                 image: logoDataUrl,
                 width: 172,
-                height: 72,
-                margin: [0, 0, 0, 0]
-              } : { text: '', margin: [0, 40, 0, 0] }
+                height: 72
+              } : { text: '' }
             ]
           },
           // Assurance à droite
           {
             width: '40%',
             stack: [
-              { text: 'Assurance MAAF PRO', fontSize: PDF_CONFIG.DEFAULT_FONT_SIZE, color: PDF_CONFIG.DARK_BLUE },
-              { text: 'Responsabilité civile', fontSize: PDF_CONFIG.DEFAULT_FONT_SIZE, color: PDF_CONFIG.DARK_BLUE },
-              { text: 'Responsabilité civile décennale', fontSize: PDF_CONFIG.DEFAULT_FONT_SIZE, color: PDF_CONFIG.DARK_BLUE }
+              { text: 'Assurance MAAF PRO', fontSize: 10, color: PDF_CONFIG.DARK_BLUE },
+              { text: 'Responsabilité civile', fontSize: 10, color: PDF_CONFIG.DARK_BLUE },
+              { text: 'Responsabilité civile décennale', fontSize: 10, color: PDF_CONFIG.DARK_BLUE }
             ],
             alignment: 'right'
           }
@@ -119,8 +125,7 @@ export const DevisCompletPreview: React.FC<DevisCompletPreviewProps> = ({
       // Slogan - Aligné en colonne 1
       {
         text: company?.slogan || 'Entreprise Générale du Bâtiment',
-        fontSize: 12,
-        bold: true,
+        fontSize: 10,
         color: PDF_CONFIG.DARK_BLUE,
         margin: [0, 10, 0, 20]
       },
@@ -128,8 +133,7 @@ export const DevisCompletPreview: React.FC<DevisCompletPreviewProps> = ({
       // Coordonnées société - Nom et adresse combinés
       {
         text: `Société ${company?.name || ''} - ${company?.address || ''} - ${company?.postal_code || ''} ${company?.city || ''}`,
-        fontSize: 11,
-        bold: true,
+        fontSize: 10,
         color: PDF_CONFIG.DARK_BLUE,
         margin: [0, 0, 0, 3]
       },
@@ -140,18 +144,17 @@ export const DevisCompletPreview: React.FC<DevisCompletPreviewProps> = ({
           {
             width: PDF_CONFIG.COLUMN1_WIDTH,
             text: 'Tél:',
-            fontSize: PDF_CONFIG.DEFAULT_FONT_SIZE,
+            fontSize: 10,
             color: PDF_CONFIG.DARK_BLUE
           },
           {
             width: '*',
             text: company?.tel1 || '',
-            fontSize: PDF_CONFIG.DEFAULT_FONT_SIZE,
+            fontSize: 10,
             color: PDF_CONFIG.DARK_BLUE
           }
         ],
-        columnGap: 1,
-        margin: [0, 3, 0, 0]
+        columnGap: 1
       },
       
       company?.tel2 ? {
@@ -159,17 +162,16 @@ export const DevisCompletPreview: React.FC<DevisCompletPreviewProps> = ({
           {
             width: PDF_CONFIG.COLUMN1_WIDTH,
             text: '',
-            fontSize: PDF_CONFIG.DEFAULT_FONT_SIZE
+            fontSize: 10
           },
           {
             width: '*',
             text: company.tel2,
-            fontSize: PDF_CONFIG.DEFAULT_FONT_SIZE,
+            fontSize: 10,
             color: PDF_CONFIG.DARK_BLUE
           }
         ],
-        columnGap: 1,
-        margin: [0, 0, 0, 0]
+        columnGap: 1
       } : null,
       
       {
@@ -177,13 +179,13 @@ export const DevisCompletPreview: React.FC<DevisCompletPreviewProps> = ({
           {
             width: PDF_CONFIG.COLUMN1_WIDTH,
             text: 'Mail:',
-            fontSize: PDF_CONFIG.DEFAULT_FONT_SIZE,
+            fontSize: 10,
             color: PDF_CONFIG.DARK_BLUE
           },
           {
             width: '*',
             text: company?.email || '',
-            fontSize: PDF_CONFIG.DEFAULT_FONT_SIZE,
+            fontSize: 10,
             color: PDF_CONFIG.DARK_BLUE
           }
         ],
@@ -200,18 +202,17 @@ export const DevisCompletPreview: React.FC<DevisCompletPreviewProps> = ({
           {
             width: PDF_CONFIG.COLUMN1_WIDTH,
             text: '',
-            fontSize: PDF_CONFIG.DEFAULT_FONT_SIZE
+            fontSize: 10
           },
           {
             width: '*',
             text: [
-              { text: `Devis n°: ${devisNumber || ''} Du ${formatDate(devisDate)} `, fontSize: PDF_CONFIG.DEFAULT_FONT_SIZE, color: PDF_CONFIG.DARK_BLUE },
+              { text: `Devis n°: ${devisNumber || ''} Du ${formatDate(devisDate)} `, fontSize: 10, color: PDF_CONFIG.DARK_BLUE },
               { text: ` (Validité de l'offre : 3 mois.)`, fontSize: 9, italics: true, color: PDF_CONFIG.DARK_BLUE }
             ]
           }
         ],
-        columnGap: 1,
-        margin: [0, 0, 0, 0]
+        columnGap: 1
       },
       
       // Espace avant Client
@@ -220,11 +221,11 @@ export const DevisCompletPreview: React.FC<DevisCompletPreviewProps> = ({
       // Client - Titre aligné en colonne 2
       {
         columns: [
-          { width: PDF_CONFIG.COLUMN1_WIDTH, text: '', fontSize: PDF_CONFIG.DEFAULT_FONT_SIZE },
+          { width: PDF_CONFIG.COLUMN1_WIDTH, text: '', fontSize: 10 },
           { 
             width: '*', 
             text: 'Client / Maître d\'ouvrage',
-            fontSize: PDF_CONFIG.DEFAULT_FONT_SIZE,
+            fontSize: 10,
             color: PDF_CONFIG.DARK_BLUE
           }
         ],
@@ -234,11 +235,11 @@ export const DevisCompletPreview: React.FC<DevisCompletPreviewProps> = ({
       // Client - Contenu avec sauts de ligne préservés
       {
         columns: [
-          { width: PDF_CONFIG.COLUMN1_WIDTH, text: '', fontSize: PDF_CONFIG.DEFAULT_FONT_SIZE },
+          { width: PDF_CONFIG.COLUMN1_WIDTH, text: '', fontSize: 10 },
           { 
             width: '*', 
             text: client || '',
-            fontSize: PDF_CONFIG.DEFAULT_FONT_SIZE,
+            fontSize: 10,
             color: PDF_CONFIG.DARK_BLUE,
             lineHeight: 1.3
           }
@@ -253,7 +254,7 @@ export const DevisCompletPreview: React.FC<DevisCompletPreviewProps> = ({
       // Chantier - Titre et contenu alignés en colonne 1
       {
         text: 'Chantier / Travaux',
-        fontSize: PDF_CONFIG.DEFAULT_FONT_SIZE,
+        fontSize: 10,
         color: PDF_CONFIG.DARK_BLUE,
         margin: [0, 0, 0, 5]
       },
@@ -261,7 +262,7 @@ export const DevisCompletPreview: React.FC<DevisCompletPreviewProps> = ({
       // Occupant
       occupant ? {
         text: occupant,
-        fontSize: PDF_CONFIG.DEFAULT_FONT_SIZE,
+        fontSize: 10,
         color: PDF_CONFIG.DARK_BLUE,
         margin: [0, 5, 0, 0]
       } : null,
@@ -269,14 +270,14 @@ export const DevisCompletPreview: React.FC<DevisCompletPreviewProps> = ({
       // Adresse du chantier
       projectAddress ? {
         text: 'Adresse du chantier / lieu d\'intervention:',
-        fontSize: PDF_CONFIG.DEFAULT_FONT_SIZE,
+        fontSize: 10,
         color: PDF_CONFIG.DARK_BLUE,
         margin: [0, 5, 0, 0]
       } : null,
       
       projectAddress ? {
         text: projectAddress,
-        fontSize: PDF_CONFIG.DEFAULT_FONT_SIZE,
+        fontSize: 10,
         color: PDF_CONFIG.DARK_BLUE,
         margin: [10, 3, 0, 0]
       } : null,
@@ -284,14 +285,14 @@ export const DevisCompletPreview: React.FC<DevisCompletPreviewProps> = ({
       // Descriptif
       projectDescription ? {
         text: 'Descriptif:',
-        fontSize: PDF_CONFIG.DEFAULT_FONT_SIZE,
+        fontSize: 10,
         color: PDF_CONFIG.DARK_BLUE,
         margin: [0, 8, 0, 0]
       } : null,
       
       projectDescription ? {
         text: projectDescription,
-        fontSize: PDF_CONFIG.DEFAULT_FONT_SIZE,
+        fontSize: 10,
         color: PDF_CONFIG.DARK_BLUE,
         margin: [10, 3, 0, 0]
       } : null,
@@ -299,33 +300,30 @@ export const DevisCompletPreview: React.FC<DevisCompletPreviewProps> = ({
       // Informations complémentaires
       additionalInfo ? {
         text: additionalInfo,
-        fontSize: PDF_CONFIG.DEFAULT_FONT_SIZE,
+        fontSize: 10,
         color: PDF_CONFIG.DARK_BLUE,
         margin: [10, 15, 0, 0]
-      } : null,
-      
-      // Pied de page
-      {
-        text: `${company?.name || ''} - SASU au Capital de ${company?.capital_social || '10000'} € - ${company?.address || ''} ${company?.postal_code || ''} ${company?.city || ''} - Siret : ${company?.siret || ''} - Code APE : ${company?.code_ape || ''} - N° TVA Intracommunautaire : ${company?.tva_intracom || ''}`,
-        fontSize: 7,
-        color: PDF_CONFIG.DARK_BLUE,
-        alignment: 'center',
-        absolutePosition: { x: 20, y: 800 }
-      }
+      } : null
     ].filter(Boolean);
     
-    // Pages détaillées - Contenu du détail du devis
+    // Pages détaillées - Page du détail du devis
     const detailPageContent = [
-      // En-tête
+      // En-tête avec numéro de page
       {
-        text: `DEVIS N° ${devisNumber || ''}`,
-        style: 'header',
-        alignment: 'center'
+        columns: [
+          { width: '*', text: '' },
+          { 
+            width: 'auto', 
+            text: `DEVIS N° ${devisNumber || ''} - Page 2/${totalPages}`,
+            style: 'header',
+            alignment: 'right'
+          }
+        ]
       },
       { text: `Date: ${formatDate(devisDate)}`, style: 'subheader' },
       { text: `Client: ${client || ''}`, style: 'subheader' },
       { text: `Description: ${projectDescription || ''}`, style: 'subheader' },
-      { text: 'DÉTAIL DES PRESTATIONS', style: 'header', alignment: 'center' },
+      { text: 'DÉTAIL DES PRESTATIONS', style: 'header', alignment: 'center' }
     ];
     
     // Ajouter les tableaux de travaux par pièce
@@ -358,16 +356,16 @@ export const DevisCompletPreview: React.FC<DevisCompletPreviewProps> = ({
           const prixHT = travail.prixHT || 0;
           
           return [
-            { text: travail.designation || travail.nom || 'Sans nom', alignment: 'left' },
-            { text: quantite.toString(), alignment: 'center' },
-            { text: travail.unite || 'U', alignment: 'center' },
-            { text: prixUnitaireHT.toFixed(2) + ' €', alignment: 'right' },
-            { text: (travail.tauxTVA || 20).toString() + ' %', alignment: 'center' },
-            { text: prixHT.toFixed(2) + ' €', alignment: 'right' }
+            { text: travail.description || travail.sousTypeLabel || 'Sans nom', style: 'tableContent', alignment: 'left' },
+            { text: quantite.toString(), style: 'tableContent', alignment: 'center' },
+            { text: travail.unite || 'U', style: 'tableContent', alignment: 'center' },
+            { text: prixUnitaireHT.toFixed(2) + ' €', style: 'tableContent', alignment: 'right' },
+            { text: (travail.tauxTVA || 20).toString() + ' %', style: 'tableContent', alignment: 'center' },
+            { text: prixHT.toFixed(2) + ' €', style: 'tableContent', alignment: 'right' }
           ];
         }),
         [
-          { text: 'Total Pièce', style: 'totalRow', colSpan: 5 },
+          { text: 'Total Pièce', colSpan: 5, style: 'totalRow' },
           {}, {}, {}, {},
           { text: roomTotalHT.toFixed(2) + ' €', style: 'totalRow', alignment: 'right' }
         ]
@@ -396,9 +394,21 @@ export const DevisCompletPreview: React.FC<DevisCompletPreviewProps> = ({
       );
     });
     
-    // Ajouter le récapitulatif
-    detailPageContent.push(
-      { text: 'RÉCAPITULATIF GLOBAL', style: 'header', alignment: 'center', margin: [0, 30, 0, 10] },
+    // Page récapitulative
+    const recapPageContent = [
+      // En-tête avec numéro de page
+      {
+        columns: [
+          { width: '*', text: '' },
+          { 
+            width: 'auto', 
+            text: `DEVIS N° ${devisNumber || ''} - Page 3/${totalPages}`,
+            style: 'header',
+            alignment: 'right'
+          }
+        ]
+      },
+      { text: 'RÉCAPITULATIF GLOBAL', style: 'header', alignment: 'center' },
       {
         table: {
           headerRows: 0,
@@ -433,49 +443,50 @@ export const DevisCompletPreview: React.FC<DevisCompletPreviewProps> = ({
       },
       {
         text: 'Le présent devis est valable 3 mois à compter de sa date d\'émission. Paiement selon conditions générales de vente.',
-        margin: [0, 0, 0, 5],
-        fontSize: 9
+        style: 'tableContent',
+        margin: [0, 0, 0, 5]
       },
       {
         text: 'TVA non récupérable pour les travaux de rénovation de l\'habitat privé de plus de 2 ans.',
-        margin: [0, 0, 0, 15],
-        fontSize: 9
+        style: 'tableContent',
+        margin: [0, 0, 0, 15]
       },
       {
         text: 'Date et Signature (précédées de la mention "Bon pour accord")',
         style: 'subheader',
         margin: [0, 30, 0, 50]
-      },
-      
-      // Pied de page
-      {
-        text: `${company?.name || ''} - SASU au Capital de ${company?.capital_social || '10000'} € - ${company?.address || ''} ${company?.postal_code || ''} ${company?.city || ''} - Siret : ${company?.siret || ''} - Code APE : ${company?.code_ape || ''} - N° TVA Intracommunautaire : ${company?.tva_intracom || ''}`,
-        fontSize: 7,
-        color: PDF_CONFIG.DARK_BLUE,
-        alignment: 'center',
-        margin: [0, 50, 0, 0],
-        absolutePosition: { x: 20, y: 800 }
       }
-    );
+    ];
     
     // Document complet
     return {
       pageSize: 'A4',
-      pageMargins: [30, 30, 30, 30],
+      pageMargins: [30, 30, 30, 40],
       content: [
         // Page de garde
         coverPageContent,
-        // Saut de page
+        // Saut de page vers les détails
         { text: '', pageBreak: 'after' },
-        // Pages de détail
-        detailPageContent
+        // Page de détails
+        detailPageContent,
+        // Saut de page vers le récapitulatif
+        { text: '', pageBreak: 'after' },
+        // Page de récapitulatif
+        recapPageContent
       ],
-      
+      footer: function(currentPage, pageCount) {
+        return {
+          text: `${company?.name || ''} - SASU au Capital de ${company?.capital_social || '10000'} € - ${company?.address || ''} ${company?.postal_code || ''} ${company?.city || ''} - Siret : ${company?.siret || ''} - Code APE : ${company?.code_ape || ''} - N° TVA Intracommunautaire : ${company?.tva_intracom || ''}`,
+          fontSize: 7,
+          color: PDF_CONFIG.DARK_BLUE,
+          alignment: 'center',
+          margin: [20, 10, 20, 0]
+        };
+      },
       styles: styles,
-      
       defaultStyle: {
         font: 'Roboto',
-        fontSize: PDF_CONFIG.DEFAULT_FONT_SIZE,
+        fontSize: 10,
         color: PDF_CONFIG.DARK_BLUE,
         lineHeight: 1.3
       }
@@ -510,41 +521,41 @@ export const DevisCompletPreview: React.FC<DevisCompletPreviewProps> = ({
         
         <div className="p-5 space-y-6">
           <div className="p-4 bg-gray-100 rounded-md">
-            <h2 className="text-lg font-medium mb-2" style={{ color: PDF_CONFIG.DARK_BLUE }}>
+            <h2 className="text-lg mb-2" style={{ color: PDF_CONFIG.DARK_BLUE, fontSize: '10px' }}>
               Aperçu du devis complet
             </h2>
-            <p className="text-sm text-gray-600">
+            <p className="text-gray-600" style={{ fontSize: '9px' }}>
               Ce document contient toutes les pages du devis : page de garde, détails des travaux par pièce, et récapitulatif.
             </p>
-            <p className="text-sm text-gray-600 mt-2">
+            <p className="text-gray-600 mt-2" style={{ fontSize: '9px' }}>
               Utilisez les boutons ci-dessous pour imprimer ou exporter le devis complet en PDF.
             </p>
           </div>
           
           <div className="space-y-3">
             <div className="p-3 border rounded-md bg-white">
-              <h3 className="font-medium" style={{ color: PDF_CONFIG.DARK_BLUE }}>
+              <h3 style={{ color: PDF_CONFIG.DARK_BLUE, fontSize: '10px' }}>
                 Page de garde
               </h3>
-              <p className="text-sm text-gray-600">
+              <p className="text-gray-600" style={{ fontSize: '9px' }}>
                 Informations générales, coordonnées du client et du chantier
               </p>
             </div>
             
             <div className="p-3 border rounded-md bg-white">
-              <h3 className="font-medium" style={{ color: PDF_CONFIG.DARK_BLUE }}>
+              <h3 style={{ color: PDF_CONFIG.DARK_BLUE, fontSize: '10px' }}>
                 Détails des travaux
               </h3>
-              <p className="text-sm text-gray-600">
+              <p className="text-gray-600" style={{ fontSize: '9px' }}>
                 Liste détaillée des travaux par pièce ({rooms.filter(r => getTravauxForPiece(r.id).length > 0).length} pièce(s) avec travaux)
               </p>
             </div>
             
             <div className="p-3 border rounded-md bg-white">
-              <h3 className="font-medium" style={{ color: PDF_CONFIG.DARK_BLUE }}>
+              <h3 style={{ color: PDF_CONFIG.DARK_BLUE, fontSize: '10px' }}>
                 Récapitulatif
               </h3>
-              <p className="text-sm text-gray-600">
+              <p className="text-gray-600" style={{ fontSize: '9px' }}>
                 Montant total : {totalTTC.toFixed(2)} € TTC
               </p>
             </div>
