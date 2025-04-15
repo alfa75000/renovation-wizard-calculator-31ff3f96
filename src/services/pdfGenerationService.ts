@@ -1,3 +1,4 @@
+
 import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
 import { Room, Travail, ProjectMetadata } from '@/types';
@@ -346,6 +347,25 @@ export const generateRecapPDF = async (
   // On filtre les pièces qui n'ont pas de travaux
   const roomsWithTravaux = rooms.filter(room => getTravauxForPiece(room.id).length > 0);
   
+  // Grouper les travaux par TVA pour les détails
+  const grouperTravauxParTVA = (travauxList: Travail[]): Record<number, Travail[]> => {
+    return travauxList.reduce((groups, travail) => {
+      const tauxTVA = travail.tauxTVA;
+      if (!groups[tauxTVA]) {
+        groups[tauxTVA] = [];
+      }
+      groups[tauxTVA].push(travail);
+      return groups;
+    }, {} as Record<number, Travail[]>);
+  };
+  
+  // Calculer le montant de TVA d'un travail
+  const calculerMontantTVA = (travail: Travail): number => {
+    const prixUnitaireHT = travail.prixFournitures + travail.prixMainOeuvre;
+    const totalHT = prixUnitaireHT * travail.quantite;
+    return totalHT * (travail.tauxTVA / 100);
+  };
+  
   // Créer le contenu du document
   const docContent: any[] = [];
   
@@ -371,7 +391,6 @@ export const generateRecapPDF = async (
   
   // Pour chaque pièce avec des travaux
   let totalHT = 0;
-  let totalTVA = 0;
   
   roomsWithTravaux.forEach(room => {
     const travauxPiece = getTravauxForPiece(room.id);
@@ -382,15 +401,8 @@ export const generateRecapPDF = async (
       return sum + (t.prixFournitures + t.prixMainOeuvre) * t.quantite;
     }, 0);
     
-    // Calculer la TVA pour cette pièce
-    const roomTVA = travauxPiece.reduce((sum, t) => {
-      const totalHT = (t.prixFournitures + t.prixMainOeuvre) * t.quantite;
-      return sum + (totalHT * t.tauxTVA / 100);
-    }, 0);
-    
-    // Ajouter à nos totaux
+    // Ajouter à notre total global
     totalHT += roomTotalHT;
-    totalTVA += roomTVA;
     
     // Ajouter la ligne à la table
     roomTotalsTableBody.push([
@@ -432,23 +444,58 @@ export const generateRecapPDF = async (
     margin: [0, 0, 0, 30]
   });
   
-  // Table des totaux généraux
+  // Grouper les travaux par taux de TVA
+  const travauxParTVA = grouperTravauxParTVA(travaux);
+  const tauxTVA = Object.keys(travauxParTVA).map(Number).sort();
+  
+  // Calculer les montants de TVA par taux
+  const montantsTVAParTaux = tauxTVA.map(taux => {
+    const travauxTaux = travauxParTVA[taux];
+    const totalHTTaux = travauxTaux.reduce((sum, travail) => {
+      const prixUnitaireHT = travail.prixFournitures + travail.prixMainOeuvre;
+      return sum + (prixUnitaireHT * travail.quantite);
+    }, 0);
+    const montantTVA = travauxTaux.reduce((sum, travail) => 
+      sum + calculerMontantTVA(travail), 0);
+    
+    return { taux, totalHTTaux, montantTVA };
+  });
+  
+  // Calculer le total TVA
+  const totalTVA = montantsTVAParTaux.reduce((sum, { montantTVA }) => sum + montantTVA, 0);
+  
+  // Table des totaux généraux - alignée à droite
   const totalTTC = totalHT + totalTVA;
   
+  // Construire les lignes de la table des totaux
   const totalTableBody = [
     [
       { text: 'Total HT', alignment: 'left', fontSize: 10, bold: true },
       { text: formatPrice(totalHT), alignment: 'right', fontSize: 10, color: DARK_BLUE }
-    ],
-    [
-      { text: 'Total TVA', alignment: 'left', fontSize: 10, bold: true },
-      { text: formatPrice(totalTVA), alignment: 'right', fontSize: 10, color: DARK_BLUE }
-    ],
-    [
-      { text: 'Total TTC', alignment: 'left', fontSize: 10, bold: true },
-      { text: formatPrice(totalTTC), alignment: 'right', fontSize: 10, color: DARK_BLUE }
     ]
   ];
+  
+  // Ajouter chaque taux de TVA séparément
+  montantsTVAParTaux.forEach(({ taux, totalHTTaux, montantTVA }) => {
+    totalTableBody.push([
+      { text: `Total TVA ${taux}%`, alignment: 'left', fontSize: 10, bold: true },
+      { text: formatPrice(montantTVA), alignment: 'right', fontSize: 10, color: DARK_BLUE }
+    ]);
+  });
+  
+  // Ajouter le total TVA si plusieurs taux sont présents
+  if (montantsTVAParTaux.length > 1) {
+    totalTableBody.push([
+      { text: 'Total TVA', alignment: 'left', fontSize: 10, bold: true },
+      { text: formatPrice(totalTVA), alignment: 'right', fontSize: 10, color: DARK_BLUE }
+    ]);
+  }
+  
+  // Ajouter le total TTC
+  totalTableBody.push([
+    { text: 'Total TTC', alignment: 'left', fontSize: 10, bold: true },
+    { text: formatPrice(totalTTC), alignment: 'right', fontSize: 10, color: DARK_BLUE }
+  ]);
   
   // Ajouter la table des totaux, alignée à droite
   docContent.push({
