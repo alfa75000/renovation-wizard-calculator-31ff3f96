@@ -54,8 +54,8 @@ const DetailsTravaux: React.FC<DetailsTravauxProps> = ({
 
         return (
           <div key={room.id} className="mb-6">
-            <h3 className="text-lg font-semibold mb-2 border-b pb-2">
-              {room.name} ({room.surface.toFixed(2)} m²)
+            <h3 className="text-lg font-semibold mb-2 border-b pb-2 text-left">
+              {room.name}
             </h3>
             
             <div className="overflow-x-auto">
