@@ -4,7 +4,7 @@ import pdfFonts from 'pdfmake/build/vfs_fonts';
 import { Room, Travail, ProjectMetadata } from '@/types';
 
 // Initialiser pdfMake avec les polices
-pdfMake.vfs = pdfFonts.pdfMake ? pdfFonts.pdfMake.vfs : pdfFonts.vfs;
+pdfMake.vfs = pdfFonts.pdfMake.vfs;
 
 // Couleur bleu foncée similaire à celle utilisée dans DevisCoverPreview
 const DARK_BLUE = "#002855";
@@ -32,7 +32,7 @@ export const generateDetailsPDF = async (
   // On filtre les pièces qui n'ont pas de travaux
   const roomsWithTravaux = rooms.filter(room => getTravauxForPiece(room.id).length > 0);
   
-  // Calculer le nombre total de pages (approximatif car les pièces sont désormais à la suite)
+  // Calculer le nombre total de pages (approximatif)
   const pageCount = 1; // Estimation d'une seule page pour toutes les pièces
   
   // Créer le contenu du document
@@ -50,6 +50,51 @@ export const generateDetailsPDF = async (
     margin: [0, 0, 0, 20] // Marge bas pour espacer l'en-tête du contenu
   });
 
+  // Ajouter l'en-tête du tableau commun pour toutes les pièces (une seule fois en haut de la page)
+  const tableHeaderRow = [
+    { text: 'Description', style: 'tableHeader', alignment: 'left', color: DARK_BLUE },
+    { text: 'Quantité', style: 'tableHeader', alignment: 'right', color: DARK_BLUE },
+    { text: 'Prix HT Unitaire', style: 'tableHeader', alignment: 'center', color: DARK_BLUE },
+    { text: 'TVA', style: 'tableHeader', alignment: 'right', color: DARK_BLUE },
+    { text: 'Total HT', style: 'tableHeader', alignment: 'right', color: DARK_BLUE }
+  ];
+
+  // Créer un tableau pour l'en-tête
+  docContent.push({
+    table: {
+      headerRows: 1,
+      widths: ['*', 'auto', 'auto', 'auto', 'auto'],
+      body: [tableHeaderRow]
+    },
+    layout: {
+      hLineWidth: function(i: number, node: any) {
+        return (i === 0 || i === node.table.body.length) ? 1 : 1;
+      },
+      vLineWidth: function() {
+        return 0;
+      },
+      hLineColor: function() {
+        return '#e5e7eb';
+      },
+      paddingLeft: function() {
+        return 4;
+      },
+      paddingRight: function() {
+        return 4;
+      },
+      paddingTop: function() {
+        return 2;
+      },
+      paddingBottom: function() {
+        return 2;
+      },
+      fillColor: function(rowIndex: number) {
+        return (rowIndex === 0) ? '#f3f4f6' : null;
+      }
+    },
+    margin: [0, 0, 0, 10]
+  });
+
   // Pour chaque pièce avec des travaux, sans forcer de saut de page
   roomsWithTravaux.forEach((room, roomIndex) => {
     const travauxPiece = getTravauxForPiece(room.id);
@@ -61,21 +106,13 @@ export const generateDetailsPDF = async (
       style: 'roomTitle',
       fontSize: 9,
       bold: true,
+      color: DARK_BLUE,
       fillColor: '#f3f4f6',
       margin: [0, 0, 0, 5]
     });
     
-    // Créer le tableau pour cette pièce
+    // Créer le tableau pour cette pièce (sans l'en-tête)
     const tableBody = [];
-    
-    // En-tête du tableau
-    tableBody.push([
-      { text: 'Description', style: 'tableHeader', alignment: 'left', color: DARK_BLUE },
-      { text: 'Quantité', style: 'tableHeader', alignment: 'right', color: DARK_BLUE },
-      { text: 'Prix HT Unitaire', style: 'tableHeader', alignment: 'center', color: DARK_BLUE },
-      { text: 'TVA', style: 'tableHeader', alignment: 'right', color: DARK_BLUE },
-      { text: 'Total HT', style: 'tableHeader', alignment: 'right', color: DARK_BLUE }
-    ]);
     
     // Ajouter chaque travail au tableau
     travauxPiece.forEach(travail => {
@@ -89,7 +126,8 @@ export const generateDetailsPDF = async (
       if (travail.description) {
         descriptionContent.push({ 
           text: travail.description, 
-          fontSize: 8
+          fontSize: 8,
+          bold: false
         });
       }
       
@@ -97,13 +135,15 @@ export const generateDetailsPDF = async (
         descriptionContent.push({ 
           text: travail.personnalisation, 
           fontSize: 8,
+          bold: false,
           italics: true
         });
       }
       
       descriptionContent.push({
         text: `MO: ${formatPrice(travail.prixMainOeuvre)}/u, Fourn: ${formatPrice(travail.prixFournitures)}/u (total: ${formatPrice(prixUnitaireHT)}/u)`,
-        fontSize: 8
+        fontSize: 7,
+        bold: false
       });
       
       tableBody.push([
@@ -130,7 +170,7 @@ export const generateDetailsPDF = async (
     // Ajouter le tableau au document
     docContent.push({
       table: {
-        headerRows: 1,
+        headerRows: 0, // Pas d'en-tête de tableau puisqu'on l'a déjà ajouté en haut
         widths: ['*', 'auto', 'auto', 'auto', 'auto'],
         body: tableBody
       },
@@ -155,9 +195,6 @@ export const generateDetailsPDF = async (
         },
         paddingBottom: function() {
           return 2;
-        },
-        fillColor: function(rowIndex: number) {
-          return (rowIndex === 0) ? '#f3f4f6' : null;
         }
       },
       margin: [0, 0, 0, 15]
