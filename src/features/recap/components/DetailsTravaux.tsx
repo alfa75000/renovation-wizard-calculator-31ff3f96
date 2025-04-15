@@ -49,7 +49,7 @@ const DetailsTravaux: React.FC<DetailsTravauxProps> = ({
                   <TableRow>
                     <TableHead className="text-center">Description</TableHead>
                     <TableHead className="text-right">Quantité</TableHead>
-                    <TableHead className="text-right">Prix unitaire HT</TableHead>
+                    <TableHead className="text-right">Prix U HT</TableHead>
                     <TableHead className="text-right">TVA</TableHead>
                     <TableHead className="text-right">Total HT</TableHead>
                   </TableRow>
