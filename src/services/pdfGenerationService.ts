@@ -1,4 +1,3 @@
-
 import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
 import { Room, Travail, ProjectMetadata } from '@/types';
@@ -29,7 +28,6 @@ export const generateDetailsPDF = async (
 
   // Fonction utilitaire pour formater les prix avec séparation des milliers
   const formatPrice = (value: number): string => {
-    // Utiliser un espace non-sécable comme séparateur de milliers pour éviter les problèmes d'affichage
     return new Intl.NumberFormat('fr-FR', { 
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
@@ -39,7 +37,6 @@ export const generateDetailsPDF = async (
 
   // Fonction pour formater les quantités avec séparation des milliers
   const formatQuantity = (quantity: number): string => {
-    // Utiliser un espace non-sécable comme séparateur de milliers pour éviter les problèmes d'affichage
     return new Intl.NumberFormat('fr-FR', { 
       minimumFractionDigits: 0,
       maximumFractionDigits: 2,
@@ -325,6 +322,201 @@ export const generateDetailsPDF = async (
     console.log('PDF généré avec succès');
   } catch (error) {
     console.error('Erreur lors de la génération du PDF:', error);
+    throw error;
+  }
+};
+
+export const generateRecapPDF = async (
+  rooms: Room[], 
+  travaux: Travail[], 
+  getTravauxForPiece: (pieceId: string) => Travail[],
+  metadata?: ProjectMetadata
+) => {
+  console.log('Génération du PDF récapitulatif avec pdfMake');
+
+  // Fonction utilitaire pour formater les prix avec séparation des milliers
+  const formatPrice = (value: number): string => {
+    return new Intl.NumberFormat('fr-FR', { 
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+      useGrouping: true
+    }).format(value).replace(/\s/g, '\u00A0') + '€';
+  };
+
+  // On filtre les pièces qui n'ont pas de travaux
+  const roomsWithTravaux = rooms.filter(room => getTravauxForPiece(room.id).length > 0);
+  
+  // Créer le contenu du document
+  const docContent: any[] = [];
+  
+  // Ajouter le titre du récapitulatif
+  docContent.push({
+    text: 'RÉCAPITULATIF',
+    style: 'header',
+    alignment: 'center',
+    fontSize: 14,
+    bold: true,
+    color: DARK_BLUE,
+    margin: [0, 10, 0, 20]
+  });
+  
+  // Créer la table des totaux par pièce
+  const roomTotalsTableBody = [];
+  
+  // Ajouter l'en-tête de la table
+  roomTotalsTableBody.push([
+    { text: '', style: 'tableHeader', alignment: 'left', color: DARK_BLUE },
+    { text: 'Montant HT', style: 'tableHeader', alignment: 'right', color: DARK_BLUE }
+  ]);
+  
+  // Pour chaque pièce avec des travaux
+  let totalHT = 0;
+  let totalTVA = 0;
+  
+  roomsWithTravaux.forEach(room => {
+    const travauxPiece = getTravauxForPiece(room.id);
+    if (travauxPiece.length === 0) return;
+    
+    // Calculer le total HT pour cette pièce
+    const roomTotalHT = travauxPiece.reduce((sum, t) => {
+      return sum + (t.prixFournitures + t.prixMainOeuvre) * t.quantite;
+    }, 0);
+    
+    // Calculer la TVA pour cette pièce
+    const roomTVA = travauxPiece.reduce((sum, t) => {
+      const totalHT = (t.prixFournitures + t.prixMainOeuvre) * t.quantite;
+      return sum + (totalHT * t.tauxTVA / 100);
+    }, 0);
+    
+    // Ajouter à nos totaux
+    totalHT += roomTotalHT;
+    totalTVA += roomTVA;
+    
+    // Ajouter la ligne à la table
+    roomTotalsTableBody.push([
+      { text: `Total HT ${room.name}`, alignment: 'left', fontSize: 10, bold: true },
+      { text: formatPrice(roomTotalHT), alignment: 'right', fontSize: 10, color: DARK_BLUE }
+    ]);
+  });
+  
+  // Ajouter la table au document
+  docContent.push({
+    table: {
+      headerRows: 1,
+      widths: ['*', 100],
+      body: roomTotalsTableBody
+    },
+    layout: {
+      hLineWidth: function(i: number, node: any) {
+        return (i === 0 || i === 1 || i === node.table.body.length) ? 1 : 0;
+      },
+      vLineWidth: function() {
+        return 0;
+      },
+      hLineColor: function() {
+        return '#e5e7eb';
+      },
+      paddingLeft: function() {
+        return 10;
+      },
+      paddingRight: function() {
+        return 10;
+      },
+      paddingTop: function() {
+        return 8;
+      },
+      paddingBottom: function() {
+        return 8;
+      }
+    },
+    margin: [0, 0, 0, 30]
+  });
+  
+  // Table des totaux généraux
+  const totalTTC = totalHT + totalTVA;
+  
+  const totalTableBody = [
+    [
+      { text: 'Total HT', alignment: 'left', fontSize: 10, bold: true },
+      { text: formatPrice(totalHT), alignment: 'right', fontSize: 10, color: DARK_BLUE }
+    ],
+    [
+      { text: 'Total TVA', alignment: 'left', fontSize: 10, bold: true },
+      { text: formatPrice(totalTVA), alignment: 'right', fontSize: 10, color: DARK_BLUE }
+    ],
+    [
+      { text: 'Total TTC', alignment: 'left', fontSize: 10, bold: true },
+      { text: formatPrice(totalTTC), alignment: 'right', fontSize: 10, color: DARK_BLUE }
+    ]
+  ];
+  
+  // Ajouter la table des totaux, alignée à droite
+  docContent.push({
+    stack: [
+      {
+        table: {
+          widths: [100, 100],
+          body: totalTableBody
+        },
+        layout: {
+          hLineWidth: function(i: number, node: any) {
+            return (i === 0 || i === node.table.body.length) ? 1 : 1;
+          },
+          vLineWidth: function() {
+            return 0;
+          },
+          hLineColor: function() {
+            return '#e5e7eb';
+          },
+          paddingLeft: function() {
+            return 10;
+          },
+          paddingRight: function() {
+            return 10;
+          },
+          paddingTop: function() {
+            return 8;
+          },
+          paddingBottom: function() {
+            return 8;
+          }
+        }
+      }
+    ],
+    alignment: 'right',
+    margin: [0, 0, 0, 20]
+  });
+  
+  // Définir le document avec contenu et styles
+  const docDefinition = {
+    content: docContent,
+    styles: {
+      header: {
+        fontSize: 14,
+        bold: true,
+        color: DARK_BLUE,
+        margin: [0, 10, 0, 10]
+      },
+      tableHeader: {
+        fontSize: 10,
+        bold: true,
+        color: DARK_BLUE,
+        margin: [0, 5, 0, 5]
+      }
+    },
+    pageMargins: [40, 40, 40, 40],
+    defaultStyle: {
+      fontSize: 10,
+      color: DARK_BLUE
+    }
+  };
+  
+  try {
+    // Créer et télécharger le PDF
+    pdfMake.createPdf(docDefinition).download(`devis_recap_${metadata?.devisNumber || 'XXXX-XX'}.pdf`);
+    console.log('PDF récapitulatif généré avec succès');
+  } catch (error) {
+    console.error('Erreur lors de la génération du PDF récapitulatif:', error);
     throw error;
   }
 };
