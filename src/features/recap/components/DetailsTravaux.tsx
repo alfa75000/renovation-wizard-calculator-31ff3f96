@@ -36,7 +36,7 @@ const DetailsTravaux: React.FC<DetailsTravauxProps> = ({
             <TableRow>
               <TableHead className="text-center">Description</TableHead>
               <TableHead className="text-right">Quantité</TableHead>
-              <TableHead className="text-right">Prix U HT</TableHead>
+              <TableHead className="text-center">Prix U HT</TableHead>
               <TableHead className="text-right">TVA</TableHead>
               <TableHead className="text-right">Total HT</TableHead>
             </TableRow>
@@ -51,9 +51,9 @@ const DetailsTravaux: React.FC<DetailsTravauxProps> = ({
 
               return (
                 <React.Fragment key={room.id}>
-                  {/* Nom de la pièce */}
+                  {/* Nom de la pièce - aligné à gauche */}
                   <TableRow className="bg-gray-100">
-                    <TableCell colSpan={5} className="font-semibold">
+                    <TableCell colSpan={5} className="font-semibold text-left">
                       {room.name}
                     </TableCell>
                   </TableRow>
