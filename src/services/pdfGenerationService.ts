@@ -32,8 +32,8 @@ export const generateDetailsPDF = async (
   // On filtre les pièces qui n'ont pas de travaux
   const roomsWithTravaux = rooms.filter(room => getTravauxForPiece(room.id).length > 0);
   
-  // Calculer le nombre total de pages
-  const pageCount = roomsWithTravaux.length;
+  // Calculer le nombre total de pages (approximatif car les pièces sont désormais à la suite)
+  const pageCount = 1; // Estimation d'une seule page pour toutes les pièces
   
   // Créer le contenu du document
   const docContent: any[] = [];
@@ -41,24 +41,19 @@ export const generateDetailsPDF = async (
   // Marge globale de 15mm
   const pageMargins = [15, 15, 15, 15]; // [gauche, haut, droite, bas] en mm
 
-  // Pour chaque pièce avec des travaux
+  // Ajouter l'en-tête avec le numéro de devis et la pagination
+  docContent.push({
+    text: `DEVIS N° ${metadata?.devisNumber || 'XXXX-XX'} - page 1/${pageCount}`,
+    style: 'header',
+    alignment: 'right',
+    fontSize: 8,
+    margin: [0, 0, 0, 20] // Marge bas pour espacer l'en-tête du contenu
+  });
+
+  // Pour chaque pièce avec des travaux, sans forcer de saut de page
   roomsWithTravaux.forEach((room, roomIndex) => {
     const travauxPiece = getTravauxForPiece(room.id);
     if (travauxPiece.length === 0) return;
-    
-    // Si ce n'est pas la première pièce, ajouter un saut de page avant
-    if (roomIndex > 0) {
-      docContent.push({ text: '', pageBreak: 'before' });
-    }
-    
-    // Ajouter l'en-tête avec le numéro de devis et la pagination
-    docContent.push({
-      text: `DEVIS N° ${metadata?.devisNumber || 'XXXX-XX'} - page ${roomIndex + 1}/${pageCount}`,
-      style: 'header',
-      alignment: 'right',
-      fontSize: 9,
-      margin: [0, 0, 0, 20] // Marge bas pour espacer l'en-tête du contenu
-    });
     
     // Ajouter le titre de la pièce
     docContent.push({
@@ -75,11 +70,11 @@ export const generateDetailsPDF = async (
     
     // En-tête du tableau
     tableBody.push([
-      { text: 'Description', style: 'tableHeader', alignment: 'left' },
-      { text: 'Quantité', style: 'tableHeader', alignment: 'right' },
-      { text: 'Prix HT Unitaire', style: 'tableHeader', alignment: 'center' },
-      { text: 'TVA', style: 'tableHeader', alignment: 'right' },
-      { text: 'Total HT', style: 'tableHeader', alignment: 'right' }
+      { text: 'Description', style: 'tableHeader', alignment: 'left', color: DARK_BLUE },
+      { text: 'Quantité', style: 'tableHeader', alignment: 'right', color: DARK_BLUE },
+      { text: 'Prix HT Unitaire', style: 'tableHeader', alignment: 'center', color: DARK_BLUE },
+      { text: 'TVA', style: 'tableHeader', alignment: 'right', color: DARK_BLUE },
+      { text: 'Total HT', style: 'tableHeader', alignment: 'right', color: DARK_BLUE }
     ]);
     
     // Ajouter chaque travail au tableau
@@ -102,7 +97,7 @@ export const generateDetailsPDF = async (
         descriptionContent.push({ 
           text: travail.personnalisation, 
           fontSize: 8,
-          italics: true 
+          italics: true
         });
       }
       
@@ -174,24 +169,28 @@ export const generateDetailsPDF = async (
     content: docContent,
     styles: {
       header: {
-        fontSize: 9,
+        fontSize: 8,
+        color: DARK_BLUE,
         margin: [0, 5, 0, 20]
       },
       roomTitle: {
         fontSize: 9,
         bold: true,
+        color: DARK_BLUE,
         fillColor: '#f3f4f6',
         padding: [5, 3, 5, 3],
         margin: [0, 0, 0, 5]
       },
       tableHeader: {
         fontSize: 9,
-        bold: true
+        bold: true,
+        color: DARK_BLUE
       }
     },
     pageMargins: pageMargins, // Réduction des marges à 15mm sur tous les côtés
     defaultStyle: {
-      fontSize: 9
+      fontSize: 9,
+      color: DARK_BLUE
     }
   };
   
