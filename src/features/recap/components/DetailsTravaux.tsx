@@ -30,21 +30,6 @@ const DetailsTravaux: React.FC<DetailsTravauxProps> = ({
 
   return (
     <div className="space-y-8">
-      <div className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="text-center">Description</TableHead>
-              <TableHead className="text-right">Quantité</TableHead>
-              <TableHead className="text-right">Prix unitaire HT</TableHead>
-              <TableHead className="text-right">TVA</TableHead>
-              <TableHead className="text-right">Total HT</TableHead>
-            </TableRow>
-          </TableHeader>
-        </Table>
-      </div>
-
-      {/* Affichage des pièces et travaux */}
       {rooms.map(room => {
         const travauxPiece = getTravauxForPiece(room.id);
         if (travauxPiece.length === 0) return null;
@@ -60,6 +45,15 @@ const DetailsTravaux: React.FC<DetailsTravauxProps> = ({
             
             <div className="overflow-x-auto">
               <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-center">Description</TableHead>
+                    <TableHead className="text-right">Quantité</TableHead>
+                    <TableHead className="text-right">Prix unitaire HT</TableHead>
+                    <TableHead className="text-right">TVA</TableHead>
+                    <TableHead className="text-right">Total HT</TableHead>
+                  </TableRow>
+                </TableHeader>
                 <TableBody>
                   {travauxPiece.map(travail => (
                     <TravailRecapRow key={travail.id} travail={travail} />
