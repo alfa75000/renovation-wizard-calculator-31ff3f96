@@ -29,7 +29,7 @@ const MenuiseriesList: React.FC<MenuiseriesListProps> = ({
         
         // Si le nom a changé, met à jour la menuiserie
         if (newName !== menuiserie.name) {
-          onEdit(menuiserie.id, { name: newName });
+          onEdit(menuiserie.id, { ...menuiserie, name: newName });
         }
       });
     }

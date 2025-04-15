@@ -1,9 +1,11 @@
+
 import React from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import UniteSelect from "./UniteSelect";
 import SurfaceImpacteeSelect from "./SurfaceImpacteeSelect";
-import { SurfaceImpactee, UniteType } from "@/types/supabase";
+import { SurfaceImpactee } from "@/types";
+import { UniteType } from "@/types/supabase";
 
 interface QuantitySectionProps {
   quantite: number;

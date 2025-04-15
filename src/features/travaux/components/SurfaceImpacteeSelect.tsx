@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { SurfaceImpactee } from '@/types/supabase';
+import { SurfaceImpactee } from '@/types';
 
 interface SurfaceImpacteeSelectProps {
   value: SurfaceImpactee;

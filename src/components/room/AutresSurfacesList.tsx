@@ -56,7 +56,6 @@ const AutresSurfacesList: React.FC<AutresSurfacesListProps> = ({ roomId }) => {
     
     return {
       type: surface.type,
-      nom: surface.nom,
       name: surface.name,
       designation: surface.designation,
       largeur: surface.largeur,
@@ -65,9 +64,7 @@ const AutresSurfacesList: React.FC<AutresSurfacesListProps> = ({ roomId }) => {
       surfaceImpactee: surface.surfaceImpactee,
       estDeduction: surface.estDeduction,
       impactePlinthe: surface.impactePlinthe,
-      description: surface.description,
-      roomId: surface.roomId,
-      typeId: surface.typeId
+      description: surface.description
     };
   };
   
