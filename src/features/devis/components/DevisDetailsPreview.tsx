@@ -7,7 +7,7 @@ import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
 import { useProject } from "@/contexts/ProjectContext";
 import { useTravaux } from "@/features/travaux/hooks/useTravaux";
-import { PrintableField, CompanyInfo, PDF_CONFIG, formatDate } from "../services/pdfGenerationService";
+import { PrintableField, CompanyInfo, PDF_CONFIG, formatDate, PDFStyle } from "../services/pdfGenerationService";
 
 // Initialiser pdfMake avec les polices
 pdfMake.vfs = pdfFonts.pdfMake ? pdfFonts.pdfMake.vfs : pdfFonts.vfs;
@@ -60,8 +60,11 @@ export const DevisDetailsPreview: React.FC<DevisDetailsPreviewProps> = ({
   
   // Fonction pour générer le PDF
   const createDocDefinition = () => {
+    // Déterminer le nombre total de pages
+    const totalPages = 2; // 1 pour les détails + 1 pour le récapitulatif
+    
     // Définitions des styles
-    const styles = {
+    const styles: Record<string, PDFStyle> = {
       header: {
         fontSize: 10,
         color: PDF_CONFIG.DARK_BLUE
@@ -84,18 +87,15 @@ export const DevisDetailsPreview: React.FC<DevisDetailsPreviewProps> = ({
       }
     };
     
-    // Déterminer le nombre total de pages
-    const totalPages = 2; // 1 pour les détails + 1 pour le récapitulatif
-    
     // Contenu du document
-    const content = [
+    const content: any[] = [
       // En-tête
       {
         columns: [
           { width: '*', text: '' },
           { 
             width: 'auto', 
-            text: `DEVIS N° ${devisNumber || ''}`,
+            text: `DEVIS N° ${devisNumber || ''} - Page 1/${totalPages}`,
             style: 'header',
             alignment: 'right'
           }
@@ -153,7 +153,7 @@ export const DevisDetailsPreview: React.FC<DevisDetailsPreviewProps> = ({
       ];
       
       content.push(
-        { text: `PIÈCE: ${room.name}`, style: 'subheader', margin: [0, 15, 0, 5] },
+        { text: `PIÈCE: ${room.name}`, style: 'subheader' },
         {
           table: {
             headerRows: 1,
@@ -161,13 +161,13 @@ export const DevisDetailsPreview: React.FC<DevisDetailsPreviewProps> = ({
             body: tableBody
           },
           layout: {
-            hLineWidth: function(i, node) {
+            hLineWidth: function(i: number, node: any) {
               return (i === 0 || i === 1 || i === node.table.body.length) ? 1 : 0.5;
             },
             vLineWidth: function() {
               return 0; // Aucune ligne verticale
             },
-            hLineColor: function(i, node) {
+            hLineColor: function(i: number, node: any) {
               return (i === 0 || i === 1 || i === node.table.body.length) ? '#aaa' : '#ddd';
             }
           }
@@ -193,7 +193,7 @@ export const DevisDetailsPreview: React.FC<DevisDetailsPreviewProps> = ({
           }
         ]
       },
-      { text: 'RÉCAPITULATIF GLOBAL', style: 'header', alignment: 'center', margin: [0, 10, 0, 10] },
+      { text: 'RÉCAPITULATIF GLOBAL', style: 'header', alignment: 'center' },
       {
         table: {
           headerRows: 0,
@@ -214,39 +214,17 @@ export const DevisDetailsPreview: React.FC<DevisDetailsPreviewProps> = ({
           ]
         },
         layout: {
-          hLineWidth: function(i) {
-            return 1;
-          },
-          vLineWidth: function() {
-            return 0; // Aucune ligne verticale
-          },
-          hLineColor: function() {
-            return '#aaa';
-          }
+          hLineWidth: function() { return 1; },
+          vLineWidth: function() { return 0; }, // Aucune ligne verticale
+          hLineColor: function() { return '#aaa'; }
         }
       },
       
       // Mentions légales et conditions
-      {
-        text: 'Mentions et Conditions',
-        style: 'subheader',
-        margin: [0, 30, 0, 5]
-      },
-      {
-        text: 'Le présent devis est valable 3 mois à compter de sa date d\'émission. Paiement selon conditions générales de vente.',
-        style: 'tableContent',
-        margin: [0, 0, 0, 5]
-      },
-      {
-        text: 'TVA non récupérable pour les travaux de rénovation de l\'habitat privé de plus de 2 ans.',
-        style: 'tableContent',
-        margin: [0, 0, 0, 15]
-      },
-      {
-        text: 'Date et Signature (précédées de la mention "Bon pour accord")',
-        style: 'subheader',
-        margin: [0, 30, 0, 50]
-      }
+      { text: 'Mentions et Conditions', style: 'subheader' },
+      { text: 'Le présent devis est valable 3 mois à compter de sa date d\'émission. Paiement selon conditions générales de vente.', style: 'tableContent' },
+      { text: 'TVA non récupérable pour les travaux de rénovation de l\'habitat privé de plus de 2 ans.', style: 'tableContent' },
+      { text: 'Date et Signature (précédées de la mention "Bon pour accord")', style: 'subheader' }
     );
     
     // Pied de page avec numérotation
@@ -254,7 +232,7 @@ export const DevisDetailsPreview: React.FC<DevisDetailsPreviewProps> = ({
       pageSize: 'A4',
       pageMargins: [30, 30, 30, 40],
       content: content,
-      footer: function(currentPage, pageCount) {
+      footer: function(currentPage: number, pageCount: number) {
         return {
           text: `${company?.name || ''} - SASU au Capital de ${company?.capital_social || '10000'} € - ${company?.address || ''} ${company?.postal_code || ''} ${company?.city || ''} - Siret : ${company?.siret || ''} - Code APE : ${company?.code_ape || ''} - N° TVA Intracommunautaire : ${company?.tva_intracom || ''}`,
           fontSize: 7,
@@ -305,7 +283,7 @@ export const DevisDetailsPreview: React.FC<DevisDetailsPreviewProps> = ({
         <div ref={printContentRef} className="p-5 rounded-md my-4 bg-white">
           <div className="text-right mb-4">
             <h1 className="text-xl" style={{ color: PDF_CONFIG.DARK_BLUE }}>
-              DEVIS N° {devisNumber || ''}
+              DEVIS N° {devisNumber || ''} - Page 1/2
             </h1>
           </div>
           

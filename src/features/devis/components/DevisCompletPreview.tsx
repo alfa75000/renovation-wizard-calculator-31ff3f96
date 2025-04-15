@@ -7,7 +7,7 @@ import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
 import { useProject } from "@/contexts/ProjectContext";
 import { useTravaux } from "@/features/travaux/hooks/useTravaux";
-import { PrintableField, CompanyInfo, PDF_CONFIG, formatDate } from "../services/pdfGenerationService";
+import { PrintableField, CompanyInfo, PDF_CONFIG, formatDate, PDFStyle } from "../services/pdfGenerationService";
 
 // Initialiser pdfMake avec les polices
 pdfMake.vfs = pdfFonts.pdfMake ? pdfFonts.pdfMake.vfs : pdfFonts.vfs;
@@ -67,7 +67,7 @@ export const DevisCompletPreview: React.FC<DevisCompletPreviewProps> = ({
   // Fonction pour générer le PDF
   const createDocDefinition = () => {
     // Définitions des styles
-    const styles = {
+    const styles: Record<string, PDFStyle> = {
       header: {
         fontSize: 10,
         color: PDF_CONFIG.DARK_BLUE
@@ -94,7 +94,7 @@ export const DevisCompletPreview: React.FC<DevisCompletPreviewProps> = ({
     const totalPages = 3; // 1 page de garde + 1 pour les détails + 1 pour le récapitulatif
     
     // Contenu du document - Page de garde
-    const coverPageContent = [
+    const coverPageContent: any[] = [
       // Logo et informations d'assurance
       {
         columns: [
@@ -126,16 +126,14 @@ export const DevisCompletPreview: React.FC<DevisCompletPreviewProps> = ({
       {
         text: company?.slogan || 'Entreprise Générale du Bâtiment',
         fontSize: 10,
-        color: PDF_CONFIG.DARK_BLUE,
-        margin: [0, 10, 0, 20]
+        color: PDF_CONFIG.DARK_BLUE
       },
       
       // Coordonnées société - Nom et adresse combinés
       {
         text: `Société ${company?.name || ''} - ${company?.address || ''} - ${company?.postal_code || ''} ${company?.city || ''}`,
         fontSize: 10,
-        color: PDF_CONFIG.DARK_BLUE,
-        margin: [0, 0, 0, 3]
+        color: PDF_CONFIG.DARK_BLUE
       },
       
       // Tél et Mail
@@ -189,12 +187,8 @@ export const DevisCompletPreview: React.FC<DevisCompletPreviewProps> = ({
             color: PDF_CONFIG.DARK_BLUE
           }
         ],
-        columnGap: 1,
-        margin: [0, 5, 0, 0]
+        columnGap: 1
       },
-      
-      // Espace avant devis
-      { text: '', margin: [0, 30, 0, 0] },
       
       // Numéro et date du devis
       {
@@ -214,9 +208,6 @@ export const DevisCompletPreview: React.FC<DevisCompletPreviewProps> = ({
         ],
         columnGap: 1
       },
-      
-      // Espace avant Client
-      { text: '', margin: [0, 35, 0, 0] },
       
       // Client - Titre aligné en colonne 2
       {
@@ -244,70 +235,59 @@ export const DevisCompletPreview: React.FC<DevisCompletPreviewProps> = ({
             lineHeight: 1.3
           }
         ],
-        columnGap: 15,
-        margin: [0, 5, 0, 0]
+        columnGap: 15
       },
-      
-      // Espacement
-      { text: '', margin: [0, 25, 0, 0] },
       
       // Chantier - Titre et contenu alignés en colonne 1
       {
         text: 'Chantier / Travaux',
         fontSize: 10,
-        color: PDF_CONFIG.DARK_BLUE,
-        margin: [0, 0, 0, 5]
+        color: PDF_CONFIG.DARK_BLUE
       },
       
       // Occupant
       occupant ? {
         text: occupant,
         fontSize: 10,
-        color: PDF_CONFIG.DARK_BLUE,
-        margin: [0, 5, 0, 0]
+        color: PDF_CONFIG.DARK_BLUE
       } : null,
       
       // Adresse du chantier
       projectAddress ? {
         text: 'Adresse du chantier / lieu d\'intervention:',
         fontSize: 10,
-        color: PDF_CONFIG.DARK_BLUE,
-        margin: [0, 5, 0, 0]
+        color: PDF_CONFIG.DARK_BLUE
       } : null,
       
       projectAddress ? {
         text: projectAddress,
         fontSize: 10,
-        color: PDF_CONFIG.DARK_BLUE,
-        margin: [10, 3, 0, 0]
+        color: PDF_CONFIG.DARK_BLUE
       } : null,
       
       // Descriptif
       projectDescription ? {
         text: 'Descriptif:',
         fontSize: 10,
-        color: PDF_CONFIG.DARK_BLUE,
-        margin: [0, 8, 0, 0]
+        color: PDF_CONFIG.DARK_BLUE
       } : null,
       
       projectDescription ? {
         text: projectDescription,
         fontSize: 10,
-        color: PDF_CONFIG.DARK_BLUE,
-        margin: [10, 3, 0, 0]
+        color: PDF_CONFIG.DARK_BLUE
       } : null,
       
       // Informations complémentaires
       additionalInfo ? {
         text: additionalInfo,
         fontSize: 10,
-        color: PDF_CONFIG.DARK_BLUE,
-        margin: [10, 15, 0, 0]
+        color: PDF_CONFIG.DARK_BLUE
       } : null
     ].filter(Boolean);
     
     // Pages détaillées - Page du détail du devis
-    const detailPageContent = [
+    const detailPageContent: any[] = [
       // En-tête avec numéro de page
       {
         columns: [
@@ -372,7 +352,7 @@ export const DevisCompletPreview: React.FC<DevisCompletPreviewProps> = ({
       ];
       
       detailPageContent.push(
-        { text: `PIÈCE: ${room.name}`, style: 'subheader', margin: [0, 15, 0, 5] },
+        { text: `PIÈCE: ${room.name}`, style: 'subheader' },
         {
           table: {
             headerRows: 1,
@@ -380,13 +360,13 @@ export const DevisCompletPreview: React.FC<DevisCompletPreviewProps> = ({
             body: tableBody
           },
           layout: {
-            hLineWidth: function(i, node) {
+            hLineWidth: function(i: number, node: any) {
               return (i === 0 || i === 1 || i === node.table.body.length) ? 1 : 0.5;
             },
             vLineWidth: function() {
               return 0; // Aucune ligne verticale
             },
-            hLineColor: function(i, node) {
+            hLineColor: function(i: number, node: any) {
               return (i === 0 || i === 1 || i === node.table.body.length) ? '#aaa' : '#ddd';
             }
           }
@@ -395,7 +375,7 @@ export const DevisCompletPreview: React.FC<DevisCompletPreviewProps> = ({
     });
     
     // Page récapitulative
-    const recapPageContent = [
+    const recapPageContent: any[] = [
       // En-tête avec numéro de page
       {
         columns: [
@@ -436,26 +416,10 @@ export const DevisCompletPreview: React.FC<DevisCompletPreviewProps> = ({
       },
       
       // Mentions légales
-      {
-        text: 'Mentions et Conditions',
-        style: 'subheader',
-        margin: [0, 30, 0, 5]
-      },
-      {
-        text: 'Le présent devis est valable 3 mois à compter de sa date d\'émission. Paiement selon conditions générales de vente.',
-        style: 'tableContent',
-        margin: [0, 0, 0, 5]
-      },
-      {
-        text: 'TVA non récupérable pour les travaux de rénovation de l\'habitat privé de plus de 2 ans.',
-        style: 'tableContent',
-        margin: [0, 0, 0, 15]
-      },
-      {
-        text: 'Date et Signature (précédées de la mention "Bon pour accord")',
-        style: 'subheader',
-        margin: [0, 30, 0, 50]
-      }
+      { text: 'Mentions et Conditions', style: 'subheader' },
+      { text: 'Le présent devis est valable 3 mois à compter de sa date d\'émission. Paiement selon conditions générales de vente.', style: 'tableContent' },
+      { text: 'TVA non récupérable pour les travaux de rénovation de l\'habitat privé de plus de 2 ans.', style: 'tableContent' },
+      { text: 'Date et Signature (précédées de la mention "Bon pour accord")', style: 'subheader' }
     ];
     
     // Document complet
@@ -474,7 +438,7 @@ export const DevisCompletPreview: React.FC<DevisCompletPreviewProps> = ({
         // Page de récapitulatif
         recapPageContent
       ],
-      footer: function(currentPage, pageCount) {
+      footer: function(currentPage: number, pageCount: number) {
         return {
           text: `${company?.name || ''} - SASU au Capital de ${company?.capital_social || '10000'} € - ${company?.address || ''} ${company?.postal_code || ''} ${company?.city || ''} - Siret : ${company?.siret || ''} - Code APE : ${company?.code_ape || ''} - N° TVA Intracommunautaire : ${company?.tva_intracom || ''}`,
           fontSize: 7,

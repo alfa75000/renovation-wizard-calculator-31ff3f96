@@ -35,6 +35,16 @@ export const PDF_CONFIG = {
   LOGO_PATH: "/lrs_logo.jpg"
 };
 
+// Style pour pdfMake
+export interface PDFStyle {
+  fontSize?: number;
+  color?: string;
+  alignment?: string;
+  bold?: boolean;
+  italics?: boolean;
+  margin?: [number, number, number, number];
+}
+
 // Formater une date pour l'affichage
 export const formatDate = (dateString: string | undefined) => {
   if (!dateString) return "";
