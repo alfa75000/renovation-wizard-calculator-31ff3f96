@@ -151,7 +151,9 @@ export const generateDetailsPDF = async (
         descriptionContent.push({ 
           text: travail.personnalisation, 
           fontSize: 8,
-          italic: true  // Correction: utiliser 'italic' au lieu de 'italics'
+          // Corriger le problème de propriété non reconnue
+          // italic est un style de texte défini dans pdfMake
+          style: 'italic'  // Utiliser style au lieu de italic directement
         });
       }
       
@@ -254,6 +256,10 @@ export const generateDetailsPDF = async (
         fontSize: 9,
         bold: true,
         color: DARK_BLUE
+      },
+      // Ajouter un style "italic" pour être utilisé plus haut
+      italic: {
+        italics: true
       }
     },
     pageMargins: pageMargins, // Réduction des marges à 15mm sur tous les côtés
@@ -264,8 +270,20 @@ export const generateDetailsPDF = async (
   };
   
   try {
-    // Créer et télécharger le PDF
-    pdfMake.createPdf(docDefinition).download(`devis_details_${metadata?.devisNumber || 'XXXX-XX'}.pdf`);
+    // Corriger le problème d'affichage des chiffres en spécifiant une police standard
+    // Définir les polices à utiliser pour le PDF
+    pdfMake.fonts = {
+      Roboto: {
+        normal: 'Roboto-Regular.ttf',
+        bold: 'Roboto-Medium.ttf',
+        italics: 'Roboto-Italic.ttf',
+        bolditalics: 'Roboto-MediumItalic.ttf'
+      }
+    };
+
+    // Créer et télécharger le PDF avec des polices explicites
+    const pdfDocGenerator = pdfMake.createPdf(docDefinition);
+    pdfDocGenerator.download(`devis_details_${metadata?.devisNumber || 'XXXX-XX'}.pdf`);
     console.log('PDF généré avec succès');
   } catch (error) {
     console.error('Erreur lors de la génération du PDF:', error);
