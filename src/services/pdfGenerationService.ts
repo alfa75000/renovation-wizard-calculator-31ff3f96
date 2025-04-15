@@ -89,17 +89,24 @@ export const generateDetailsPDF = async (
       ];
       
       if (travail.description) {
-        descriptionContent.push({ text: travail.description, fontSize: 8, color: '#4b5563' });
+        descriptionContent.push({ 
+          text: travail.description, 
+          fontSize: 8,
+          italics: false
+        });
       }
       
       if (travail.personnalisation) {
-        descriptionContent.push({ text: travail.personnalisation, fontSize: 8, color: '#4b5563', italics: true });
+        descriptionContent.push({ 
+          text: travail.personnalisation, 
+          fontSize: 8,
+          italics: true
+        });
       }
       
       descriptionContent.push({
         text: `MO: ${formatPrice(travail.prixMainOeuvre)}/u, Fourn: ${formatPrice(travail.prixFournitures)}/u (total: ${formatPrice(prixUnitaireHT)}/u)`,
-        fontSize: 8,
-        color: '#4b5563'
+        fontSize: 8
       });
       
       tableBody.push([
