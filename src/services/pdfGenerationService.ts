@@ -1,6 +1,5 @@
-
-import pdfMake from 'pdfmake/build/pdfmake';
-import pdfFonts from 'pdfmake/build/vfs_fonts';
+import pdfMake from 'pdfMake/build/pdfmake';
+import pdfFonts from 'pdfMake/build/vfs_fonts';
 import { Room, Travail, ProjectMetadata } from '@/types';
 
 // Initialiser pdfMake avec les polices
@@ -155,7 +154,7 @@ export const generateDetailsPDF = async (
         descriptionContent.push({ 
           text: travail.personnalisation, 
           fontSize: 8,
-          italics: true
+          style: 'italic'  // Use style instead of italics
         });
       }
       
@@ -258,6 +257,9 @@ export const generateDetailsPDF = async (
         fontSize: 9,
         bold: true,
         color: DARK_BLUE
+      },
+      italic: {
+        italics: true  // This defines the italic style
       }
     },
     pageMargins: pageMargins, // Marges doublées à 30mm sur tous les côtés
