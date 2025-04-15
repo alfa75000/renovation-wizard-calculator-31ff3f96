@@ -1,4 +1,3 @@
-
 import React from "react";
 import { formaterPrix } from "@/lib/utils";
 import { Travail } from "@/types";
@@ -15,6 +14,9 @@ interface TravailRecapRowProps {
 const TravailRecapRow: React.FC<TravailRecapRowProps> = ({ travail }) => {
   const prixUnitaireHT = calculerPrixUnitaireHT(travail);
   const totalHT = calculerTotalHT(travail);
+  
+  // Log the unite value to investigate
+  console.log('Travail Unite:', travail.unite, 'Type:', typeof travail.unite);
   
   return (
     <TableRow>
