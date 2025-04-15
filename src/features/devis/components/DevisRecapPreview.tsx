@@ -89,10 +89,10 @@ export const DevisRecapPreview: React.FC<DevisRecapPreviewProps> = ({
       const totalTTCRoom = calculerTotalTTCTravaux(travauxPiece);
       
       tableBody.push([
-        { text: room.name, alignment: 'left' },
-        { text: formaterPrix(totalHTRoom), alignment: 'right' },
-        { text: formaterPrix(totalTVARoom), alignment: 'right' },
-        { text: formaterPrix(totalTTCRoom), alignment: 'right' }
+        { text: room.name, style: 'tableCell', alignment: 'left' },
+        { text: formaterPrix(totalHTRoom), style: 'tableCell', alignment: 'right' },
+        { text: formaterPrix(totalTVARoom), style: 'tableCell', alignment: 'right' },
+        { text: formaterPrix(totalTTCRoom), style: 'tableCell', alignment: 'right' }
       ]);
     });
     
@@ -135,8 +135,8 @@ export const DevisRecapPreview: React.FC<DevisRecapPreviewProps> = ({
         widths: ['*', 'auto'],
         body: [
           [
-            { text: 'Montant Total HT', alignment: 'right', bold: true },
-            { text: formaterPrix(totalHT), alignment: 'right', bold: true }
+            { text: 'Montant Total HT', style: 'tableTotal', alignment: 'right', bold: true },
+            { text: formaterPrix(totalHT), style: 'tableTotal', alignment: 'right', bold: true }
           ],
           ...(tauxTVA.map(taux => {
             const travauxTaux = travauxParTVA[taux];
@@ -144,13 +144,13 @@ export const DevisRecapPreview: React.FC<DevisRecapPreviewProps> = ({
             const montantTVA = travauxTaux.reduce((acc, travail) => acc + calculerMontantTVA(travail), 0);
             
             return [
-              { text: `TVA ${taux}% (sur ${formaterPrix(totalHTTaux)})`, alignment: 'right' },
-              { text: formaterPrix(montantTVA), alignment: 'right' }
+              { text: `TVA ${taux}% (sur ${formaterPrix(totalHTTaux)})`, style: 'tableCell', alignment: 'right' },
+              { text: formaterPrix(montantTVA), style: 'tableCell', alignment: 'right' }
             ];
           })),
           [
-            { text: 'Montant Total TTC', alignment: 'right', bold: true },
-            { text: formaterPrix(totalTTC), alignment: 'right', bold: true }
+            { text: 'Montant Total TTC', style: 'tableTotal', alignment: 'right', bold: true },
+            { text: formaterPrix(totalTTC), style: 'tableTotal', alignment: 'right', bold: true }
           ]
         ]
       },
@@ -193,6 +193,15 @@ export const DevisRecapPreview: React.FC<DevisRecapPreviewProps> = ({
           bold: true,
           fontSize: 10,
           color: PDF_CONSTANTS.DARK_BLUE
+        },
+        tableCell: {
+          fontSize: 9,
+          color: PDF_CONSTANTS.DARK_BLUE
+        },
+        tableTotal: {
+          fontSize: 10,
+          color: PDF_CONSTANTS.DARK_BLUE,
+          bold: true
         }
       },
       defaultStyle: {

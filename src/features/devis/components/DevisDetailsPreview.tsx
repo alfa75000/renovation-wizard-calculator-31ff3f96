@@ -85,19 +85,21 @@ export const DevisDetailsPreview: React.FC<DevisDetailsPreviewProps> = ({
       // Ajouter chaque travail au tableau
       travauxPiece.forEach(travail => {
         tableBody.push([
-          { text: travail.description, alignment: 'left' },
-          { text: `${travail.quantity} ${travail.unite}`, alignment: 'right' },
-          { text: formaterPrix(travail.prix_unitaire), alignment: 'right' },
-          { text: `${travail.taux_tva}%`, alignment: 'right' },
-          { text: formaterPrix(travail.prix_unitaire * travail.quantity), alignment: 'right' }
+          { text: travail.description, style: 'tableCell', alignment: 'left' },
+          { text: `${travail.quantite} ${travail.unite}`, style: 'tableCell', alignment: 'right' },
+          { text: formaterPrix(travail.prixFournitures + travail.prixMainOeuvre), style: 'tableCell', alignment: 'right' },
+          { text: `${travail.tauxTVA}%`, style: 'tableCell', alignment: 'right' },
+          { text: formaterPrix((travail.prixFournitures + travail.prixMainOeuvre) * travail.quantite), style: 'tableCell', alignment: 'right' }
         ]);
       });
       
       // Ajouter la ligne de total pour cette pièce
       tableBody.push([
-        { text: `Total HT ${room.name}`, colSpan: 4, alignment: 'left', bold: true },
-        {}, {}, {},
-        { text: formaterPrix(totalHT), alignment: 'right', bold: true }
+        { text: `Total HT ${room.name}`, style: 'tableTotal', alignment: 'left', bold: true },
+        { text: '', style: 'tableTotal' },
+        { text: '', style: 'tableTotal' },
+        { text: '', style: 'tableTotal' },
+        { text: formaterPrix(totalHT), style: 'tableTotal', alignment: 'right', bold: true }
       ]);
       
       // Ajouter le tableau au contenu
@@ -145,6 +147,14 @@ export const DevisDetailsPreview: React.FC<DevisDetailsPreviewProps> = ({
       styles: {
         tableHeader: {
           bold: true,
+          fontSize: 10,
+          color: PDF_CONSTANTS.DARK_BLUE
+        },
+        tableCell: {
+          fontSize: 9,
+          color: PDF_CONSTANTS.DARK_BLUE
+        },
+        tableTotal: {
           fontSize: 10,
           color: PDF_CONSTANTS.DARK_BLUE
         }
