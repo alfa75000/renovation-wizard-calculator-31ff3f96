@@ -1,5 +1,6 @@
-import pdfMake from 'pdfMake/build/pdfmake';
-import pdfFonts from 'pdfMake/build/vfs_fonts';
+
+import pdfMake from 'pdfmake/build/pdfmake';
+import pdfFonts from 'pdfmake/build/vfs_fonts';
 import { Room, Travail, ProjectMetadata } from '@/types';
 
 // Initialiser pdfMake avec les polices
@@ -139,7 +140,7 @@ export const generateDetailsPDF = async (
       const prixUnitaireHT = travail.prixFournitures + travail.prixMainOeuvre;
       const totalHT = prixUnitaireHT * travail.quantite;
       
-      const descriptionContent = [
+      const descriptionContent: any[] = [
         { text: `${travail.typeTravauxLabel}: ${travail.sousTypeLabel}`, fontSize: 9 }
       ];
       
@@ -151,11 +152,13 @@ export const generateDetailsPDF = async (
       }
       
       if (travail.personnalisation) {
-        descriptionContent.push({ 
+        // Utiliser le format correct avec la définition d'un objet compatible
+        const personnalisationStyle: any = { 
           text: travail.personnalisation, 
           fontSize: 8,
-          style: 'italic'  // Use style instead of italics
-        });
+          italics: true 
+        };
+        descriptionContent.push(personnalisationStyle);
       }
       
       descriptionContent.push({
