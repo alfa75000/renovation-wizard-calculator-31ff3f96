@@ -1,4 +1,3 @@
-
 import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
 import { Room, Travail, ProjectMetadata } from '@/types';
@@ -189,22 +188,19 @@ export const generateDetailsPDF = async (
     });
   });
   
-  // Marge globale doublée à 30mm (au lieu de 15mm)
-  const pageMargins = [30, 60, 30, 30]; // [gauche, haut, droite, bas] en mm - Augmentation de la marge haute pour l'en-tête
+  // Marges ajustées pour mieux gérer l'en-tête
+  const pageMargins = [30, 40, 30, 30]; // [gauche, haut, droite, bas]
   
-  // Définir le document avec contenu et styles
   const docDefinition = {
     header: function(currentPage: number, pageCount: number) {
       return [
-        // En-tête avec le numéro de devis et la pagination
         {
           text: `DEVIS N° ${metadata?.devisNumber || 'XXXX-XX'} - page ${currentPage}/${pageCount}`,
           style: 'header',
           alignment: 'right',
           fontSize: 8,
-          margin: [30, 10, 30, 5] // Marges [gauche, haut, droite, bas]
+          margin: [30, 15, 30, 5] // Ajustement de la marge haute de l'en-tête
         },
-        // En-tête du tableau
         {
           table: {
             headerRows: 1,
