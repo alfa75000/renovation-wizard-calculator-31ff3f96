@@ -1,4 +1,3 @@
-
 import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
 import { Room, Travail, ProjectMetadata } from '@/types';
@@ -195,51 +194,34 @@ export const generateDetailsPDF = async (
   // Définir le document avec contenu et styles
   const docDefinition = {
     header: function(currentPage: number, pageCount: number) {
-      return [
-        // En-tête avec le numéro de devis et la pagination - marge haute réduite à 25mm
-        {
-          text: `DEVIS N° ${metadata?.devisNumber || 'XXXX-XX'} - page ${currentPage}/${pageCount}`,
-          style: 'header',
-          alignment: 'right',
-          fontSize: 8,
-          margin: [30, 25, 30, 5] // Marges [gauche, haut, droite, bas] - marge haute ajustée
-        },
-        // En-tête du tableau déplacé ici
-        {
-          table: {
-            headerRows: 1,
-            widths: columnWidths,
-            body: [tableHeaderRow]
+      return {
+        stack: [
+          // En-tête avec le numéro de devis et la pagination
+          {
+            text: `DEVIS N° ${metadata?.devisNumber || 'XXXX-XX'} - page ${currentPage}/${pageCount}`,
+            style: 'header',
+            alignment: 'right',
+            fontSize: 8,
+            margin: [30, 20, 30, 10] // Ajustement des marges [gauche, haut, droite, bas]
           },
-          layout: {
-            hLineWidth: function(i: number, node: any) {
-              return (i === 0 || i === node.table.body.length) ? 1 : 1;
+          // En-tête du tableau
+          {
+            table: {
+              headerRows: 1,
+              widths: columnWidths,
+              body: [tableHeaderRow]
             },
-            vLineWidth: function() {
-              return 0;
+            layout: {
+              hLineWidth: function() { return 1; },
+              vLineWidth: function() { return 0; },
+              hLineColor: function() { return '#e5e7eb'; },
+              fillColor: function() { return '#f3f4f6'; }
             },
-            hLineColor: function() {
-              return '#e5e7eb';
-            },
-            paddingLeft: function() {
-              return 4;
-            },
-            paddingRight: function() {
-              return 4;
-            },
-            paddingTop: function() {
-              return 2;
-            },
-            paddingBottom: function() {
-              return 2;
-            },
-            fillColor: function(rowIndex: number) {
-              return (rowIndex === 0) ? '#f3f4f6' : null;
-            }
-          },
-          margin: [30, 5, 30, 10]
-        }
-      ];
+            margin: [30, 0, 30, 0]
+          }
+        ],
+        margin: [0, 0, 0, 20] // Marge supplémentaire en bas de l'en-tête
+      };
     },
     content: docContent,
     styles: {
