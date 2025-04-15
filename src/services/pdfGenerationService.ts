@@ -51,22 +51,13 @@ export const generateDetailsPDF = async (
   const roomsWithTravaux = rooms.filter(room => getTravauxForPiece(room.id).length > 0);
   
   // Calculer le nombre total de pages (approximatif)
-  const pageCount = 1; // Estimation d'une seule page pour toutes les pièces
+  // Nous allons définir cela plus tard dans le header
   
   // Créer le contenu du document
   const docContent: any[] = [];
   
   // Marge globale doublée à 30mm (au lieu de 15mm)
   const pageMargins = [30, 30, 30, 30]; // [gauche, haut, droite, bas] en mm
-
-  // Ajouter l'en-tête avec le numéro de devis et la pagination
-  docContent.push({
-    text: `DEVIS N° ${metadata?.devisNumber || 'XXXX-XX'} - page 1/${pageCount}`,
-    style: 'header',
-    alignment: 'right',
-    fontSize: 8,
-    margin: [0, 0, 0, 20] // Marge bas pour espacer l'en-tête du contenu
-  });
 
   // Définir les largeurs de colonnes ajustées comme demandé
   const columnWidths = ['*', 50, 50, 30, 60]; // Description, Quantité, Prix HT, TVA, Total HT
@@ -79,42 +70,6 @@ export const generateDetailsPDF = async (
     { text: 'TVA', style: 'tableHeader', alignment: 'center', color: DARK_BLUE },
     { text: 'Total HT', style: 'tableHeader', alignment: 'center', color: DARK_BLUE }
   ];
-
-  // Créer un tableau pour l'en-tête
-  docContent.push({
-    table: {
-      headerRows: 1,
-      widths: columnWidths, // Utiliser les largeurs de colonnes ajustées
-      body: [tableHeaderRow]
-    },
-    layout: {
-      hLineWidth: function(i: number, node: any) {
-        return (i === 0 || i === node.table.body.length) ? 1 : 1;
-      },
-      vLineWidth: function() {
-        return 0;
-      },
-      hLineColor: function() {
-        return '#e5e7eb';
-      },
-      paddingLeft: function() {
-        return 4;
-      },
-      paddingRight: function() {
-        return 4;
-      },
-      paddingTop: function() {
-        return 2;
-      },
-      paddingBottom: function() {
-        return 2;
-      },
-      fillColor: function(rowIndex: number) {
-        return (rowIndex === 0) ? '#f3f4f6' : null;
-      }
-    },
-    margin: [0, 0, 0, 10]
-  });
 
   // Pour chaque pièce avec des travaux, sans forcer de saut de page
   roomsWithTravaux.forEach((room, roomIndex) => {
@@ -208,9 +163,9 @@ export const generateDetailsPDF = async (
     // Ajouter le tableau au document
     docContent.push({
       table: {
-        headerRows: 0, // Pas d'en-tête de tableau puisqu'on l'a déjà ajouté en haut
+        headerRows: 1, // Maintenant, chaque tableau a sa propre ligne d'en-tête
         widths: columnWidths, // Utiliser les largeurs de colonnes ajustées
-        body: tableBody
+        body: [tableHeaderRow, ...tableBody] // Inclure l'en-tête dans chaque tableau
       },
       layout: {
         hLineWidth: function(i: number, node: any) {
@@ -233,6 +188,9 @@ export const generateDetailsPDF = async (
         },
         paddingBottom: function() {
           return 2;
+        },
+        fillColor: function(rowIndex: number) {
+          return (rowIndex === 0) ? '#f3f4f6' : null; // Appliquer la couleur de fond à l'en-tête
         }
       },
       margin: [0, 0, 0, 15]  // Augmenter la marge en bas de chaque tableau de pièce
@@ -241,6 +199,20 @@ export const generateDetailsPDF = async (
   
   // Définir le document avec contenu et styles
   const docDefinition = {
+    // Définition de l'en-tête qui apparaît sur chaque page
+    header: function(currentPage: number, pageCount: number) {
+      return {
+        stack: [
+          {
+            text: `DEVIS N° ${metadata?.devisNumber || 'XXXX-XX'} - page ${currentPage}/${pageCount}`,
+            style: 'header',
+            alignment: 'right',
+            fontSize: 8,
+            margin: [0, 15, 30, 20] // Marge [gauche, haut, droite, bas]
+          }
+        ]
+      };
+    },
     content: docContent,
     styles: {
       header: {
