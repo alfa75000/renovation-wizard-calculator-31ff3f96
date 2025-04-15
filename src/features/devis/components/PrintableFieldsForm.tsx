@@ -6,15 +6,19 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { fetchCompanies } from "@/services/companiesService";
-import { Printer, Save, FileText, Book } from "lucide-react";
+import { Printer, Save, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { useProject } from "@/contexts/ProjectContext";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/lib/supabase";
 import { DevisCoverPreview } from "./DevisCoverPreview";
-import { DevisDetailsPreview } from "./DevisDetailsPreview";
-import { DevisCompletPreview } from "./DevisCompletPreview";
-import { PrintableField, CompanyInfo } from "../services/pdfGenerationService";
+
+interface PrintableField {
+  id: string;
+  name: string;
+  enabled: boolean;
+  content?: string | null;
+}
 
 export const PrintableFieldsForm: React.FC = () => {
   const { state } = useProject();
@@ -24,13 +28,10 @@ export const PrintableFieldsForm: React.FC = () => {
   const [clientName, setClientName] = useState<string>("Chargement...");
   const [companyName, setCompanyName] = useState<string>("LRS Rénovation");
   const [companyLogoUrl, setCompanyLogoUrl] = useState<string | null>(null);
-  const [companyData, setCompanyData] = useState<CompanyInfo | null>(null);
-  const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
+  const [companyData, setCompanyData] = useState<any>(null);
   
-  // États pour l'aperçu des différentes pages
+  // État pour l'aperçu de la page de garde
   const [showCoverPreview, setShowCoverPreview] = useState(false);
-  const [showDetailsPreview, setShowDetailsPreview] = useState(false);
-  const [showCompletPreview, setShowCompletPreview] = useState(false);
   
   const [printableFields, setPrintableFields] = useState<PrintableField[]>([
     { id: "companyLogo", name: "Logo société", enabled: true, content: null },
@@ -104,9 +105,6 @@ export const PrintableFieldsForm: React.FC = () => {
               return field;
             })
           );
-          
-          // Charger le logo en Data URL
-          loadLogoAsDataUrl(data.logo_url || '/lrs_logo.jpg');
         }
       } catch (error) {
         console.error("Erreur lors de la récupération des informations de la société:", error);
@@ -115,56 +113,6 @@ export const PrintableFieldsForm: React.FC = () => {
 
     fetchCompanyInfo();
   }, []);
-  
-  // Fonction pour charger le logo en Data URL
-  const loadLogoAsDataUrl = (logoPath: string) => {
-    try {
-      // Créer une image
-      const img = new Image();
-      
-      // Configurer les gestionnaires d'événements
-      img.onload = () => {
-        // Créer un canvas pour convertir l'image en Data URL
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(img, 0, 0);
-          // Convertir en Data URL
-          const dataUrl = canvas.toDataURL('image/jpeg');
-          setLogoDataUrl(dataUrl);
-        }
-      };
-      
-      img.onerror = (e) => {
-        console.error("Erreur de chargement du logo:", e);
-        setLogoDataUrl(null);
-        
-        // Essayer avec un logo local par défaut
-        const defaultLogo = new Image();
-        defaultLogo.onload = () => {
-          const canvas = document.createElement('canvas');
-          canvas.width = defaultLogo.width;
-          canvas.height = defaultLogo.height;
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            ctx.drawImage(defaultLogo, 0, 0);
-            const dataUrl = canvas.toDataURL('image/jpeg');
-            setLogoDataUrl(dataUrl);
-          }
-        };
-        defaultLogo.src = '/lrs_logo.jpg';
-      };
-      
-      // Déclencher le chargement avec le chemin de l'image
-      img.src = logoPath;
-      
-    } catch (error) {
-      console.error("Erreur lors du chargement de l'image:", error);
-      setLogoDataUrl(null);
-    }
-  };
 
   useEffect(() => {
     // Update fields content when metadata changes
@@ -203,16 +151,12 @@ export const PrintableFieldsForm: React.FC = () => {
     toast.success("Paramètres d'impression enregistrés");
   };
 
+  const handlePreviewPrint = () => {
+    toast.info("Aperçu avant impression (fonctionnalité à implémenter)");
+  };
+  
   const handleCoverPreview = () => {
     setShowCoverPreview(true);
-  };
-  
-  const handleDetailsPreview = () => {
-    setShowDetailsPreview(true);
-  };
-  
-  const handleCompletPreview = () => {
-    setShowCompletPreview(true);
   };
 
   return (
@@ -263,17 +207,13 @@ export const PrintableFieldsForm: React.FC = () => {
 
       <div className="flex justify-between mt-6">
         <div className="flex gap-2">
+          <Button variant="outline" onClick={handlePreviewPrint} className="flex items-center gap-2">
+            <Printer className="h-4 w-4" />
+            Aperçu
+          </Button>
           <Button variant="outline" onClick={handleCoverPreview} className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
-            Page de Garde
-          </Button>
-          <Button variant="outline" onClick={handleDetailsPreview} className="flex items-center gap-2">
-            <Printer className="h-4 w-4" />
-            Détails
-          </Button>
-          <Button variant="outline" onClick={handleCompletPreview} className="flex items-center gap-2">
-            <Book className="h-4 w-4" />
-            Aperçu Complet
+            Aperçu Page de Garde
           </Button>
         </div>
         <Button onClick={handleSaveSettings} className="flex items-center gap-2">
@@ -287,23 +227,6 @@ export const PrintableFieldsForm: React.FC = () => {
           fields={printableFields.filter(field => field.enabled)} 
           company={companyData}
           onClose={() => setShowCoverPreview(false)}
-        />
-      )}
-      
-      {showDetailsPreview && (
-        <DevisDetailsPreview 
-          fields={printableFields.filter(field => field.enabled)}
-          company={companyData}
-          onClose={() => setShowDetailsPreview(false)}
-        />
-      )}
-      
-      {showCompletPreview && (
-        <DevisCompletPreview 
-          fields={printableFields.filter(field => field.enabled)}
-          company={companyData}
-          logoDataUrl={logoDataUrl}
-          onClose={() => setShowCompletPreview(false)}
         />
       )}
     </div>

@@ -21,12 +21,6 @@ export interface Travail {
   typeTravaux?: string;
   sousType?: string;
   surfaceImpactee?: string;
-  
-  // Propriétés calculées pour les PDF
-  prixHT?: number;
-  prixUnitaireHT?: number;
-  designation?: string;
-  nom?: string;
 }
 
 // Type de travaux (catalogue)
