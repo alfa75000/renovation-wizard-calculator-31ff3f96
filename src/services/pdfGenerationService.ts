@@ -107,8 +107,8 @@ export const generateDetailsPDF = async (
         descriptionContent.push({ 
           text: travail.personnalisation, 
           fontSize: 8,
-          italics: true  // Utiliser italics directement avec as any
-        } as any);
+          italics: true
+        });
       }
       
       descriptionContent.push({
@@ -119,24 +119,18 @@ export const generateDetailsPDF = async (
       // Ajouter plus d'espace entre les travaux
       const marginBottom = index < travauxPiece.length - 1 ? 7 : 2; // 7 points pour espacement entre prestations
       
-      // Augmenter l'interligne dans les cellules de description
-      const stack = {
-        stack: descriptionContent,
-        lineHeight: 1.3  // Augmenter l'interligne de 1 point
-      };
-      
-      // Afficher la quantité en deux lignes
-      const quantityStack = {
-        stack: [
-          { text: formatQuantity(travail.quantite), alignment: 'center', fontSize: 9 },
-          { text: travail.unite, alignment: 'center', fontSize: 9 }
-        ],
-        alignment: 'center'
-      };
-      
       tableBody.push([
-        stack,
-        quantityStack,
+        { 
+          stack: descriptionContent,
+          lineHeight: 1.3
+        },
+        { 
+          stack: [
+            { text: formatQuantity(travail.quantite), alignment: 'center', fontSize: 9 },
+            { text: travail.unite, alignment: 'center', fontSize: 9 }
+          ],
+          alignment: 'center'
+        },
         { text: formatPrice(prixUnitaireHT), alignment: 'center', fontSize: 9 },
         { text: `${travail.tauxTVA}%`, alignment: 'center', fontSize: 9 },
         { text: formatPrice(totalHT), alignment: 'center', fontSize: 9 }
@@ -192,8 +186,8 @@ export const generateDetailsPDF = async (
     });
   });
   
-  // Marges ajustées - augmentation de la marge haute à 50mm
-  const pageMargins = [30, 50, 30, 30]; // [gauche, haut, droite, bas]
+  // Marges ajustées - augmentation de la marge haute à 40mm
+  const pageMargins = [30, 40, 30, 30]; // [gauche, haut, droite, bas]
   
   const docDefinition = {
     header: function(currentPage: number, pageCount: number) {
@@ -203,7 +197,7 @@ export const generateDetailsPDF = async (
           style: 'header',
           alignment: 'right',
           fontSize: 8,
-          margin: [30, 20, 30, 5] // Ajustement de la marge haute de l'en-tête
+          margin: [30, 25, 30, 5] // Marge haute de l'en-tête à 25mm
         }
       ];
     },
