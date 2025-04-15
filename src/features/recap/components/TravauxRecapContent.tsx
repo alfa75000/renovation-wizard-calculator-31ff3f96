@@ -35,34 +35,26 @@ const TravauxRecapContent: React.FC<TravauxRecapContentProps> = ({
         {travaux.length === 0 ? (
           <NoTravauxMessage />
         ) : (
-          <>
-            {/* Affichage des détails une seule fois en tête */}
-            <DetailsTravaux 
-              rooms={rooms} 
-              travaux={travaux} 
-              getTravauxForPiece={getTravauxForPiece} 
-            />
+          <Tabs defaultValue="details" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="details">Détails des travaux</TabsTrigger>
+              <TabsTrigger value="recap">Récapitulatif</TabsTrigger>
+            </TabsList>
             
-            <Tabs defaultValue="details" className="w-full mt-8">
-              <TabsList className="grid w-full grid-cols-2 mb-4">
-                <TabsTrigger value="details">Détails des travaux</TabsTrigger>
-                <TabsTrigger value="recap">Récapitulatif</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="details">
-                {/* Ce contenu peut être modifié selon vos besoins */}
-                <div className="py-4">
-                  <GlobalTotals travaux={travaux} title="Totaux par catégorie" />
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="recap">
-                <div className="py-4">
-                  <GlobalTotals travaux={travaux} title="Récapitulatif global" />
-                </div>
-              </TabsContent>
-            </Tabs>
-          </>
+            <TabsContent value="details">
+              <DetailsTravaux 
+                rooms={rooms} 
+                travaux={travaux} 
+                getTravauxForPiece={getTravauxForPiece} 
+              />
+            </TabsContent>
+            
+            <TabsContent value="recap">
+              <div className="py-8 text-center text-gray-500">
+                Le récapitulatif sera implémenté prochainement.
+              </div>
+            </TabsContent>
+          </Tabs>
         )}
       </CardContent>
     </Card>

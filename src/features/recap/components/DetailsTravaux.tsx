@@ -30,7 +30,6 @@ const DetailsTravaux: React.FC<DetailsTravauxProps> = ({
 
   return (
     <div className="space-y-8">
-      <h2 className="text-xl font-semibold mb-4 border-b pb-2">Détails des travaux par pièce</h2>
       {rooms.map(room => {
         const travauxPiece = getTravauxForPiece(room.id);
         if (travauxPiece.length === 0) return null;
