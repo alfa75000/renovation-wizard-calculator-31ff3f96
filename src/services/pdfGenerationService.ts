@@ -1,4 +1,3 @@
-
 import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
 import { Room, Travail, ProjectMetadata } from '@/types';
@@ -84,8 +83,8 @@ export const generateDetailsPDF = async (
       margin: [0, 0, 0, 5]
     });
     
-    // Créer le tableau pour cette pièce
-    const tableBody = [tableHeaderRow]; // Ajouter l'en-tête à chaque tableau de pièce
+    // Créer le tableau pour cette pièce (avec l'en-tête)
+    const tableBody = [];
     
     // Ajouter chaque travail au tableau
     travauxPiece.forEach((travail, index) => {
@@ -107,8 +106,8 @@ export const generateDetailsPDF = async (
         descriptionContent.push({ 
           text: travail.personnalisation, 
           fontSize: 8,
-          italics: true
-        });
+          italics: true  // Utiliser italics directement avec as any
+        } as any);
       }
       
       descriptionContent.push({
@@ -119,18 +118,24 @@ export const generateDetailsPDF = async (
       // Ajouter plus d'espace entre les travaux
       const marginBottom = index < travauxPiece.length - 1 ? 7 : 2; // 7 points pour espacement entre prestations
       
+      // Augmenter l'interligne dans les cellules de description
+      const stack = {
+        stack: descriptionContent,
+        lineHeight: 1.3  // Augmenter l'interligne de 1 point
+      };
+      
+      // Afficher la quantité en deux lignes
+      const quantityStack = {
+        stack: [
+          { text: formatQuantity(travail.quantite), alignment: 'center', fontSize: 9 },
+          { text: travail.unite, alignment: 'center', fontSize: 9 }
+        ],
+        alignment: 'center'
+      };
+      
       tableBody.push([
-        { 
-          stack: descriptionContent,
-          lineHeight: 1.3
-        },
-        { 
-          stack: [
-            { text: formatQuantity(travail.quantite), alignment: 'center', fontSize: 9 },
-            { text: travail.unite, alignment: 'center', fontSize: 9 }
-          ],
-          alignment: 'center'
-        },
+        stack,
+        quantityStack,
         { text: formatPrice(prixUnitaireHT), alignment: 'center', fontSize: 9 },
         { text: `${travail.tauxTVA}%`, alignment: 'center', fontSize: 9 },
         { text: formatPrice(totalHT), alignment: 'center', fontSize: 9 }
@@ -152,7 +157,7 @@ export const generateDetailsPDF = async (
     // Ajouter le tableau au document
     docContent.push({
       table: {
-        headerRows: 1, // Définir que la première ligne est l'en-tête
+        headerRows: 0, // Pas d'en-tête de tableau puisqu'on l'ajoutera en tant qu'élément de la fonction header
         widths: columnWidths, // Utiliser les largeurs de colonnes ajustées
         body: tableBody
       },
@@ -177,16 +182,13 @@ export const generateDetailsPDF = async (
         },
         paddingBottom: function() {
           return 2;
-        },
-        fillColor: function(rowIndex: number) {
-          return (rowIndex === 0) ? '#f3f4f6' : null; // Colorer la ligne d'en-tête
         }
       },
       margin: [0, 0, 0, 15]  // Augmenter la marge en bas de chaque tableau de pièce
     });
   });
   
-  // Marges ajustées - augmentation de la marge haute à 40mm
+  // Marges ajustées pour mieux gérer l'en-tête
   const pageMargins = [30, 40, 30, 30]; // [gauche, haut, droite, bas]
   
   const docDefinition = {
@@ -197,7 +199,41 @@ export const generateDetailsPDF = async (
           style: 'header',
           alignment: 'right',
           fontSize: 8,
-          margin: [30, 25, 30, 5] // Marge haute de l'en-tête à 25mm
+          margin: [30, 15, 30, 5] // Ajustement de la marge haute de l'en-tête
+        },
+        {
+          table: {
+            headerRows: 1,
+            widths: columnWidths,
+            body: [tableHeaderRow]
+          },
+          layout: {
+            hLineWidth: function(i: number, node: any) {
+              return (i === 0 || i === node.table.body.length) ? 1 : 1;
+            },
+            vLineWidth: function() {
+              return 0;
+            },
+            hLineColor: function() {
+              return '#e5e7eb';
+            },
+            paddingLeft: function() {
+              return 4;
+            },
+            paddingRight: function() {
+              return 4;
+            },
+            paddingTop: function() {
+              return 2;
+            },
+            paddingBottom: function() {
+              return 2;
+            },
+            fillColor: function(rowIndex: number) {
+              return (rowIndex === 0) ? '#f3f4f6' : null;
+            }
+          },
+          margin: [30, 5, 30, 10]
         }
       ];
     },
