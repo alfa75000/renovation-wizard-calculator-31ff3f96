@@ -104,7 +104,8 @@ export const generateDetailsPDF = async (
         descriptionLines.push(travail.personnalisation);
       }
       
-      descriptionLines.push(`MO: ${formatPrice(travail.prixMainOeuvre)}/u, Fourn: ${formatPrice(travail.prixFournitures)}/u (total: ${formatPrice(prixUnitaireHT)}/u)`);
+      // Ligne MO/Fournitures avec taille de police réduite
+      const moFournText = `MO: ${formatPrice(travail.prixMainOeuvre)}/u, Fourn: ${formatPrice(travail.prixFournitures)}/u (total: ${formatPrice(prixUnitaireHT)}/u)`;
       
       // Estimer le nombre de lignes dans la description, incluant les retours à la ligne automatiques
       let totalLines = 0;
@@ -119,16 +120,22 @@ export const generateDetailsPDF = async (
         totalLines += textLines;
       });
       
+      // Estimer aussi les lignes pour le texte MO/Fournitures
+      const moFournLines = Math.ceil(moFournText.length / columnCharWidth);
+      totalLines += moFournLines;
+      
       // Calculer les marges supérieures pour centrer verticalement les valeurs
       // Formule ajustée: marge de base + marge par ligne supplémentaire
       const topMargin = Math.max(0, 3 + (totalLines - 2) * 4);
       
       // Ajouter la ligne au tableau
       tableBody.push([
-        // Colonne 1: Description avec sauts de ligne
+        // Colonne 1: Description avec sauts de ligne et espacement entre lignes augmenté
         { 
-          text: descriptionLines.join('\n'),
-          fontSize: 9
+          stack: [
+            { text: descriptionLines.join('\n'), fontSize: 9, lineHeight: 1.4 },
+            { text: moFournText, fontSize: 6, lineHeight: 1.4 }
+          ]
         },
         
         // Colonne 2: Quantité avec marge supérieure pour centrage visuel
@@ -165,6 +172,14 @@ export const generateDetailsPDF = async (
           margin: [0, topMargin, 0, 0]
         }
       ]);
+      
+      // Ajouter une ligne d'espacement entre les prestations (sauf après la dernière)
+      if (index < travauxPiece.length - 1) {
+        tableBody.push([
+          { text: '', margin: [0, 2, 0, 2] }, // Espacement supplémentaire
+          {}, {}, {}, {}
+        ]);
+      }
     });
     
     // Calculer le total HT pour cette pièce
@@ -188,7 +203,22 @@ export const generateDetailsPDF = async (
       },
       layout: {
         hLineWidth: function(i: number, node: any) {
-          return (i === 0 || i === node.table.body.length) ? 1 : 1;
+          // Ne montrer les lignes qu'au début et à la fin de chaque prestation (pas aux sauts de page)
+          if (i === 0 || i === node.table.body.length) {
+            return 1; // Première et dernière ligne du tableau
+          }
+          
+          // Pour les autres lignes, vérifier si c'est une fin de prestation ou un total
+          // On vérifie si la ligne actuelle ou la précédente contient "Total HT"
+          const isEndOfPrestation = i < node.table.body.length && 
+            ((node.table.body[i][0] && 
+              node.table.body[i][0].text && 
+              node.table.body[i][0].text.toString().includes('Total HT')) ||
+            (i > 0 && node.table.body[i-1][0] && 
+              node.table.body[i-1][0].text && 
+              node.table.body[i-1][0].text.toString().includes('Total HT')));
+          
+          return isEndOfPrestation ? 1 : 0;
         },
         vLineWidth: function() {
           return 0;
