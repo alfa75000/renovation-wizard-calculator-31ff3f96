@@ -1,234 +1,395 @@
 
 import React, { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useQuery } from "@tanstack/react-query";
-import { fetchCompanies } from "@/services/companiesService";
-import { Printer, Save, FileText } from "lucide-react";
-import { toast } from "sonner";
-import { useProject } from "@/contexts/ProjectContext";
-import { Separator } from "@/components/ui/separator";
-import { supabase } from "@/lib/supabase";
-import { DevisCoverPreview } from "./DevisCoverPreview";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel } from "@/components/ui/form";
+import { generateDevisNumber } from "@/services/devisService";
+import { useToast } from "@/components/ui/use-toast";
+import { PrintableField } from "../services/pdfGenerationService";
 
-interface PrintableField {
-  id: string;
-  name: string;
-  enabled: boolean;
-  content?: string | null;
+// Typage pour les champs du devis
+const devisSchema = z.object({
+  devisNumber: z.string().min(1, "Un numéro de devis est requis"),
+  devisDate: z.string().min(1, "Une date est requise"),
+  validityOffer: z.string(),
+  client: z.string().min(1, "Les informations du client sont requises"),
+  projectDescription: z.string().optional(),
+  projectAddress: z.string().optional(),
+  occupant: z.string().optional(),
+  additionalInfo: z.string().optional(),
+});
+
+// Définition des champs disponibles pour le devis
+const availableFields: PrintableField[] = [
+  { id: "devisNumber", name: "Numéro de devis", enabled: true },
+  { id: "devisDate", name: "Date du devis", enabled: true },
+  { id: "validityOffer", name: "Validité de l'offre", enabled: true },
+  { id: "client", name: "Client", enabled: true },
+  { id: "projectDescription", name: "Description du projet", enabled: true },
+  { id: "projectAddress", name: "Adresse du projet", enabled: true },
+  { id: "occupant", name: "Occupant", enabled: false },
+  { id: "additionalInfo", name: "Informations complémentaires", enabled: false },
+];
+
+interface PrintableFieldsFormProps {
+  onFieldsUpdate?: (fields: PrintableField[]) => void;
 }
 
-export const PrintableFieldsForm: React.FC = () => {
-  const { state } = useProject();
-  const { metadata, property } = state;
-  
-  // État pour stocker les informations du client et de la société
-  const [clientName, setClientName] = useState<string>("Chargement...");
-  const [companyName, setCompanyName] = useState<string>("LRS Rénovation");
-  const [companyLogoUrl, setCompanyLogoUrl] = useState<string | null>(null);
-  const [companyData, setCompanyData] = useState<any>(null);
-  
-  // État pour l'aperçu de la page de garde
-  const [showCoverPreview, setShowCoverPreview] = useState(false);
-  
-  const [printableFields, setPrintableFields] = useState<PrintableField[]>([
-    { id: "companyLogo", name: "Logo société", enabled: true, content: null },
-    { id: "companyName", name: "Nom société", enabled: true, content: companyName },
-    { id: "client", name: "Client", enabled: true, content: clientName },
-    { id: "devisNumber", name: "Numéro du devis", enabled: true, content: metadata?.devisNumber || "Non défini" },
-    { id: "devisDate", name: "Date du devis", enabled: true, content: metadata?.dateDevis || "Non définie" },
-    { id: "validityOffer", name: "Validité de l'offre", enabled: true, content: "Validité de l'offre : 3 mois." },
-    { id: "projectDescription", name: "Description du projet", enabled: true, content: metadata?.descriptionProjet || "Aucune description" },
-    { id: "projectAddress", name: "Adresse du chantier", enabled: true, content: metadata?.adresseChantier || "Aucune adresse" },
-    { id: "occupant", name: "Occupant", enabled: true, content: metadata?.occupant || "Non spécifié" },
-    { id: "additionalInfo", name: "Informations complémentaires", enabled: true, content: metadata?.infoComplementaire || "Aucune information" },
-    { id: "summary", name: "Récapitulatif", enabled: true },
-  ]);
+export const PrintableFieldsForm: React.FC<PrintableFieldsFormProps> = ({ onFieldsUpdate }) => {
+  const [fields, setFields] = useState<PrintableField[]>(availableFields);
+  const { toast } = useToast();
 
-  // Utiliser directement les données de clientsData au lieu de chercher les infos du client
-  useEffect(() => {
-    if (metadata?.clientsData && metadata.clientsData.trim() !== '') {
-      console.log("Utilisation des données clients de clientsData:", metadata.clientsData);
-      
-      // Mettre à jour le champ client dans printableFields
-      setPrintableFields(prev => 
-        prev.map(field => field.id === "client" 
-          ? { ...field, content: metadata.clientsData } 
-          : field
-        )
-      );
-    } else {
-      console.log("Aucune donnée client disponible dans clientsData");
-      
-      // Si aucune donnée cliente n'est disponible, afficher un message par défaut
-      setPrintableFields(prev => 
-        prev.map(field => field.id === "client" 
-          ? { ...field, content: "Aucun client sélectionné" } 
-          : field
-        )
-      );
-    }
-  }, [metadata?.clientsData]);
+  const form = useForm<z.infer<typeof devisSchema>>({
+    resolver: zodResolver(devisSchema),
+    defaultValues: {
+      devisNumber: "",
+      devisDate: new Date().toISOString().substring(0, 10),
+      validityOffer: "3 mois",
+      client: "",
+      projectDescription: "",
+      projectAddress: "",
+      occupant: "",
+      additionalInfo: "",
+    },
+  });
 
-  // Récupérer les informations de la société sélectionnée
+  // Générer un numéro de devis automatiquement au chargement
   useEffect(() => {
-    const fetchCompanyInfo = async () => {
-      // Récupérer l'ID de la société depuis la page Infos Chantier
-      // Pour l'instant, utilisons un ID fixe puisque c'est comme ça dans InfosChantier.tsx
-      const companyId = "c949dd6d-52e8-41c4-99f8-6e84bf4695b9"; // ID par défaut utilisé dans InfosChantier
-      
+    const generateNumber = async () => {
       try {
-        const { data, error } = await supabase
-          .from('companies')
-          .select('*')
-          .eq('id', companyId)
-          .single();
-        
-        if (error) throw error;
-        
-        if (data) {
-          setCompanyName(data.name);
-          setCompanyLogoUrl(data.logo_url);
-          setCompanyData(data);
-          
-          // Mettre à jour les champs de société dans printableFields
-          setPrintableFields(prev => 
-            prev.map(field => {
-              if (field.id === "companyName") {
-                return { ...field, content: data.name };
-              } 
-              if (field.id === "companyLogo") {
-                return { ...field, content: data.logo_url };
-              }
-              return field;
-            })
-          );
-        }
+        const number = await generateDevisNumber();
+        form.setValue("devisNumber", number);
+        updateFields("devisNumber", number);
       } catch (error) {
-        console.error("Erreur lors de la récupération des informations de la société:", error);
+        console.error("Erreur lors de la génération du numéro de devis:", error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de générer un numéro de devis automatiquement",
+          variant: "destructive",
+        });
       }
     };
 
-    fetchCompanyInfo();
+    generateNumber();
   }, []);
 
+  // Mettre à jour les champs lorsque le formulaire change
   useEffect(() => {
-    // Update fields content when metadata changes
-    setPrintableFields(prev => 
-      prev.map(field => {
-        switch(field.id) {
-          case "devisNumber":
-            return { ...field, content: metadata?.devisNumber || "Non défini" };
-          case "devisDate":
-            return { ...field, content: metadata?.dateDevis || "Non définie" };
-          case "projectDescription":
-            return { ...field, content: metadata?.descriptionProjet || "Aucune description" };
-          case "projectAddress":
-            return { ...field, content: metadata?.adresseChantier || "Aucune adresse" };
-          case "occupant":
-            return { ...field, content: metadata?.occupant || "Non spécifié" };
-          case "additionalInfo":
-            return { ...field, content: metadata?.infoComplementaire || "Aucune information" };
-          default:
-            return field;
-        }
-      })
+    const subscription = form.watch((value) => {
+      // Mettre à jour le contenu des champs
+      const updatedFields = fields.map((field) => {
+        const fieldValue = value[field.id as keyof typeof value];
+        return {
+          ...field,
+          content: fieldValue?.toString() || null,
+        };
+      });
+      
+      setFields(updatedFields);
+      
+      // Notifier le parent des changements
+      if (onFieldsUpdate) {
+        onFieldsUpdate(updatedFields);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [form.watch, fields, onFieldsUpdate]);
+
+  // Fonction pour mettre à jour l'état enabled d'un champ
+  const toggleField = (id: string, enabled: boolean) => {
+    const updatedFields = fields.map((field) =>
+      field.id === id ? { ...field, enabled } : field
     );
-  }, [metadata]);
+    setFields(updatedFields);
+    
+    // Notifier le parent des changements
+    if (onFieldsUpdate) {
+      onFieldsUpdate(updatedFields);
+    }
+  };
 
-  const handleFieldToggle = (fieldId: string) => {
-    setPrintableFields((prev) =>
-      prev.map((field) =>
-        field.id === fieldId ? { ...field, enabled: !field.enabled } : field
-      )
+  // Fonction pour mettre à jour le contenu d'un champ
+  const updateFields = (id: string, content: string) => {
+    const updatedFields = fields.map((field) =>
+      field.id === id ? { ...field, content } : field
     );
+    setFields(updatedFields);
+    
+    // Notifier le parent des changements
+    if (onFieldsUpdate) {
+      onFieldsUpdate(updatedFields);
+    }
   };
 
-  const handleSaveSettings = () => {
-    // In a real implementation, this would save to localStorage or a database
-    toast.success("Paramètres d'impression enregistrés");
-  };
-
-  const handlePreviewPrint = () => {
-    toast.info("Aperçu avant impression (fonctionnalité à implémenter)");
-  };
-  
-  const handleCoverPreview = () => {
-    setShowCoverPreview(true);
+  // Gérer la soumission du formulaire
+  const onSubmit = (data: z.infer<typeof devisSchema>) => {
+    toast({
+      title: "Paramètres sauvegardés",
+      description: "Les champs du devis ont été mis à jour avec succès",
+    });
+    
+    // Mettre à jour le contenu des champs
+    const updatedFields = fields.map((field) => {
+      const fieldValue = data[field.id as keyof typeof data];
+      return {
+        ...field,
+        content: fieldValue?.toString() || null,
+      };
+    });
+    
+    setFields(updatedFields);
+    
+    // Notifier le parent des changements
+    if (onFieldsUpdate) {
+      onFieldsUpdate(updatedFields);
+    }
   };
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Éléments à imprimer</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {printableFields.map((field) => (
-              <div key={field.id} className="w-full">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id={field.id}
-                    checked={field.enabled}
-                    onCheckedChange={() => handleFieldToggle(field.id)}
-                  />
-                  <Label htmlFor={field.id} className="cursor-pointer font-medium">
-                    {field.name}
-                  </Label>
-                </div>
-                
-                {field.id === "companyLogo" && companyLogoUrl && (
-                  <div className="ml-6 mt-1">
-                    <img 
-                      src={companyLogoUrl} 
-                      alt="Logo de l'entreprise" 
-                      className="h-12 object-contain"
+    <Card className="shadow-md">
+      <CardHeader>
+        <CardTitle>Paramètres du devis</CardTitle>
+        <CardDescription>
+          Configurez les informations à inclure dans le devis
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="grid gap-6 md:grid-cols-2">
+              {/* Numéro de devis */}
+              <FormField
+                control={form.control}
+                name="devisNumber"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <div className="flex items-center justify-between">
+                      <FormLabel htmlFor="devisNumber">Numéro de devis</FormLabel>
+                      <Checkbox
+                        id="devisNumberEnabled"
+                        checked={fields.find((f) => f.id === "devisNumber")?.enabled || false}
+                        onCheckedChange={(checked) =>
+                          toggleField("devisNumber", checked === true)
+                        }
+                      />
+                    </div>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        disabled={!fields.find((f) => f.id === "devisNumber")?.enabled}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              {/* Date du devis */}
+              <FormField
+                control={form.control}
+                name="devisDate"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <div className="flex items-center justify-between">
+                      <FormLabel htmlFor="devisDate">Date du devis</FormLabel>
+                      <Checkbox
+                        id="devisDateEnabled"
+                        checked={fields.find((f) => f.id === "devisDate")?.enabled || false}
+                        onCheckedChange={(checked) =>
+                          toggleField("devisDate", checked === true)
+                        }
+                      />
+                    </div>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="date"
+                        disabled={!fields.find((f) => f.id === "devisDate")?.enabled}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              {/* Validité de l'offre */}
+              <FormField
+                control={form.control}
+                name="validityOffer"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <div className="flex items-center justify-between">
+                      <FormLabel htmlFor="validityOffer">Validité de l'offre</FormLabel>
+                      <Checkbox
+                        id="validityOfferEnabled"
+                        checked={fields.find((f) => f.id === "validityOffer")?.enabled || false}
+                        onCheckedChange={(checked) =>
+                          toggleField("validityOffer", checked === true)
+                        }
+                      />
+                    </div>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        disabled={!fields.find((f) => f.id === "validityOffer")?.enabled}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Client */}
+            <FormField
+              control={form.control}
+              name="client"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <div className="flex items-center justify-between">
+                    <FormLabel htmlFor="client">Client / Maître d'ouvrage</FormLabel>
+                    <Checkbox
+                      id="clientEnabled"
+                      checked={fields.find((f) => f.id === "client")?.enabled || false}
+                      onCheckedChange={(checked) =>
+                        toggleField("client", checked === true)
+                      }
                     />
                   </div>
-                )}
-                
-                {field.id !== "companyLogo" && field.id !== "summary" && field.content && (
-                  <div className="ml-6 mt-1 text-sm text-gray-500 italic">
-                    {field.content}
-                  </div>
-                )}
-                
-                {field.id !== printableFields[printableFields.length - 1].id && (
-                  <Separator className="my-3" />
-                )}
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+                  <FormControl>
+                    <Textarea
+                      {...field}
+                      rows={4}
+                      className="resize-none"
+                      disabled={!fields.find((f) => f.id === "client")?.enabled}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Nom, prénom, adresse et autres informations du client
+                  </FormDescription>
+                </FormItem>
+              )}
+            />
 
-      <div className="flex justify-between mt-6">
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={handlePreviewPrint} className="flex items-center gap-2">
-            <Printer className="h-4 w-4" />
-            Aperçu
-          </Button>
-          <Button variant="outline" onClick={handleCoverPreview} className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            Aperçu Page de Garde
-          </Button>
-        </div>
-        <Button onClick={handleSaveSettings} className="flex items-center gap-2">
-          <Save className="h-4 w-4" />
-          Enregistrer
-        </Button>
-      </div>
-      
-      {showCoverPreview && (
-        <DevisCoverPreview 
-          fields={printableFields.filter(field => field.enabled)} 
-          company={companyData}
-          onClose={() => setShowCoverPreview(false)}
-        />
-      )}
-    </div>
+            {/* Description du projet */}
+            <FormField
+              control={form.control}
+              name="projectDescription"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <div className="flex items-center justify-between">
+                    <FormLabel htmlFor="projectDescription">Description du projet</FormLabel>
+                    <Checkbox
+                      id="projectDescriptionEnabled"
+                      checked={fields.find((f) => f.id === "projectDescription")?.enabled || false}
+                      onCheckedChange={(checked) =>
+                        toggleField("projectDescription", checked === true)
+                      }
+                    />
+                  </div>
+                  <FormControl>
+                    <Textarea
+                      {...field}
+                      rows={3}
+                      className="resize-none"
+                      disabled={!fields.find((f) => f.id === "projectDescription")?.enabled}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            {/* Adresse du projet */}
+            <FormField
+              control={form.control}
+              name="projectAddress"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <div className="flex items-center justify-between">
+                    <FormLabel htmlFor="projectAddress">Adresse du projet</FormLabel>
+                    <Checkbox
+                      id="projectAddressEnabled"
+                      checked={fields.find((f) => f.id === "projectAddress")?.enabled || false}
+                      onCheckedChange={(checked) =>
+                        toggleField("projectAddress", checked === true)
+                      }
+                    />
+                  </div>
+                  <FormControl>
+                    <Textarea
+                      {...field}
+                      rows={2}
+                      className="resize-none"
+                      disabled={!fields.find((f) => f.id === "projectAddress")?.enabled}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            {/* Occupant */}
+            <FormField
+              control={form.control}
+              name="occupant"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <div className="flex items-center justify-between">
+                    <FormLabel htmlFor="occupant">Occupant</FormLabel>
+                    <Checkbox
+                      id="occupantEnabled"
+                      checked={fields.find((f) => f.id === "occupant")?.enabled || false}
+                      onCheckedChange={(checked) =>
+                        toggleField("occupant", checked === true)
+                      }
+                    />
+                  </div>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      disabled={!fields.find((f) => f.id === "occupant")?.enabled}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            {/* Informations complémentaires */}
+            <FormField
+              control={form.control}
+              name="additionalInfo"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <div className="flex items-center justify-between">
+                    <FormLabel htmlFor="additionalInfo">Informations complémentaires</FormLabel>
+                    <Checkbox
+                      id="additionalInfoEnabled"
+                      checked={fields.find((f) => f.id === "additionalInfo")?.enabled || false}
+                      onCheckedChange={(checked) =>
+                        toggleField("additionalInfo", checked === true)
+                      }
+                    />
+                  </div>
+                  <FormControl>
+                    <Textarea
+                      {...field}
+                      rows={3}
+                      className="resize-none"
+                      disabled={!fields.find((f) => f.id === "additionalInfo")?.enabled}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <Button type="submit">Enregistrer les paramètres</Button>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
   );
 };
