@@ -78,17 +78,17 @@ const RecapitulatifTravaux: React.FC<RecapitulatifTravauxProps> = ({
             })}
           </TableBody>
           <TableFooter>
-            <TableRow className="border-t">
-              <TableCell className="font-bold text-left">Montant Total HT</TableCell>
-              <TableCell className="text-right font-semibold border-l" colSpan={3}>{formaterPrix(totalHT)}</TableCell>
+            <TableRow className="border-t h-8">
+              <TableCell colSpan={2} className="text-right font-bold">Montant Total HT</TableCell>
+              <TableCell colSpan={2} className="text-right font-semibold">{formaterPrix(totalHT)}</TableCell>
             </TableRow>
-            <TableRow>
-              <TableCell className="font-bold text-left">Total TVA</TableCell>
-              <TableCell className="text-right font-semibold border-l" colSpan={3}>{formaterPrix(totalTVA)}</TableCell>
+            <TableRow className="h-8">
+              <TableCell colSpan={2} className="text-right font-bold">Total TVA</TableCell>
+              <TableCell colSpan={2} className="text-right font-semibold">{formaterPrix(totalTVA)}</TableCell>
             </TableRow>
-            <TableRow>
-              <TableCell className="font-bold text-left">Montant Total TTC</TableCell>
-              <TableCell className="text-right font-semibold border-l" colSpan={3}>{formaterPrix(totalTTC)}</TableCell>
+            <TableRow className="h-8">
+              <TableCell colSpan={2} className="text-right font-bold">Montant Total TTC</TableCell>
+              <TableCell colSpan={2} className="text-right font-semibold">{formaterPrix(totalTTC)}</TableCell>
             </TableRow>
           </TableFooter>
         </Table>
@@ -98,4 +98,3 @@ const RecapitulatifTravaux: React.FC<RecapitulatifTravauxProps> = ({
 };
 
 export default RecapitulatifTravaux;
-
