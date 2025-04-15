@@ -151,7 +151,7 @@ export const generateDetailsPDF = async (
         descriptionContent.push({ 
           text: travail.personnalisation, 
           fontSize: 8,
-          italics: true  // Utiliser italics au lieu de italic
+          italic: true  // Correction: utiliser 'italic' au lieu de 'italics'
         });
       }
       
