@@ -5,7 +5,8 @@ import { formaterPrix } from "@/lib/utils";
 import { 
   calculerTotalHTTravaux,
   calculerMontantTVA,
-  calculerTotalTTCTravaux
+  calculerTotalTTCTravaux,
+  grouperTravauxParTVA
 } from "@/features/travaux/utils/travauxUtils";
 import {
   Table,
@@ -30,8 +31,23 @@ const RecapitulatifTravaux: React.FC<RecapitulatifTravauxProps> = ({
 }) => {
   // Calculer les totaux globaux
   const totalHT = calculerTotalHTTravaux(travaux);
-  const totalTVA = travaux.reduce((acc, travail) => acc + calculerMontantTVA(travail), 0);
   const totalTTC = calculerTotalTTCTravaux(travaux);
+  
+  // Grouper les travaux par taux de TVA
+  const travauxParTVA = grouperTravauxParTVA(travaux);
+  const tauxTVA = Object.keys(travauxParTVA).map(Number).sort();
+  
+  // Calculer les montants de TVA par taux
+  const montantsTVAParTaux = tauxTVA.map(taux => {
+    const travauxTaux = travauxParTVA[taux];
+    const montantTVA = travauxTaux.reduce((sum, travail) => 
+      sum + calculerMontantTVA(travail), 0);
+    
+    return { taux, montantTVA };
+  });
+  
+  // Calculer le total TVA
+  const totalTVA = montantsTVAParTaux.reduce((sum, { montantTVA }) => sum + montantTVA, 0);
 
   if (travaux.length === 0) {
     return <div className="text-center text-gray-500">Aucun travail n'a été ajouté.</div>;
@@ -85,12 +101,27 @@ const RecapitulatifTravaux: React.FC<RecapitulatifTravauxProps> = ({
                   {formaterPrix(totalHT)}
                 </TableCell>
               </TableRow>
-              <TableRow className="border-b">
-                <TableCell className="font-bold p-4">Total TVA</TableCell>
-                <TableCell className="text-right text-blue-600 font-medium p-4">
-                  {formaterPrix(totalTVA)}
-                </TableCell>
-              </TableRow>
+              
+              {/* Afficher chaque taux de TVA séparément */}
+              {montantsTVAParTaux.map(({ taux, montantTVA }) => (
+                <TableRow key={`tva-${taux}`} className="border-b">
+                  <TableCell className="font-bold p-4">Total TVA {taux}%</TableCell>
+                  <TableCell className="text-right text-blue-600 font-medium p-4">
+                    {formaterPrix(montantTVA)}
+                  </TableCell>
+                </TableRow>
+              ))}
+              
+              {/* Afficher le total TVA si plusieurs taux sont présents */}
+              {montantsTVAParTaux.length > 1 && (
+                <TableRow className="border-b">
+                  <TableCell className="font-bold p-4">Total TVA</TableCell>
+                  <TableCell className="text-right text-blue-600 font-medium p-4">
+                    {formaterPrix(totalTVA)}
+                  </TableCell>
+                </TableRow>
+              )}
+              
               <TableRow>
                 <TableCell className="font-bold p-4">Total TTC</TableCell>
                 <TableCell className="text-right text-blue-600 font-medium p-4">
