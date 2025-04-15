@@ -1,4 +1,3 @@
-
 import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
 import { Room, Travail, ProjectMetadata } from '@/types';
@@ -497,41 +496,37 @@ export const generateRecapPDF = async (
     { text: formatPrice(totalTTC), alignment: 'right', fontSize: 10, color: DARK_BLUE }
   ]);
   
-  // Ajouter la table des totaux, alignée à droite
+  // Modifier cette partie pour aligner correctement la table des totaux à droite
   docContent.push({
-    stack: [
-      {
-        table: {
-          widths: [100, 100],
-          body: totalTableBody
-        },
-        layout: {
-          hLineWidth: function(i: number, node: any) {
-            return (i === 0 || i === node.table.body.length) ? 1 : 1;
-          },
-          vLineWidth: function() {
-            return 0;
-          },
-          hLineColor: function() {
-            return '#e5e7eb';
-          },
-          paddingLeft: function() {
-            return 10;
-          },
-          paddingRight: function() {
-            return 10;
-          },
-          paddingTop: function() {
-            return 8;
-          },
-          paddingBottom: function() {
-            return 8;
-          }
-        }
-      }
-    ],
     alignment: 'right',
-    margin: [0, 0, 0, 20]
+    margin: [0, 0, 0, 20],
+    table: {
+      widths: [100, 100],
+      body: totalTableBody
+    },
+    layout: {
+      hLineWidth: function(i: number, node: any) {
+        return (i === 0 || i === node.table.body.length) ? 1 : 1;
+      },
+      vLineWidth: function() {
+        return 0;
+      },
+      hLineColor: function() {
+        return '#e5e7eb';
+      },
+      paddingLeft: function() {
+        return 10;
+      },
+      paddingRight: function() {
+        return 10;
+      },
+      paddingTop: function() {
+        return 8;
+      },
+      paddingBottom: function() {
+        return 8;
+      }
+    }
   });
   
   // Définir le document avec contenu et styles
