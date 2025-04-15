@@ -1,3 +1,4 @@
+
 import React, { useRef, useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -5,7 +6,7 @@ import { X, Printer, Download } from "lucide-react";
 import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
 
-// Initialiser pdfMake avec les polices
+// Initialiser pdfMake avec les polices par défaut
 pdfMake.vfs = pdfFonts.pdfMake ? pdfFonts.pdfMake.vfs : pdfFonts.vfs;
 
 // Couleur bleu foncée unifiée pour toute la page
@@ -13,6 +14,12 @@ const DARK_BLUE = "#002855"; // Bleu marine plus foncé que #003366
 
 // Taille de police standard
 const DEFAULT_FONT_SIZE = 10;
+
+// Largeur de la première colonne (en pixels) pour l'alignement
+const COLUMN1_WIDTH = 25;
+
+// Chemin vers le logo
+const LOGO_PATH = "/lrs_logo.jpg";
 
 interface PrintableField {
   id: string;
@@ -47,12 +54,12 @@ interface DevisCoverPreviewProps {
 export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({ 
   fields, 
   company, 
-  onClose 
+  onClose
 }) => {
   const printContentRef = useRef<HTMLDivElement>(null);
   const [logoError, setLogoError] = useState(false);
-  const [logoLoaded, setLogoLoaded] = useState(false);
-  const [logoBase64, setLogoBase64] = useState<string | null>(null);
+  const [logoExists, setLogoExists] = useState(false);
+  const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
   
   const devisNumber = fields.find(f => f.id === "devisNumber")?.content;
   const devisDate = fields.find(f => f.id === "devisDate")?.content;
@@ -63,15 +70,49 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
   const occupant = fields.find(f => f.id === "occupant")?.content;
   const additionalInfo = fields.find(f => f.id === "additionalInfo")?.content;
 
-  // Formater les données client pour l'affichage et le PDF
-  const formatClientData = (clientData: string | null | undefined): string[] => {
-    if (!clientData) return [];
-    // Divise les lignes et filtre les lignes vides
-    return clientData.split('\n').filter(line => line.trim().length > 0);
-  };
+  // Vérifier si le logo existe et le charger en Data URL
+  useEffect(() => {
+    // Fonction pour charger l'image et la convertir en Data URL
+    const loadImage = async () => {
+      try {
+        // Créer une image
+        const img = new Image();
+        
+        // Configurer les gestionnaires d'événements
+        img.onload = () => {
+          // Créer un canvas pour convertir l'image en Data URL
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0);
+            // Convertir en Data URL
+            const dataUrl = canvas.toDataURL('image/jpeg');
+            setLogoDataUrl(dataUrl);
+            setLogoExists(true);
+          }
+        };
+        
+        img.onerror = (e) => {
+          console.error("Erreur de chargement du logo:", e);
+          setLogoExists(false);
+          setLogoDataUrl(null);
+        };
+        
+        // Déclencher le chargement avec le chemin de l'image
+        img.src = LOGO_PATH;
+        
+      } catch (error) {
+        console.error("Erreur lors du chargement de l'image:", error);
+        setLogoExists(false);
+        setLogoDataUrl(null);
+      }
+    };
+    
+    loadImage();
+  }, []);
   
-  const clientLines = formatClientData(client);
-
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return "";
     
@@ -86,96 +127,34 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
     }
   };
 
-  // Fonction pour convertir une URL d'image en base64
-  useEffect(() => {
-    if (company?.logo_url) {
-      const img = new Image();
-      
-      img.crossOrigin = "anonymous";  // Important pour les images de différentes origines
-      
-      img.onload = () => {
-        try {
-          const canvas = document.createElement('canvas');
-          canvas.width = img.width;
-          canvas.height = img.height;
-          
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            ctx.drawImage(img, 0, 0);
-            const dataURL = canvas.toDataURL('image/jpeg');
-            setLogoBase64(dataURL);
-            setLogoLoaded(true);
-            setLogoError(false);
-            console.log("Logo chargé avec succès et converti en base64");
-          }
-        } catch (error) {
-          console.error("Erreur lors de la conversion du logo en base64:", error);
-          setLogoError(true);
-        }
-      };
-      
-      img.onerror = () => {
-        console.error("Erreur lors du chargement du logo:", company.logo_url);
-        setLogoError(true);
-        setLogoLoaded(false);
-      };
-      
-      // Ajouter un timestamp à l'URL pour éviter la mise en cache
-      const timestamp = new Date().getTime();
-      const logoUrl = company.logo_url.includes('?') 
-        ? `${company.logo_url}&t=${timestamp}` 
-        : `${company.logo_url}?t=${timestamp}`;
-        
-      img.src = logoUrl;
-    }
-  }, [company?.logo_url]);
-
   // Création du PDF avec pdfMake
   const createDocDefinition = () => {
-    // Définition d'un espace réservé vide pour le logo
-    const logoPlaceholder = {
-      stack: [
-        { text: '[Emplacement réservé pour le logo]', color: '#aaaaaa', fontSize: 8, margin: [0, 20, 0, 0] }
-      ],
-      width: 120,
-      height: 60
-    };
-    
-    // Préparer les lignes des données client pour le PDF
-    const clientContent = clientLines.map(line => ({
-      text: line,
-      fontSize: DEFAULT_FONT_SIZE,
-      color: DARK_BLUE,
-      margin: [0, 2, 0, 0]
-    }));
-    
-    const logoContent = logoBase64 && logoLoaded
-      ? { image: logoBase64, width: 120, height: 60, fit: [120, 60] }
-      : logoPlaceholder;
+    // Définition des colonnes
+    const col1Width = COLUMN1_WIDTH; // Largeur fixe pour la première colonne
+    const col2Width = '*'; // Largeur automatique pour la deuxième colonne
     
     return {
       pageSize: 'A4',
-      pageMargins: [20, 20, 20, 20],
+      pageMargins: [30, 30, 30, 30], // Marges augmentées de 50%
       
       content: [
-        // En-tête avec logo et informations d'assurance
+        // Logo et assurance sur la même ligne
         {
           columns: [
+            // Logo à gauche
             {
-              // Colonne de gauche (logo et slogan)
               width: '60%',
               stack: [
-                logoContent,
-                { 
-                  text: company?.slogan || 'Entreprise Générale du Bâtiment', 
-                  fontSize: DEFAULT_FONT_SIZE, 
-                  color: DARK_BLUE,
-                  margin: [0, 5, 0, 0]
-                }
+                logoExists && logoDataUrl ? {
+                  image: logoDataUrl,
+                  width: 172,
+                  height: 72,
+                  margin: [0, 0, 0, 0]
+                } : { text: '', margin: [0, 40, 0, 0] }
               ]
             },
+            // Assurance à droite
             {
-              // Colonne de droite (assurance)
               width: '40%',
               stack: [
                 { text: 'Assurance MAAF PRO', fontSize: DEFAULT_FONT_SIZE, color: DARK_BLUE },
@@ -187,108 +166,144 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
           ]
         },
         
-        // Espacement
-        { text: '', margin: [0, 20, 0, 0] },
-        
-        // Coordonnées société - espacement réduit
+        // Slogan - Aligné en colonne 1
         {
-          columns: [
-            { width: 55, text: 'Société', fontSize: DEFAULT_FONT_SIZE, color: DARK_BLUE },
-            { text: company?.name || '', fontSize: DEFAULT_FONT_SIZE, color: DARK_BLUE }
-          ],
-          lineHeight: 1.3 // Augmentation de l'interligne
-        },
-        {
-          columns: [
-            { width: 55, text: 'Siège:', fontSize: DEFAULT_FONT_SIZE, color: DARK_BLUE },
-            { text: `${company?.address || ''} - ${company?.postal_code || ''} ${company?.city || ''}`, fontSize: DEFAULT_FONT_SIZE, color: DARK_BLUE }
-          ],
-          margin: [0, 0, 0, 0],
-          lineHeight: 1.3
+          text: company?.slogan || 'Entreprise Générale du Bâtiment',
+          fontSize: 12,
+          bold: true,   // Ajouté pour le gras
+          color: DARK_BLUE,
+          margin: [0, 10, 0, 20] // Plus d'espace après le slogan
         },
         
-        // Espacement
-        { text: '', margin: [0, 5, 0, 0] },
+        // Coordonnées société - Nom et adresse combinés
+        {
+          text: `Société  ${company?.name || ''} - ${company?.address || ''} - ${company?.postal_code || ''} ${company?.city || ''}`,
+          //fontSize: DEFAULT_FONT_SIZE,
+          fontSize: 11,
+          bold: true,   // Ajouté pour le gras
+          color: DARK_BLUE,
+          margin: [0, 0, 0, 3]
+        },
         
-        // Contact avec interligne augmenté
+        // Tél et Mail
         {
           columns: [
-            { width: 55, text: 'Tél:', fontSize: DEFAULT_FONT_SIZE, color: DARK_BLUE },
-            { text: company?.tel1 || '', fontSize: DEFAULT_FONT_SIZE, color: DARK_BLUE }
+            {
+              width: col1Width,
+              text: 'Tél:',
+              fontSize: DEFAULT_FONT_SIZE,
+              color: DARK_BLUE
+            },
+            {
+              width: col2Width,
+              text: company?.tel1 || '',
+              fontSize: DEFAULT_FONT_SIZE,
+              color: DARK_BLUE
+            }
           ],
-          lineHeight: 1.3
+          columnGap: 1, // Espacement augmenté
+          margin: [0, 3, 0, 0]
         },
         company?.tel2 ? {
           columns: [
-            { width: 55, text: '', fontSize: DEFAULT_FONT_SIZE },
-            { text: company?.tel2, fontSize: DEFAULT_FONT_SIZE, color: DARK_BLUE }
+            {
+              width: col1Width,
+              text: '',
+              fontSize: DEFAULT_FONT_SIZE
+            },
+            {
+              width: col2Width,
+              text: company.tel2,
+              fontSize: DEFAULT_FONT_SIZE,
+              color: DARK_BLUE
+            }
           ],
-          margin: [0, 0, 0, 0],
-          lineHeight: 1.3
-        } : {},
-        
-        // Espace entre téléphone et mail
-        { text: '', margin: [0, 3, 0, 0] },
-        
+          columnGap: 1, // Espacement augmenté
+          margin: [0, 0, 0, 0]
+        } : null,
         {
           columns: [
-            { width: 55, text: 'Mail:', fontSize: DEFAULT_FONT_SIZE, color: DARK_BLUE },
-            { text: company?.email || '', fontSize: DEFAULT_FONT_SIZE, color: DARK_BLUE }
-          ],
-          lineHeight: 1.3
-        },
-        
-        // Espacement entre mail et devis
-        { text: '', margin: [0, 15, 0, 0] },
-        
-        // Numéro et date du devis - aligné avec les coordonnées société
-        {
-          columns: [
-            { 
-              width: 55, 
-              text: 'Devis n°:', 
-              fontSize: DEFAULT_FONT_SIZE, 
+            {
+              width: col1Width,
+              text: 'Mail:',
+              fontSize: DEFAULT_FONT_SIZE,
               color: DARK_BLUE
             },
-            { 
+            {
+              width: col2Width,
+              text: company?.email || '',
+              fontSize: DEFAULT_FONT_SIZE,
+              color: DARK_BLUE
+            }
+          ],
+          columnGap: 1, // Espacement augmenté
+          margin: [0, 5, 0, 0] // Plus d'espace après le mail
+        },
+        
+        // Espace avant devis
+        { text: '', margin: [0, 30, 0, 0] },
+        
+        // Numéro et date du devis - TOUT aligné en colonne 2
+        {
+          columns: [
+            {
+              width: col1Width,
+              text: '', // Colonne 1 vide
+              fontSize: DEFAULT_FONT_SIZE
+            },
+            {
+              width: col2Width,
               text: [
-                { text: `${devisNumber || ''} Du ${formatDate(devisDate)}`, fontSize: DEFAULT_FONT_SIZE, color: DARK_BLUE },
+                { text: `Devis n°: ${devisNumber || ''} Du ${formatDate(devisDate)} `, fontSize: DEFAULT_FONT_SIZE, color: DARK_BLUE },
                 { text: ` (Validité de l'offre : 3 mois.)`, fontSize: 9, italics: true, color: DARK_BLUE }
               ]
             }
           ],
-          lineHeight: 1.3
+          columnGap: 1, // Espacement augmenté
+          margin: [0, 0, 0, 0]
         },
         
-        // Espacement
-        { text: '', margin: [0, 15, 0, 0] },
+        // Espace avant Client
+        { text: '', margin: [0, 35, 0, 0] },
         
-        // Section client sans cadre - aligné avec les autres sections
-        {
-          text: 'Client / Maître d\'ouvrage',
-          fontSize: DEFAULT_FONT_SIZE,
-          color: DARK_BLUE,
-          margin: [0, 0, 0, 5]
-        },
+        // Client - Titre aligné en colonne 2
         {
           columns: [
-            { width: 55, text: '', fontSize: DEFAULT_FONT_SIZE },
+            { width: col1Width, text: '', fontSize: DEFAULT_FONT_SIZE },
             { 
-              stack: clientContent.length > 0 ? clientContent : [{ text: "Aucun client sélectionné", fontSize: DEFAULT_FONT_SIZE, color: DARK_BLUE }]
+              width: col2Width, 
+              text: 'Client / Maître d\'ouvrage',
+              fontSize: DEFAULT_FONT_SIZE,
+              color: DARK_BLUE
             }
           ],
-          lineHeight: 1.3
+          columnGap: 1 // Espacement augmenté
         },
         
-        // Espacement (6 retours à la ligne comme demandé)
-        { text: '', margin: [0, 3, 0, 0] },
-        { text: '', margin: [0, 3, 0, 0] },
-        { text: '', margin: [0, 3, 0, 0] },
-        { text: '', margin: [0, 3, 0, 0] },
-        { text: '', margin: [0, 3, 0, 0] },
-        { text: '', margin: [0, 3, 0, 0] },
+        // Client - Contenu avec sauts de ligne préservés
+        {
+          columns: [
+            { width: col1Width, text: '', fontSize: DEFAULT_FONT_SIZE },
+            { 
+              width: col2Width, 
+              text: client || '',
+              fontSize: DEFAULT_FONT_SIZE,
+              color: DARK_BLUE,
+              lineHeight: 1.3
+            }
+          ],
+          columnGap: 15, // Espacement augmenté
+          margin: [0, 5, 0, 0]
+        },
         
-        // Section chantier sans cadre - aligné avec les autres sections
+        // 5 lignes vides après les données client
+        { text: '', margin: [0, 5, 0, 0] },
+        { text: '', margin: [0, 5, 0, 0] },
+        { text: '', margin: [0, 5, 0, 0] },
+        { text: '', margin: [0, 5, 0, 0] },
+        { text: '', margin: [0, 5, 0, 0] },
+        
+        // Chantier - Titre et contenu alignés en colonne 1
         {
           text: 'Chantier / Travaux',
           fontSize: DEFAULT_FONT_SIZE,
@@ -296,67 +311,51 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
           margin: [0, 0, 0, 5]
         },
         
-        // Occupant en premier comme demandé - si présent
+        // Occupant
         occupant ? {
-          columns: [
-            { width: 55, text: '', fontSize: DEFAULT_FONT_SIZE },
-            { 
-              text: occupant,
-              fontSize: DEFAULT_FONT_SIZE,
-              color: DARK_BLUE
-            }
-          ],
-          lineHeight: 1.3
+          text: occupant,
+          fontSize: DEFAULT_FONT_SIZE,
+          color: DARK_BLUE,
+          margin: [0, 5, 0, 0]
         } : null,
         
-        // Espacement si occupant est présent
-        occupant ? { text: '', margin: [0, 3, 0, 0] } : null,
-        
-        // Adresse du chantier - si présente
+        // Adresse du chantier
         projectAddress ? {
-          columns: [
-            { width: 55, text: '', fontSize: DEFAULT_FONT_SIZE },
-            {
-              text: [
-                { text: 'Adresse du chantier / lieu d\'intervention: ', fontSize: DEFAULT_FONT_SIZE, color: DARK_BLUE },
-                { text: projectAddress, fontSize: DEFAULT_FONT_SIZE, color: DARK_BLUE }
-              ]
-            }
-          ],
-          lineHeight: 1.3
+          text: 'Adresse du chantier / lieu d\'intervention:',
+          fontSize: DEFAULT_FONT_SIZE,
+          color: DARK_BLUE,
+          margin: [0, 5, 0, 0]
         } : null,
         
-        // Espacement si adresse est présente
-        projectAddress ? { text: '', margin: [0, 3, 0, 0] } : null,
-        
-        // Description du projet - si présente
+        // Ensuite, uniquement la valeur de l'adresse en C2
+        projectAddress ? {
+          text: projectAddress,
+          fontSize: DEFAULT_FONT_SIZE,
+          color: DARK_BLUE,
+          margin: [10, 3, 0, 0]  // Ajouter 15 points de marge à gauche au lieu de 0
+        } : null,
+
+        // Descriptif
         projectDescription ? {
-          columns: [
-            { width: 55, text: '', fontSize: DEFAULT_FONT_SIZE },
-            {
-              stack: [
-                { text: 'Descriptif:', fontSize: DEFAULT_FONT_SIZE, color: DARK_BLUE },
-                { text: projectDescription, fontSize: DEFAULT_FONT_SIZE, color: DARK_BLUE, margin: [0, 3, 0, 0] }
-              ]
-            }
-          ],
-          lineHeight: 1.3
+          text: 'Descriptif:',
+          fontSize: DEFAULT_FONT_SIZE,
+          color: DARK_BLUE,
+          margin: [0, 8, 0, 0]
         } : null,
         
-        // Espacement si description est présente
-        projectDescription ? { text: '', margin: [0, 3, 0, 0] } : null,
+        projectDescription ? {
+          text: projectDescription,
+          fontSize: DEFAULT_FONT_SIZE,
+          color: DARK_BLUE,
+          margin: [10, 3, 0, 0]
+        } : null,
         
-        // Informations complémentaires sans titre - si présent
+        // Informations complémentaires
         additionalInfo ? {
-          columns: [
-            { width: 55, text: '', fontSize: DEFAULT_FONT_SIZE },
-            { 
-              text: additionalInfo,
-              fontSize: DEFAULT_FONT_SIZE,
-              color: DARK_BLUE
-            }
-          ],
-          lineHeight: 1.3
+          text: additionalInfo,
+          fontSize: DEFAULT_FONT_SIZE,
+          color: DARK_BLUE,
+          margin: [10, 15, 0, 0]
         } : null,
         
         // Pied de page avec taille réduite pour tenir sur une ligne
@@ -373,8 +372,8 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
       defaultStyle: {
         font: 'Roboto',
         fontSize: DEFAULT_FONT_SIZE,
-        color: DARK_BLUE, // Couleur par défaut pour tout le document
-        lineHeight: 1.3 // Interligne par défaut pour tout le document
+        color: DARK_BLUE,
+        lineHeight: 1.3
       }
     };
   };
@@ -410,36 +409,17 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
         
         {/* Contenu principal - Cet aperçu est uniquement visuel, le vrai PDF est généré par pdfMake */}
         <div ref={printContentRef} className="p-5 rounded-md my-4 bg-white">
+          {/* Logo et informations d'assurance */}
           <div className="flex justify-between items-start">
-            <div className="max-w-[50%]">
-              {logoLoaded && logoBase64 ? (
-                <div>
-                  <img 
-                    src={logoBase64} 
-                    alt="" 
-                    className="max-h-24 max-w-full object-contain"
-                  />
-                  {company?.slogan ? (
-                    <p className="text-xs mt-2" style={{ color: DARK_BLUE }}>{company.slogan}</p>
-                  ) : (
-                    <p className="text-xs mt-2" style={{ color: DARK_BLUE }}>Entreprise Générale du Bâtiment</p>
-                  )}
-                </div>
-              ) : (
-                <div>
-                  <div className="h-24 w-48 flex items-center justify-center border border-gray-200 bg-gray-50">
-                    <span className="text-gray-400 text-xs">Emplacement réservé pour le logo</span>
-                  </div>
-                  {company?.slogan ? (
-                    <p className="text-xs mt-2" style={{ color: DARK_BLUE }}>{company.slogan}</p>
-                  ) : (
-                    <p className="text-xs mt-2" style={{ color: DARK_BLUE }}>Entreprise Générale du Bâtiment</p>
-                  )}
-                </div>
-              )}
+            <div className="max-w-[60%]">
+              {logoExists && logoDataUrl ? (
+                <img 
+                  src={logoDataUrl} 
+                  alt="Logo" 
+                  className="h-[72px] object-contain mb-2"
+                />
+              ) : null}
             </div>
-            
-            {/* Information d'assurance */}
             <div className="text-right text-xs" style={{ color: DARK_BLUE }}>
               <p>Assurance MAAF PRO</p>
               <p>Responsabilité civile</p>
@@ -447,109 +427,86 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
             </div>
           </div>
           
-          {/* Coordonnées société avec espacement réduit et interligne augmenté */}
-          <div className="mt-12 mb-4 text-xs leading-relaxed" style={{ color: DARK_BLUE }}>
-            <p>
-              <span style={{ display: 'inline-block', width: '55px' }}>Société</span>
-              <span>{company?.name}</span>
-            </p>
-            <p>
-              <span style={{ display: 'inline-block', width: '55px' }}>Siège:</span>
-              <span>{company?.address} - {company?.postal_code} {company?.city}</span>
-            </p>
+          <p className="text-xs font-bold mb-5" style={{ color: DARK_BLUE, fontSize: '12px' }}>
+            {company?.slogan || 'Entreprise Générale du Bâtiment'}
+          </p>
+          
+          {/* Coordonnées société - Nom et adresse combinés */}
+          <div className="text-xs leading-relaxed font-bold" style={{ color: DARK_BLUE, fontSize: '11px' }}>
+            <p>Société {company?.name} - {company?.address} - {company?.postal_code} {company?.city}</p>
+          </div>
+          
+          {/* Tél et Mail avec structure en 2 colonnes */}
+          <div className="grid grid-cols-[25px_1fr] gap-1 text-xs leading-relaxed mt-2" style={{ color: DARK_BLUE }}>
+            <div>Tél:</div>
+            <div>{company?.tel1}</div>
             
-            <div className="mt-2">
-              <p>
-                <span style={{ display: 'inline-block', width: '55px' }}>Tél:</span>
-                <span>{company?.tel1}</span>
-              </p>
-              {company?.tel2 && (
-                <p>
-                  <span style={{ display: 'inline-block', width: '55px' }}></span>
-                  <span>{company?.tel2}</span>
-                </p>
-              )}
-            </div>
+            {company?.tel2 && (
+              <>
+                <div></div>
+                <div>{company?.tel2}</div>
+              </>
+            )}
             
-            {/* Espace entre téléphone et mail */}
-            <div className="mt-3">
-              <p>
-                <span style={{ display: 'inline-block', width: '55px' }}>Mail:</span>
-                <span>{company?.email}</span>
-              </p>
+            <div>Mail:</div>
+            <div>{company?.email}</div>
+          </div>
+          
+          {/* Espace avant devis */}
+          <div className="mt-8"></div>
+          
+          {/* Numéro et date du devis - TOUT dans la colonne 2 */}
+          <div className="grid grid-cols-[25px_1fr] gap-1 text-xs" style={{ color: DARK_BLUE }}>
+            <div></div>
+            <div>
+              Devis n°: {devisNumber} Du {formatDate(devisDate)} 
+              <span className="text-[9px] italic">(Validité de l'offre : 3 mois.)</span>
             </div>
           </div>
           
-          {/* Espace entre mail et devis */}
-          <div className="mt-6"></div>
+          {/* Espace avant Client */}
+          <div className="mt-8"></div>
           
-          {/* Numéro et date du devis aligné avec autres éléments */}
-          <div className="text-xs leading-relaxed" style={{ color: DARK_BLUE }}>
-            <p>
-              <span style={{ display: 'inline-block', width: '55px' }}>Devis n°:</span>
-              <span>
-                {devisNumber} Du {formatDate(devisDate)}
-                <span className="text-[9px] italic ml-1">(Validité de l'offre : 3 mois.)</span>
-              </span>
-            </p>
-          </div>
-          
-          {/* Espace avant section client */}
-          <div className="mt-6"></div>
-          
-          {/* Section client sans cadre - aligné avec les autres sections */}
-          <div className="mb-2">
-            <p className="text-xs mb-1" style={{ color: DARK_BLUE }}>Client / Maître d'ouvrage</p>
-            <div className="text-xs leading-relaxed pl-14" style={{ color: DARK_BLUE }}>
-              {clientLines.length > 0 ? (
-                clientLines.map((line, index) => (
-                  <div key={index} className="whitespace-pre-wrap">{line}</div>
-                ))
-              ) : (
-                <div>Aucun client sélectionné</div>
-              )}
+          {/* Client - aligné en colonne 2 avec retours à la ligne */}
+          <div className="grid grid-cols-[25px_1fr] gap-1 text-xs" style={{ color: DARK_BLUE }}>
+            <div></div>
+            <div>
+              <p className="mb-1">Client / Maître d'ouvrage</p>
+              <div className="whitespace-pre-line">{client}</div>
             </div>
           </div>
           
-          {/* 6 retours à la ligne */}
-          <div className="h-24"></div>
+          {/* 5 retours à la ligne au lieu de 10 */}
+          <div className="h-20"></div>
           
-          {/* Section chantier sans cadre - aligné avec les autres sections */}
-          <div>
-            <p className="text-xs mb-1" style={{ color: DARK_BLUE }}>Chantier / Travaux</p>
-            <div className="text-xs leading-relaxed pl-14" style={{ color: DARK_BLUE }}>
-              {/* Occupant en premier */}
-              {occupant && (
-                <div className="mb-2">
-                  {occupant}
-                </div>
-              )}
-              
-              {/* Adresse */}
-              {projectAddress && (
-                <div className="mb-2">
-                  Adresse du chantier / lieu d'intervention: {projectAddress}
-                </div>
-              )}
-              
-              {/* Description */}
-              {projectDescription && (
-                <div className="mb-2">
-                  Descriptif: <br />
-                  <span className="block mt-1">{projectDescription}</span>
-                </div>
-              )}
-              
-              {/* Informations complémentaires sans titre */}
-              {additionalInfo && (
-                <div className="mt-2">
-                  {additionalInfo}
-                </div>
-              )}
-            </div>
+          {/* Chantier - aligné à gauche (colonne 1) */}
+          <div className="text-xs" style={{ color: DARK_BLUE }}>
+            <p className="mb-1">Chantier / Travaux</p>
+            
+            {occupant && (
+              <p className="mb-1">{occupant}</p>
+            )}
+            
+            {projectAddress && (
+              <>
+                <p className="mb-1">Adresse du chantier / lieu d'intervention:</p>
+                <p className="mb-3 ml-3">{projectAddress}</p>
+              </>
+            )}
+            
+            {projectDescription && (
+              <>
+                <p className="mb-1">Descriptif:</p>
+                <p className="mb-3 ml-3">{projectDescription}</p>
+              </>
+            )}
+            
+            {additionalInfo && (
+              <p className="ml-3">{additionalInfo}</p>
+            )}
           </div>
           
-          {/* Pied de page avec taille réduite */}
+          {/* Pied de page */}
           <div className="text-center text-[7px] mt-24 absolute bottom-2 left-0 right-0" style={{ color: DARK_BLUE }}>
             {company?.name} - SASU au Capital de {company?.capital_social || "10000"} € - {company?.address} {company?.postal_code} {company?.city} - Siret : {company?.siret} - Code APE : {company?.code_ape} - N° TVA Intracommunautaire : {company?.tva_intracom}
           </div>
