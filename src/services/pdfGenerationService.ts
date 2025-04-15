@@ -50,28 +50,13 @@ export const generateDetailsPDF = async (
   // On filtre les pièces qui n'ont pas de travaux
   const roomsWithTravaux = rooms.filter(room => getTravauxForPiece(room.id).length > 0);
   
-  // Calculer le nombre total de pages (approximatif)
-  const pageCount = 1; // Estimation d'une seule page pour toutes les pièces
+  // Estimation du nombre de pages - à ajuster selon les besoins
+  const pageCount = Math.max(1, Math.ceil(roomsWithTravaux.length / 2));
   
-  // Créer le contenu du document
-  const docContent: any[] = [];
-  
-  // Marge globale doublée à 30mm (au lieu de 15mm)
-  const pageMargins = [30, 30, 30, 30]; // [gauche, haut, droite, bas] en mm
-
-  // Ajouter l'en-tête avec le numéro de devis et la pagination
-  docContent.push({
-    text: `DEVIS N° ${metadata?.devisNumber || 'XXXX-XX'} - page 1/${pageCount}`,
-    style: 'header',
-    alignment: 'right',
-    fontSize: 8,
-    margin: [0, 0, 0, 20] // Marge bas pour espacer l'en-tête du contenu
-  });
-
   // Définir les largeurs de colonnes ajustées comme demandé
   const columnWidths = ['*', 50, 50, 30, 60]; // Description, Quantité, Prix HT, TVA, Total HT
 
-  // Ajouter l'en-tête du tableau commun pour toutes les pièces (une seule fois en haut de la page)
+  // Créer l'en-tête du tableau commun pour toutes les pièces
   const tableHeaderRow = [
     { text: 'Description', style: 'tableHeader', alignment: 'left', color: DARK_BLUE },
     { text: 'Quantité', style: 'tableHeader', alignment: 'center', color: DARK_BLUE },
@@ -79,44 +64,11 @@ export const generateDetailsPDF = async (
     { text: 'TVA', style: 'tableHeader', alignment: 'center', color: DARK_BLUE },
     { text: 'Total HT', style: 'tableHeader', alignment: 'center', color: DARK_BLUE }
   ];
-
-  // Créer un tableau pour l'en-tête
-  docContent.push({
-    table: {
-      headerRows: 1,
-      widths: columnWidths, // Utiliser les largeurs de colonnes ajustées
-      body: [tableHeaderRow]
-    },
-    layout: {
-      hLineWidth: function(i: number, node: any) {
-        return (i === 0 || i === node.table.body.length) ? 1 : 1;
-      },
-      vLineWidth: function() {
-        return 0;
-      },
-      hLineColor: function() {
-        return '#e5e7eb';
-      },
-      paddingLeft: function() {
-        return 4;
-      },
-      paddingRight: function() {
-        return 4;
-      },
-      paddingTop: function() {
-        return 2;
-      },
-      paddingBottom: function() {
-        return 2;
-      },
-      fillColor: function(rowIndex: number) {
-        return (rowIndex === 0) ? '#f3f4f6' : null;
-      }
-    },
-    margin: [0, 0, 0, 10]
-  });
-
-  // Pour chaque pièce avec des travaux, sans forcer de saut de page
+  
+  // Créer le contenu du document
+  const docContent: any[] = [];
+  
+  // Pour chaque pièce avec des travaux
   roomsWithTravaux.forEach((room, roomIndex) => {
     const travauxPiece = getTravauxForPiece(room.id);
     if (travauxPiece.length === 0) return;
@@ -132,7 +84,7 @@ export const generateDetailsPDF = async (
       margin: [0, 0, 0, 5]
     });
     
-    // Créer le tableau pour cette pièce (sans l'en-tête)
+    // Créer le tableau pour cette pièce (avec l'en-tête)
     const tableBody = [];
     
     // Ajouter chaque travail au tableau
@@ -140,7 +92,7 @@ export const generateDetailsPDF = async (
       const prixUnitaireHT = travail.prixFournitures + travail.prixMainOeuvre;
       const totalHT = prixUnitaireHT * travail.quantite;
       
-      const descriptionContent: any[] = [
+      const descriptionContent = [
         { text: `${travail.typeTravauxLabel}: ${travail.sousTypeLabel}`, fontSize: 9 }
       ];
       
@@ -152,13 +104,11 @@ export const generateDetailsPDF = async (
       }
       
       if (travail.personnalisation) {
-        // Utiliser le format correct avec la définition d'un objet compatible
-        const personnalisationStyle: any = { 
+        descriptionContent.push({ 
           text: travail.personnalisation, 
           fontSize: 8,
-          italics: true 
-        };
-        descriptionContent.push(personnalisationStyle);
+          italics: true  // Utiliser italics directement avec as any
+        } as any);
       }
       
       descriptionContent.push({
@@ -208,7 +158,7 @@ export const generateDetailsPDF = async (
     // Ajouter le tableau au document
     docContent.push({
       table: {
-        headerRows: 0, // Pas d'en-tête de tableau puisqu'on l'a déjà ajouté en haut
+        headerRows: 0, // Pas d'en-tête de tableau puisqu'on l'ajoutera en tant qu'élément de la fonction header
         widths: columnWidths, // Utiliser les largeurs de colonnes ajustées
         body: tableBody
       },
@@ -239,14 +189,64 @@ export const generateDetailsPDF = async (
     });
   });
   
+  // Marge globale doublée à 30mm (au lieu de 15mm)
+  const pageMargins = [30, 60, 30, 30]; // [gauche, haut, droite, bas] en mm - Augmentation de la marge haute pour l'en-tête
+  
   // Définir le document avec contenu et styles
   const docDefinition = {
+    header: function(currentPage: number, pageCount: number) {
+      return [
+        // En-tête avec le numéro de devis et la pagination
+        {
+          text: `DEVIS N° ${metadata?.devisNumber || 'XXXX-XX'} - page ${currentPage}/${pageCount}`,
+          style: 'header',
+          alignment: 'right',
+          fontSize: 8,
+          margin: [30, 10, 30, 5] // Marges [gauche, haut, droite, bas]
+        },
+        // En-tête du tableau
+        {
+          table: {
+            headerRows: 1,
+            widths: columnWidths,
+            body: [tableHeaderRow]
+          },
+          layout: {
+            hLineWidth: function(i: number, node: any) {
+              return (i === 0 || i === node.table.body.length) ? 1 : 1;
+            },
+            vLineWidth: function() {
+              return 0;
+            },
+            hLineColor: function() {
+              return '#e5e7eb';
+            },
+            paddingLeft: function() {
+              return 4;
+            },
+            paddingRight: function() {
+              return 4;
+            },
+            paddingTop: function() {
+              return 2;
+            },
+            paddingBottom: function() {
+              return 2;
+            },
+            fillColor: function(rowIndex: number) {
+              return (rowIndex === 0) ? '#f3f4f6' : null;
+            }
+          },
+          margin: [30, 5, 30, 10]
+        }
+      ];
+    },
     content: docContent,
     styles: {
       header: {
         fontSize: 8,
         color: DARK_BLUE,
-        margin: [0, 5, 0, 20]
+        margin: [0, 5, 0, 10]
       },
       roomTitle: {
         fontSize: 9,
@@ -258,14 +258,14 @@ export const generateDetailsPDF = async (
       },
       tableHeader: {
         fontSize: 9,
-        bold: true,
+        // Suppression de la propriété bold pour les en-têtes du tableau
         color: DARK_BLUE
       },
       italic: {
-        italics: true  // This defines the italic style
+        italics: true
       }
     },
-    pageMargins: pageMargins, // Marges doublées à 30mm sur tous les côtés
+    pageMargins: pageMargins,
     defaultStyle: {
       fontSize: 9,
       color: DARK_BLUE
@@ -273,7 +273,7 @@ export const generateDetailsPDF = async (
   };
   
   try {
-    // Créer et télécharger le PDF (aucune configuration de police spécifique nécessaire)
+    // Créer et télécharger le PDF
     pdfMake.createPdf(docDefinition).download(`devis_details_${metadata?.devisNumber || 'XXXX-XX'}.pdf`);
     console.log('PDF généré avec succès');
   } catch (error) {
