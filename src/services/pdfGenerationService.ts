@@ -118,19 +118,18 @@ export const generateDetailsPDF = async (
     const tableBody = [];
     
     // Ajouter chaque travail au tableau
-    travauxPiece.forEach(travail => {
+    travauxPiece.forEach((travail, index) => {
       const prixUnitaireHT = travail.prixFournitures + travail.prixMainOeuvre;
       const totalHT = prixUnitaireHT * travail.quantite;
       
       const descriptionContent = [
-        { text: `${travail.typeTravauxLabel}: ${travail.sousTypeLabel}`, fontSize: 9, bold: true }
+        { text: `${travail.typeTravauxLabel}: ${travail.sousTypeLabel}`, fontSize: 9 }
       ];
       
       if (travail.description) {
         descriptionContent.push({ 
           text: travail.description, 
-          fontSize: 8,
-          bold: false
+          fontSize: 8
         });
       }
       
@@ -138,23 +137,30 @@ export const generateDetailsPDF = async (
         descriptionContent.push({ 
           text: travail.personnalisation, 
           fontSize: 8,
-          bold: false,
-          italic: true // Correction de 'italics' à 'italic'
+          italicStyle: true  // Utiliser italicStyle au lieu de italic qui n'existe pas dans ce type
         });
       }
       
       descriptionContent.push({
         text: `MO: ${formatPrice(travail.prixMainOeuvre)}/u, Fourn: ${formatPrice(travail.prixFournitures)}/u (total: ${formatPrice(prixUnitaireHT)}/u)`,
-        fontSize: 7,
-        bold: false
+        fontSize: 7
       });
       
+      // Ajouter plus d'espace entre les travaux
+      const marginBottom = index < travauxPiece.length - 1 ? 7 : 2; // 7 points pour espacement entre prestations
+      
+      // Augmenter l'interligne dans les cellules de description
+      const stack = {
+        stack: descriptionContent,
+        lineHeight: 1.3  // Augmenter l'interligne de 1 point
+      };
+      
       tableBody.push([
-        { stack: descriptionContent },
+        stack,
         { text: `${travail.quantite} ${travail.unite}`, alignment: 'right', fontSize: 9 },
         { text: formatPrice(prixUnitaireHT), alignment: 'right', fontSize: 9 },
         { text: `${travail.tauxTVA}%`, alignment: 'right', fontSize: 9 },
-        { text: formatPrice(totalHT), alignment: 'right', fontSize: 9, bold: true }
+        { text: formatPrice(totalHT), alignment: 'right', fontSize: 9 }
       ]);
     });
     
@@ -200,7 +206,7 @@ export const generateDetailsPDF = async (
           return 2;
         }
       },
-      margin: [0, 0, 0, 15]
+      margin: [0, 0, 0, 15]  // Augmenter la marge en bas de chaque tableau de pièce
     });
   });
   
