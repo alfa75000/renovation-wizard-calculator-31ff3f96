@@ -4,8 +4,8 @@ import pdfFonts from 'pdfmake/build/vfs_fonts';
 import { Room, Travail, ProjectMetadata } from '@/types';
 
 // Initialiser pdfMake avec les polices
-// Vérifier que pdfFonts existe avant d'accéder à ses propriétés
-if (pdfFonts && pdfFonts.pdfMake && pdfFonts.pdfMake.vfs) {
+// Vérifier que pdfMake et pdfFonts existent avant d'accéder à leurs propriétés
+if (pdfMake && pdfFonts && pdfFonts.pdfMake) {
   pdfMake.vfs = pdfFonts.pdfMake.vfs;
 }
 
@@ -53,20 +53,23 @@ export const generateDetailsPDF = async (
     margin: [0, 0, 0, 20] // Marge bas pour espacer l'en-tête du contenu
   });
 
+  // Définir les largeurs de colonnes constantes pour tous les tableaux
+  const columnWidths = ['*', 60, 75, 40, 60]; // Description, Quantité, Prix HT, TVA, Total HT
+
   // Ajouter l'en-tête du tableau commun pour toutes les pièces (une seule fois en haut de la page)
   const tableHeaderRow = [
     { text: 'Description', style: 'tableHeader', alignment: 'left', color: DARK_BLUE },
-    { text: 'Quantité', style: 'tableHeader', alignment: 'right', color: DARK_BLUE },
+    { text: 'Quantité', style: 'tableHeader', alignment: 'center', color: DARK_BLUE },
     { text: 'Prix HT Unitaire', style: 'tableHeader', alignment: 'center', color: DARK_BLUE },
-    { text: 'TVA', style: 'tableHeader', alignment: 'right', color: DARK_BLUE },
-    { text: 'Total HT', style: 'tableHeader', alignment: 'right', color: DARK_BLUE }
+    { text: 'TVA', style: 'tableHeader', alignment: 'center', color: DARK_BLUE },
+    { text: 'Total HT', style: 'tableHeader', alignment: 'center', color: DARK_BLUE }
   ];
 
   // Créer un tableau pour l'en-tête
   docContent.push({
     table: {
       headerRows: 1,
-      widths: ['*', 'auto', 'auto', 'auto', 'auto'],
+      widths: columnWidths, // Utiliser les largeurs de colonnes définies
       body: [tableHeaderRow]
     },
     layout: {
@@ -137,7 +140,7 @@ export const generateDetailsPDF = async (
         descriptionContent.push({ 
           text: travail.personnalisation, 
           fontSize: 8,
-          italicStyle: true  // Utiliser italicStyle au lieu de italic qui n'existe pas dans ce type
+          italic: true  // Utiliser italic au lieu de italicStyle
         });
       }
       
@@ -157,10 +160,10 @@ export const generateDetailsPDF = async (
       
       tableBody.push([
         stack,
-        { text: `${travail.quantite} ${travail.unite}`, alignment: 'right', fontSize: 9 },
-        { text: formatPrice(prixUnitaireHT), alignment: 'right', fontSize: 9 },
-        { text: `${travail.tauxTVA}%`, alignment: 'right', fontSize: 9 },
-        { text: formatPrice(totalHT), alignment: 'right', fontSize: 9 }
+        { text: `${travail.quantite} ${travail.unite}`, alignment: 'center', fontSize: 9 },
+        { text: formatPrice(prixUnitaireHT), alignment: 'center', fontSize: 9 },
+        { text: `${travail.tauxTVA}%`, alignment: 'center', fontSize: 9 },
+        { text: formatPrice(totalHT), alignment: 'center', fontSize: 9 }
       ]);
     });
     
@@ -173,14 +176,14 @@ export const generateDetailsPDF = async (
     tableBody.push([
       { text: `Total HT ${room.name}`, colSpan: 4, alignment: 'left', fontSize: 9, bold: true, fillColor: '#f9fafb' },
       {}, {}, {},
-      { text: formatPrice(pieceTotalHT), alignment: 'right', fontSize: 9, bold: true, fillColor: '#f9fafb' }
+      { text: formatPrice(pieceTotalHT), alignment: 'center', fontSize: 9, bold: true, fillColor: '#f9fafb' }
     ]);
     
     // Ajouter le tableau au document
     docContent.push({
       table: {
         headerRows: 0, // Pas d'en-tête de tableau puisqu'on l'a déjà ajouté en haut
-        widths: ['*', 'auto', 'auto', 'auto', 'auto'],
+        widths: columnWidths, // Utiliser les largeurs de colonnes définies
         body: tableBody
       },
       layout: {
