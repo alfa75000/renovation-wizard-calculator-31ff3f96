@@ -6,12 +6,13 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { fetchCompanies } from "@/services/companiesService";
-import { Printer, Save, FileText } from "lucide-react";
+import { Printer, Save, FileText, ClipboardList } from "lucide-react";
 import { toast } from "sonner";
 import { useProject } from "@/contexts/ProjectContext";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/lib/supabase";
 import { DevisCoverPreview } from "./DevisCoverPreview";
+import { DevisDetailsPreview } from "./DevisDetailsPreview";
 
 interface PrintableField {
   id: string;
@@ -30,8 +31,9 @@ export const PrintableFieldsForm: React.FC = () => {
   const [companyLogoUrl, setCompanyLogoUrl] = useState<string | null>(null);
   const [companyData, setCompanyData] = useState<any>(null);
   
-  // État pour l'aperçu de la page de garde
+  // État pour l'aperçu des pages
   const [showCoverPreview, setShowCoverPreview] = useState(false);
+  const [showDetailsPreview, setShowDetailsPreview] = useState(false);
   
   const [printableFields, setPrintableFields] = useState<PrintableField[]>([
     { id: "companyLogo", name: "Logo société", enabled: true, content: null },
@@ -158,6 +160,10 @@ export const PrintableFieldsForm: React.FC = () => {
   const handleCoverPreview = () => {
     setShowCoverPreview(true);
   };
+  
+  const handleDetailsPreview = () => {
+    setShowDetailsPreview(true);
+  };
 
   return (
     <div className="space-y-6">
@@ -215,6 +221,10 @@ export const PrintableFieldsForm: React.FC = () => {
             <FileText className="h-4 w-4" />
             Aperçu Page de Garde
           </Button>
+          <Button variant="outline" onClick={handleDetailsPreview} className="flex items-center gap-2">
+            <ClipboardList className="h-4 w-4" />
+            Aperçu Détails des Travaux
+          </Button>
         </div>
         <Button onClick={handleSaveSettings} className="flex items-center gap-2">
           <Save className="h-4 w-4" />
@@ -227,6 +237,13 @@ export const PrintableFieldsForm: React.FC = () => {
           fields={printableFields.filter(field => field.enabled)} 
           company={companyData}
           onClose={() => setShowCoverPreview(false)}
+        />
+      )}
+      
+      {showDetailsPreview && (
+        <DevisDetailsPreview
+          open={showDetailsPreview}
+          onClose={() => setShowDetailsPreview(false)}
         />
       )}
     </div>
