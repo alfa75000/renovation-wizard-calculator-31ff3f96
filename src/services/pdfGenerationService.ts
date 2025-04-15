@@ -84,7 +84,7 @@ export const generateDetailsPDF = async (
       margin: [0, 0, 0, 5]
     });
     
-    // Créer le tableau pour cette pièce (avec l'en-tête)
+    // Créer le tableau pour cette pièce (sans l'en-tête car il est maintenant dans le header de page)
     const tableBody = [];
     
     // Ajouter chaque travail au tableau
@@ -158,7 +158,7 @@ export const generateDetailsPDF = async (
     // Ajouter le tableau au document
     docContent.push({
       table: {
-        headerRows: 0, // Pas d'en-tête de tableau puisqu'on l'ajoutera en tant qu'élément de la fonction header
+        headerRows: 0, // Pas d'en-tête de tableau puisqu'on l'a déplacé dans l'en-tête de page
         widths: columnWidths, // Utiliser les largeurs de colonnes ajustées
         body: tableBody
       },
@@ -189,22 +189,22 @@ export const generateDetailsPDF = async (
     });
   });
   
-  // Marge globale doublée à 30mm (au lieu de 15mm)
-  const pageMargins = [30, 60, 30, 30]; // [gauche, haut, droite, bas] en mm - Augmentation de la marge haute pour l'en-tête
+  // Marge globale - Marge haute à 40mm (au lieu de 60mm)
+  const pageMargins = [30, 40, 30, 30]; // [gauche, haut, droite, bas] en mm
   
   // Définir le document avec contenu et styles
   const docDefinition = {
     header: function(currentPage: number, pageCount: number) {
       return [
-        // En-tête avec le numéro de devis et la pagination
+        // En-tête avec le numéro de devis et la pagination - marge haute réduite à 25mm
         {
           text: `DEVIS N° ${metadata?.devisNumber || 'XXXX-XX'} - page ${currentPage}/${pageCount}`,
           style: 'header',
           alignment: 'right',
           fontSize: 8,
-          margin: [30, 10, 30, 5] // Marges [gauche, haut, droite, bas]
+          margin: [30, 25, 30, 5] // Marges [gauche, haut, droite, bas] - marge haute ajustée
         },
-        // En-tête du tableau
+        // En-tête du tableau déplacé ici
         {
           table: {
             headerRows: 1,
