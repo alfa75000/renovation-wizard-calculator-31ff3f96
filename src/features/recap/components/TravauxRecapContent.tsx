@@ -3,10 +3,11 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { FileText } from "lucide-react";
 import { Room, Travail } from "@/types";
-import RoomRecapTable from "./RoomRecapTable";
 import NoTravauxMessage from "./NoTravauxMessage";
-import GlobalTotals from "./GlobalTotals";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import DetailsTravaux from "./DetailsTravaux";
 
+// Interface des propriétés
 interface TravauxRecapContentProps {
   rooms: Room[];
   travaux: Travail[];
@@ -30,18 +31,29 @@ const TravauxRecapContent: React.FC<TravauxRecapContentProps> = ({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {rooms.map(room => (
-          <RoomRecapTable 
-            key={room.id} 
-            room={room} 
-            travaux={getTravauxForPiece(room.id)} 
-          />
-        ))}
-        
         {travaux.length === 0 ? (
           <NoTravauxMessage />
         ) : (
-          <GlobalTotals travaux={travaux} />
+          <Tabs defaultValue="details" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="details">Détails des travaux</TabsTrigger>
+              <TabsTrigger value="recap">Récapitulatif</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="details">
+              <DetailsTravaux 
+                rooms={rooms} 
+                travaux={travaux} 
+                getTravauxForPiece={getTravauxForPiece} 
+              />
+            </TabsContent>
+            
+            <TabsContent value="recap">
+              <div className="py-8 text-center text-gray-500">
+                Le récapitulatif sera implémenté prochainement.
+              </div>
+            </TabsContent>
+          </Tabs>
         )}
       </CardContent>
     </Card>
