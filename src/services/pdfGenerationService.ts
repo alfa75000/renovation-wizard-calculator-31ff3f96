@@ -152,10 +152,11 @@ export const generateDetailsPDF = async (
       }
       
       if (travail.personnalisation) {
+        // Utilisation de l'objet avec la propriété 'italics' comme dans DevisCoverPreview.tsx
         descriptionContent.push({ 
           text: travail.personnalisation, 
           fontSize: 8,
-          italics: true  // Utiliser italics directement comme propriété d'objet
+          italics: true
         });
       }
       
