@@ -80,7 +80,7 @@ export const generateDetailsPDF = async (
       bold: true,
       color: DARK_BLUE,
       fillColor: '#f3f4f6',
-      margin: [0, 0, 0, 5]
+      margin: [0, 10, 0, 5] // Augmenté la marge du haut pour éviter de chevaucher l'en-tête
     });
     
     // Créer le tableau pour cette pièce (sans l'en-tête car il est maintenant dans le header de page)
@@ -188,40 +188,34 @@ export const generateDetailsPDF = async (
     });
   });
   
-  // Marge globale - Marge haute à 40mm (au lieu de 60mm)
-  const pageMargins = [30, 40, 30, 30]; // [gauche, haut, droite, bas] en mm
-  
   // Définir le document avec contenu et styles
   const docDefinition = {
     header: function(currentPage: number, pageCount: number) {
-      return {
-        stack: [
-          // En-tête avec le numéro de devis et la pagination
-          {
-            text: `DEVIS N° ${metadata?.devisNumber || 'XXXX-XX'} - page ${currentPage}/${pageCount}`,
-            style: 'header',
-            alignment: 'right',
-            fontSize: 8,
-            margin: [30, 20, 30, 10] // Ajustement des marges [gauche, haut, droite, bas]
+      return [
+        // En-tête avec le numéro de devis et la pagination
+        {
+          text: `DEVIS N° ${metadata?.devisNumber || 'XXXX-XX'} - page ${currentPage}/${pageCount}`,
+          style: 'header',
+          alignment: 'right',
+          fontSize: 8,
+          margin: [30, 20, 30, 10] // Ajustement des marges [gauche, haut, droite, bas]
+        },
+        // En-tête du tableau - modifié pour éviter l'objet stack
+        {
+          table: {
+            headerRows: 1,
+            widths: columnWidths,
+            body: [tableHeaderRow]
           },
-          // En-tête du tableau
-          {
-            table: {
-              headerRows: 1,
-              widths: columnWidths,
-              body: [tableHeaderRow]
-            },
-            layout: {
-              hLineWidth: function() { return 1; },
-              vLineWidth: function() { return 0; },
-              hLineColor: function() { return '#e5e7eb'; },
-              fillColor: function() { return '#f3f4f6'; }
-            },
-            margin: [30, 0, 30, 0]
-          }
-        ],
-        margin: [0, 0, 0, 20] // Marge supplémentaire en bas de l'en-tête
-      };
+          layout: {
+            hLineWidth: function() { return 1; },
+            vLineWidth: function() { return 0; },
+            hLineColor: function() { return '#e5e7eb'; },
+            fillColor: function(rowIndex: number) { return (rowIndex === 0) ? '#f3f4f6' : null; }
+          },
+          margin: [30, 0, 30, 10] // Ajouté une marge en bas
+        }
+      ];
     },
     content: docContent,
     styles: {
@@ -236,18 +230,18 @@ export const generateDetailsPDF = async (
         color: DARK_BLUE,
         fillColor: '#f3f4f6',
         padding: [5, 3, 5, 3],
-        margin: [0, 0, 0, 5]
+        margin: [0, 10, 0, 5] // Augmenté la marge du haut pour éviter de chevaucher l'en-tête
       },
       tableHeader: {
         fontSize: 9,
-        // Suppression de la propriété bold pour les en-têtes du tableau
+        bold: true, // Remis en gras
         color: DARK_BLUE
       },
       italic: {
         italics: true
       }
     },
-    pageMargins: pageMargins,
+    pageMargins: [30, 70, 30, 30], // [gauche, haut, droite, bas] - Augmenté la marge haute pour l'en-tête
     defaultStyle: {
       fontSize: 9,
       color: DARK_BLUE
