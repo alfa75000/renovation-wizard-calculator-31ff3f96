@@ -152,11 +152,11 @@ export const generateDetailsPDF = async (
       }
       
       if (travail.personnalisation) {
-        // Utilisation de l'objet avec la propriété 'italics' comme dans DevisCoverPreview.tsx
+        // Utiliser style property plutôt que italics directement
         descriptionContent.push({ 
           text: travail.personnalisation, 
           fontSize: 8,
-          italics: true
+          style: 'italic'
         });
       }
       
@@ -259,6 +259,9 @@ export const generateDetailsPDF = async (
         fontSize: 9,
         bold: true,
         color: DARK_BLUE
+      },
+      italic: {
+        italics: true
       }
     },
     pageMargins: pageMargins, // Réduction des marges à 15mm sur tous les côtés
