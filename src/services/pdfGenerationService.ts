@@ -27,9 +27,20 @@ export const generateDetailsPDF = async (
 ) => {
   console.log('Génération du PDF des détails des travaux avec pdfMake');
 
-  // Fonction utilitaire pour formater les prix
+  // Fonction utilitaire pour formater les prix avec séparation des milliers
   const formatPrice = (value: number): string => {
-    return `${value.toFixed(2)}€`;
+    return new Intl.NumberFormat('fr-FR', { 
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(value) + '€';
+  };
+
+  // Fonction pour formater les quantités avec séparation des milliers
+  const formatQuantity = (quantity: number): string => {
+    return new Intl.NumberFormat('fr-FR', { 
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2
+    }).format(quantity);
   };
 
   // On filtre les pièces qui n'ont pas de travaux
@@ -60,7 +71,7 @@ export const generateDetailsPDF = async (
   const tableHeaderRow = [
     { text: 'Description', style: 'tableHeader', alignment: 'left', color: DARK_BLUE },
     { text: 'Quantité', style: 'tableHeader', alignment: 'center', color: DARK_BLUE },
-    { text: 'Prix HT Unitaire', style: 'tableHeader', alignment: 'center', color: DARK_BLUE },
+    { text: 'Prix HT Unit.', style: 'tableHeader', alignment: 'center', color: DARK_BLUE },
     { text: 'TVA', style: 'tableHeader', alignment: 'center', color: DARK_BLUE },
     { text: 'Total HT', style: 'tableHeader', alignment: 'center', color: DARK_BLUE }
   ];
@@ -140,7 +151,7 @@ export const generateDetailsPDF = async (
         descriptionContent.push({ 
           text: travail.personnalisation, 
           fontSize: 8,
-          italic: true  // Utiliser italic au lieu de italicStyle
+          italics: true  // Utiliser italics au lieu de italic
         });
       }
       
@@ -158,9 +169,18 @@ export const generateDetailsPDF = async (
         lineHeight: 1.3  // Augmenter l'interligne de 1 point
       };
       
+      // Afficher la quantité en deux lignes
+      const quantityStack = {
+        stack: [
+          { text: formatQuantity(travail.quantite), alignment: 'center', fontSize: 9 },
+          { text: travail.unite, alignment: 'center', fontSize: 9 }
+        ],
+        alignment: 'center'
+      };
+      
       tableBody.push([
         stack,
-        { text: `${travail.quantite} ${travail.unite}`, alignment: 'center', fontSize: 9 },
+        quantityStack,
         { text: formatPrice(prixUnitaireHT), alignment: 'center', fontSize: 9 },
         { text: `${travail.tauxTVA}%`, alignment: 'center', fontSize: 9 },
         { text: formatPrice(totalHT), alignment: 'center', fontSize: 9 }

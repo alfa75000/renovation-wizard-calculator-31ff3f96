@@ -1,3 +1,4 @@
+
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -10,7 +11,7 @@ export function arrondir2Decimales(nombre: number): number {
   return Math.round(nombre * 100) / 100;
 }
 
-// Fonction pour formater un prix avec le symbole €
+// Fonction pour formater un prix avec le symbole € et séparation des milliers
 export function formaterPrix(prix: number | string): string {
   // Conversion en nombre si c'est une chaîne
   const prixNumber = typeof prix === 'string' ? parseFloat(prix) : prix;
@@ -24,7 +25,7 @@ export function formaterPrix(prix: number | string): string {
   }).format(prixArrondi);
 }
 
-// Fonction pour formater une quantité
+// Fonction pour formater une quantité avec séparation des milliers
 export function formaterQuantite(quantite: number | string): string {
   // Conversion en nombre si c'est une chaîne
   const quantiteNumber = typeof quantite === 'string' ? parseFloat(quantite) : quantite;

@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import { Layout } from "@/components/Layout";
 import { useProject } from "@/contexts/ProjectContext";
 import { useTravaux } from "@/features/travaux/hooks/useTravaux";
+import { generateDetailsPDF } from "@/services/pdfGenerationService";
 
 // Import des composants refactorisés
 import PropertyInfoCard from "@/features/recap/components/PropertyInfoCard";
@@ -13,8 +14,16 @@ import TravauxRecapContent from "@/features/recap/components/TravauxRecapContent
 
 const Recapitulatif: React.FC = () => {
   const { state } = useProject();
-  const { property, rooms } = state;
+  const { property, rooms, metadata } = state;
   const { travaux, getTravauxForPiece } = useTravaux();
+
+  const handlePrintDevis = async () => {
+    try {
+      await generateDetailsPDF(rooms, travaux, getTravauxForPiece, metadata);
+    } catch (error) {
+      console.error("Erreur lors de la génération du PDF:", error);
+    }
+  };
 
   return (
     <Layout
@@ -36,7 +45,7 @@ const Recapitulatif: React.FC = () => {
               Éditer le devis
             </Link>
           </Button>
-          <Button className="flex items-center gap-2">
+          <Button className="flex items-center gap-2" onClick={handlePrintDevis}>
             <Printer className="h-4 w-4" />
             Imprimer le devis
           </Button>

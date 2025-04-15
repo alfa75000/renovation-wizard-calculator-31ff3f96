@@ -6,6 +6,7 @@ import { useProject } from "@/contexts/ProjectContext";
 import { useTravaux } from "@/features/travaux/hooks/useTravaux";
 import { generateDetailsPDF } from "@/services/pdfGenerationService";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { formaterPrix, formaterQuantite } from "@/lib/utils";
 
 interface DevisDetailsPreviewProps {
   open: boolean;
@@ -61,10 +62,10 @@ export const DevisDetailsPreview: React.FC<DevisDetailsPreviewProps> = ({
                       <thead>
                         <tr className="border-b">
                           <th className="text-left p-1">Description</th>
-                          <th className="text-right p-1">Quantité</th>
-                          <th className="text-center p-1">Prix HT Unitaire</th>
-                          <th className="text-right p-1">TVA</th>
-                          <th className="text-right p-1">Total HT</th>
+                          <th className="text-center p-1">Quantité</th>
+                          <th className="text-center p-1">Prix HT Unit.</th>
+                          <th className="text-center p-1">TVA</th>
+                          <th className="text-center p-1">Total HT</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -89,14 +90,19 @@ export const DevisDetailsPreview: React.FC<DevisDetailsPreviewProps> = ({
                                   </div>
                                 )}
                                 <div className="text-[8pt] text-gray-600">
-                                  MO: {travail.prixMainOeuvre.toFixed(2)}€/u, Fourn: {travail.prixFournitures.toFixed(2)}€/u 
-                                  (total: {prixUnitaireHT.toFixed(2)}€/u)
+                                  MO: {formaterPrix(travail.prixMainOeuvre)}/u, Fourn: {formaterPrix(travail.prixFournitures)}/u 
+                                  (total: {formaterPrix(prixUnitaireHT)}/u)
                                 </div>
                               </td>
-                              <td className="text-right p-1">{travail.quantite} {travail.unite}</td>
-                              <td className="text-right p-1">{prixUnitaireHT.toFixed(2)}€</td>
-                              <td className="text-right p-1">{travail.tauxTVA}%</td>
-                              <td className="text-right p-1 font-medium">{totalHT.toFixed(2)}€</td>
+                              <td className="text-center p-1">
+                                <div className="flex flex-col items-center">
+                                  <span>{formaterQuantite(travail.quantite)}</span>
+                                  <span>{travail.unite}</span>
+                                </div>
+                              </td>
+                              <td className="text-center p-1">{formaterPrix(prixUnitaireHT)}</td>
+                              <td className="text-center p-1">{travail.tauxTVA}%</td>
+                              <td className="text-center p-1 font-medium">{formaterPrix(totalHT)}</td>
                             </tr>
                           );
                         })}
@@ -106,10 +112,10 @@ export const DevisDetailsPreview: React.FC<DevisDetailsPreviewProps> = ({
                           <td colSpan={4} className="text-left p-1 text-[9pt] font-medium">
                             Total HT {room.name}
                           </td>
-                          <td className="text-right p-1 text-[9pt] font-medium">
-                            {travauxPiece.reduce((sum, t) => {
+                          <td className="text-center p-1 text-[9pt] font-medium">
+                            {formaterPrix(travauxPiece.reduce((sum, t) => {
                               return sum + (t.prixFournitures + t.prixMainOeuvre) * t.quantite;
-                            }, 0).toFixed(2)}€
+                            }, 0))}
                           </td>
                         </tr>
                       </tbody>
