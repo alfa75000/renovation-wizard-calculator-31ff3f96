@@ -104,7 +104,7 @@ export const generateDetailsPDF = async (
         descriptionLines.push(travail.personnalisation);
       }
       
-      // Ligne MO/Fournitures avec taille de police réduite
+      // Ligne MO/Fournitures avec taille de police réduite à 7 (Modification n°1)
       const moFournText = `MO: ${formatPrice(travail.prixMainOeuvre)}/u, Fourn: ${formatPrice(travail.prixFournitures)}/u (total: ${formatPrice(prixUnitaireHT)}/u)`;
       
       // Estimer le nombre de lignes dans la description, incluant les retours à la ligne automatiques
@@ -134,7 +134,7 @@ export const generateDetailsPDF = async (
         { 
           stack: [
             { text: descriptionLines.join('\n'), fontSize: 9, lineHeight: 1.4 },
-            { text: moFournText, fontSize: 6, lineHeight: 1.4 }
+            { text: moFournText, fontSize: 7, lineHeight: 1.4 } // Modification n°1: Utiliser 7 points pour la ligne MO/Fournitures
           ]
         },
         
@@ -246,10 +246,17 @@ export const generateDetailsPDF = async (
   // Définir le document avec contenu et styles
   const docDefinition = {
     header: function(currentPage: number, pageCount: number) {
+      // Modification n°2: Ajustement de la numérotation de page
+      // Ajuster le comptage: page actuelle + 1 (pour décaler après la page de garde)
+      const adjustedCurrentPage = currentPage + 1;
+      
+      // Ajuster le nombre total: pages générées + 3 (page de garde + récap + conditions)
+      const adjustedTotalPages = pageCount + 3;
+      
       return [
-        // En-tête avec le numéro de devis et la pagination
+        // En-tête avec le numéro de devis et la pagination ajustée
         {
-          text: `DEVIS N° ${metadata?.devisNumber || 'XXXX-XX'} - page ${currentPage}/${pageCount}`,
+          text: `DEVIS N° ${metadata?.devisNumber || 'XXXX-XX'} - page ${adjustedCurrentPage}/${adjustedTotalPages}`,
           style: 'header',
           alignment: 'right',
           fontSize: 8,

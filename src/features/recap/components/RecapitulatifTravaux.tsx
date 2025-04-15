@@ -33,6 +33,15 @@ const RecapitulatifTravaux: React.FC<RecapitulatifTravauxProps> = ({
   const totalTVA = travaux.reduce((acc, travail) => acc + calculerMontantTVA(travail), 0);
   const totalTTC = calculerTotalTTCTravaux(travaux);
 
+  // Fonction pour formater les détails de MO et fournitures selon le nouveau format
+  const formatTravauxDetails = (travail: Travail): string => {
+    const prixUnitaireHT = travail.prixFournitures + travail.prixMainOeuvre;
+    const totalHT = prixUnitaireHT * travail.quantite;
+    const montantTVA = (totalHT * travail.tauxTVA) / 100;
+    
+    return `[ MO: ${formaterPrix(travail.prixMainOeuvre)}/u ] [ Fourn: ${formaterPrix(travail.prixFournitures)}/u ] [ Total HT: ${formaterPrix(prixUnitaireHT)}/u ] [ Total TVA (${travail.tauxTVA}%): ${formaterPrix(montantTVA)} ]`;
+  };
+
   if (travaux.length === 0) {
     return <div className="text-center text-gray-500">Aucun travail n'a été ajouté.</div>;
   }
@@ -62,7 +71,25 @@ const RecapitulatifTravaux: React.FC<RecapitulatifTravauxProps> = ({
               return (
                 <TableRow key={room.id}>
                   <TableCell className="font-medium text-left">
-                    {room.name}
+                    <div className="space-y-4">
+                      <div className="font-semibold">{room.name}</div>
+                      
+                      {/* Afficher chaque travail avec le nouveau format pour MO/Fournitures */}
+                      {travauxPiece.map(travail => (
+                        <div key={travail.id} className="pl-4 border-l-2 border-gray-200 space-y-2">
+                          <div className="font-medium">{travail.typeTravauxLabel}: {travail.sousTypeLabel}</div>
+                          {travail.description && <div className="text-sm text-gray-600">{travail.description}</div>}
+                          {travail.personnalisation && <div className="text-sm text-blue-600">{travail.personnalisation}</div>}
+                          
+                          {/* Nouveau format pour la ligne MO/Fournitures (Modification n°3) */}
+                          <div className="text-xs text-gray-500">{formatTravauxDetails(travail)}</div>
+                          
+                          <div className="text-sm">
+                            Quantité: {travail.quantite} {travail.unite} × Prix unitaire HT: {formaterPrix(travail.prixFournitures + travail.prixMainOeuvre)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </TableCell>
                   <TableCell className="text-right">
                     {formaterPrix(totalHTRoom)}
