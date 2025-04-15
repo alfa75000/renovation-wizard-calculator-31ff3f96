@@ -6,7 +6,7 @@ import { Room, Travail } from "@/types";
 import NoTravauxMessage from "./NoTravauxMessage";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import DetailsTravaux from "./DetailsTravaux";
-import GlobalTotals from "./GlobalTotals";
+import RecapitulatifTravaux from "./RecapitulatifTravaux";
 
 // Interface des propriétés
 interface TravauxRecapContentProps {
@@ -50,9 +50,11 @@ const TravauxRecapContent: React.FC<TravauxRecapContentProps> = ({
             </TabsContent>
             
             <TabsContent value="recap">
-              <div className="py-8 text-center text-gray-500">
-                Le récapitulatif sera implémenté prochainement.
-              </div>
+              <RecapitulatifTravaux 
+                rooms={rooms} 
+                travaux={travaux} 
+                getTravauxForPiece={getTravauxForPiece} 
+              />
             </TabsContent>
           </Tabs>
         )}
