@@ -6,8 +6,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useProject } from "@/contexts/ProjectContext";
 import { Button } from "@/components/ui/button";
 import { FileText, Eye } from "lucide-react";
-import DevisCoverPreview from "@/features/devis/components/DevisCoverPreview";
-import DevisDetailsPreview from "@/features/devis/components/DevisDetailsPreview";
+import { DevisCoverPreview } from "@/features/devis/components/DevisCoverPreview";
+import { DevisDetailsPreview } from "@/features/devis/components/DevisDetailsPreview";
 import DevisRecapPreview from "@/features/devis/components/DevisRecapPreview";
 
 // Create a client for this page

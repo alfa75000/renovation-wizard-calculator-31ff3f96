@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
 import { useProject } from "@/contexts/ProjectContext";
 import { useTravaux } from "@/features/travaux/hooks/useTravaux";
-import { RecapitulatifTravaux } from "@/features/recap/components/RecapitulatifTravaux";
+import RecapitulatifTravaux from "@/features/recap/components/RecapitulatifTravaux";
 import { generateRecapPDF } from "@/services/pdfGenerationService";
 
 // Composant affichant l'aperçu du récapitulatif pour l'impression
