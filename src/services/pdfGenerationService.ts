@@ -58,11 +58,11 @@ export const generateDetailsPDF = async (
 
   // Créer l'en-tête du tableau commun pour toutes les pièces
   const tableHeaderRow = [
-    { text: 'Description', style: 'tableHeader', alignment: 'left' },
-    { text: 'Quantité', style: 'tableHeader', alignment: 'center' },
-    { text: 'Prix HT Unit.', style: 'tableHeader', alignment: 'center' },
-    { text: 'TVA', style: 'tableHeader', alignment: 'center' },
-    { text: 'Total HT', style: 'tableHeader', alignment: 'center' }
+    { text: 'Description', style: 'tableHeader', alignment: 'left', color: DARK_BLUE },
+    { text: 'Quantité', style: 'tableHeader', alignment: 'center', color: DARK_BLUE },
+    { text: 'Prix HT Unit.', style: 'tableHeader', alignment: 'center', color: DARK_BLUE },
+    { text: 'TVA', style: 'tableHeader', alignment: 'center', color: DARK_BLUE },
+    { text: 'Total HT', style: 'tableHeader', alignment: 'center', color: DARK_BLUE }
   ];
   
   // Créer le contenu du document
@@ -77,11 +77,15 @@ export const generateDetailsPDF = async (
     docContent.push({
       text: room.name,
       style: 'roomTitle',
+      fontSize: 9,
+      bold: true,
+      color: DARK_BLUE,
+      fillColor: '#f3f4f6',
       margin: [0, 0, 0, 5]
     });
     
-    // Créer le tableau pour cette pièce avec l'en-tête
-    const tableBody = [tableHeaderRow];
+    // Créer le tableau pour cette pièce (avec l'en-tête)
+    const tableBody = [];
     
     // Ajouter chaque travail au tableau
     travauxPiece.forEach((travail, index) => {
@@ -103,8 +107,8 @@ export const generateDetailsPDF = async (
         descriptionContent.push({ 
           text: travail.personnalisation, 
           fontSize: 8,
-          italics: true
-        });
+          italics: true  // Utiliser italics directement avec as any
+        } as any);
       }
       
       descriptionContent.push({
@@ -116,7 +120,7 @@ export const generateDetailsPDF = async (
       const marginBottom = index < travauxPiece.length - 1 ? 7 : 2; // 7 points pour espacement entre prestations
       
       // Augmenter l'interligne dans les cellules de description
-      const stackDescription = {
+      const stack = {
         stack: descriptionContent,
         lineHeight: 1.3  // Augmenter l'interligne de 1 point
       };
@@ -131,7 +135,7 @@ export const generateDetailsPDF = async (
       };
       
       tableBody.push([
-        stackDescription,
+        stack,
         quantityStack,
         { text: formatPrice(prixUnitaireHT), alignment: 'center', fontSize: 9 },
         { text: `${travail.tauxTVA}%`, alignment: 'center', fontSize: 9 },
@@ -154,7 +158,7 @@ export const generateDetailsPDF = async (
     // Ajouter le tableau au document
     docContent.push({
       table: {
-        headerRows: 1, // L'en-tête est maintenant inclus dans le corps du tableau
+        headerRows: 0, // Pas d'en-tête de tableau puisqu'on l'ajoutera en tant qu'élément de la fonction header
         widths: columnWidths, // Utiliser les largeurs de colonnes ajustées
         body: tableBody
       },
@@ -179,27 +183,63 @@ export const generateDetailsPDF = async (
         },
         paddingBottom: function() {
           return 2;
-        },
-        fillColor: function(rowIndex: number) {
-          return (rowIndex === 0) ? '#f3f4f6' : null;
         }
       },
       margin: [0, 0, 0, 15]  // Augmenter la marge en bas de chaque tableau de pièce
     });
   });
   
-  // Marge haute de 40mm comme demandé
-  const pageMargins = [30, 40, 30, 30]; // [gauche, haut, droite, bas] en mm
+  // Marge globale doublée à 30mm (au lieu de 15mm)
+  const pageMargins = [30, 60, 30, 30]; // [gauche, haut, droite, bas] en mm - Augmentation de la marge haute pour l'en-tête
   
   // Définir le document avec contenu et styles
   const docDefinition = {
     header: function(currentPage: number, pageCount: number) {
-      return {
-        text: `DEVIS N° ${metadata?.devisNumber || 'XXXX-XX'} - page ${currentPage}/${pageCount}`,
-        style: 'header',
-        alignment: 'right',
-        margin: [30, 25, 30, 0] // Marges [gauche, haut, droite, bas] - marge haute à 25mm comme demandé
-      };
+      return [
+        // En-tête avec le numéro de devis et la pagination
+        {
+          text: `DEVIS N° ${metadata?.devisNumber || 'XXXX-XX'} - page ${currentPage}/${pageCount}`,
+          style: 'header',
+          alignment: 'right',
+          fontSize: 8,
+          margin: [30, 10, 30, 5] // Marges [gauche, haut, droite, bas]
+        },
+        // En-tête du tableau
+        {
+          table: {
+            headerRows: 1,
+            widths: columnWidths,
+            body: [tableHeaderRow]
+          },
+          layout: {
+            hLineWidth: function(i: number, node: any) {
+              return (i === 0 || i === node.table.body.length) ? 1 : 1;
+            },
+            vLineWidth: function() {
+              return 0;
+            },
+            hLineColor: function() {
+              return '#e5e7eb';
+            },
+            paddingLeft: function() {
+              return 4;
+            },
+            paddingRight: function() {
+              return 4;
+            },
+            paddingTop: function() {
+              return 2;
+            },
+            paddingBottom: function() {
+              return 2;
+            },
+            fillColor: function(rowIndex: number) {
+              return (rowIndex === 0) ? '#f3f4f6' : null;
+            }
+          },
+          margin: [30, 5, 30, 10]
+        }
+      ];
     },
     content: docContent,
     styles: {
@@ -218,6 +258,7 @@ export const generateDetailsPDF = async (
       },
       tableHeader: {
         fontSize: 9,
+        // Suppression de la propriété bold pour les en-têtes du tableau
         color: DARK_BLUE
       },
       italic: {
