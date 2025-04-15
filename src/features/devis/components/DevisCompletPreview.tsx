@@ -1,4 +1,3 @@
-
 import React, { useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -69,25 +68,21 @@ export const DevisCompletPreview: React.FC<DevisCompletPreviewProps> = ({
     // Définitions des styles
     const styles = {
       header: {
-        fontSize: 18,
-        bold: true,
+        fontSize: 10,
         margin: [0, 0, 0, 10],
         color: PDF_CONFIG.DARK_BLUE
       },
       subheader: {
-        fontSize: 14,
-        bold: true,
+        fontSize: 10,
         margin: [0, 10, 0, 5],
         color: PDF_CONFIG.DARK_BLUE
       },
       tableHeader: {
-        bold: true,
-        fontSize: 12,
+        fontSize: 9,
         color: PDF_CONFIG.DARK_BLUE
       },
       totalRow: {
-        bold: true,
-        fontSize: 12
+        fontSize: 10
       }
     };
     
@@ -390,14 +385,11 @@ export const DevisCompletPreview: React.FC<DevisCompletPreviewProps> = ({
             hLineWidth: function(i, node) {
               return (i === 0 || i === 1 || i === node.table.body.length) ? 1 : 0.5;
             },
-            vLineWidth: function(i, node) {
-              return (i === 0 || i === node.table.widths.length) ? 1 : 0.5;
+            vLineWidth: function() {
+              return 0; // Aucune ligne verticale
             },
             hLineColor: function(i, node) {
               return (i === 0 || i === 1 || i === node.table.body.length) ? '#aaa' : '#ddd';
-            },
-            vLineColor: function(i, node) {
-              return (i === 0 || i === node.table.widths.length) ? '#aaa' : '#ddd';
             }
           }
         }
@@ -427,10 +419,9 @@ export const DevisCompletPreview: React.FC<DevisCompletPreviewProps> = ({
           ]
         },
         layout: {
-          hLineWidth: function(i, node) { return 1; },
-          vLineWidth: function(i, node) { return 1; },
-          hLineColor: function(i) { return '#aaa'; },
-          vLineColor: function(i) { return '#aaa'; }
+          hLineWidth: function() { return 1; },
+          vLineWidth: function() { return 0; }, // Aucune ligne verticale
+          hLineColor: function() { return '#aaa'; }
         }
       },
       
@@ -442,11 +433,13 @@ export const DevisCompletPreview: React.FC<DevisCompletPreviewProps> = ({
       },
       {
         text: 'Le présent devis est valable 3 mois à compter de sa date d\'émission. Paiement selon conditions générales de vente.',
-        margin: [0, 0, 0, 5]
+        margin: [0, 0, 0, 5],
+        fontSize: 9
       },
       {
         text: 'TVA non récupérable pour les travaux de rénovation de l\'habitat privé de plus de 2 ans.',
-        margin: [0, 0, 0, 15]
+        margin: [0, 0, 0, 15],
+        fontSize: 9
       },
       {
         text: 'Date et Signature (précédées de la mention "Bon pour accord")',
