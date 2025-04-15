@@ -32,13 +32,13 @@ export const generateDetailsPDF = async (
   // Créer un container temporaire pour le contenu HTML du PDF
   const container = document.createElement('div');
   container.style.width = '210mm'; // Format A4
-  container.style.padding = '15mm';
+  container.style.padding = '15mm'; // Réduction des marges à 15mm sur tous les côtés
   container.style.position = 'relative';
   
   // Ajouter l'en-tête avec le numéro de devis
   const header = document.createElement('div');
   header.style.position = 'absolute';
-  header.style.top = '10mm';
+  header.style.top = '15mm'; // Ajusté à 15mm au lieu de 10mm
   header.style.right = '15mm';
   header.style.fontSize = '9pt';
   header.textContent = `DEVIS N° ${metadata?.devisNumber || 'XXXX-XX'} - page 1/${rooms.filter(r => getTravauxForPiece(r.id).length > 0).length}`;
@@ -78,7 +78,7 @@ export const generateDetailsPDF = async (
     const headers = [
       { text: 'Description', align: 'left' },
       { text: 'Quantité', align: 'right' },
-      { text: 'Prix Unitaire HT', align: 'right' },
+      { text: 'Prix HT Unitaire', align: 'center' }, // Modifié: "Prix Unitaire HT" -> "Prix HT Unitaire" avec align: 'center'
       { text: 'TVA', align: 'right' },
       { text: 'Total HT', align: 'right' }
     ];
@@ -196,7 +196,7 @@ export const generateDetailsPDF = async (
   
   // Options pour html2pdf
   const opt = {
-    margin: [15, 15, 15, 15], // [top, right, bottom, left] en mm
+    margin: [15, 15, 15, 15], // [top, right, bottom, left] en mm - réduit à 15mm sur tous les côtés
     filename: `devis_details_${metadata?.devisNumber || 'XXXX-XX'}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: { scale: 2 },

@@ -54,7 +54,7 @@ export const DevisDetailsPreview: React.FC<DevisDetailsPreviewProps> = ({
                     <tr className="border-b">
                       <th className="text-left p-1">Description</th>
                       <th className="text-right p-1">Quantité</th>
-                      <th className="text-right p-1">Prix Unitaire HT</th>
+                      <th className="text-center p-1">Prix HT Unitaire</th>
                       <th className="text-right p-1">TVA</th>
                       <th className="text-right p-1">Total HT</th>
                     </tr>
