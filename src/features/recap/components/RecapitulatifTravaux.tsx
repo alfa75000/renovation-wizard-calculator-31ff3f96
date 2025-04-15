@@ -78,20 +78,17 @@ const RecapitulatifTravaux: React.FC<RecapitulatifTravauxProps> = ({
             })}
           </TableBody>
           <TableFooter>
-            <TableRow>
+            <TableRow className="border-t">
               <TableCell className="font-bold text-left">Montant Total HT</TableCell>
-              <TableCell className="text-right">{formaterPrix(totalHT)}</TableCell>
-              <TableCell colSpan={2}></TableCell>
+              <TableCell className="text-right font-semibold border-l" colSpan={3}>{formaterPrix(totalHT)}</TableCell>
             </TableRow>
             <TableRow>
               <TableCell className="font-bold text-left">Total TVA</TableCell>
-              <TableCell className="text-right">{formaterPrix(totalTVA)}</TableCell>
-              <TableCell colSpan={2}></TableCell>
+              <TableCell className="text-right font-semibold border-l" colSpan={3}>{formaterPrix(totalTVA)}</TableCell>
             </TableRow>
             <TableRow>
               <TableCell className="font-bold text-left">Montant Total TTC</TableCell>
-              <TableCell className="text-right">{formaterPrix(totalTTC)}</TableCell>
-              <TableCell colSpan={2}></TableCell>
+              <TableCell className="text-right font-semibold border-l" colSpan={3}>{formaterPrix(totalTTC)}</TableCell>
             </TableRow>
           </TableFooter>
         </Table>
@@ -101,3 +98,4 @@ const RecapitulatifTravaux: React.FC<RecapitulatifTravauxProps> = ({
 };
 
 export default RecapitulatifTravaux;
+
