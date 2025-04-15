@@ -2,11 +2,18 @@
 export interface AutreSurface {
   id: string;
   roomId: string;
-  typeId: string;
+  typeId?: string;
+  type: string;
   nom: string;
-  longueur: number;
+  name: string;
+  designation: string;
   largeur: number;
-  hauteur?: number;
+  hauteur: number;
+  surface: number;
+  quantity: number;
+  surfaceImpactee: "mur" | "plafond" | "sol";
+  estDeduction: boolean;
+  impactePlinthe: boolean;
   description?: string;
   commentaire?: string;
 }
@@ -18,6 +25,11 @@ export interface TypeAutreSurface {
   description: string;
   defaultUnit: string;
   estSurfacePlane: boolean;
+  surfaceImpacteeParDefaut?: "mur" | "plafond" | "sol";
+  estDeduction?: boolean;
+  impactePlinthe?: boolean;
+  largeur?: number;
+  hauteur?: number;
 }
 
 export interface AutresSurfacesState {

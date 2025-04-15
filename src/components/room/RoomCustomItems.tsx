@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useRoomCustomItemsWithSupabase } from '@/hooks/useRoomCustomItemsWithSupabase';
 import { RoomCustomItem } from '@/types/supabase';
@@ -52,16 +53,20 @@ const RoomCustomItems: React.FC<RoomCustomItemsProps> = ({
         setTypesAutresSurfaces(autresSurfacesState.typesAutresSurfaces);
       } else {
         const types = await fetchCustomItemTypes();
-        setTypesAutresSurfaces(types.map(type => ({
+        const convertedTypes: TypeAutreSurface[] = types.map(type => ({
           id: type.id,
           nom: type.name,
+          label: type.name,
           description: type.description || '',
+          defaultUnit: 'm²',
+          estSurfacePlane: true,
           largeur: type.largeur || 0,
           hauteur: type.hauteur || 0,
           surfaceImpacteeParDefaut: type.surface_impactee.toLowerCase() as any,
           estDeduction: type.adjustment_type === 'Déduire',
           impactePlinthe: type.impacte_plinthe
-        })));
+        }));
+        setTypesAutresSurfaces(convertedTypes);
       }
     };
     

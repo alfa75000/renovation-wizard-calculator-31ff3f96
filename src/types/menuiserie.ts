@@ -2,18 +2,26 @@
 export interface Menuiserie {
   id: string;
   roomId: string;
-  typeId: string;
+  typeId?: string;
+  type: string;
   nom: string;
+  name: string;
   largeur: number;
   hauteur: number;
-  description?: string;
+  surface: number;
+  quantity: number;
   quantite: number;
+  surfaceImpactee: "mur" | "plafond" | "sol";
+  impactePlinthe?: boolean;
+  description?: string;
   commentaire?: string;
+  menuiserie_type_id?: string;
 }
 
 export interface TypeMenuiserie {
   id: string;
   nom: string;
+  name?: string;
   label: string;
   description: string;
   estUnique: boolean;
