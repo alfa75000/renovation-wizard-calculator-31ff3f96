@@ -1,3 +1,4 @@
+
 import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
 import { Room, Travail, ProjectMetadata } from '@/types';
@@ -105,12 +106,22 @@ export const generateDetailsPDF = async (
       
       descriptionLines.push(`MO: ${formatPrice(travail.prixMainOeuvre)}/u, Fourn: ${formatPrice(travail.prixFournitures)}/u (total: ${formatPrice(prixUnitaireHT)}/u)`);
       
-      // Estimer le nombre de lignes dans la description
-      const lineCount = descriptionLines.length;
+      // Estimer le nombre de lignes dans la description, incluant les retours à la ligne automatiques
+      let totalLines = 0;
+      
+      // Largeur approximative de la colonne de description en caractères (à ajuster si nécessaire)
+      const columnCharWidth = 80;
+      
+      // Estimer le nombre réel de lignes pour chaque portion de texte
+      descriptionLines.forEach(line => {
+        // Estimer combien de lignes cette portion occupera
+        const textLines = Math.ceil(line.length / columnCharWidth);
+        totalLines += textLines;
+      });
       
       // Calculer les marges supérieures pour centrer verticalement les valeurs
-      // Formule empirique: 5 points de base + 5 points par ligne supplémentaire
-      const topMargin = Math.max(0, 5 + (lineCount - 2) * 5);
+      // Formule ajustée: marge de base + marge par ligne supplémentaire
+      const topMargin = Math.max(0, 3 + (totalLines - 2) * 4);
       
       // Ajouter la ligne au tableau
       tableBody.push([
