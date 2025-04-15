@@ -1,6 +1,8 @@
+
 import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
 import { Company } from '@/types';
+import { format } from 'date-fns';
 
 // Initialiser pdfMake avec les polices par défaut
 pdfMake.vfs = pdfFonts.pdfMake ? pdfFonts.pdfMake.vfs : pdfFonts.vfs;

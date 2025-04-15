@@ -25,6 +25,10 @@ export interface TypeMenuiserie {
   label: string;
   description: string;
   estUnique: boolean;
+  hauteur?: number;
+  largeur?: number;
+  surfaceReference?: "mur" | "plafond" | "sol";
+  impactePlinthe?: boolean;
 }
 
 export interface MenuiseriesTypesState {

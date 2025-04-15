@@ -7,6 +7,7 @@ export * from './room';
 export * from './surface';
 export * from './travaux';
 export * from './company';
+export * from './supabase';
 
 // Réexporter l'interface PrintableField depuis pdfGenerationService
-export { PrintableField } from '../features/devis/services/pdfGenerationService';
+export type { PrintableField } from '../features/devis/services/pdfGenerationService';
