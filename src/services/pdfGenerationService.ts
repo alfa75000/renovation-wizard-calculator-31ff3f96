@@ -47,15 +47,6 @@ export const generateDetailsPDF = async (
     }).format(quantity).replace(/\s/g, '\u00A0');
   };
 
-  // Format MO/Fournitures avec le nouveau format
-  const formatMOFournitures = (travail: Travail): string => {
-    const prixUnitaireHT = travail.prixFournitures + travail.prixMainOeuvre;
-    const totalHT = prixUnitaireHT * travail.quantite;
-    const montantTVA = (totalHT * travail.tauxTVA) / 100;
-    
-    return `[ MO: ${formatPrice(travail.prixMainOeuvre)}/u ] [ Fourn: ${formatPrice(travail.prixFournitures)}/u ] [ Total HT: ${formatPrice(prixUnitaireHT)}/u ] [ Total TVA (${travail.tauxTVA}%): ${formatPrice(montantTVA)} ]`;
-  };
-
   // On filtre les pièces qui n'ont pas de travaux
   const roomsWithTravaux = rooms.filter(room => getTravauxForPiece(room.id).length > 0);
   
@@ -113,8 +104,8 @@ export const generateDetailsPDF = async (
         descriptionLines.push(travail.personnalisation);
       }
       
-      // Utiliser le nouveau format pour MO/Fournitures
-      const moFournText = formatMOFournitures(travail);
+      // Ligne MO/Fournitures avec taille de police réduite à 7 (Modification n°1)
+      const moFournText = `MO: ${formatPrice(travail.prixMainOeuvre)}/u, Fourn: ${formatPrice(travail.prixFournitures)}/u (total: ${formatPrice(prixUnitaireHT)}/u)`;
       
       // Estimer le nombre de lignes dans la description, incluant les retours à la ligne automatiques
       let totalLines = 0;
