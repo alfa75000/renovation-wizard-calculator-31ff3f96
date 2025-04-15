@@ -30,34 +30,40 @@ const DetailsTravaux: React.FC<DetailsTravauxProps> = ({
 
   return (
     <div className="space-y-8">
-      {rooms.map(room => {
-        const travauxPiece = getTravauxForPiece(room.id);
-        if (travauxPiece.length === 0) return null;
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="text-center">Description</TableHead>
+              <TableHead className="text-right">Quantité</TableHead>
+              <TableHead className="text-right">Prix U HT</TableHead>
+              <TableHead className="text-right">TVA</TableHead>
+              <TableHead className="text-right">Total HT</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rooms.map(room => {
+              const travauxPiece = getTravauxForPiece(room.id);
+              if (travauxPiece.length === 0) return null;
 
-        // Calculer le total HT pour cette pièce
-        const totalHT = calculerTotalHTTravaux(travauxPiece);
+              // Calculer le total HT pour cette pièce
+              const totalHT = calculerTotalHTTravaux(travauxPiece);
 
-        return (
-          <div key={room.id} className="mb-6">
-            <h3 className="text-lg font-semibold mb-2 border-b pb-2 text-left">
-              {room.name}
-            </h3>
-            
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-center">Description</TableHead>
-                    <TableHead className="text-right">Quantité</TableHead>
-                    <TableHead className="text-right">Prix U HT</TableHead>
-                    <TableHead className="text-right">TVA</TableHead>
-                    <TableHead className="text-right">Total HT</TableHead>
+              return (
+                <React.Fragment key={room.id}>
+                  {/* Nom de la pièce */}
+                  <TableRow className="bg-gray-100">
+                    <TableCell colSpan={5} className="font-semibold">
+                      {room.name}
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
+                  
+                  {/* Liste des travaux de la pièce */}
                   {travauxPiece.map(travail => (
                     <TravailRecapRow key={travail.id} travail={travail} />
                   ))}
+                  
+                  {/* Total de la pièce */}
                   <TableRow className="bg-gray-50 font-medium">
                     <TableCell colSpan={4} className="text-left">
                       Total HT {room.name}
@@ -66,12 +72,12 @@ const DetailsTravaux: React.FC<DetailsTravauxProps> = ({
                       {formaterPrix(totalHT)}
                     </TableCell>
                   </TableRow>
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-        );
-      })}
+                </React.Fragment>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 };
