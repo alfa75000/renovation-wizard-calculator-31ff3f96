@@ -4,7 +4,10 @@ import pdfFonts from 'pdfmake/build/vfs_fonts';
 import { Room, Travail, ProjectMetadata } from '@/types';
 
 // Initialiser pdfMake avec les polices
-pdfMake.vfs = pdfFonts.pdfMake.vfs;
+// Vérifier que pdfFonts existe avant d'accéder à ses propriétés
+if (pdfFonts && pdfFonts.pdfMake && pdfFonts.pdfMake.vfs) {
+  pdfMake.vfs = pdfFonts.pdfMake.vfs;
+}
 
 // Couleur bleu foncée similaire à celle utilisée dans DevisCoverPreview
 const DARK_BLUE = "#002855";
@@ -136,7 +139,7 @@ export const generateDetailsPDF = async (
           text: travail.personnalisation, 
           fontSize: 8,
           bold: false,
-          italics: true
+          italic: true // Correction de 'italics' à 'italic'
         });
       }
       
