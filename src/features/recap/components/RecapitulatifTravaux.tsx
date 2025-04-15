@@ -39,12 +39,18 @@ const RecapitulatifTravaux: React.FC<RecapitulatifTravauxProps> = ({
 
   return (
     <div className="space-y-8">
-      <div className="overflow-x-auto">
+      {/* Tableau principal avec les totaux par pièce */}
+      <div className="border rounded">
         <Table>
           <TableHeader>
+            <TableRow className="border-b">
+              <TableHead className="text-center text-base font-bold p-4 w-full" colSpan={2}>
+                RÉCAPITULATIF
+              </TableHead>
+            </TableRow>
             <TableRow>
-              <TableHead className="text-left">Pièce</TableHead>
-              <TableHead className="text-right">Montant HT</TableHead>
+              <TableHead className="text-left font-bold p-4"></TableHead>
+              <TableHead className="text-right font-bold p-4">Montant HT</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -56,28 +62,44 @@ const RecapitulatifTravaux: React.FC<RecapitulatifTravauxProps> = ({
               const totalHTRoom = calculerTotalHTTravaux(travauxPiece);
 
               return (
-                <TableRow key={room.id}>
-                  <TableCell className="font-medium">Total HT {room.name}</TableCell>
-                  <TableCell className="text-right">{formaterPrix(totalHTRoom)}</TableCell>
+                <TableRow key={room.id} className="border-b">
+                  <TableCell className="font-bold p-4">Total HT {room.name}</TableCell>
+                  <TableCell className="text-right text-blue-600 font-medium p-4">
+                    {formaterPrix(totalHTRoom)}
+                  </TableCell>
                 </TableRow>
               );
             })}
           </TableBody>
-          <TableFooter>
-            <TableRow>
-              <TableCell className="font-bold">TOTAL HT</TableCell>
-              <TableCell className="text-right font-bold">{formaterPrix(totalHT)}</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell className="font-bold">TOTAL TVA</TableCell>
-              <TableCell className="text-right font-bold">{formaterPrix(totalTVA)}</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell className="font-bold">TOTAL TTC</TableCell>
-              <TableCell className="text-right font-bold">{formaterPrix(totalTTC)}</TableCell>
-            </TableRow>
-          </TableFooter>
         </Table>
+      </div>
+
+      {/* Tableau des totaux généraux - aligné à droite */}
+      <div className="flex justify-end">
+        <div className="w-1/3 border rounded">
+          <Table>
+            <TableBody>
+              <TableRow className="border-b">
+                <TableCell className="font-bold p-4">Total HT</TableCell>
+                <TableCell className="text-right text-blue-600 font-medium p-4">
+                  {formaterPrix(totalHT)}
+                </TableCell>
+              </TableRow>
+              <TableRow className="border-b">
+                <TableCell className="font-bold p-4">Total TVA</TableCell>
+                <TableCell className="text-right text-blue-600 font-medium p-4">
+                  {formaterPrix(totalTVA)}
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="font-bold p-4">Total TTC</TableCell>
+                <TableCell className="text-right text-blue-600 font-medium p-4">
+                  {formaterPrix(totalTTC)}
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </div>
       </div>
     </div>
   );
