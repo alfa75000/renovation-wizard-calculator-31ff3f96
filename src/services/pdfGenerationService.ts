@@ -1,3 +1,4 @@
+
 import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
 import { Room, Travail, ProjectMetadata } from '@/types';
@@ -83,8 +84,8 @@ export const generateDetailsPDF = async (
       margin: [0, 0, 0, 5]
     });
     
-    // Créer le tableau pour cette pièce (avec l'en-tête)
-    const tableBody = [];
+    // Créer le tableau pour cette pièce
+    const tableBody = [tableHeaderRow]; // Ajouter l'en-tête à chaque tableau de pièce
     
     // Ajouter chaque travail au tableau
     travauxPiece.forEach((travail, index) => {
@@ -157,7 +158,7 @@ export const generateDetailsPDF = async (
     // Ajouter le tableau au document
     docContent.push({
       table: {
-        headerRows: 0, // Pas d'en-tête de tableau puisqu'on l'ajoutera en tant qu'élément de la fonction header
+        headerRows: 1, // Définir que la première ligne est l'en-tête
         widths: columnWidths, // Utiliser les largeurs de colonnes ajustées
         body: tableBody
       },
@@ -182,14 +183,17 @@ export const generateDetailsPDF = async (
         },
         paddingBottom: function() {
           return 2;
+        },
+        fillColor: function(rowIndex: number) {
+          return (rowIndex === 0) ? '#f3f4f6' : null; // Colorer la ligne d'en-tête
         }
       },
       margin: [0, 0, 0, 15]  // Augmenter la marge en bas de chaque tableau de pièce
     });
   });
   
-  // Marges ajustées pour mieux gérer l'en-tête
-  const pageMargins = [30, 40, 30, 30]; // [gauche, haut, droite, bas]
+  // Marges ajustées - augmentation de la marge haute à 50mm
+  const pageMargins = [30, 50, 30, 30]; // [gauche, haut, droite, bas]
   
   const docDefinition = {
     header: function(currentPage: number, pageCount: number) {
@@ -199,41 +203,7 @@ export const generateDetailsPDF = async (
           style: 'header',
           alignment: 'right',
           fontSize: 8,
-          margin: [30, 15, 30, 5] // Ajustement de la marge haute de l'en-tête
-        },
-        {
-          table: {
-            headerRows: 1,
-            widths: columnWidths,
-            body: [tableHeaderRow]
-          },
-          layout: {
-            hLineWidth: function(i: number, node: any) {
-              return (i === 0 || i === node.table.body.length) ? 1 : 1;
-            },
-            vLineWidth: function() {
-              return 0;
-            },
-            hLineColor: function() {
-              return '#e5e7eb';
-            },
-            paddingLeft: function() {
-              return 4;
-            },
-            paddingRight: function() {
-              return 4;
-            },
-            paddingTop: function() {
-              return 2;
-            },
-            paddingBottom: function() {
-              return 2;
-            },
-            fillColor: function(rowIndex: number) {
-              return (rowIndex === 0) ? '#f3f4f6' : null;
-            }
-          },
-          margin: [30, 5, 30, 10]
+          margin: [30, 20, 30, 5] // Ajustement de la marge haute de l'en-tête
         }
       ];
     },
