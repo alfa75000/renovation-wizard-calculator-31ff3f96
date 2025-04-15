@@ -12,6 +12,8 @@ import {
   TableBody,
   TableCell,
   TableFooter,
+  TableHead,
+  TableHeader,
   TableRow,
 } from "@/components/ui/table";
 
@@ -39,6 +41,14 @@ const RecapitulatifTravaux: React.FC<RecapitulatifTravauxProps> = ({
     <div className="space-y-8">
       <div className="overflow-x-auto">
         <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[50%] text-center">Désignation</TableHead>
+              <TableHead className="text-right">Total HT</TableHead>
+              <TableHead className="text-right">Total TVA</TableHead>
+              <TableHead className="text-right">Total TTC</TableHead>
+            </TableRow>
+          </TableHeader>
           <TableBody>
             {rooms.map(room => {
               const travauxPiece = getTravauxForPiece(room.id);
@@ -52,16 +62,16 @@ const RecapitulatifTravaux: React.FC<RecapitulatifTravauxProps> = ({
               return (
                 <TableRow key={room.id}>
                   <TableCell className="font-medium text-left">
-                    Total {room.name}
+                    {room.name}
                   </TableCell>
                   <TableCell className="text-right">
-                    HT: {formaterPrix(totalHTRoom)}
+                    {formaterPrix(totalHTRoom)}
                   </TableCell>
                   <TableCell className="text-right">
-                    TVA: {formaterPrix(totalTVARoom)}
+                    {formaterPrix(totalTVARoom)}
                   </TableCell>
                   <TableCell className="text-right">
-                    TTC: {formaterPrix(totalTTCRoom)}
+                    {formaterPrix(totalTTCRoom)}
                   </TableCell>
                 </TableRow>
               );
@@ -69,16 +79,19 @@ const RecapitulatifTravaux: React.FC<RecapitulatifTravauxProps> = ({
           </TableBody>
           <TableFooter>
             <TableRow>
-              <TableCell className="font-bold text-right" colSpan={2}>Montant Total HT</TableCell>
-              <TableCell className="text-right" colSpan={2}>{formaterPrix(totalHT)}</TableCell>
+              <TableCell className="font-bold text-left">Montant Total HT</TableCell>
+              <TableCell className="text-right">{formaterPrix(totalHT)}</TableCell>
+              <TableCell colSpan={2}></TableCell>
             </TableRow>
             <TableRow>
-              <TableCell className="font-bold text-right" colSpan={2}>Total TVA</TableCell>
-              <TableCell className="text-right" colSpan={2}>{formaterPrix(totalTVA)}</TableCell>
+              <TableCell className="font-bold text-left">Total TVA</TableCell>
+              <TableCell className="text-right">{formaterPrix(totalTVA)}</TableCell>
+              <TableCell colSpan={2}></TableCell>
             </TableRow>
             <TableRow>
-              <TableCell className="font-bold text-right" colSpan={2}>Montant Total TTC</TableCell>
-              <TableCell className="text-right" colSpan={2}>{formaterPrix(totalTTC)}</TableCell>
+              <TableCell className="font-bold text-left">Montant Total TTC</TableCell>
+              <TableCell className="text-right">{formaterPrix(totalTTC)}</TableCell>
+              <TableCell colSpan={2}></TableCell>
             </TableRow>
           </TableFooter>
         </Table>
