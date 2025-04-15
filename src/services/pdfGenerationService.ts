@@ -56,8 +56,8 @@ export const generateDetailsPDF = async (
   // Créer le contenu du document
   const docContent: any[] = [];
   
-  // Marge globale de 15mm
-  const pageMargins = [15, 15, 15, 15]; // [gauche, haut, droite, bas] en mm
+  // Marge globale doublée à 30mm (au lieu de 15mm)
+  const pageMargins = [30, 30, 30, 30]; // [gauche, haut, droite, bas] en mm
 
   // Ajouter l'en-tête avec le numéro de devis et la pagination
   docContent.push({
@@ -68,8 +68,8 @@ export const generateDetailsPDF = async (
     margin: [0, 0, 0, 20] // Marge bas pour espacer l'en-tête du contenu
   });
 
-  // Définir les largeurs de colonnes constantes pour tous les tableaux
-  const columnWidths = ['*', 60, 75, 40, 60]; // Description, Quantité, Prix HT, TVA, Total HT
+  // Définir les largeurs de colonnes ajustées comme demandé
+  const columnWidths = ['*', 50, 50, 30, 60]; // Description, Quantité, Prix HT, TVA, Total HT
 
   // Ajouter l'en-tête du tableau commun pour toutes les pièces (une seule fois en haut de la page)
   const tableHeaderRow = [
@@ -84,7 +84,7 @@ export const generateDetailsPDF = async (
   docContent.push({
     table: {
       headerRows: 1,
-      widths: columnWidths, // Utiliser les largeurs de colonnes définies
+      widths: columnWidths, // Utiliser les largeurs de colonnes ajustées
       body: [tableHeaderRow]
     },
     layout: {
@@ -152,11 +152,10 @@ export const generateDetailsPDF = async (
       }
       
       if (travail.personnalisation) {
-        // Utiliser style property plutôt que italics directement
         descriptionContent.push({ 
           text: travail.personnalisation, 
           fontSize: 8,
-          style: 'italic'
+          italics: true
         });
       }
       
@@ -208,7 +207,7 @@ export const generateDetailsPDF = async (
     docContent.push({
       table: {
         headerRows: 0, // Pas d'en-tête de tableau puisqu'on l'a déjà ajouté en haut
-        widths: columnWidths, // Utiliser les largeurs de colonnes définies
+        widths: columnWidths, // Utiliser les largeurs de colonnes ajustées
         body: tableBody
       },
       layout: {
@@ -259,12 +258,9 @@ export const generateDetailsPDF = async (
         fontSize: 9,
         bold: true,
         color: DARK_BLUE
-      },
-      italic: {
-        italics: true
       }
     },
-    pageMargins: pageMargins, // Réduction des marges à 15mm sur tous les côtés
+    pageMargins: pageMargins, // Marges doublées à 30mm sur tous les côtés
     defaultStyle: {
       fontSize: 9,
       color: DARK_BLUE
