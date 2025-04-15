@@ -29,18 +29,22 @@ export const generateDetailsPDF = async (
 
   // Fonction utilitaire pour formater les prix avec séparation des milliers
   const formatPrice = (value: number): string => {
+    // Utiliser un espace non-sécable comme séparateur de milliers pour éviter les problèmes d'affichage
     return new Intl.NumberFormat('fr-FR', { 
       minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(value) + '€';
+      maximumFractionDigits: 2,
+      useGrouping: true
+    }).format(value).replace(/\s/g, '\u00A0') + '€';
   };
 
   // Fonction pour formater les quantités avec séparation des milliers
   const formatQuantity = (quantity: number): string => {
+    // Utiliser un espace non-sécable comme séparateur de milliers pour éviter les problèmes d'affichage
     return new Intl.NumberFormat('fr-FR', { 
       minimumFractionDigits: 0,
-      maximumFractionDigits: 2
-    }).format(quantity);
+      maximumFractionDigits: 2,
+      useGrouping: true
+    }).format(quantity).replace(/\s/g, '\u00A0');
   };
 
   // On filtre les pièces qui n'ont pas de travaux
@@ -151,9 +155,7 @@ export const generateDetailsPDF = async (
         descriptionContent.push({ 
           text: travail.personnalisation, 
           fontSize: 8,
-          // Corriger le problème de propriété non reconnue
-          // italic est un style de texte défini dans pdfMake
-          style: 'italic'  // Utiliser style au lieu de italic directement
+          italics: true  // Utiliser italics directement comme propriété d'objet
         });
       }
       
@@ -256,10 +258,6 @@ export const generateDetailsPDF = async (
         fontSize: 9,
         bold: true,
         color: DARK_BLUE
-      },
-      // Ajouter un style "italic" pour être utilisé plus haut
-      italic: {
-        italics: true
       }
     },
     pageMargins: pageMargins, // Réduction des marges à 15mm sur tous les côtés
@@ -270,20 +268,8 @@ export const generateDetailsPDF = async (
   };
   
   try {
-    // Corriger le problème d'affichage des chiffres en spécifiant une police standard
-    // Définir les polices à utiliser pour le PDF
-    pdfMake.fonts = {
-      Roboto: {
-        normal: 'Roboto-Regular.ttf',
-        bold: 'Roboto-Medium.ttf',
-        italics: 'Roboto-Italic.ttf',
-        bolditalics: 'Roboto-MediumItalic.ttf'
-      }
-    };
-
-    // Créer et télécharger le PDF avec des polices explicites
-    const pdfDocGenerator = pdfMake.createPdf(docDefinition);
-    pdfDocGenerator.download(`devis_details_${metadata?.devisNumber || 'XXXX-XX'}.pdf`);
+    // Créer et télécharger le PDF (aucune configuration de police spécifique nécessaire)
+    pdfMake.createPdf(docDefinition).download(`devis_details_${metadata?.devisNumber || 'XXXX-XX'}.pdf`);
     console.log('PDF généré avec succès');
   } catch (error) {
     console.error('Erreur lors de la génération du PDF:', error);
