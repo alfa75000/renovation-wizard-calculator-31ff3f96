@@ -86,59 +86,73 @@ export const generateDetailsPDF = async (
     // Créer le tableau pour cette pièce (sans l'en-tête car il est maintenant dans le header de page)
     const tableBody = [];
     
-    // Ajouter chaque travail au tableau
+    // Ajouter chaque travail au tableau - IMPLÉMENTATION AMÉLIORÉE AVEC CENTRAGE VERTICAL
     travauxPiece.forEach((travail, index) => {
       const prixUnitaireHT = travail.prixFournitures + travail.prixMainOeuvre;
       const totalHT = prixUnitaireHT * travail.quantite;
       
-      const descriptionContent = [
-        { text: `${travail.typeTravauxLabel}: ${travail.sousTypeLabel}`, fontSize: 9 }
-      ];
+      // Construire le contenu de la description avec des sauts de ligne
+      let descriptionLines = [];
+      descriptionLines.push(`${travail.typeTravauxLabel}: ${travail.sousTypeLabel}`);
       
       if (travail.description) {
-        descriptionContent.push({ 
-          text: travail.description, 
-          fontSize: 8
-        });
+        descriptionLines.push(travail.description);
       }
       
       if (travail.personnalisation) {
-        descriptionContent.push({ 
-          text: travail.personnalisation, 
-          fontSize: 8,
-          italics: true  // Utiliser italics directement avec as any
-        } as any);
+        descriptionLines.push(travail.personnalisation);
       }
       
-      descriptionContent.push({
-        text: `MO: ${formatPrice(travail.prixMainOeuvre)}/u, Fourn: ${formatPrice(travail.prixFournitures)}/u (total: ${formatPrice(prixUnitaireHT)}/u)`,
-        fontSize: 7
-      });
+      descriptionLines.push(`MO: ${formatPrice(travail.prixMainOeuvre)}/u, Fourn: ${formatPrice(travail.prixFournitures)}/u (total: ${formatPrice(prixUnitaireHT)}/u)`);
       
-      // Ajouter plus d'espace entre les travaux
-      const marginBottom = index < travauxPiece.length - 1 ? 7 : 2; // 7 points pour espacement entre prestations
+      // Estimer le nombre de lignes dans la description
+      const lineCount = descriptionLines.length;
       
-      // Augmenter l'interligne dans les cellules de description
-      const stack = {
-        stack: descriptionContent,
-        lineHeight: 1.3  // Augmenter l'interligne de 1 point
-      };
+      // Calculer les marges supérieures pour centrer verticalement les valeurs
+      // Formule empirique: 5 points de base + 5 points par ligne supplémentaire
+      const topMargin = Math.max(0, 5 + (lineCount - 2) * 5);
       
-      // Afficher la quantité en deux lignes
-      const quantityStack = {
-        stack: [
-          { text: formatQuantity(travail.quantite), alignment: 'center', fontSize: 9 },
-          { text: travail.unite, alignment: 'center', fontSize: 9 }
-        ],
-        alignment: 'center'
-      };
-      
+      // Ajouter la ligne au tableau
       tableBody.push([
-        stack,
-        quantityStack,
-        { text: formatPrice(prixUnitaireHT), alignment: 'center', fontSize: 9 },
-        { text: `${travail.tauxTVA}%`, alignment: 'center', fontSize: 9 },
-        { text: formatPrice(totalHT), alignment: 'center', fontSize: 9 }
+        // Colonne 1: Description avec sauts de ligne
+        { 
+          text: descriptionLines.join('\n'),
+          fontSize: 9
+        },
+        
+        // Colonne 2: Quantité avec marge supérieure pour centrage visuel
+        { 
+          stack: [
+            { text: formatQuantity(travail.quantite), alignment: 'center', fontSize: 9 },
+            { text: travail.unite, alignment: 'center', fontSize: 9 }
+          ],
+          alignment: 'center',
+          margin: [0, topMargin, 0, 0]
+        },
+        
+        // Colonne 3: Prix unitaire avec marge supérieure pour centrage visuel
+        { 
+          text: formatPrice(prixUnitaireHT), 
+          alignment: 'center',
+          fontSize: 9,
+          margin: [0, topMargin, 0, 0]
+        },
+        
+        // Colonne 4: TVA avec marge supérieure pour centrage visuel
+        { 
+          text: `${travail.tauxTVA}%`, 
+          alignment: 'center',
+          fontSize: 9,
+          margin: [0, topMargin, 0, 0]
+        },
+        
+        // Colonne 5: Total HT avec marge supérieure pour centrage visuel
+        { 
+          text: formatPrice(totalHT), 
+          alignment: 'center',
+          fontSize: 9,
+          margin: [0, topMargin, 0, 0]
+        }
       ]);
     });
     
