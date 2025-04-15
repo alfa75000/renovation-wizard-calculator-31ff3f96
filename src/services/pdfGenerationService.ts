@@ -4,7 +4,10 @@ import pdfFonts from 'pdfmake/build/vfs_fonts';
 import { Room, Travail, ProjectMetadata } from '@/types';
 
 // Initialiser pdfMake avec les polices
-pdfMake.vfs = pdfFonts.pdfMake.vfs;
+pdfMake.vfs = pdfFonts.pdfMake ? pdfFonts.pdfMake.vfs : pdfFonts.vfs;
+
+// Couleur bleu foncée similaire à celle utilisée dans DevisCoverPreview
+const DARK_BLUE = "#002855";
 
 export const generateCoverPDF = async (fields: any[], company: any) => {
   // La logique existante pour la page de garde reste inchangée
@@ -91,8 +94,7 @@ export const generateDetailsPDF = async (
       if (travail.description) {
         descriptionContent.push({ 
           text: travail.description, 
-          fontSize: 8,
-          italics: false
+          fontSize: 8
         });
       }
       
@@ -100,7 +102,7 @@ export const generateDetailsPDF = async (
         descriptionContent.push({ 
           text: travail.personnalisation, 
           fontSize: 8,
-          italics: true
+          italics: true 
         });
       }
       
