@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -103,7 +102,6 @@ export const PrintableFieldsForm: React.FC = () => {
             })
           );
 
-          // Mettre à jour les métadonnées du projet avec les données de l'entreprise
           dispatch({
             type: 'UPDATE_METADATA',
             payload: { company: data as CompanyData }
@@ -220,15 +218,15 @@ export const PrintableFieldsForm: React.FC = () => {
         <div className="flex gap-2">
           <Button variant="outline" onClick={handlePreviewPrint} className="flex items-center gap-2">
             <Printer className="h-4 w-4" />
-            Aperçu
+            Générer PDF du Devis
           </Button>
           <Button variant="outline" onClick={handleCoverPreview} className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
-            Aperçu Du Devis
+            Aperçu Page de Garde
           </Button>
           <Button variant="outline" onClick={handleDetailsPreview} className="flex items-center gap-2">
             <ClipboardList className="h-4 w-4" />
-            Imprimer PDF
+            Aperçu Détails des Travaux
           </Button>
           <Button variant="outline" onClick={handleRecapPreview} className="flex items-center gap-2">
             <ClipboardList className="h-4 w-4" />
