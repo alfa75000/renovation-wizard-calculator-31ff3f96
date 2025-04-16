@@ -466,67 +466,57 @@ export const generateRecapPDF = async (
   // Table des totaux généraux - alignée à droite
   const totalTTC = totalHT + totalTVA;
   
-  // Construire les lignes de la table des totaux
+  // Construire les lignes de la table des totaux selon le nouveau format demandé
   const totalTableBody = [
     [
-      { text: 'Total HT', alignment: 'left', fontSize: 10, bold: true },
+      { text: 'Total HT', alignment: 'left', fontSize: 10, bold: false },
       { text: formatPrice(totalHT), alignment: 'right', fontSize: 10, color: DARK_BLUE }
+    ],
+    [
+      { text: 'Total TVA', alignment: 'left', fontSize: 10, bold: false },
+      { text: formatPrice(totalTVA), alignment: 'right', fontSize: 10, color: DARK_BLUE }
+    ],
+    [
+      { text: 'Total TTC', alignment: 'left', fontSize: 10, bold: true },
+      { text: formatPrice(totalTTC), alignment: 'right', fontSize: 10, color: DARK_BLUE, bold: true }
     ]
   ];
   
-  // Ajouter chaque taux de TVA séparément
-  montantsTVAParTaux.forEach(({ taux, totalHTTaux, montantTVA }) => {
-    totalTableBody.push([
-      { text: `Total TVA ${taux}%`, alignment: 'left', fontSize: 10, bold: true },
-      { text: formatPrice(montantTVA), alignment: 'right', fontSize: 10, color: DARK_BLUE }
-    ]);
-  });
-  
-  // Ajouter le total TVA si plusieurs taux sont présents
-  if (montantsTVAParTaux.length > 1) {
-    totalTableBody.push([
-      { text: 'Total TVA', alignment: 'left', fontSize: 10, bold: true },
-      { text: formatPrice(totalTVA), alignment: 'right', fontSize: 10, color: DARK_BLUE }
-    ]);
-  }
-  
-  // Ajouter le total TTC
-  totalTableBody.push([
-    { text: 'Total TTC', alignment: 'left', fontSize: 10, bold: true },
-    { text: formatPrice(totalTTC), alignment: 'right', fontSize: 10, color: DARK_BLUE }
-  ]);
-  
-  // Modifier cette partie pour aligner correctement la table des totaux à droite
+  // Ajouter la table des totaux, alignée à droite
   docContent.push({
-    alignment: 'right',
-    margin: [0, 0, 0, 20],
-    table: {
-      widths: [100, 100],
-      body: totalTableBody
-    },
-    layout: {
-      hLineWidth: function(i: number, node: any) {
-        return (i === 0 || i === node.table.body.length) ? 1 : 1;
-      },
-      vLineWidth: function() {
-        return 0;
-      },
-      hLineColor: function() {
-        return '#e5e7eb';
-      },
-      paddingLeft: function() {
-        return 10;
-      },
-      paddingRight: function() {
-        return 10;
-      },
-      paddingTop: function() {
-        return 8;
-      },
-      paddingBottom: function() {
-        return 8;
+    stack: [
+      {
+        table: {
+          widths: [80, 80],     // largeurs des colonnes du tableau des Totaux
+          body: totalTableBody
+        },
+        layout: {
+          hLineWidth: function(i: number, node: any) {
+            return (i === 0 || i === node.table.body.length) ? 1 : 1;
+          },
+          vLineWidth: function() {
+            return 0;
+          },
+          hLineColor: function() {
+            return '#e5e7eb';
+          },
+          paddingLeft: function() {
+            return 10;
+          },
+          paddingRight: function() {
+            return 10;
+          },
+          paddingTop: function() {
+            return 8;
+          },
+          paddingBottom: function() {
+            return 8;
+          }
+        }
       }
-    }
+    ],
+    alignment: 'right',
+    margin: [300, 0, 0, 20]
   });
   
   // Définir le document avec contenu et styles
