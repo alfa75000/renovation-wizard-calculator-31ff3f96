@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -13,6 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/lib/supabase";
 import { DevisCoverPreview } from "./DevisCoverPreview";
 import { DevisDetailsPreview } from "./DevisDetailsPreview";
+import { CompanyData } from "@/types";
 
 interface PrintableField {
   id: string;
@@ -22,14 +22,14 @@ interface PrintableField {
 }
 
 export const PrintableFieldsForm: React.FC = () => {
-  const { state } = useProject();
+  const { state, dispatch } = useProject();
   const { metadata, property } = state;
   
   // État pour stocker les informations du client et de la société
   const [clientName, setClientName] = useState<string>("Chargement...");
   const [companyName, setCompanyName] = useState<string>("LRS Rénovation");
   const [companyLogoUrl, setCompanyLogoUrl] = useState<string | null>(null);
-  const [companyData, setCompanyData] = useState<any>(null);
+  const [companyData, setCompanyData] = useState<CompanyData | null>(null);
   
   // État pour l'aperçu des pages
   const [showCoverPreview, setShowCoverPreview] = useState(false);
@@ -107,6 +107,12 @@ export const PrintableFieldsForm: React.FC = () => {
               return field;
             })
           );
+
+          // Mettre à jour les métadonnées du projet avec les données de la société
+          dispatch({
+            type: 'UPDATE_METADATA',
+            payload: { company: data }
+          });
         }
       } catch (error) {
         console.error("Erreur lors de la récupération des informations de la société:", error);
@@ -114,7 +120,7 @@ export const PrintableFieldsForm: React.FC = () => {
     };
 
     fetchCompanyInfo();
-  }, []);
+  }, [dispatch]);
 
   useEffect(() => {
     // Update fields content when metadata changes
