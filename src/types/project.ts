@@ -61,6 +61,7 @@ export interface ProjectGeneralData {
 
 // Interface pour les données de la société
 export interface CompanyData {
+  id: string; // Changé de optionnel à obligatoire
   name: string;
   capital_social: string;
   address: string;
@@ -70,7 +71,6 @@ export interface CompanyData {
   code_ape: string;
   tva_intracom: string;
   logo_url?: string;
-  id?: string;
 }
 
 // Métadonnées du projet
@@ -84,7 +84,7 @@ export interface ProjectMetadata {
   dateDevis: string;
   devisNumber: string;
   clientsData?: string;
-  company?: CompanyData; // Ajout de la propriété company
+  company?: CompanyData;
 }
 
 // On importe Room et Travail pour éviter les erreurs de référence circulaire

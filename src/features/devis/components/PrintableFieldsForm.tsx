@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -85,7 +86,7 @@ export const PrintableFieldsForm: React.FC = () => {
         if (data) {
           setCompanyName(data.name);
           setCompanyLogoUrl(data.logo_url);
-          setCompanyData(data);
+          setCompanyData(data as CompanyData);
           
           setPrintableFields(prev => 
             prev.map(field => {
@@ -101,7 +102,7 @@ export const PrintableFieldsForm: React.FC = () => {
 
           dispatch({
             type: 'UPDATE_METADATA',
-            payload: { company: data }
+            payload: { company: data as CompanyData }
           });
         }
       } catch (error) {
