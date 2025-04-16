@@ -25,13 +25,11 @@ export const PrintableFieldsForm: React.FC = () => {
   const { state, dispatch } = useProject();
   const { metadata, property } = state;
   
-  // État pour stocker les informations du client et de la société
   const [clientName, setClientName] = useState<string>("Chargement...");
   const [companyName, setCompanyName] = useState<string>("LRS Rénovation");
   const [companyLogoUrl, setCompanyLogoUrl] = useState<string | null>(null);
   const [companyData, setCompanyData] = useState<CompanyData | null>(null);
   
-  // État pour l'aperçu des pages
   const [showCoverPreview, setShowCoverPreview] = useState(false);
   const [showDetailsPreview, setShowDetailsPreview] = useState(false);
   
@@ -49,12 +47,10 @@ export const PrintableFieldsForm: React.FC = () => {
     { id: "summary", name: "Récapitulatif", enabled: true },
   ]);
 
-  // Utiliser directement les données de clientsData au lieu de chercher les infos du client
   useEffect(() => {
     if (metadata?.clientsData && metadata.clientsData.trim() !== '') {
       console.log("Utilisation des données clients de clientsData:", metadata.clientsData);
       
-      // Mettre à jour le champ client dans printableFields
       setPrintableFields(prev => 
         prev.map(field => field.id === "client" 
           ? { ...field, content: metadata.clientsData } 
@@ -64,7 +60,6 @@ export const PrintableFieldsForm: React.FC = () => {
     } else {
       console.log("Aucune donnée client disponible dans clientsData");
       
-      // Si aucune donnée cliente n'est disponible, afficher un message par défaut
       setPrintableFields(prev => 
         prev.map(field => field.id === "client" 
           ? { ...field, content: "Aucun client sélectionné" } 
@@ -74,12 +69,9 @@ export const PrintableFieldsForm: React.FC = () => {
     }
   }, [metadata?.clientsData]);
 
-  // Récupérer les informations de la société sélectionnée
   useEffect(() => {
     const fetchCompanyInfo = async () => {
-      // Récupérer l'ID de la société depuis la page Infos Chantier
-      // Pour l'instant, utilisons un ID fixe puisque c'est comme ça dans InfosChantier.tsx
-      const companyId = "c949dd6d-52e8-41c4-99f8-6e84bf4695b9"; // ID par défaut utilisé dans InfosChantier
+      const companyId = "c949dd6d-52e8-41c4-99f8-6e84bf4695b9";
       
       try {
         const { data, error } = await supabase
@@ -95,7 +87,6 @@ export const PrintableFieldsForm: React.FC = () => {
           setCompanyLogoUrl(data.logo_url);
           setCompanyData(data);
           
-          // Mettre à jour les champs de société dans printableFields
           setPrintableFields(prev => 
             prev.map(field => {
               if (field.id === "companyName") {
@@ -108,7 +99,6 @@ export const PrintableFieldsForm: React.FC = () => {
             })
           );
 
-          // Mettre à jour les métadonnées du projet avec les données de la société
           dispatch({
             type: 'UPDATE_METADATA',
             payload: { company: data }
@@ -123,7 +113,6 @@ export const PrintableFieldsForm: React.FC = () => {
   }, [dispatch]);
 
   useEffect(() => {
-    // Update fields content when metadata changes
     setPrintableFields(prev => 
       prev.map(field => {
         switch(field.id) {
@@ -155,7 +144,6 @@ export const PrintableFieldsForm: React.FC = () => {
   };
 
   const handleSaveSettings = () => {
-    // In a real implementation, this would save to localStorage or a database
     toast.success("Paramètres d'impression enregistrés");
   };
 

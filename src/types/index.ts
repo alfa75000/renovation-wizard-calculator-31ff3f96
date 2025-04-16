@@ -8,7 +8,8 @@ import {
   ProjetChantierState, 
   ProjectAction, 
   ProjetChantierAction,
-  ProjectMetadata // Add this import
+  ProjectMetadata,
+  CompanyData // Add this import
 } from './project';
 
 import {
@@ -54,7 +55,8 @@ export type {
   ProjetChantierState, 
   ProjectAction, 
   ProjetChantierAction,
-  ProjectMetadata, // Add this export
+  ProjectMetadata,
+  CompanyData, // Add this export
   Room,
   Piece,
   Menuiserie,
