@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -14,6 +15,8 @@ import { DevisCoverPreview } from "./DevisCoverPreview";
 import { DevisDetailsPreview } from "./DevisDetailsPreview";
 import DevisRecapPreview from "./DevisRecapPreview";
 import { CompanyData } from "@/types";
+import { generateCompletePDF } from "@/services/pdfGenerationService";
+import { useTravaux } from "@/features/travaux/hooks/useTravaux";
 
 interface PrintableField {
   id: string;
@@ -24,7 +27,8 @@ interface PrintableField {
 
 export const PrintableFieldsForm: React.FC = () => {
   const { state, dispatch } = useProject();
-  const { metadata, property } = state;
+  const { metadata, property, rooms } = state;
+  const { travaux, getTravauxForPiece } = useTravaux();
   
   const [clientName, setClientName] = useState<string>("Chargement...");
   const [companyName, setCompanyName] = useState<string>("LRS Rénovation");
@@ -152,8 +156,26 @@ export const PrintableFieldsForm: React.FC = () => {
     toast.success("Paramètres d'impression enregistrés");
   };
 
-  const handlePreviewPrint = () => {
-    toast.info("Aperçu avant impression (fonctionnalité à implémenter)");
+  const handlePreviewPrint = async () => {
+    try {
+      // Filtrer uniquement les champs activés
+      const enabledFields = printableFields.filter(field => field.enabled);
+      
+      // Générer le PDF complet avec toutes les sections
+      await generateCompletePDF(
+        enabledFields,
+        companyData,
+        rooms,
+        travaux,
+        getTravauxForPiece,
+        metadata
+      );
+      
+      toast.success("PDF du devis complet généré avec succès");
+    } catch (error) {
+      console.error("Erreur lors de la génération du PDF complet:", error);
+      toast.error("Erreur lors de la génération du PDF");
+    }
   };
   
   const handleCoverPreview = () => {
