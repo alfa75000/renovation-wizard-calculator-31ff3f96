@@ -25,9 +25,11 @@ export const generateHeaderContent = (metadata?: ProjectMetadata, currentPage: n
 
 /**
  * Génère le pied de page standard pour tous les documents PDF
- * Utilise les données de l'entreprise stockées dans metadata
+ * Utilise les données de l'entreprise stockées dans metadata.company
  */
 export const generateFooter = (metadata?: ProjectMetadata) => {
+  console.log("Données de l'entreprise dans generateFooter:", metadata?.company);
+  
   // Récupérer les informations de la société directement de l'objet company
   const company = metadata?.company;
   

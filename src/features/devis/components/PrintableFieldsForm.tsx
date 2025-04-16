@@ -84,6 +84,7 @@ export const PrintableFieldsForm: React.FC = () => {
         if (error) throw error;
         
         if (data) {
+          console.log("Données de l'entreprise récupérées:", data);
           setCompanyName(data.name);
           setCompanyLogoUrl(data.logo_url);
           setCompanyData(data as CompanyData);
@@ -100,10 +101,13 @@ export const PrintableFieldsForm: React.FC = () => {
             })
           );
 
+          // Mettre à jour les métadonnées du projet avec les données de l'entreprise
           dispatch({
             type: 'UPDATE_METADATA',
             payload: { company: data as CompanyData }
           });
+          
+          console.log("Métadonnées mises à jour avec les données de l'entreprise");
         }
       } catch (error) {
         console.error("Erreur lors de la récupération des informations de la société:", error);
