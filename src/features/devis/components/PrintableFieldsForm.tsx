@@ -13,6 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/lib/supabase";
 import { DevisCoverPreview } from "./DevisCoverPreview";
 import { DevisDetailsPreview } from "./DevisDetailsPreview";
+import DevisRecapPreview from "./DevisRecapPreview";
 import { CompanyData } from "@/types";
 
 interface PrintableField {
@@ -33,6 +34,7 @@ export const PrintableFieldsForm: React.FC = () => {
   
   const [showCoverPreview, setShowCoverPreview] = useState(false);
   const [showDetailsPreview, setShowDetailsPreview] = useState(false);
+  const [showRecapPreview, setShowRecapPreview] = useState(false);
   
   const [printableFields, setPrintableFields] = useState<PrintableField[]>([
     { id: "companyLogo", name: "Logo société", enabled: true, content: null },
@@ -163,6 +165,10 @@ export const PrintableFieldsForm: React.FC = () => {
   const handleDetailsPreview = () => {
     setShowDetailsPreview(true);
   };
+  
+  const handleRecapPreview = () => {
+    setShowRecapPreview(true);
+  };
 
   return (
     <div className="space-y-6">
@@ -218,11 +224,15 @@ export const PrintableFieldsForm: React.FC = () => {
           </Button>
           <Button variant="outline" onClick={handleCoverPreview} className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
-            Aperçu Page de Garde
+            Aperçu Du Devis
           </Button>
           <Button variant="outline" onClick={handleDetailsPreview} className="flex items-center gap-2">
             <ClipboardList className="h-4 w-4" />
-            Aperçu Détails des Travaux
+            Imprimer PDF
+          </Button>
+          <Button variant="outline" onClick={handleRecapPreview} className="flex items-center gap-2">
+            <ClipboardList className="h-4 w-4" />
+            Aperçu du Récapitulatif
           </Button>
         </div>
         <Button onClick={handleSaveSettings} className="flex items-center gap-2">
@@ -244,6 +254,10 @@ export const PrintableFieldsForm: React.FC = () => {
           open={showDetailsPreview}
           onClose={() => setShowDetailsPreview(false)}
         />
+      )}
+      
+      {showRecapPreview && (
+        <DevisRecapPreview />
       )}
     </div>
   );
