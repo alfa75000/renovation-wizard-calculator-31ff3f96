@@ -1,15 +1,34 @@
+
 import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
 import { Room, Travail, ProjectMetadata } from '@/types';
 
+// Importer les constantes et les utilitaires
+import { 
+  DARK_BLUE, 
+  PDF_STYLES, 
+  PDF_MARGINS, 
+  TABLE_COLUMN_WIDTHS,
+  formatPrice,
+  formatQuantity
+} from './pdf/pdfConstants';
+
+// Importer les générateurs
+import {
+  generateFooter,
+  formatMOFournitures,
+  generateHeaderContent,
+  generateCGVContent,
+  generateSignatureContent,
+  generateSalutationContent,
+  generateStandardTotalsTable,
+  generateTTCTable
+} from './pdf/pdfGenerators';
+
 // Initialiser pdfMake avec les polices
-// Vérifier que pdfMake et pdfFonts existent avant d'accéder à leurs propriétés
 if (pdfMake && pdfFonts && pdfFonts.pdfMake) {
   pdfMake.vfs = pdfFonts.pdfMake.vfs;
 }
-
-// Couleur bleu foncée similaire à celle utilisée dans DevisCoverPreview
-const DARK_BLUE = "#002855";
 
 export const generateCoverPDF = async (fields: any[], company: any) => {
   // La logique existante pour la page de garde reste inchangée
@@ -26,43 +45,13 @@ export const generateDetailsPDF = async (
 ) => {
   console.log('Génération du PDF des détails des travaux avec pdfMake');
 
-  // Fonction utilitaire pour formater les prix avec séparation des milliers
-  const formatPrice = (value: number): string => {
-    return new Intl.NumberFormat('fr-FR', { 
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-      useGrouping: true
-    }).format(value).replace(/\s/g, '\u00A0') + '€';
-  };
-
-  // Fonction pour formater les quantités avec séparation des milliers
-  const formatQuantity = (quantity: number): string => {
-    return new Intl.NumberFormat('fr-FR', { 
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 2,
-      useGrouping: true
-    }).format(quantity).replace(/\s/g, '\u00A0');
-  };
-
-  // Format MO/Fournitures avec le nouveau format
-  const formatMOFournitures = (travail: Travail): string => {
-    const prixUnitaireHT = travail.prixFournitures + travail.prixMainOeuvre;
-    const totalHT = prixUnitaireHT * travail.quantite;
-    const montantTVA = (totalHT * travail.tauxTVA) / 100;
-    
-    return `[ MO: ${formatPrice(travail.prixMainOeuvre)}/u ] [ Fourn: ${formatPrice(travail.prixFournitures)}/u ] [ Total HT: ${formatPrice(prixUnitaireHT)}/u ] [ Total TVA (${travail.tauxTVA}%): ${formatPrice(montantTVA)} ]`;
-  };
-
   // On filtre les pièces qui n'ont pas de travaux
   const roomsWithTravaux = rooms.filter(room => getTravauxForPiece(room.id).length > 0);
   
-  // Estimation du nombre de pages - à ajuster selon les besoins
+  // Estimation du nombre de pages
   const pageCount = Math.max(1, Math.ceil(roomsWithTravaux.length / 2));
   
-  // Définir les largeurs de colonnes ajustées comme demandé
-  const columnWidths = ['*', 50, 50, 30, 60]; // Description, Quantité, Prix HT, TVA, Total HT
-
-  // Créer l'en-tête du tableau commun pour toutes les pièces
+  // Créer l'en-tête du tableau commun
   const tableHeaderRow = [
     { text: 'Description', style: 'tableHeader', alignment: 'left', color: DARK_BLUE },
     { text: 'Quantité', style: 'tableHeader', alignment: 'center', color: DARK_BLUE },
@@ -87,18 +76,18 @@ export const generateDetailsPDF = async (
       bold: true,
       color: DARK_BLUE,
       fillColor: '#f3f4f6',
-      margin: [0, 10, 0, 5] // Augmenté la marge du haut pour éviter de chevaucher l'en-tête
+      margin: [0, 10, 0, 5]
     });
     
-    // Créer le tableau pour cette pièce (sans l'en-tête car il est maintenant dans le header de page)
+    // Créer le tableau pour cette pièce
     const tableBody = [];
     
-    // Ajouter chaque travail au tableau - IMPLÉMENTATION AMÉLIORÉE AVEC CENTRAGE VERTICAL
+    // Ajouter chaque travail au tableau
     travauxPiece.forEach((travail, index) => {
       const prixUnitaireHT = travail.prixFournitures + travail.prixMainOeuvre;
       const totalHT = prixUnitaireHT * travail.quantite;
       
-      // Construire le contenu de la description avec des sauts de ligne
+      // Construire le contenu de la description
       let descriptionLines = [];
       descriptionLines.push(`${travail.typeTravauxLabel}: ${travail.sousTypeLabel}`);
       
@@ -113,15 +102,14 @@ export const generateDetailsPDF = async (
       // Utiliser le nouveau format pour MO/Fournitures
       const moFournText = formatMOFournitures(travail);
       
-      // Estimer le nombre de lignes dans la description, incluant les retours à la ligne automatiques
+      // Estimer le nombre de lignes dans la description
       let totalLines = 0;
       
-      // Largeur approximative de la colonne de description en caractères (à ajuster si nécessaire)
+      // Largeur approximative de la colonne de description en caractères
       const columnCharWidth = 80;
       
       // Estimer le nombre réel de lignes pour chaque portion de texte
       descriptionLines.forEach(line => {
-        // Estimer combien de lignes cette portion occupera
         const textLines = Math.ceil(line.length / columnCharWidth);
         totalLines += textLines;
       });
@@ -130,21 +118,20 @@ export const generateDetailsPDF = async (
       const moFournLines = Math.ceil(moFournText.length / columnCharWidth);
       totalLines += moFournLines;
       
-      // Calculer les marges supérieures pour centrer verticalement les valeurs
-      // Formule ajustée: marge de base + marge par ligne supplémentaire
+      // Calculer les marges supérieures pour centrer verticalement
       const topMargin = Math.max(0, 3 + (totalLines - 2) * 4);
       
       // Ajouter la ligne au tableau
       tableBody.push([
-        // Colonne 1: Description avec sauts de ligne et espacement entre lignes augmenté
+        // Colonne 1: Description
         { 
           stack: [
             { text: descriptionLines.join('\n'), fontSize: 9, lineHeight: 1.4 },
-            { text: moFournText, fontSize: 7, lineHeight: 1.4 } // Modification n°1: Utiliser 7 points pour la ligne MO/Fournitures
+            { text: moFournText, fontSize: 7, lineHeight: 1.4 }
           ]
         },
         
-        // Colonne 2: Quantité avec marge supérieure pour centrage visuel
+        // Colonne 2: Quantité
         { 
           stack: [
             { text: formatQuantity(travail.quantite), alignment: 'center', fontSize: 9 },
@@ -154,7 +141,7 @@ export const generateDetailsPDF = async (
           margin: [0, topMargin, 0, 0]
         },
         
-        // Colonne 3: Prix unitaire avec marge supérieure pour centrage visuel
+        // Colonne 3: Prix unitaire
         { 
           text: formatPrice(prixUnitaireHT), 
           alignment: 'center',
@@ -162,7 +149,7 @@ export const generateDetailsPDF = async (
           margin: [0, topMargin, 0, 0]
         },
         
-        // Colonne 4: TVA avec marge supérieure pour centrage visuel
+        // Colonne 4: TVA
         { 
           text: `${travail.tauxTVA}%`, 
           alignment: 'center',
@@ -170,7 +157,7 @@ export const generateDetailsPDF = async (
           margin: [0, topMargin, 0, 0]
         },
         
-        // Colonne 5: Total HT avec marge supérieure pour centrage visuel
+        // Colonne 5: Total HT
         { 
           text: formatPrice(totalHT), 
           alignment: 'center',
@@ -179,10 +166,10 @@ export const generateDetailsPDF = async (
         }
       ]);
       
-      // Ajouter une ligne d'espacement entre les prestations (sauf après la dernière)
+      // Ajouter une ligne d'espacement entre les prestations
       if (index < travauxPiece.length - 1) {
         tableBody.push([
-          { text: '', margin: [0, 2, 0, 2] }, // Espacement supplémentaire
+          { text: '', margin: [0, 2, 0, 2] },
           {}, {}, {}, {}
         ]);
       }
@@ -203,19 +190,16 @@ export const generateDetailsPDF = async (
     // Ajouter le tableau au document
     docContent.push({
       table: {
-        headerRows: 0, // Pas d'en-tête de tableau puisqu'on l'a déplacé dans l'en-tête de page
-        widths: columnWidths, // Utiliser les largeurs de colonnes ajustées
+        headerRows: 0,
+        widths: TABLE_COLUMN_WIDTHS.DETAILS,
         body: tableBody
       },
       layout: {
         hLineWidth: function(i: number, node: any) {
-          // Ne montrer les lignes qu'au début et à la fin de chaque prestation (pas aux sauts de page)
           if (i === 0 || i === node.table.body.length) {
-            return 1; // Première et dernière ligne du tableau
+            return 1;
           }
           
-          // Pour les autres lignes, vérifier si c'est une fin de prestation ou un total
-          // On vérifie si la ligne actuelle ou la précédente contient "Total HT"
           const isEndOfPrestation = i < node.table.body.length && 
             ((node.table.body[i][0] && 
               node.table.body[i][0].text && 
@@ -245,34 +229,25 @@ export const generateDetailsPDF = async (
           return 2;
         }
       },
-      margin: [0, 0, 0, 15]  // Augmenter la marge en bas de chaque tableau de pièce
+      margin: [0, 0, 0, 15]
     });
   });
   
   // Définir le document avec contenu et styles
   const docDefinition = {
     header: function(currentPage: number, pageCount: number) {
-      // Modification n°2: Ajustement de la numérotation de page
-      // Ajuster le comptage: page actuelle + 1 (pour décaler après la page de garde)
+      // Ajustement de la numérotation de page
       const adjustedCurrentPage = currentPage + 1;
-      
-      // Ajuster le nombre total: pages générées + 3 (page de garde + récap + conditions)
       const adjustedTotalPages = pageCount + 3;
       
       return [
         // En-tête avec le numéro de devis et la pagination ajustée
-        {
-          text: `DEVIS N° ${metadata?.devisNumber || 'XXXX-XX'} - page ${adjustedCurrentPage}/${adjustedTotalPages}`,
-          style: 'header',
-          alignment: 'right',
-          fontSize: 8,
-          margin: [30, 20, 30, 10] // Ajustement des marges [gauche, haut, droite, bas]
-        },
-        // En-tête du tableau - modifié pour éviter l'objet stack
+        generateHeaderContent(metadata, adjustedCurrentPage, adjustedTotalPages),
+        // En-tête du tableau
         {
           table: {
             headerRows: 1,
-            widths: columnWidths,
+            widths: TABLE_COLUMN_WIDTHS.DETAILS,
             body: [tableHeaderRow]
           },
           layout: {
@@ -281,35 +256,16 @@ export const generateDetailsPDF = async (
             hLineColor: function() { return '#e5e7eb'; },
             fillColor: function(rowIndex: number) { return (rowIndex === 0) ? '#f3f4f6' : null; }
           },
-          margin: [30, 0, 30, 10] // Ajouté une marge en bas
+          margin: [30, 0, 30, 10]
         }
       ];
     },
-    content: docContent,
-    styles: {
-      header: {
-        fontSize: 8,
-        color: DARK_BLUE,
-        margin: [0, 5, 0, 10]
-      },
-      roomTitle: {
-        fontSize: 9,
-        bold: true,
-        color: DARK_BLUE,
-        fillColor: '#f3f4f6',
-        padding: [5, 3, 5, 3],
-        margin: [0, 10, 0, 5] // Augmenté la marge du haut pour éviter de chevaucher l'en-tête
-      },
-      tableHeader: {
-        fontSize: 9,
-        bold: true, // Remis en gras
-        color: DARK_BLUE
-      },
-      italic: {
-        italics: true
-      }
+    footer: function(currentPage: number, pageCount: number) {
+      return generateFooter(metadata);
     },
-    pageMargins: [30, 70, 30, 30], // [gauche, haut, droite, bas] - Augmenté la marge haute pour l'en-tête
+    content: docContent,
+    styles: PDF_STYLES,
+    pageMargins: PDF_MARGINS.DETAILS,
     defaultStyle: {
       fontSize: 9,
       color: DARK_BLUE
@@ -334,36 +290,8 @@ export const generateRecapPDF = async (
 ) => {
   console.log('Génération du PDF récapitulatif avec pdfMake');
 
-  // Fonction utilitaire pour formater les prix avec séparation des milliers
-  const formatPrice = (value: number): string => {
-    return new Intl.NumberFormat('fr-FR', { 
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-      useGrouping: true
-    }).format(value).replace(/\s/g, '\u00A0') + '€';
-  };
-
   // On filtre les pièces qui n'ont pas de travaux
   const roomsWithTravaux = rooms.filter(room => getTravauxForPiece(room.id).length > 0);
-  
-  // Grouper les travaux par TVA pour les détails
-  const grouperTravauxParTVA = (travauxList: Travail[]): Record<number, Travail[]> => {
-    return travauxList.reduce((groups, travail) => {
-      const tauxTVA = travail.tauxTVA;
-      if (!groups[tauxTVA]) {
-        groups[tauxTVA] = [];
-      }
-      groups[tauxTVA].push(travail);
-      return groups;
-    }, {} as Record<number, Travail[]>);
-  };
-  
-  // Calculer le montant de TVA d'un travail
-  const calculerMontantTVA = (travail: Travail): number => {
-    const prixUnitaireHT = travail.prixFournitures + travail.prixMainOeuvre;
-    const totalHT = prixUnitaireHT * travail.quantite;
-    return totalHT * (travail.tauxTVA / 100);
-  };
   
   // Créer le contenu du document
   const docContent: any[] = [];
@@ -373,7 +301,7 @@ export const generateRecapPDF = async (
     text: 'RÉCAPITULATIF',
     style: 'header',
     alignment: 'center',
-    fontSize: 14,
+    fontSize: 12,
     bold: true,
     color: DARK_BLUE,
     margin: [0, 10, 0, 20]
@@ -384,12 +312,13 @@ export const generateRecapPDF = async (
   
   // Ajouter l'en-tête de la table
   roomTotalsTableBody.push([
-    { text: '', style: 'tableHeader', alignment: 'left', color: DARK_BLUE },
-    { text: 'Montant HT', style: 'tableHeader', alignment: 'right', color: DARK_BLUE }
+    { text: '', style: 'tableHeader', alignment: 'left', color: DARK_BLUE, fontSize: 8 }, // Ajouter fontSize: 8
+    { text: 'Montant HT', style: 'tableHeader', alignment: 'right', color: DARK_BLUE, fontSize: 8 } // Ajouter fontSize: 8
   ]);
-  
+    
   // Pour chaque pièce avec des travaux
   let totalHT = 0;
+  let totalTVA = 0;
   
   roomsWithTravaux.forEach(room => {
     const travauxPiece = getTravauxForPiece(room.id);
@@ -400,13 +329,20 @@ export const generateRecapPDF = async (
       return sum + (t.prixFournitures + t.prixMainOeuvre) * t.quantite;
     }, 0);
     
-    // Ajouter à notre total global
+    // Calculer la TVA pour cette pièce
+    const roomTVA = travauxPiece.reduce((sum, t) => {
+      const totalHT = (t.prixFournitures + t.prixMainOeuvre) * t.quantite;
+      return sum + (totalHT * t.tauxTVA / 100);
+    }, 0);
+    
+    // Ajouter à nos totaux
     totalHT += roomTotalHT;
+    totalTVA += roomTVA;
     
     // Ajouter la ligne à la table
     roomTotalsTableBody.push([
-      { text: `Total HT ${room.name}`, alignment: 'left', fontSize: 10, bold: true },
-      { text: formatPrice(roomTotalHT), alignment: 'right', fontSize: 10, color: DARK_BLUE }
+      { text: `Total ${room.name}`, alignment: 'left', fontSize: 8, bold: true },
+      { text: formatPrice(roomTotalHT), alignment: 'right', fontSize: 8, color: DARK_BLUE }
     ]);
   });
   
@@ -434,111 +370,83 @@ export const generateRecapPDF = async (
         return 10;
       },
       paddingTop: function() {
-        return 8;
+        return 5;
       },
       paddingBottom: function() {
-        return 8;
+        return 5;
       }
     },
-    margin: [0, 0, 0, 30]
+    margin: [0, 0, 0, 20]
   });
   
-  // Grouper les travaux par taux de TVA
-  const travauxParTVA = grouperTravauxParTVA(travaux);
-  const tauxTVA = Object.keys(travauxParTVA).map(Number).sort();
-  
-  // Calculer les montants de TVA par taux
-  const montantsTVAParTaux = tauxTVA.map(taux => {
-    const travauxTaux = travauxParTVA[taux];
-    const totalHTTaux = travauxTaux.reduce((sum, travail) => {
-      const prixUnitaireHT = travail.prixFournitures + travail.prixMainOeuvre;
-      return sum + (prixUnitaireHT * travail.quantite);
-    }, 0);
-    const montantTVA = travauxTaux.reduce((sum, travail) => 
-      sum + calculerMontantTVA(travail), 0);
-    
-    return { taux, totalHTTaux, montantTVA };
-  });
-  
-  // Calculer le total TVA
-  const totalTVA = montantsTVAParTaux.reduce((sum, { montantTVA }) => sum + montantTVA, 0);
-  
-  // Table des totaux généraux - alignée à droite
+  // Table des totaux généraux
   const totalTTC = totalHT + totalTVA;
-  
-  // Construire les lignes de la table des totaux selon le nouveau format demandé
-  const totalTableBody = [
-    [
-      { text: 'Total HT', alignment: 'left', fontSize: 10, bold: false },
-      { text: formatPrice(totalHT), alignment: 'right', fontSize: 10, color: DARK_BLUE }
-    ],
-    [
-      { text: 'Total TVA', alignment: 'left', fontSize: 10, bold: false },
-      { text: formatPrice(totalTVA), alignment: 'right', fontSize: 10, color: DARK_BLUE }
-    ],
-    [
-      { text: 'Total TTC', alignment: 'left', fontSize: 10, bold: true },
-      { text: formatPrice(totalTTC), alignment: 'right', fontSize: 10, color: DARK_BLUE, bold: true }
-    ]
-  ];
-  
-  // Ajouter la table des totaux, alignée à droite
+
+  // Structure de la page récapitulative
   docContent.push({
-    stack: [
+    columns: [
+      // Colonne gauche - Texte de signature (environ 70% de la largeur)
       {
-        table: {
-          widths: [80, 80],     // largeurs des colonnes du tableau des Totaux
-          body: totalTableBody
-        },
-        layout: {
-          hLineWidth: function(i: number, node: any) {
-            return (i === 0 || i === node.table.body.length) ? 1 : 1;
-          },
-          vLineWidth: function() {
-            return 0;
-          },
-          hLineColor: function() {
-            return '#e5e7eb';
-          },
-          paddingLeft: function() {
-            return 10;
-          },
-          paddingRight: function() {
-            return 10;
-          },
-          paddingTop: function() {
-            return 8;
-          },
-          paddingBottom: function() {
-            return 8;
-          }
-        }
+        width: '70%',
+        stack: [
+          // Contenu de signature généré
+          ...generateSignatureContent(),
+          
+          // 10 lignes vides pour la signature
+          { text: "", margin: [0, 5, 0, 0] },
+          { text: "", margin: [0, 5, 0, 0] },
+          { text: "", margin: [0, 5, 0, 0] },
+          { text: "", margin: [0, 5, 0, 0] },
+          { text: "", margin: [0, 5, 0, 0] },
+          { text: "", margin: [0, 5, 0, 0] },
+          { text: "", margin: [0, 5, 0, 0] },
+          { text: "", margin: [0, 5, 0, 0] },
+          { text: "", margin: [0, 5, 0, 0] },
+          { text: "", margin: [0, 5, 0, 0] }
+        ]
+      },
+      // Colonne droite - Tableaux des totaux (environ 30% de la largeur)
+      {
+        width: '30%',
+        stack: [
+          // D'abord le tableau standard sans bordures
+          generateStandardTotalsTable(totalHT, totalTVA),
+          // Ensuite le tableau du Total TTC avec bordure complète
+          generateTTCTable(totalTTC)
+        ]
       }
     ],
-    alignment: 'right',
-    margin: [300, 0, 0, 20]
+    margin: [0, 0, 0, 20]
+  });
+
+  // Ajouter le texte de salutation sur toute la largeur
+  docContent.push(generateSalutationContent());
+    
+  // Ajouter les conditions générales de vente
+  const cgvContent = generateCGVContent();
+  cgvContent.forEach(item => {
+    docContent.push(item);
   });
   
   // Définir le document avec contenu et styles
   const docDefinition = {
-    content: docContent,
-    styles: {
-      header: {
-        fontSize: 14,
-        bold: true,
-        color: DARK_BLUE,
-        margin: [0, 10, 0, 10]
-      },
-      tableHeader: {
-        fontSize: 10,
-        bold: true,
-        color: DARK_BLUE,
-        margin: [0, 5, 0, 5]
-      }
+    // En-tête avec numéro de devis et pagination - Toujours afficher l'en-tête, même sur la première page
+    header: function(currentPage, pageCount) {
+      // Calculer la numérotation des pages
+      const pageNumber = currentPage + 1;
+      const totalPages = pageCount + 2;
+      
+      return generateHeaderContent(metadata, pageNumber, totalPages);
     },
-    pageMargins: [40, 40, 40, 40],
+    // Pied de page avec les informations de la société
+    footer: function(currentPage, pageCount) {
+      return generateFooter(metadata);
+    },
+    content: docContent,
+    styles: PDF_STYLES,
+    pageMargins: PDF_MARGINS.RECAP,
     defaultStyle: {
-      fontSize: 10,
+      fontSize: 9,
       color: DARK_BLUE
     }
   };
