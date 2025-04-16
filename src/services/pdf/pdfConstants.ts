@@ -93,6 +93,7 @@ export const PDF_STYLES = {
 
 // Marges standard pour les documents
 export const PDF_MARGINS = {
+  COVER: [40, 40, 40, 40], // Ajout des marges pour la page de garde
   DETAILS: [30, 70, 30, 40], // [gauche, haut, droite, bas]
   RECAP: [40, 40, 40, 40]
 };
