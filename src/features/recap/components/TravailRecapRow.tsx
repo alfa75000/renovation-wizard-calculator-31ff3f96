@@ -30,9 +30,9 @@ const TravailRecapRow: React.FC<TravailRecapRowProps> = ({ travail }) => {
             {travail.personnalisation}
           </div>
         )}
-        <div className="text-xs text-gray-600 mt-1">
+        <div className="text-xs text-gray-600 mt-4">
           MO: {formaterPrix(travail.prixMainOeuvre)}/u, Fourn: {formaterPrix(travail.prixFournitures)}/u 
-          (total: {formaterPrix(prixUnitaireHT)}/u)
+          (TVA {travail.tauxTVA}%)
         </div>
       </TableCell>
       <TableCell className="text-right">{travail.quantite} {travail.unite}</TableCell>

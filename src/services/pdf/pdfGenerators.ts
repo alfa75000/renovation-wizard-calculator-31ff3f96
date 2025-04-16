@@ -1,4 +1,3 @@
-
 // Fonctions utilitaires pour générer des parties spécifiques des PDF
 
 import { Travail, ProjectMetadata } from '@/types';
@@ -54,13 +53,15 @@ export const generateFooter = (metadata?: ProjectMetadata) => {
 
 /**
  * Génère le format MO/Fournitures avec TVA
+ * Modifié: Retiré le Total HT par unité et augmenté la taille de police
  */
 export const formatMOFournitures = (travail: Travail): string => {
   const prixUnitaireHT = travail.prixFournitures + travail.prixMainOeuvre;
   const totalHT = prixUnitaireHT * travail.quantite;
   const montantTVA = (totalHT * travail.tauxTVA) / 100;
   
-  return `[ MO: ${formatPrice(travail.prixMainOeuvre)}/u ] [ Fourn: ${formatPrice(travail.prixFournitures)}/u ] [ Total HT: ${formatPrice(prixUnitaireHT)}/u ] [ Total TVA (${travail.tauxTVA}%): ${formatPrice(montantTVA)} ]`;
+  // Retiré "[ Total HT: XX€/u ]" de la chaîne formatée
+  return `[ MO: ${formatPrice(travail.prixMainOeuvre)}/u ] [ Fourn: ${formatPrice(travail.prixFournitures)}/u ] [ Total TVA (${travail.tauxTVA}%): ${formatPrice(montantTVA)} ]`;
 };
 
 /**

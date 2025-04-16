@@ -89,9 +89,9 @@ export const DevisDetailsPreview: React.FC<DevisDetailsPreviewProps> = ({
                                     {travail.personnalisation}
                                   </div>
                                 )}
-                                <div className="text-[8pt] text-gray-600">
+                                <div className="text-[9pt] text-gray-600 mt-4">
                                   MO: {formaterPrix(travail.prixMainOeuvre)}/u, Fourn: {formaterPrix(travail.prixFournitures)}/u 
-                                  (total: {formaterPrix(prixUnitaireHT)}/u)
+                                  (TVA {travail.tauxTVA}%)
                                 </div>
                               </td>
                               <td className="text-center p-1">
@@ -139,3 +139,4 @@ export const DevisDetailsPreview: React.FC<DevisDetailsPreviewProps> = ({
     </Dialog>
   );
 };
+

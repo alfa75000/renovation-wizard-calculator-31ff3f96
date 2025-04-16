@@ -1,4 +1,3 @@
-
 // Fichier de constantes pour la génération de PDF
 
 // Couleur principale utilisée dans toute l'application
@@ -119,4 +118,17 @@ export const formatQuantity = (quantity: number): string => {
     maximumFractionDigits: 2,
     useGrouping: true
   }).format(quantity).replace(/\s/g, '\u00A0');
+};
+
+/**
+ * Génère le format MO/Fournitures avec TVA
+ * Retiré le Total HT par unité et augmenté l'espacement
+ */
+export const formatMOFournitures = (travail: Travail): string => {
+  const prixUnitaireHT = travail.prixFournitures + travail.prixMainOeuvre;
+  const totalHT = prixUnitaireHT * travail.quantite;
+  const montantTVA = (totalHT * travail.tauxTVA) / 100;
+  
+  // Retiré "[ Total HT: XX€/u ]" de la chaîne formatée
+  return `[ MO: ${formatPrice(travail.prixMainOeuvre)}/u ] [ Fourn: ${formatPrice(travail.prixFournitures)}/u ] [ Total TVA (${travail.tauxTVA}%): ${formatPrice(montantTVA)} ]`;
 };
