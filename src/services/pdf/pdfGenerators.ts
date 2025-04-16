@@ -28,15 +28,18 @@ export const generateHeaderContent = (metadata?: ProjectMetadata, currentPage: n
  * Utilise les données de l'entreprise stockées dans metadata
  */
 export const generateFooter = (metadata?: ProjectMetadata) => {
-  // Récupérer les informations de la société
-  const companyName = metadata?.company?.name || '';
-  const capitalSocial = metadata?.company?.capital_social || '10000';
-  const address = metadata?.company?.address || '';
-  const postalCode = metadata?.company?.postal_code || '';
-  const city = metadata?.company?.city || '';
-  const siret = metadata?.company?.siret || '';
-  const codeApe = metadata?.company?.code_ape || '';
-  const tvaIntracom = metadata?.company?.tva_intracom || '';
+  // Récupérer les informations de la société directement de l'objet company
+  const company = metadata?.company;
+  
+  // Utiliser les données de company si disponibles, sinon utiliser des valeurs par défaut
+  const companyName = company?.name || '';
+  const capitalSocial = company?.capital_social || '10000';
+  const address = company?.address || '';
+  const postalCode = company?.postal_code || '';
+  const city = company?.city || '';
+  const siret = company?.siret || '';
+  const codeApe = company?.code_ape || '';
+  const tvaIntracom = company?.tva_intracom || '';
   
   return {
     text: `${companyName} - SASU au Capital de ${capitalSocial} € - ${address} ${postalCode} ${city} - Siret : ${siret} - Code APE : ${codeApe} - N° TVA Intracommunautaire : ${tvaIntracom}`,
