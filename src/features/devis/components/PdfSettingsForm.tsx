@@ -281,78 +281,130 @@ export const PdfSettingsForm: React.FC = () => {
           <TabsContent value="colors" className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Couleur principale</Label>
+                <Label>Couleur des textes généraux</Label>
                 <div className="flex items-center space-x-2">
                   <Input 
                     type="color" 
-                    value={pdfSettings.colors.primary}
+                    value={pdfSettings.colors.mainText}
                     onChange={(e) => updatePdfSettings({ 
                       colors: { 
                         ...pdfSettings.colors, 
-                        primary: e.target.value 
+                        mainText: e.target.value 
                       } 
                     })}
                     className="w-16 h-10 p-1"
                   />
                   <Input 
                     type="text" 
-                    value={pdfSettings.colors.primary}
+                    value={pdfSettings.colors.mainText}
                     onChange={(e) => updatePdfSettings({ 
                       colors: { 
                         ...pdfSettings.colors, 
-                        primary: e.target.value 
+                        mainText: e.target.value 
                       } 
                     })}
                   />
                 </div>
               </div>
               <div>
-                <Label>Couleur secondaire</Label>
+                <Label>Couleur des textes MO/TVA/Détails</Label>
                 <div className="flex items-center space-x-2">
                   <Input 
                     type="color" 
-                    value={pdfSettings.colors.secondary}
+                    value={pdfSettings.colors.detailsText}
                     onChange={(e) => updatePdfSettings({ 
                       colors: { 
                         ...pdfSettings.colors, 
-                        secondary: e.target.value 
+                        detailsText: e.target.value 
                       } 
                     })}
                     className="w-16 h-10 p-1"
                   />
                   <Input 
                     type="text" 
-                    value={pdfSettings.colors.secondary}
+                    value={pdfSettings.colors.detailsText}
                     onChange={(e) => updatePdfSettings({ 
                       colors: { 
                         ...pdfSettings.colors, 
-                        secondary: e.target.value 
+                        detailsText: e.target.value 
                       } 
                     })}
                   />
                 </div>
               </div>
               <div>
-                <Label>Couleur du texte</Label>
+                <Label>Couleur des traits page de garde</Label>
                 <div className="flex items-center space-x-2">
                   <Input 
                     type="color" 
-                    value={pdfSettings.colors.text}
+                    value={pdfSettings.colors.coverLines}
                     onChange={(e) => updatePdfSettings({ 
                       colors: { 
                         ...pdfSettings.colors, 
-                        text: e.target.value 
+                        coverLines: e.target.value 
                       } 
                     })}
                     className="w-16 h-10 p-1"
                   />
                   <Input 
                     type="text" 
-                    value={pdfSettings.colors.text}
+                    value={pdfSettings.colors.coverLines}
                     onChange={(e) => updatePdfSettings({ 
                       colors: { 
                         ...pdfSettings.colors, 
-                        text: e.target.value 
+                        coverLines: e.target.value 
+                      } 
+                    })}
+                  />
+                </div>
+              </div>
+              <div>
+                <Label>Couleur des traits pages détails/récap</Label>
+                <div className="flex items-center space-x-2">
+                  <Input 
+                    type="color" 
+                    value={pdfSettings.colors.detailsLines}
+                    onChange={(e) => updatePdfSettings({ 
+                      colors: { 
+                        ...pdfSettings.colors, 
+                        detailsLines: e.target.value 
+                      } 
+                    })}
+                    className="w-16 h-10 p-1"
+                  />
+                  <Input 
+                    type="text" 
+                    value={pdfSettings.colors.detailsLines}
+                    onChange={(e) => updatePdfSettings({ 
+                      colors: { 
+                        ...pdfSettings.colors, 
+                        detailsLines: e.target.value 
+                      } 
+                    })}
+                  />
+                </div>
+              </div>
+              <div>
+                <Label>Couleur des cadres Total TTC</Label>
+                <div className="flex items-center space-x-2">
+                  <Input 
+                    type="color" 
+                    value={pdfSettings.colors.totalBoxLines}
+                    onChange={(e) => updatePdfSettings({ 
+                      colors: { 
+                        ...pdfSettings.colors, 
+                        totalBoxLines: e.target.value 
+                      } 
+                    })}
+                    className="w-16 h-10 p-1"
+                  />
+                  <Input 
+                    type="text" 
+                    value={pdfSettings.colors.totalBoxLines}
+                    onChange={(e) => updatePdfSettings({ 
+                      colors: { 
+                        ...pdfSettings.colors, 
+                        totalBoxLines: e.target.value 
                       } 
                     })}
                   />
@@ -363,22 +415,22 @@ export const PdfSettingsForm: React.FC = () => {
                 <div className="flex items-center space-x-2">
                   <Input 
                     type="color" 
-                    value={pdfSettings.colors.light}
+                    value={pdfSettings.colors.background}
                     onChange={(e) => updatePdfSettings({ 
                       colors: { 
                         ...pdfSettings.colors, 
-                        light: e.target.value 
+                        background: e.target.value 
                       } 
                     })}
                     className="w-16 h-10 p-1"
                   />
                   <Input 
                     type="text" 
-                    value={pdfSettings.colors.light}
+                    value={pdfSettings.colors.background}
                     onChange={(e) => updatePdfSettings({ 
                       colors: { 
                         ...pdfSettings.colors, 
-                        light: e.target.value 
+                        background: e.target.value 
                       } 
                     })}
                   />
