@@ -1,3 +1,4 @@
+
 // Fonctions utilitaires pour générer des parties spécifiques des PDF
 
 import { Travail, ProjectMetadata } from '@/types';
@@ -8,16 +9,21 @@ import {
   formatQuantity,
   TABLE_COLUMN_WIDTHS
 } from './pdfConstants';
+import { PdfSettings } from './config/pdfSettingsTypes';
+import { getCustomColors, getFontSizes } from './pdfGenerationUtils';
 
 /**
  * Génère le contenu de l'en-tête pour les documents PDF
  */
-export const generateHeaderContent = (metadata?: ProjectMetadata, currentPage: number = 1, totalPages: number = 1) => {
+export const generateHeaderContent = (metadata?: ProjectMetadata, currentPage: number = 1, totalPages: number = 1, pdfSettings?: PdfSettings) => {
+  const colors = getCustomColors(pdfSettings || {});
+  const fontSizes = getFontSizes(pdfSettings || {});
+  
   return {
     text: `DEVIS N° ${metadata?.devisNumber || 'XXXX-XX'} - page ${currentPage}/${totalPages}`,
     alignment: 'right',
-    fontSize: 8,
-    color: DARK_BLUE,
+    fontSize: fontSizes.small,
+    color: colors.mainText,
     margin: [40, 20, 40, 10]
   };
 };
@@ -26,8 +32,11 @@ export const generateHeaderContent = (metadata?: ProjectMetadata, currentPage: n
  * Génère le pied de page standard pour tous les documents PDF
  * Utilise les données de l'entreprise stockées dans metadata.company
  */
-export const generateFooter = (metadata?: ProjectMetadata) => {
+export const generateFooter = (metadata?: ProjectMetadata, pdfSettings?: PdfSettings) => {
   console.log("Données de l'entreprise dans generateFooter:", metadata?.company);
+  
+  const colors = getCustomColors(pdfSettings || {});
+  const fontSizes = getFontSizes(pdfSettings || {});
   
   // Récupérer les informations de la société directement de l'objet company
   const company = metadata?.company;
@@ -44,8 +53,8 @@ export const generateFooter = (metadata?: ProjectMetadata) => {
   
   return {
     text: `${companyName} - SASU au Capital de ${capitalSocial} € - ${address} ${postalCode} ${city} - Siret : ${siret} - Code APE : ${codeApe} - N° TVA Intracommunautaire : ${tvaIntracom}`,
-    fontSize: 7,
-    color: DARK_BLUE,
+    fontSize: fontSizes.small,
+    color: colors.mainText,
     alignment: 'center',
     margin: [40, 0, 40, 20]
   };
@@ -55,7 +64,7 @@ export const generateFooter = (metadata?: ProjectMetadata) => {
  * Génère le format MO/Fournitures avec TVA
  * Modifié: Retiré le Total HT par unité et augmenté la taille de police
  */
-export const formatMOFournitures = (travail: Travail): string => {
+export const formatMOFournitures = (travail: Travail, pdfSettings?: PdfSettings): string => {
   const prixUnitaireHT = travail.prixFournitures + travail.prixMainOeuvre;
   const totalHT = prixUnitaireHT * travail.quantite;
   const montantTVA = (totalHT * travail.tauxTVA) / 100;
@@ -190,18 +199,21 @@ export const generateSalutationContent = () => {
 /**
  * Génère une structure de tableau pour les totaux (HT et TVA) sans bordures
  */
-export const generateStandardTotalsTable = (totalHT: number, totalTVA: number) => {
+export const generateStandardTotalsTable = (totalHT: number, totalTVA: number, pdfSettings?: PdfSettings) => {
+  const colors = getCustomColors(pdfSettings || {});
+  const fontSizes = getFontSizes(pdfSettings || {});
+
   return {
     table: {
       widths: TABLE_COLUMN_WIDTHS.TOTALS,
       body: [
         [
-          { text: 'Total HT', alignment: 'left', fontSize: 8, bold: false }, // Changer fontSize: 10 à fontSize: 8
-          { text: formatPrice(totalHT), alignment: 'right', fontSize: 8, color: DARK_BLUE } // Changer fontSize: 10 à fontSize: 8
+          { text: 'Total HT', alignment: 'left', fontSize: fontSizes.small, bold: false },
+          { text: formatPrice(totalHT), alignment: 'right', fontSize: fontSizes.small, color: colors.mainText }
         ],
         [
-          { text: 'Total TVA', alignment: 'left', fontSize: 8, bold: false }, // Changer fontSize: 10 à fontSize: 8
-          { text: formatPrice(totalTVA), alignment: 'right', fontSize: 8, color: DARK_BLUE } // Changer fontSize: 10 à fontSize: 8
+          { text: 'Total TVA', alignment: 'left', fontSize: fontSizes.small, bold: false },
+          { text: formatPrice(totalTVA), alignment: 'right', fontSize: fontSizes.small, color: colors.mainText }
         ]
       ]
     },
@@ -210,8 +222,8 @@ export const generateStandardTotalsTable = (totalHT: number, totalTVA: number) =
       vLineWidth: function() { return 0; },
       paddingLeft: function() { return 5; },
       paddingRight: function() { return 5; },
-      paddingTop: function() { return 5; }, // Changer de 8 à 5
-      paddingBottom: function() { return 5; } // Changer de 8 à 5
+      paddingTop: function() { return 5; },
+      paddingBottom: function() { return 5; }
     },
     margin: [0, 0, 0, 0]
   };
@@ -220,14 +232,17 @@ export const generateStandardTotalsTable = (totalHT: number, totalTVA: number) =
 /**
  * Génère une structure de tableau pour le Total TTC avec bordure complète
  */
-export const generateTTCTable = (totalTTC: number) => {
+export const generateTTCTable = (totalTTC: number, pdfSettings?: PdfSettings) => {
+  const colors = getCustomColors(pdfSettings || {});
+  const fontSizes = getFontSizes(pdfSettings || {});
+
   return {
     table: {
       widths: TABLE_COLUMN_WIDTHS.TOTALS,
       body: [
         [
-          { text: 'Total TTC', alignment: 'left', fontSize: 8, bold: true }, // Changer fontSize: 10 à fontSize: 8
-          { text: formatPrice(totalTTC), alignment: 'right', fontSize: 8, color: DARK_BLUE, bold: true } // Changer fontSize: 10 à fontSize: 8
+          { text: 'Total TTC', alignment: 'left', fontSize: fontSizes.small, bold: true },
+          { text: formatPrice(totalTTC), alignment: 'right', fontSize: fontSizes.small, color: colors.mainText, bold: true }
         ]
       ]
     },
@@ -235,14 +250,14 @@ export const generateTTCTable = (totalTTC: number) => {
       hLineWidth: function() { return 1; },
       vLineWidth: function(i, node) { 
         // Supprimer la ligne verticale centrale (i=1)
-        return i === 0 || i === 2 ? 1 : 0; // Modifier cette ligne qui était avant: return 1;
+        return i === 0 || i === 2 ? 1 : 0;
       },
-      hLineColor: function() { return '#e5e7eb'; },
-      vLineColor: function() { return '#e5e7eb'; },
+      hLineColor: function() { return colors.totalBoxLines; },
+      vLineColor: function() { return colors.totalBoxLines; },
       paddingLeft: function() { return 5; },
       paddingRight: function() { return 5; },
-      paddingTop: function() { return 5; }, // Changer de 8 à 5
-      paddingBottom: function() { return 5; } // Changer de 8 à 5
+      paddingTop: function() { return 5; },
+      paddingBottom: function() { return 5; }
     },
     margin: [0, 0, 0, 0]
   };

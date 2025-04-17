@@ -7,6 +7,7 @@ import { Layout } from "@/components/Layout";
 import { useProject } from "@/contexts/ProjectContext";
 import { useTravaux } from "@/features/travaux/hooks/useTravaux";
 import { generateDetailsPDF } from "@/services/pdfGenerationService";
+import { useAppState } from "@/hooks/useAppState";
 
 // Import des composants refactorisés
 import PropertyInfoCard from "@/features/recap/components/PropertyInfoCard";
@@ -16,10 +17,17 @@ const Recapitulatif: React.FC = () => {
   const { state } = useProject();
   const { property, rooms, metadata } = state;
   const { travaux, getTravauxForPiece } = useTravaux();
+  const { currentUser } = useAppState();
 
   const handlePrintDevis = async () => {
     try {
-      await generateDetailsPDF(rooms, travaux, getTravauxForPiece, metadata);
+      await generateDetailsPDF(
+        rooms, 
+        travaux, 
+        getTravauxForPiece, 
+        metadata, 
+        currentUser?.id // Passer l'ID de l'utilisateur actuel
+      );
     } catch (error) {
       console.error("Erreur lors de la génération du PDF:", error);
     }
