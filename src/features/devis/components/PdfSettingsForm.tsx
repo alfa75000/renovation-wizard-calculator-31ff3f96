@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -68,9 +67,10 @@ export const PdfSettingsForm: React.FC = () => {
       </CardHeader>
       <CardContent className="space-y-6">
         <Tabs defaultValue="typography" className="w-full">
-          <TabsList className="grid grid-cols-4 mb-4">
+          <TabsList className="grid grid-cols-5 mb-4">
             <TabsTrigger value="typography">Typographie</TabsTrigger>
             <TabsTrigger value="colors">Couleurs</TabsTrigger>
+            <TabsTrigger value="spacing">Espacements</TabsTrigger>
             <TabsTrigger value="layout">Mise en page</TabsTrigger>
             <TabsTrigger value="logo">Logo</TabsTrigger>
           </TabsList>
@@ -87,8 +87,13 @@ export const PdfSettingsForm: React.FC = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Roboto">Roboto</SelectItem>
-                  <SelectItem value="Arial">Arial</SelectItem>
-                  <SelectItem value="Times New Roman">Times New Roman</SelectItem>
+                  <SelectItem value="Questrial">Questrial</SelectItem>
+                  <SelectItem value="Work Sans">Work Sans</SelectItem>
+                  <SelectItem value="DM Sans">DM Sans</SelectItem>
+                  <SelectItem value="Inter">Inter</SelectItem>
+                  <SelectItem value="Poppins">Poppins</SelectItem>
+                  <SelectItem value="Montserrat">Montserrat</SelectItem>
+                  <SelectItem value="Plus Jakarta Sans">Plus Jakarta Sans</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -158,6 +163,117 @@ export const PdfSettingsForm: React.FC = () => {
                     } 
                   })}
                 />
+              </div>
+              <div>
+                <Label>Taille police Détails (MO, TVA...)</Label>
+                <Input 
+                  type="number" 
+                  value={pdfSettings.fontSize.details} 
+                  onChange={(e) => updatePdfSettings({ 
+                    fontSize: { 
+                      ...pdfSettings.fontSize, 
+                      details: Number(e.target.value) 
+                    } 
+                  })}
+                />
+              </div>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="spacing" className="space-y-6">
+            <div>
+              <h3 className="text-sm font-medium mb-4">Espacements page de garde</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Entre les sections principales</Label>
+                  <Input 
+                    type="number" 
+                    step="0.1"
+                    value={pdfSettings.lineSpacing.coverSections} 
+                    onChange={(e) => updatePdfSettings({ 
+                      lineSpacing: { 
+                        ...pdfSettings.lineSpacing, 
+                        coverSections: Number(e.target.value) 
+                      } 
+                    })}
+                  />
+                </div>
+                <div>
+                  <Label>Entre les champs</Label>
+                  <Input 
+                    type="number" 
+                    step="0.1"
+                    value={pdfSettings.lineSpacing.betweenFields} 
+                    onChange={(e) => updatePdfSettings({ 
+                      lineSpacing: { 
+                        ...pdfSettings.lineSpacing, 
+                        betweenFields: Number(e.target.value) 
+                      } 
+                    })}
+                  />
+                </div>
+                <div>
+                  <Label>Après la description</Label>
+                  <Input 
+                    type="number" 
+                    step="0.1"
+                    value={pdfSettings.lineSpacing.afterDescription} 
+                    onChange={(e) => updatePdfSettings({ 
+                      lineSpacing: { 
+                        ...pdfSettings.lineSpacing, 
+                        afterDescription: Number(e.target.value) 
+                      } 
+                    })}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-medium mb-4">Espacements pages détails</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Entre les lignes de description</Label>
+                  <Input 
+                    type="number" 
+                    step="0.1"
+                    value={pdfSettings.lineSpacing.detailsDescription} 
+                    onChange={(e) => updatePdfSettings({ 
+                      lineSpacing: { 
+                        ...pdfSettings.lineSpacing, 
+                        detailsDescription: Number(e.target.value) 
+                      } 
+                    })}
+                  />
+                </div>
+                <div>
+                  <Label>Après chaque ligne</Label>
+                  <Input 
+                    type="number" 
+                    step="0.1"
+                    value={pdfSettings.lineSpacing.afterDetailRow} 
+                    onChange={(e) => updatePdfSettings({ 
+                      lineSpacing: { 
+                        ...pdfSettings.lineSpacing, 
+                        afterDetailRow: Number(e.target.value) 
+                      } 
+                    })}
+                  />
+                </div>
+                <div>
+                  <Label>Entre les sections</Label>
+                  <Input 
+                    type="number" 
+                    step="0.1"
+                    value={pdfSettings.lineSpacing.betweenSections} 
+                    onChange={(e) => updatePdfSettings({ 
+                      lineSpacing: { 
+                        ...pdfSettings.lineSpacing, 
+                        betweenSections: Number(e.target.value) 
+                      } 
+                    })}
+                  />
+                </div>
               </div>
             </div>
           </TabsContent>

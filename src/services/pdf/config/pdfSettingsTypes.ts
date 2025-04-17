@@ -1,4 +1,3 @@
-
 import { z } from 'zod';
 
 export const PdfSettingsSchema = z.object({
@@ -8,13 +7,30 @@ export const PdfSettingsSchema = z.object({
     subtitle: z.number().default(14),
     heading: z.number().default(12),
     normal: z.number().default(10),
-    small: z.number().default(8)
+    small: z.number().default(8),
+    details: z.number().default(9)
   }).default({
     title: 18,
     subtitle: 14,
     heading: 12,
     normal: 10,
-    small: 8
+    small: 8,
+    details: 9
+  }),
+  lineSpacing: z.object({
+    coverSections: z.number().default(1.5),
+    betweenFields: z.number().default(1.2),
+    afterDescription: z.number().default(1.8),
+    detailsDescription: z.number().default(1.4),
+    afterDetailRow: z.number().default(1.2),
+    betweenSections: z.number().default(2)
+  }).default({
+    coverSections: 1.5,
+    betweenFields: 1.2,
+    afterDescription: 1.8,
+    detailsDescription: 1.4,
+    afterDetailRow: 1.2,
+    betweenSections: 2
   }),
   colors: z.object({
     primary: z.string().default('#002855'),
