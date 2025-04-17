@@ -33,23 +33,24 @@ export const MarginSettings: React.FC<MarginSettingsProps> = ({
       
       <MarginsControl
         label="Page de couverture"
-        values={pdfSettings.margins.cover}
+        values={pdfSettings.margins.cover as [number, number, number, number]}
         onChange={(values) => handleMarginChange('cover', values)}
         className="mb-4"
       />
 
       <MarginsControl
         label="Pages de détails"
-        values={pdfSettings.margins.details}
+        values={pdfSettings.margins.details as [number, number, number, number]}
         onChange={(values) => handleMarginChange('details', values)}
         className="mb-4"
       />
 
       <MarginsControl
         label="Page récapitulative"
-        values={pdfSettings.margins.recap}
+        values={pdfSettings.margins.recap as [number, number, number, number]}
         onChange={(values) => handleMarginChange('recap', values)}
       />
     </div>
   );
 };
+
