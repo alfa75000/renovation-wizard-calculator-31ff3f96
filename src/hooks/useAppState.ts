@@ -245,6 +245,52 @@ export const useAppState = () => {
     }
   }, [currentUser, loadAppState]);
 
+  const updatePdfSettings = useCallback(async (settings: PdfSettings) => {
+    if (!appState || !currentUser) {
+      console.error("Tentative de mise à jour des paramètres PDF sans utilisateur ou état d'application");
+      return false;
+    }
+    
+    try {
+      setAppState(prev => {
+        if (!prev) return null;
+        return { 
+          ...prev, 
+          pdf_settings: settings
+        };
+      });
+      
+      const { error } = await supabase
+        .from('app_state')
+        .update({ pdf_settings: settings })
+        .eq('user_id', currentUser.id);
+      
+      if (error) {
+        console.error('Erreur lors de la mise à jour des paramètres PDF:', error);
+        toast.error('Erreur lors de la mise à jour des paramètres PDF');
+        
+        const freshState = await loadAppState(currentUser.id);
+        if (freshState) {
+          setAppState(freshState);
+        }
+        
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Exception lors de la mise à jour des paramètres PDF:', error);
+      toast.error('Erreur lors de la mise à jour des paramètres PDF');
+      
+      const freshState = await loadAppState(currentUser.id);
+      if (freshState) {
+        setAppState(freshState);
+      }
+      
+      return false;
+    }
+  }, [appState, currentUser, loadAppState]);
+
   return {
     isLoading,
     currentUser,
@@ -252,6 +298,7 @@ export const useAppState = () => {
     appState,
     switchUser,
     updateAutoSaveOptions,
-    updateCurrentProject
+    updateCurrentProject,
+    updatePdfSettings
   };
 };
