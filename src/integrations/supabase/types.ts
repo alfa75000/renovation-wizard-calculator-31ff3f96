@@ -15,6 +15,7 @@ export type Database = {
           current_project_id: string | null
           id: string
           last_updated_at: string
+          pdf_settings: Json | null
           user_id: string
         }
         Insert: {
@@ -22,6 +23,7 @@ export type Database = {
           current_project_id?: string | null
           id?: string
           last_updated_at?: string
+          pdf_settings?: Json | null
           user_id: string
         }
         Update: {
@@ -29,6 +31,7 @@ export type Database = {
           current_project_id?: string | null
           id?: string
           last_updated_at?: string
+          pdf_settings?: Json | null
           user_id?: string
         }
         Relationships: [
