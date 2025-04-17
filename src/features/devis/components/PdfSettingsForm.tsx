@@ -9,7 +9,7 @@ import {
   CardDescription
 } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { usePdfGenerationSettings } from '@/services/pdf/hooks/usePdfGenerationSettings';
+import { usePdfSettings } from '@/services/pdf/hooks/usePdfSettings';
 import { Loader } from '@/components/ui/loader';
 import { Undo2 } from 'lucide-react';
 
@@ -21,9 +21,9 @@ import { MarginSettings } from './pdf-settings/MarginSettings';
 import { LogoSettings } from './pdf-settings/LogoSettings';
 
 export const PdfSettingsForm: React.FC = () => {
-  const { pdfSettings, isLoading, updatePdfSettings, resetPdfSettings } = usePdfGenerationSettings();
+  const { pdfSettings, updatePdfSettings, resetPdfSettings } = usePdfSettings();
 
-  if (isLoading) {
+  if (!pdfSettings) {
     return (
       <div className="flex items-center justify-center p-8">
         <Loader size="lg" />
