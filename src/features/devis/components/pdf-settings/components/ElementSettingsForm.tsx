@@ -1,0 +1,91 @@
+
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Form } from '@/components/ui/form';
+import { ElementSettings } from '../types/elementSettings';
+import { FontSelector } from './FontSelector';
+import { ColorPalette } from './ColorPalette';
+import { SpacingControl } from './SpacingControl';
+import { BorderControl } from './BorderControl';
+import { AlignmentControl } from './AlignmentControl';
+import { StyleControls } from './StyleControls';
+
+interface ElementSettingsFormProps {
+  selectedElement: string;
+  settings: ElementSettings;
+  onSave: (settings: ElementSettings) => void;
+  defaultColors: string[];
+  onDefaultColorClick: (color: string) => void;
+}
+
+export const ElementSettingsForm: React.FC<ElementSettingsFormProps> = ({
+  selectedElement,
+  settings,
+  onSave,
+  defaultColors,
+  onDefaultColorClick
+}) => {
+  const [currentSettings, setCurrentSettings] = React.useState<ElementSettings>(settings);
+
+  const handleSave = () => {
+    onSave(currentSettings);
+  };
+
+  return (
+    <Form>
+      <div className="space-y-6">
+        <h3 className="text-lg font-medium">
+          Paramètres pour : {selectedElement}
+        </h3>
+
+        {/* Police et style */}
+        <div className="grid grid-cols-2 gap-4">
+          <FontSelector
+            value={currentSettings.fontFamily}
+            onChange={(font) => setCurrentSettings(prev => ({ ...prev, fontFamily: font }))}
+          />
+          <StyleControls
+            fontSize={currentSettings.fontSize}
+            isBold={currentSettings.isBold}
+            isItalic={currentSettings.isItalic}
+            onChange={(styleSettings) => setCurrentSettings(prev => ({ ...prev, ...styleSettings }))}
+          />
+        </div>
+
+        {/* Couleurs */}
+        <ColorPalette
+          selectedColor={currentSettings.color}
+          defaultColors={defaultColors}
+          onColorChange={(color) => setCurrentSettings(prev => ({ ...prev, color }))}
+          onDefaultColorClick={onDefaultColorClick}
+        />
+
+        {/* Espacement */}
+        <SpacingControl
+          spacing={currentSettings.spacing}
+          onChange={(spacing) => setCurrentSettings(prev => ({ ...prev, spacing }))}
+        />
+
+        {/* Alignement */}
+        <AlignmentControl
+          alignment={currentSettings.alignment}
+          onChange={(alignment) => setCurrentSettings(prev => ({ ...prev, alignment }))}
+        />
+
+        {/* Bordures */}
+        <BorderControl
+          border={currentSettings.border}
+          defaultColors={defaultColors}
+          onChange={(border) => setCurrentSettings(prev => ({ ...prev, border }))}
+        />
+
+        {/* Bouton d'application */}
+        <div className="flex justify-end pt-4">
+          <Button onClick={handleSave}>
+            Appliquer les modifications
+          </Button>
+        </div>
+      </div>
+    </Form>
+  );
+};
