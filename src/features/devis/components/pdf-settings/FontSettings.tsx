@@ -39,12 +39,8 @@ export const FontSettings: React.FC<FontSettingsProps> = ({
     }
   };
 
-  // Vérifie si l'élément existe dans les paramètres, sinon utilise les valeurs par défaut
   const getElementSettings = (elementId: string): ElementSettings => {
-    if (pdfSettings?.elements?.[elementId]) {
-      return pdfSettings.elements[elementId];
-    }
-    return defaultElementSettings;
+    return pdfSettings?.elements?.[elementId] || {...defaultElementSettings};
   };
 
   return (
@@ -74,3 +70,4 @@ export const FontSettings: React.FC<FontSettingsProps> = ({
     </div>
   );
 };
+
