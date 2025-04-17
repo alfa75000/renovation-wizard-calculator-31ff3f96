@@ -17,20 +17,12 @@ export const MarginSettings: React.FC<MarginSettingsProps> = ({
 }) => {
   const handleMarginChange = (
     key: keyof PdfSettings['margins'], 
-    values: number[]
+    values: [number, number, number, number]
   ) => {
-    // Ensure exactly 4 values are used, slice first 4 or pad with 0 if less
-    const sanitizedValues: [number, number, number, number] = [
-      values[0] || 0, 
-      values[1] || 0, 
-      values[2] || 0, 
-      values[3] || 0
-    ];
-
     updatePdfSettings({
       margins: {
         ...pdfSettings.margins,
-        [key]: sanitizedValues
+        [key]: values
       }
     });
   };
@@ -61,4 +53,3 @@ export const MarginSettings: React.FC<MarginSettingsProps> = ({
     </div>
   );
 };
-
