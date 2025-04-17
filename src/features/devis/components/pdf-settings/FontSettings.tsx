@@ -30,7 +30,10 @@ export const FontSettings: React.FC<FontSettingsProps> = ({
     if (selectedElement && pdfSettings) {
       const updatedElements = {
         ...pdfSettings.elements,
-        [selectedElement]: newSettings
+        [selectedElement]: {
+          ...defaultElementSettings, // Assurons-nous d'avoir toutes les propriétés requises
+          ...newSettings
+        }
       };
       
       await updatePdfSettings({
@@ -40,11 +43,13 @@ export const FontSettings: React.FC<FontSettingsProps> = ({
   };
 
   const getElementSettings = (elementId: string): ElementSettings => {
-    const defaultSettings: ElementSettings = {
-      ...defaultElementSettings,
-      fontFamily: defaultElementSettings.fontFamily, // Ensure this is required
-    };
-    return pdfSettings?.elements?.[elementId] || defaultSettings;
+    if (pdfSettings?.elements?.[elementId]) {
+      return {
+        ...defaultElementSettings,
+        ...pdfSettings.elements[elementId]
+      };
+    }
+    return { ...defaultElementSettings };
   };
 
   return (
@@ -74,4 +79,3 @@ export const FontSettings: React.FC<FontSettingsProps> = ({
     </div>
   );
 };
-
