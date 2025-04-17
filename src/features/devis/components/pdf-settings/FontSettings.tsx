@@ -32,7 +32,13 @@ export const FontSettings: React.FC<FontSettingsProps> = ({
         ...pdfSettings.elements,
         [selectedElement]: {
           ...defaultElementSettings,
-          ...newSettings
+          ...newSettings,
+          spacing: {
+            top: newSettings.spacing?.top ?? 0,
+            right: newSettings.spacing?.right ?? 0,
+            bottom: newSettings.spacing?.bottom ?? 0,
+            left: newSettings.spacing?.left ?? 0
+          }
         }
       };
       
@@ -46,7 +52,13 @@ export const FontSettings: React.FC<FontSettingsProps> = ({
     if (pdfSettings?.elements?.[elementId]) {
       return {
         ...defaultElementSettings,
-        ...pdfSettings.elements[elementId]
+        ...pdfSettings.elements[elementId],
+        spacing: {
+          top: pdfSettings.elements[elementId].spacing?.top ?? 0,
+          right: pdfSettings.elements[elementId].spacing?.right ?? 0,
+          bottom: pdfSettings.elements[elementId].spacing?.bottom ?? 0,
+          left: pdfSettings.elements[elementId].spacing?.left ?? 0
+        }
       };
     }
     return defaultElementSettings;
@@ -79,3 +91,4 @@ export const FontSettings: React.FC<FontSettingsProps> = ({
     </div>
   );
 };
+
