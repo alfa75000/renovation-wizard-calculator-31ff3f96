@@ -1022,3 +1022,48 @@ export const generateDetailsPDF = async (
     throw error;
   }
 }
+
+// Ajout de la fonction manquante generateRecapPDF
+export const generateRecapPDF = async (
+  rooms: Room[], 
+  travaux: Travail[], 
+  getTravauxForPiece: (pieceId: string) => Travail[],
+  metadata?: ProjectMetadata,
+  userId?: string
+) => {
+  console.log('Génération du PDF du récapitulatif des travaux');
+
+  try {
+    // Récupérer les paramètres PDF personnalisés
+    const pdfSettings = await getUserPdfSettings(userId);
+    console.log('Paramètres PDF récupérés:', pdfSettings);
+    
+    // Préparer le contenu du récapitulatif
+    const recapContent = prepareRecapContent(rooms, travaux, getTravauxForPiece, metadata, pdfSettings);
+    
+    // Configurer les styles et polices en fonction des paramètres
+    const { styles, defaultStyle } = configurePdfStyles(pdfSettings);
+    
+    // Créer le document PDF
+    const docDefinition = {
+      content: recapContent,
+      styles: styles,
+      defaultStyle: defaultStyle,
+      pageMargins: getDocumentMargins(pdfSettings, 'recap'),
+      footer: function(currentPage: number, pageCount: number) {
+        return generateFooter(metadata, pdfSettings);
+      },
+      header: function(currentPage: number, pageCount: number) {
+        return generateHeaderContent(metadata, currentPage, pageCount, pdfSettings);
+      }
+    };
+    
+    // Générer et télécharger le PDF
+    pdfMake.createPdf(docDefinition).download(`devis-recap-${metadata?.devisNumber || 'XXXX-XX'}.pdf`);
+    console.log('PDF du récapitulatif généré avec succès');
+    return true;
+  } catch (error) {
+    console.error('Erreur lors de la génération du PDF du récapitulatif:', error);
+    throw error;
+  }
+};

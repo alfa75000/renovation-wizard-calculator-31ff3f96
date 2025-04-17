@@ -5,18 +5,20 @@ import { Printer } from "lucide-react";
 import { useProject } from "@/contexts/ProjectContext";
 import { useTravaux } from "@/features/travaux/hooks/useTravaux";
 import RecapitulatifTravaux from "@/features/recap/components/RecapitulatifTravaux";
-import { generateRecapPDF } from "@/services/pdfGenerationService";
+import { generateDetailsPDF } from "@/services/pdfGenerationService";
+import { useAppState } from "@/hooks/useAppState";
 
 // Composant affichant l'aperçu du récapitulatif pour l'impression
 const DevisRecapPreview: React.FC = () => {
   const { state } = useProject();
   const { rooms, metadata } = state;
   const { travaux, getTravauxForPiece } = useTravaux();
+  const { currentUser } = useAppState();
 
   // Fonction pour générer le PDF
   const handlePrint = async () => {
     try {
-      await generateRecapPDF(rooms, travaux, getTravauxForPiece, metadata);
+      await generateDetailsPDF(rooms, travaux, getTravauxForPiece, metadata, currentUser?.id);
     } catch (error) {
       console.error("Erreur lors de la génération du PDF:", error);
     }
