@@ -6,7 +6,7 @@ import { Link } from "react-router-dom";
 import { Layout } from "@/components/Layout";
 import { useProject } from "@/contexts/ProjectContext";
 import { useTravaux } from "@/features/travaux/hooks/useTravaux";
-import { generateDetailsPDF } from "@/services/pdfGenerationService";
+import { generateRecapPDF } from "@/services/pdfGenerationService";
 import { useAppState } from "@/hooks/useAppState";
 
 // Import des composants refactorisés
@@ -21,20 +21,19 @@ const Recapitulatif: React.FC = () => {
 
   const handlePrintDevis = async () => {
     try {
-      console.log("Génération du PDF avec l'utilisateur:", currentUser);
+      console.log("Génération du PDF récapitulatif depuis la page Recapitulatif");
+      console.log("User ID:", currentUser?.id);
       
       if (!currentUser?.id) {
         console.warn("Aucun utilisateur connecté, utilisation des paramètres par défaut");
-      } else {
-        console.log("Génération du PDF avec l'ID utilisateur:", currentUser.id);
       }
       
-      await generateDetailsPDF(
+      await generateRecapPDF(
         rooms, 
         travaux, 
         getTravauxForPiece, 
         metadata, 
-        currentUser?.id // Passer l'ID de l'utilisateur actuel
+        currentUser?.id
       );
     } catch (error) {
       console.error("Erreur lors de la génération du PDF:", error);
