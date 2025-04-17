@@ -6,6 +6,7 @@ import { configurePdfStyles, getDocumentMargins, getCustomColors, getFontSizes }
 import { supabase } from '@/lib/supabase';
 import { PdfSettings, PdfSettingsSchema } from './pdf/config/pdfSettingsTypes';
 import { toast } from 'sonner';
+import { generateHeaderContent, generateFooter, generateSignatureContent, generateSalutationContent } from './pdf/pdfGenerators';
 
 // Initialize pdfMake with fonts
 pdfMake.vfs = pdfFonts.pdfMake ? pdfFonts.pdfMake.vfs : pdfFonts.vfs;
@@ -193,16 +194,225 @@ export const generateCompletePDF = async (
     const colors = getCustomColors(userPdfSettings);
     const fontSizes = getFontSizes(userPdfSettings);
     
-    // Créer le document PDF
+    // Contenu du document
+    const content: any[] = [];
+    
+    // Titre du document
+    content.push({ 
+      text: 'DEVIS', 
+      style: 'header', 
+      alignment: 'center', 
+      fontSize: fontSizes.title, 
+      margin: [0, 0, 0, 20] 
+    });
+    
+    // Informations de la société
+    if (enabledFields.find(f => f.id === 'companyName')?.enabled) {
+      content.push({ 
+        text: companyData?.name || "Nom de la société", 
+        alignment: 'center', 
+        fontSize: fontSizes.subtitle,
+        bold: true,
+        margin: [0, 0, 0, 10] 
+      });
+    }
+    
+    // Logo de la société
+    if (enabledFields.find(f => f.id === 'companyLogo')?.enabled && companyData?.logo_url) {
+      content.push({
+        image: companyData.logo_url,
+        width: 150,
+        alignment: 'center',
+        margin: [0, 0, 0, 20]
+      });
+    }
+    
+    // Date du devis
+    content.push({ 
+      text: 'Date: ' + (enabledFields.find(f => f.id === 'devisDate')?.enabled ? 
+        (metadata?.dateDevis || new Date().toLocaleDateString()) : 
+        new Date().toLocaleDateString()),
+      margin: [0, 0, 0, 10] 
+    });
+    
+    // Numéro du devis
+    if (enabledFields.find(f => f.id === 'devisNumber')?.enabled) {
+      content.push({ 
+        text: 'Numéro de devis: ' + (metadata?.devisNumber || "Non défini"),
+        margin: [0, 0, 0, 10] 
+      });
+    }
+    
+    // Client
+    if (enabledFields.find(f => f.id === 'client')?.enabled) {
+      const clientField = enabledFields.find(f => f.id === 'client');
+      content.push({ 
+        text: 'Client: ' + (clientField?.content || "Non spécifié"),
+        margin: [0, 0, 0, 10] 
+      });
+    }
+    
+    // Validité de l'offre
+    if (enabledFields.find(f => f.id === 'validityOffer')?.enabled) {
+      const validityField = enabledFields.find(f => f.id === 'validityOffer');
+      content.push({ 
+        text: validityField?.content || "Validité de l'offre : 3 mois.",
+        margin: [0, 0, 0, 10] 
+      });
+    }
+    
+    // Description du projet
+    if (enabledFields.find(f => f.id === 'projectDescription')?.enabled) {
+      content.push({ 
+        text: 'Description du projet: ' + (metadata?.descriptionProjet || "Aucune description"),
+        margin: [0, 0, 0, 10] 
+      });
+    }
+    
+    // Adresse du chantier
+    if (enabledFields.find(f => f.id === 'projectAddress')?.enabled) {
+      content.push({ 
+        text: 'Adresse du chantier: ' + (metadata?.adresseChantier || "Aucune adresse"),
+        margin: [0, 0, 0, 10] 
+      });
+    }
+    
+    // Occupant
+    if (enabledFields.find(f => f.id === 'occupant')?.enabled) {
+      content.push({ 
+        text: 'Occupant: ' + (metadata?.occupant || "Non spécifié"),
+        margin: [0, 0, 0, 10] 
+      });
+    }
+    
+    // Informations complémentaires
+    if (enabledFields.find(f => f.id === 'additionalInfo')?.enabled) {
+      content.push({ 
+        text: 'Informations complémentaires: ' + (metadata?.infoComplementaire || "Aucune information"),
+        margin: [0, 0, 0, 20] 
+      });
+    }
+    
+    // Récapitulatif des travaux
+    if (enabledFields.find(f => f.id === 'summary')?.enabled) {
+      content.push({ 
+        text: 'RÉCAPITULATIF DES TRAVAUX', 
+        style: 'header', 
+        alignment: 'center', 
+        fontSize: fontSizes.subtitle, 
+        margin: [0, 30, 0, 20],
+        pageBreak: 'before'
+      });
+      
+      // Génération du tableau récapitulatif pour chaque pièce
+      let totalTTC = 0;
+      let totalTVA = 0;
+      
+      rooms.forEach(room => {
+        const roomTravaux = getTravauxForPiece(room.id);
+        
+        if (roomTravaux.length > 0) {
+          // Titre de la pièce
+          content.push({
+            text: room.name,
+            style: 'roomTitle',
+            margin: [0, 10, 0, 5]
+          });
+          
+          // Tableau des travaux pour cette pièce
+          const tableBody = [
+            [
+              { text: 'Description', style: 'tableHeader' },
+              { text: 'Quantité', style: 'tableHeader', alignment: 'center' },
+              { text: 'Prix HT', style: 'tableHeader', alignment: 'right' },
+              { text: 'TVA', style: 'tableHeader', alignment: 'center' },
+              { text: 'Total TTC', style: 'tableHeader', alignment: 'right' }
+            ]
+          ];
+          
+          let roomTotal = 0;
+          
+          roomTravaux.forEach(travail => {
+            const prixUnitaireHT = travail.prixFournitures + travail.prixMainOeuvre;
+            const totalHT = prixUnitaireHT * travail.quantite;
+            const montantTVA = (totalHT * travail.tauxTVA) / 100;
+            const totalTravailTTC = totalHT + montantTVA;
+            
+            roomTotal += totalTravailTTC;
+            totalTVA += montantTVA;
+            
+            tableBody.push([
+              { text: travail.description, fontSize: fontSizes.small },
+              { text: travail.quantite.toString(), alignment: 'center', fontSize: fontSizes.small },
+              { text: (prixUnitaireHT).toFixed(2) + ' €', alignment: 'right', fontSize: fontSizes.small },
+              { text: travail.tauxTVA + ' %', alignment: 'center', fontSize: fontSizes.small },
+              { text: totalTravailTTC.toFixed(2) + ' €', alignment: 'right', fontSize: fontSizes.small }
+            ]);
+          });
+          
+          // Ajouter le tableau à la pièce
+          content.push({
+            table: {
+              headerRows: 1,
+              widths: ['*', 'auto', 'auto', 'auto', 'auto'],
+              body: tableBody
+            },
+            layout: 'lightHorizontalLines',
+            margin: [0, 0, 0, 10]
+          });
+          
+          // Total de la pièce
+          content.push({
+            text: 'Total pour la pièce: ' + roomTotal.toFixed(2) + ' €',
+            alignment: 'right',
+            bold: true,
+            margin: [0, 0, 0, 15]
+          });
+          
+          totalTTC += roomTotal;
+        }
+      });
+      
+      // Ajout du total général
+      content.push({
+        text: 'TOTAL GÉNÉRAL',
+        style: 'header',
+        margin: [0, 20, 0, 10]
+      });
+      
+      const totalHT = totalTTC - totalTVA;
+      
+      content.push({
+        text: [
+          { text: 'Total HT: ', bold: true },
+          { text: totalHT.toFixed(2) + ' €\n', bold: false },
+          { text: 'Total TVA: ', bold: true },
+          { text: totalTVA.toFixed(2) + ' €\n', bold: false },
+          { text: 'Total TTC: ', bold: true },
+          { text: totalTTC.toFixed(2) + ' €', bold: true }
+        ],
+        margin: [0, 0, 0, 20]
+      });
+    }
+    
+    // Signature et salutations
+    content.push(...generateSignatureContent());
+    content.push(generateSalutationContent());
+    
+    // Créer le document PDF avec le contenu généré
     const docDefinition = {
       pageMargins: margins,
       defaultStyle: defaultStyle,
       styles: styles,
-      content: [
-        { text: 'DEVIS COMPLET', style: 'header', alignment: 'center', fontSize: fontSizes.title, margin: [0, 0, 0, 20] },
-        { text: 'Date: ' + new Date().toLocaleDateString(), margin: [0, 0, 0, 10] }
-        // Ajoutez le reste du contenu du PDF ici en fonction des champs activés
-      ]
+      content: content,
+      footer: function(currentPage, pageCount) {
+        return {
+          text: `Page ${currentPage} / ${pageCount}`,
+          alignment: 'center',
+          fontSize: fontSizes.small,
+          margin: [0, 10, 0, 0]
+        };
+      }
     };
     
     console.log('Définition du document créée, génération du PDF complet');
