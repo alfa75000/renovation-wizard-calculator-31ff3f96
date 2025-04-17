@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 interface MarginsControlProps {
   label: string;
   values: [number, number, number, number];
-  onChange: (values: [number, number, number, number]) => void;
+  onChange: (values: number[]) => void;
   className?: string;
 }
 
@@ -20,7 +20,7 @@ export const MarginsControl: React.FC<MarginsControlProps> = ({
   className = '' 
 }) => {
   const handleChange = (index: number, value: number) => {
-    const newValues = [...values] as [number, number, number, number];
+    const newValues = [...values];
     newValues[index] = value;
     onChange(newValues);
   };
@@ -53,3 +53,4 @@ export const MarginsControl: React.FC<MarginsControlProps> = ({
     </div>
   );
 };
+
