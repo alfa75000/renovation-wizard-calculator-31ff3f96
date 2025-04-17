@@ -1,9 +1,9 @@
-
 import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
 import { Room, Travail, ProjectMetadata } from '@/types';
 import { supabase } from '@/lib/supabase';
 import { PdfSettings, PdfSettingsSchema } from './pdf/config/pdfSettingsTypes';
+import { getUserPdfSettings } from './pdf/hooks/usePdfGenerationSettings';
 
 // Importer les constantes et les utilitaires
 import { 
@@ -39,33 +39,6 @@ if (pdfMake && pdfFonts && pdfFonts.pdfMake) {
   pdfMake.vfs = pdfFonts.pdfMake.vfs;
 }
 
-// Fonction pour récupérer les paramètres PDF de l'utilisateur actuel
-const getUserPdfSettings = async (userId?: string): Promise<PdfSettings> => {
-  try {
-    if (!userId) {
-      console.warn('Aucun ID utilisateur fourni pour récupérer les paramètres PDF');
-      return PdfSettingsSchema.parse({}); // Retourne les valeurs par défaut
-    }
-
-    const { data, error } = await supabase
-      .from('app_state')
-      .select('pdf_settings')
-      .eq('user_id', userId)
-      .single();
-    
-    if (error) {
-      console.error('Erreur lors de la récupération des paramètres PDF:', error);
-      return PdfSettingsSchema.parse({}); // Retourne les valeurs par défaut
-    }
-    
-    // Valider les données avec Zod
-    return PdfSettingsSchema.parse(data?.pdf_settings || {});
-  } catch (error) {
-    console.error('Exception lors de la récupération des paramètres PDF:', error);
-    return PdfSettingsSchema.parse({}); // Retourne les valeurs par défaut
-  }
-};
-
 // Nouvelle fonction pour générer le PDF complet du devis
 export const generateCompletePDF = async (
   fields: any[],
@@ -77,11 +50,12 @@ export const generateCompletePDF = async (
   userId?: string
 ) => {
   console.log('Génération du PDF complet du devis...');
+  console.log('ID Utilisateur fourni pour les paramètres PDF:', userId);
   
   try {
     // Récupérer les paramètres PDF personnalisés
     const pdfSettings = await getUserPdfSettings(userId);
-    console.log('Paramètres PDF récupérés:', pdfSettings);
+    console.log('[generateCompletePDF] Paramètres PDF récupérés:', pdfSettings);
     
     // 1. Préparer les contenus des différentes parties
     // PARTIE 1: Contenu de la page de garde
@@ -123,12 +97,318 @@ export const generateCompletePDF = async (
       }
     };
     
+    console.log('Configuration du document PDF:', {
+      defaultStyle,
+      pageMargins: getDocumentMargins(pdfSettings, 'cover'),
+      pdfSettingsColors: pdfSettings.colors,
+      pdfSettingsFonts: pdfSettings.fontSize
+    });
+    
     // 3. Générer et télécharger le PDF complet
     pdfMake.createPdf(docDefinition).download(`devis-complet-${metadata?.devisNumber || 'XXXX-XX'}.pdf`);
     console.log('PDF complet généré avec succès');
     return true;
   } catch (error) {
     console.error('Erreur lors de la génération du PDF complet:', error);
+    throw error;
+  }
+};
+
+// La logique existante pour la page de garde reste inchangée
+export const generateCoverPDF = async (fields: any[], company: any) => {
+  console.log('Génération du PDF de la page de garde', { fields, company });
+  
+  // Cette fonction est probablement déjà implémentée ailleurs
+};
+
+export const generateDetailsPDF = async (
+  rooms: Room[], 
+  travaux: Travail[], 
+  getTravauxForPiece: (pieceId: string) => Travail[],
+  metadata?: ProjectMetadata,
+  userId?: string
+) => {
+  console.log('Génération du PDF des détails des travaux avec pdfMake');
+  console.log('ID Utilisateur fourni pour les paramètres PDF:', userId);
+
+  try {
+    // Récupérer les paramètres PDF personnalisés
+    console.log('[generateDetailsPDF] Récupération des paramètres PDF avec userId:', userId);
+    const pdfSettings = await getUserPdfSettings(userId);
+    console.log('[generateDetailsPDF] Paramètres PDF récupérés:', pdfSettings);
+    
+    // On filtre les pièces qui n'ont pas de travaux
+    const roomsWithTravaux = rooms.filter(room => getTravauxForPiece(room.id).length > 0);
+  
+    // Estimation du nombre de pages
+    const pageCount = Math.max(1, Math.ceil(roomsWithTravaux.length / 2));
+    
+    // Créer l'en-tête du tableau commun
+    const colors = getCustomColors(pdfSettings);
+    const fontSizes = getFontSizes(pdfSettings);
+    
+    console.log('[generateDetailsPDF] Couleurs appliquées:', colors);
+    console.log('[generateDetailsPDF] Tailles de police appliquées:', fontSizes);
+    
+    // Créer l'en-tête du tableau commun
+    const tableHeaderRow = [
+      { text: 'Description', style: 'tableHeader', alignment: 'left', color: colors.mainText },
+      { text: 'Quantité', style: 'tableHeader', alignment: 'center', color: colors.mainText },
+      { text: 'Prix HT Unit.', style: 'tableHeader', alignment: 'center', color: colors.mainText },
+      { text: 'TVA', style: 'tableHeader', alignment: 'center', color: colors.mainText },
+      { text: 'Total HT', style: 'tableHeader', alignment: 'center', color: colors.mainText }
+    ];
+    
+    // Créer le contenu du document
+    const detailsContent: any[] = [];
+    
+    // Pour chaque pièce avec des travaux
+    roomsWithTravaux.forEach((room, roomIndex) => {
+      const travauxPiece = getTravauxForPiece(room.id);
+      if (travauxPiece.length === 0) return;
+      
+      // Ajouter le titre de la pièce
+      detailsContent.push({
+        text: room.name,
+        style: 'roomTitle',
+        fontSize: fontSizes.details,
+        bold: true,
+        color: colors.mainText,
+        fillColor: colors.background,
+        margin: [0, 10, 0, 5]
+      });
+      
+      // Créer le tableau pour cette pièce
+      const tableBody = [];
+      
+      // Ajouter chaque travail au tableau
+      travauxPiece.forEach((travail, index) => {
+        const prixUnitaireHT = travail.prixFournitures + travail.prixMainOeuvre;
+        const totalHT = prixUnitaireHT * travail.quantite;
+        
+        // Construire le contenu de la description
+        let descriptionLines = [];
+        descriptionLines.push(`${travail.typeTravauxLabel}: ${travail.sousTypeLabel}`);
+        
+        if (travail.description) {
+          descriptionLines.push(travail.description);
+        }
+        
+        if (travail.personnalisation) {
+          descriptionLines.push(travail.personnalisation);
+        }
+        
+        // Utiliser le nouveau format pour MO/Fournitures
+        const moFournText = formatMOFournitures(travail, pdfSettings);
+        
+        // Estimer le nombre de lignes dans la description
+        let totalLines = 0;
+        
+        // Largeur approximative de la colonne de description en caractères
+        const columnCharWidth = 80;
+        
+        // Estimer le nombre réel de lignes pour chaque portion de texte
+        descriptionLines.forEach(line => {
+          const textLines = Math.ceil(line.length / columnCharWidth);
+          totalLines += textLines;
+        });
+        
+        // Estimer aussi les lignes pour le texte MO/Fournitures
+        const moFournLines = Math.ceil(moFournText.length / columnCharWidth);
+        totalLines += moFournLines;
+        
+        // Calculer les marges supérieures pour centrer verticalement
+        const topMargin = Math.max(0, 3 + (totalLines - 2) * 4);
+        
+        // Ajouter la ligne au tableau
+        tableBody.push([
+          // Colonne 1: Description
+          { 
+            stack: [
+              { text: descriptionLines.join('\n'), fontSize: fontSizes.normal, lineHeight: 1.4, color: colors.mainText },
+              { text: moFournText, fontSize: fontSizes.small, lineHeight: 1.4, color: colors.detailsText }
+            ]
+          },
+          
+          // Colonne 2: Quantité
+          { 
+            stack: [
+              { text: formatQuantity(travail.quantite), alignment: 'center', fontSize: fontSizes.normal, color: colors.mainText },
+              { text: travail.unite, alignment: 'center', fontSize: fontSizes.normal, color: colors.mainText }
+            ],
+            alignment: 'center',
+            margin: [0, topMargin, 0, 0]
+          },
+          
+          // Colonne 3: Prix unitaire
+          { 
+            text: formatPrice(prixUnitaireHT), 
+            alignment: 'center',
+            fontSize: fontSizes.normal,
+            color: colors.mainText,
+            margin: [0, topMargin, 0, 0]
+          },
+          
+          // Colonne 4: TVA
+          { 
+            text: `${travail.tauxTVA}%`, 
+            alignment: 'center',
+            fontSize: fontSizes.normal,
+            color: colors.mainText,
+            margin: [0, topMargin, 0, 0]
+          },
+          
+          // Colonne 5: Total HT
+          { 
+            text: formatPrice(totalHT), 
+            alignment: 'center',
+            fontSize: fontSizes.normal,
+            color: colors.mainText,
+            margin: [0, topMargin, 0, 0]
+          }
+        ]);
+        
+        // Ajouter une ligne d'espacement entre les prestations
+        if (index < travauxPiece.length - 1) {
+          tableBody.push([
+            { text: '', margin: [0, 2, 0, 2] },
+            {}, {}, {}, {}
+          ]);
+        }
+      });
+      
+      // Calculer le total HT pour cette pièce
+      const pieceTotalHT = travauxPiece.reduce((sum, t) => {
+        return sum + (t.prixFournitures + t.prixMainOeuvre) * t.quantite;
+      }, 0);
+      
+      // Ajouter la ligne de total pour cette pièce
+      tableBody.push([
+        { text: `Total HT ${room.name}`, colSpan: 4, alignment: 'left', fontSize: fontSizes.normal, bold: true, fillColor: colors.background },
+        {}, {}, {},
+        { text: formatPrice(pieceTotalHT), alignment: 'center', fontSize: fontSizes.normal, bold: true, fillColor: colors.background }
+      ]);
+      
+      // Ajouter le tableau au document
+      detailsContent.push({
+        table: {
+          headerRows: 0,
+          widths: TABLE_COLUMN_WIDTHS.DETAILS,
+          body: tableBody
+        },
+        layout: {
+          hLineWidth: function(i: number, node: any) {
+            if (i === 0 || i === node.table.body.length) {
+              return 1;
+            }
+            
+            const isEndOfPrestation = i < node.table.body.length && 
+              ((node.table.body[i][0] && 
+                node.table.body[i][0].text && 
+                node.table.body[i][0].text.toString().includes('Total HT')) ||
+              (i > 0 && node.table.body[i-1][0] && 
+                node.table.body[i-1][0].text && 
+                node.table.body[i-1][0].text.toString().includes('Total HT')));
+            
+            return isEndOfPrestation ? 1 : 0;
+          },
+          vLineWidth: function() {
+            return 0;
+          },
+          hLineColor: function() {
+            return colors.totalBoxLines;
+          },
+          paddingLeft: function() {
+            return 4;
+          },
+          paddingRight: function() {
+            return 4;
+          },
+          paddingTop: function() {
+            return 2;
+          },
+          paddingBottom: function() {
+            return 2;
+          }
+        },
+        margin: [0, 0, 0, 15]
+      });
+    });
+    
+    // Configurer les styles et polices en fonction des paramètres
+    const { styles, defaultStyle } = configurePdfStyles(pdfSettings);
+    
+    console.log('[generateDetailsPDF] Styles configurés:', {
+      styles: Object.keys(styles),
+      defaultStyle
+    });
+    
+    // Créer le document PDF
+    const docDefinition = {
+      content: detailsContent,
+      styles: styles,
+      defaultStyle: defaultStyle,
+      pageMargins: getDocumentMargins(pdfSettings, 'details'),
+      footer: function(currentPage: number, pageCount: number) {
+        return generateFooter(metadata, pdfSettings);
+      },
+      header: function(currentPage: number, pageCount: number) {
+        return generateHeaderContent(metadata, currentPage, pageCount, pdfSettings);
+      }
+    };
+    
+    // Générer et télécharger le PDF
+    pdfMake.createPdf(docDefinition).download(`devis-details-${metadata?.devisNumber || 'XXXX-XX'}.pdf`);
+    console.log('PDF des détails généré avec succès');
+    return true;
+  } catch (error) {
+    console.error('Erreur lors de la génération du PDF des détails:', error);
+    throw error;
+  }
+}
+
+// Ajout de la fonction manquante generateRecapPDF
+export const generateRecapPDF = async (
+  rooms: Room[], 
+  travaux: Travail[], 
+  getTravauxForPiece: (pieceId: string) => Travail[],
+  metadata?: ProjectMetadata,
+  userId?: string
+) => {
+  console.log('Génération du PDF du récapitulatif des travaux');
+  console.log('ID Utilisateur fourni pour les paramètres PDF:', userId);
+
+  try {
+    // Récupérer les paramètres PDF personnalisés
+    const pdfSettings = await getUserPdfSettings(userId);
+    console.log('[generateRecapPDF] Paramètres PDF récupérés:', pdfSettings);
+    
+    // Préparer le contenu du récapitulatif
+    const recapContent = prepareRecapContent(rooms, travaux, getTravauxForPiece, metadata, pdfSettings);
+    
+    // Configurer les styles et polices en fonction des paramètres
+    const { styles, defaultStyle } = configurePdfStyles(pdfSettings);
+    
+    // Créer le document PDF
+    const docDefinition = {
+      content: recapContent,
+      styles: styles,
+      defaultStyle: defaultStyle,
+      pageMargins: getDocumentMargins(pdfSettings, 'recap'),
+      footer: function(currentPage: number, pageCount: number) {
+        return generateFooter(metadata, pdfSettings);
+      },
+      header: function(currentPage: number, pageCount: number) {
+        return generateHeaderContent(metadata, currentPage, pageCount, pdfSettings);
+      }
+    };
+    
+    // Générer et télécharger le PDF
+    pdfMake.createPdf(docDefinition).download(`devis-recap-${metadata?.devisNumber || 'XXXX-XX'}.pdf`);
+    console.log('PDF du récapitulatif généré avec succès');
+    return true;
+  } catch (error) {
+    console.error('Erreur lors de la génération du PDF du récapitulatif:', error);
     throw error;
   }
 };
@@ -779,291 +1059,3 @@ function prepareRecapContent(
   
   return docContent;
 }
-
-// La logique existante pour la page de garde reste inchangée
-export const generateCoverPDF = async (fields: any[], company: any) => {
-  console.log('Génération du PDF de la page de garde', { fields, company });
-  
-  // Cette fonction est probablement déjà implémentée ailleurs
-};
-
-export const generateDetailsPDF = async (
-  rooms: Room[], 
-  travaux: Travail[], 
-  getTravauxForPiece: (pieceId: string) => Travail[],
-  metadata?: ProjectMetadata,
-  userId?: string
-) => {
-  console.log('Génération du PDF des détails des travaux avec pdfMake');
-
-  try {
-    // Récupérer les paramètres PDF personnalisés
-    const pdfSettings = await getUserPdfSettings(userId);
-    console.log('Paramètres PDF récupérés:', pdfSettings);
-    
-    // On filtre les pièces qui n'ont pas de travaux
-    const roomsWithTravaux = rooms.filter(room => getTravauxForPiece(room.id).length > 0);
-  
-    // Estimation du nombre de pages
-    const pageCount = Math.max(1, Math.ceil(roomsWithTravaux.length / 2));
-    
-    // Créer l'en-tête du tableau commun
-    const colors = getCustomColors(pdfSettings || {});
-    const fontSizes = getFontSizes(pdfSettings || {});
-    
-    // Créer l'en-tête du tableau commun
-    const tableHeaderRow = [
-      { text: 'Description', style: 'tableHeader', alignment: 'left', color: colors.mainText },
-      { text: 'Quantité', style: 'tableHeader', alignment: 'center', color: colors.mainText },
-      { text: 'Prix HT Unit.', style: 'tableHeader', alignment: 'center', color: colors.mainText },
-      { text: 'TVA', style: 'tableHeader', alignment: 'center', color: colors.mainText },
-      { text: 'Total HT', style: 'tableHeader', alignment: 'center', color: colors.mainText }
-    ];
-    
-    // Créer le contenu du document
-    const detailsContent: any[] = [];
-    
-    // Pour chaque pièce avec des travaux
-    roomsWithTravaux.forEach((room, roomIndex) => {
-      const travauxPiece = getTravauxForPiece(room.id);
-      if (travauxPiece.length === 0) return;
-      
-      // Ajouter le titre de la pièce
-      detailsContent.push({
-        text: room.name,
-        style: 'roomTitle',
-        fontSize: fontSizes.details,
-        bold: true,
-        color: colors.mainText,
-        fillColor: colors.background,
-        margin: [0, 10, 0, 5]
-      });
-      
-      // Créer le tableau pour cette pièce
-      const tableBody = [];
-      
-      // Ajouter chaque travail au tableau
-      travauxPiece.forEach((travail, index) => {
-        const prixUnitaireHT = travail.prixFournitures + travail.prixMainOeuvre;
-        const totalHT = prixUnitaireHT * travail.quantite;
-        
-        // Construire le contenu de la description
-        let descriptionLines = [];
-        descriptionLines.push(`${travail.typeTravauxLabel}: ${travail.sousTypeLabel}`);
-        
-        if (travail.description) {
-          descriptionLines.push(travail.description);
-        }
-        
-        if (travail.personnalisation) {
-          descriptionLines.push(travail.personnalisation);
-        }
-        
-        // Utiliser le nouveau format pour MO/Fournitures
-        const moFournText = formatMOFournitures(travail, pdfSettings);
-        
-        // Estimer le nombre de lignes dans la description
-        let totalLines = 0;
-        
-        // Largeur approximative de la colonne de description en caractères
-        const columnCharWidth = 80;
-        
-        // Estimer le nombre réel de lignes pour chaque portion de texte
-        descriptionLines.forEach(line => {
-          const textLines = Math.ceil(line.length / columnCharWidth);
-          totalLines += textLines;
-        });
-        
-        // Estimer aussi les lignes pour le texte MO/Fournitures
-        const moFournLines = Math.ceil(moFournText.length / columnCharWidth);
-        totalLines += moFournLines;
-        
-        // Calculer les marges supérieures pour centrer verticalement
-        const topMargin = Math.max(0, 3 + (totalLines - 2) * 4);
-        
-        // Ajouter la ligne au tableau
-        tableBody.push([
-          // Colonne 1: Description
-          { 
-            stack: [
-              { text: descriptionLines.join('\n'), fontSize: fontSizes.normal, lineHeight: 1.4, color: colors.mainText },
-              { text: moFournText, fontSize: fontSizes.small, lineHeight: 1.4, color: colors.detailsText }
-            ]
-          },
-          
-          // Colonne 2: Quantité
-          { 
-            stack: [
-              { text: formatQuantity(travail.quantite), alignment: 'center', fontSize: fontSizes.normal, color: colors.mainText },
-              { text: travail.unite, alignment: 'center', fontSize: fontSizes.normal, color: colors.mainText }
-            ],
-            alignment: 'center',
-            margin: [0, topMargin, 0, 0]
-          },
-          
-          // Colonne 3: Prix unitaire
-          { 
-            text: formatPrice(prixUnitaireHT), 
-            alignment: 'center',
-            fontSize: fontSizes.normal,
-            color: colors.mainText,
-            margin: [0, topMargin, 0, 0]
-          },
-          
-          // Colonne 4: TVA
-          { 
-            text: `${travail.tauxTVA}%`, 
-            alignment: 'center',
-            fontSize: fontSizes.normal,
-            color: colors.mainText,
-            margin: [0, topMargin, 0, 0]
-          },
-          
-          // Colonne 5: Total HT
-          { 
-            text: formatPrice(totalHT), 
-            alignment: 'center',
-            fontSize: fontSizes.normal,
-            color: colors.mainText,
-            margin: [0, topMargin, 0, 0]
-          }
-        ]);
-        
-        // Ajouter une ligne d'espacement entre les prestations
-        if (index < travauxPiece.length - 1) {
-          tableBody.push([
-            { text: '', margin: [0, 2, 0, 2] },
-            {}, {}, {}, {}
-          ]);
-        }
-      });
-      
-      // Calculer le total HT pour cette pièce
-      const pieceTotalHT = travauxPiece.reduce((sum, t) => {
-        return sum + (t.prixFournitures + t.prixMainOeuvre) * t.quantite;
-      }, 0);
-      
-      // Ajouter la ligne de total pour cette pièce
-      tableBody.push([
-        { text: `Total HT ${room.name}`, colSpan: 4, alignment: 'left', fontSize: fontSizes.normal, bold: true, fillColor: colors.background },
-        {}, {}, {},
-        { text: formatPrice(pieceTotalHT), alignment: 'center', fontSize: fontSizes.normal, bold: true, fillColor: colors.background }
-      ]);
-      
-      // Ajouter le tableau au document
-      detailsContent.push({
-        table: {
-          headerRows: 0,
-          widths: TABLE_COLUMN_WIDTHS.DETAILS,
-          body: tableBody
-        },
-        layout: {
-          hLineWidth: function(i: number, node: any) {
-            if (i === 0 || i === node.table.body.length) {
-              return 1;
-            }
-            
-            const isEndOfPrestation = i < node.table.body.length && 
-              ((node.table.body[i][0] && 
-                node.table.body[i][0].text && 
-                node.table.body[i][0].text.toString().includes('Total HT')) ||
-              (i > 0 && node.table.body[i-1][0] && 
-                node.table.body[i-1][0].text && 
-                node.table.body[i-1][0].text.toString().includes('Total HT')));
-            
-            return isEndOfPrestation ? 1 : 0;
-          },
-          vLineWidth: function() {
-            return 0;
-          },
-          hLineColor: function() {
-            return colors.totalBoxLines;
-          },
-          paddingLeft: function() {
-            return 4;
-          },
-          paddingRight: function() {
-            return 4;
-          },
-          paddingTop: function() {
-            return 2;
-          },
-          paddingBottom: function() {
-            return 2;
-          }
-        },
-        margin: [0, 0, 0, 15]
-      });
-    });
-    
-    // Configurer les styles et polices en fonction des paramètres
-    const { styles, defaultStyle } = configurePdfStyles(pdfSettings);
-    
-    // Créer le document PDF
-    const docDefinition = {
-      content: detailsContent,
-      styles: styles,
-      defaultStyle: defaultStyle,
-      pageMargins: getDocumentMargins(pdfSettings, 'details'),
-      footer: function(currentPage: number, pageCount: number) {
-        return generateFooter(metadata, pdfSettings);
-      },
-      header: function(currentPage: number, pageCount: number) {
-        return generateHeaderContent(metadata, currentPage, pageCount, pdfSettings);
-      }
-    };
-    
-    // Générer et télécharger le PDF
-    pdfMake.createPdf(docDefinition).download(`devis-details-${metadata?.devisNumber || 'XXXX-XX'}.pdf`);
-    console.log('PDF des détails généré avec succès');
-    return true;
-  } catch (error) {
-    console.error('Erreur lors de la génération du PDF des détails:', error);
-    throw error;
-  }
-}
-
-// Ajout de la fonction manquante generateRecapPDF
-export const generateRecapPDF = async (
-  rooms: Room[], 
-  travaux: Travail[], 
-  getTravauxForPiece: (pieceId: string) => Travail[],
-  metadata?: ProjectMetadata,
-  userId?: string
-) => {
-  console.log('Génération du PDF du récapitulatif des travaux');
-
-  try {
-    // Récupérer les paramètres PDF personnalisés
-    const pdfSettings = await getUserPdfSettings(userId);
-    console.log('Paramètres PDF récupérés:', pdfSettings);
-    
-    // Préparer le contenu du récapitulatif
-    const recapContent = prepareRecapContent(rooms, travaux, getTravauxForPiece, metadata, pdfSettings);
-    
-    // Configurer les styles et polices en fonction des paramètres
-    const { styles, defaultStyle } = configurePdfStyles(pdfSettings);
-    
-    // Créer le document PDF
-    const docDefinition = {
-      content: recapContent,
-      styles: styles,
-      defaultStyle: defaultStyle,
-      pageMargins: getDocumentMargins(pdfSettings, 'recap'),
-      footer: function(currentPage: number, pageCount: number) {
-        return generateFooter(metadata, pdfSettings);
-      },
-      header: function(currentPage: number, pageCount: number) {
-        return generateHeaderContent(metadata, currentPage, pageCount, pdfSettings);
-      }
-    };
-    
-    // Générer et télécharger le PDF
-    pdfMake.createPdf(docDefinition).download(`devis-recap-${metadata?.devisNumber || 'XXXX-XX'}.pdf`);
-    console.log('PDF du récapitulatif généré avec succès');
-    return true;
-  } catch (error) {
-    console.error('Erreur lors de la génération du PDF du récapitulatif:', error);
-    throw error;
-  }
-};

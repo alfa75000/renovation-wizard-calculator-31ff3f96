@@ -19,6 +19,9 @@ export const generateHeaderContent = (metadata?: ProjectMetadata, currentPage: n
   const colors = getCustomColors(pdfSettings || {});
   const fontSizes = getFontSizes(pdfSettings || {});
   
+  console.log('[generateHeaderContent] En-tête généré avec les couleurs:', colors);
+  console.log('[generateHeaderContent] En-tête généré avec les tailles de police:', fontSizes);
+  
   return {
     text: `DEVIS N° ${metadata?.devisNumber || 'XXXX-XX'} - page ${currentPage}/${totalPages}`,
     alignment: 'right',
@@ -33,10 +36,13 @@ export const generateHeaderContent = (metadata?: ProjectMetadata, currentPage: n
  * Utilise les données de l'entreprise stockées dans metadata.company
  */
 export const generateFooter = (metadata?: ProjectMetadata, pdfSettings?: PdfSettings) => {
-  console.log("Données de l'entreprise dans generateFooter:", metadata?.company);
+  console.log("[generateFooter] Données de l'entreprise:", metadata?.company);
   
   const colors = getCustomColors(pdfSettings || {});
   const fontSizes = getFontSizes(pdfSettings || {});
+  
+  console.log('[generateFooter] Pied de page généré avec les couleurs:', colors);
+  console.log('[generateFooter] Pied de page généré avec les tailles de police:', fontSizes);
   
   // Récupérer les informations de la société directement de l'objet company
   const company = metadata?.company;

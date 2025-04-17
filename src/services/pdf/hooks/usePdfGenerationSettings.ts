@@ -35,7 +35,20 @@ export const usePdfGenerationSettings = (userId?: string) => {
           setSettings(PdfSettingsSchema.parse({}));
         } else {
           console.log('Paramètres PDF récupérés:', data?.pdf_settings);
-          setSettings(PdfSettingsSchema.parse(data?.pdf_settings || {}));
+          
+          if (data?.pdf_settings) {
+            try {
+              const validatedSettings = PdfSettingsSchema.parse(data.pdf_settings);
+              console.log('Paramètres PDF validés:', validatedSettings);
+              setSettings(validatedSettings);
+            } catch (parseError) {
+              console.error('Erreur lors de la validation des paramètres PDF:', parseError);
+              setSettings(PdfSettingsSchema.parse({}));
+            }
+          } else {
+            console.warn('Aucun paramètre PDF trouvé, utilisation des valeurs par défaut');
+            setSettings(PdfSettingsSchema.parse({}));
+          }
         }
       } catch (err) {
         console.error('Exception lors de la récupération des paramètres PDF:', err);
@@ -63,7 +76,7 @@ export const getUserPdfSettings = async (userId?: string): Promise<PdfSettings> 
   }
 
   try {
-    console.log(`Récupération des paramètres PDF pour l'utilisateur ${userId}`);
+    console.log(`[getUserPdfSettings] Récupération des paramètres PDF pour l'utilisateur ${userId}`);
     const { data, error } = await supabase
       .from('app_state')
       .select('pdf_settings')
@@ -71,14 +84,27 @@ export const getUserPdfSettings = async (userId?: string): Promise<PdfSettings> 
       .single();
     
     if (error) {
-      console.error('Erreur lors de la récupération des paramètres PDF:', error);
+      console.error('[getUserPdfSettings] Erreur lors de la récupération des paramètres PDF:', error);
       return PdfSettingsSchema.parse({});
     }
     
-    console.log('Paramètres PDF récupérés:', data?.pdf_settings);
-    return PdfSettingsSchema.parse(data?.pdf_settings || {});
+    if (!data?.pdf_settings) {
+      console.warn('[getUserPdfSettings] Aucun paramètre PDF trouvé pour cet utilisateur');
+      return PdfSettingsSchema.parse({});
+    }
+    
+    console.log('[getUserPdfSettings] Paramètres PDF récupérés:', data.pdf_settings);
+    
+    try {
+      const validatedSettings = PdfSettingsSchema.parse(data.pdf_settings);
+      console.log('[getUserPdfSettings] Paramètres PDF validés:', validatedSettings);
+      return validatedSettings;
+    } catch (parseError) {
+      console.error('[getUserPdfSettings] Erreur lors de la validation des paramètres PDF:', parseError);
+      return PdfSettingsSchema.parse({});
+    }
   } catch (err) {
-    console.error('Exception lors de la récupération des paramètres PDF:', err);
+    console.error('[getUserPdfSettings] Exception lors de la récupération des paramètres PDF:', err);
     return PdfSettingsSchema.parse({});
   }
 };
