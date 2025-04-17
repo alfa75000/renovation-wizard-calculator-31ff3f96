@@ -27,6 +27,7 @@ import {
 import { usePdfSettings } from '@/services/pdf/hooks/usePdfSettings';
 import { Undo2, Info } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Loader } from '@/components/ui/loader';
 
 export const PdfSettingsForm: React.FC = () => {
   const { pdfSettings, updatePdfSettings, resetPdfSettings } = usePdfSettings();
@@ -34,7 +35,8 @@ export const PdfSettingsForm: React.FC = () => {
   if (!pdfSettings) {
     return (
       <div className="flex items-center justify-center p-8">
-        <p>Chargement des paramètres PDF...</p>
+        <Loader size="lg" />
+        <p className="ml-2">Chargement des paramètres PDF...</p>
       </div>
     );
   }

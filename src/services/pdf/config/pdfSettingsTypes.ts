@@ -9,17 +9,32 @@ export const PdfSettingsSchema = z.object({
     heading: z.number().default(12),
     normal: z.number().default(10),
     small: z.number().default(8)
+  }).default({
+    title: 18,
+    subtitle: 14,
+    heading: 12,
+    normal: 10,
+    small: 8
   }),
   colors: z.object({
     primary: z.string().default('#002855'),
     secondary: z.string().default('#4D7C8A'),
     text: z.string().default('#333333'),
     light: z.string().default('#F3F4F6')
+  }).default({
+    primary: '#002855',
+    secondary: '#4D7C8A',
+    text: '#333333',
+    light: '#F3F4F6'
   }),
   margins: z.object({
     cover: z.tuple([z.number(), z.number(), z.number(), z.number()]).default([40, 40, 40, 40]),
     details: z.tuple([z.number(), z.number(), z.number(), z.number()]).default([30, 70, 30, 40]),
     recap: z.tuple([z.number(), z.number(), z.number(), z.number()]).default([40, 40, 40, 40])
+  }).default({
+    cover: [40, 40, 40, 40],
+    details: [30, 70, 30, 40],
+    recap: [40, 40, 40, 40]
   }),
   logoSettings: z.object({
     useDefaultLogo: z.boolean().default(true),
@@ -27,6 +42,12 @@ export const PdfSettingsSchema = z.object({
     width: z.number().default(150),
     height: z.number().default(70),
     alignment: z.enum(['left', 'center', 'right']).default('left')
+  }).default({
+    useDefaultLogo: true,
+    logoUrl: null,
+    width: 150,
+    height: 70,
+    alignment: 'left'
   })
 });
 
