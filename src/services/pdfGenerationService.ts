@@ -1,3 +1,4 @@
+
 import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
 import { Room, Travail, ProjectMetadata } from '@/types';
@@ -874,4 +875,150 @@ export const generateDetailsPDF = async (
         });
         
         // Estimer aussi les lignes pour le texte MO/Fournitures
-        const moFour
+        const moFournLines = Math.ceil(moFournText.length / columnCharWidth);
+        totalLines += moFournLines;
+        
+        // Calculer les marges supérieures pour centrer verticalement
+        const topMargin = Math.max(0, 3 + (totalLines - 2) * 4);
+        
+        // Ajouter la ligne au tableau
+        tableBody.push([
+          // Colonne 1: Description
+          { 
+            stack: [
+              { text: descriptionLines.join('\n'), fontSize: fontSizes.normal, lineHeight: 1.4, color: colors.mainText },
+              { text: moFournText, fontSize: fontSizes.small, lineHeight: 1.4, color: colors.detailsText }
+            ]
+          },
+          
+          // Colonne 2: Quantité
+          { 
+            stack: [
+              { text: formatQuantity(travail.quantite), alignment: 'center', fontSize: fontSizes.normal, color: colors.mainText },
+              { text: travail.unite, alignment: 'center', fontSize: fontSizes.normal, color: colors.mainText }
+            ],
+            alignment: 'center',
+            margin: [0, topMargin, 0, 0]
+          },
+          
+          // Colonne 3: Prix unitaire
+          { 
+            text: formatPrice(prixUnitaireHT), 
+            alignment: 'center',
+            fontSize: fontSizes.normal,
+            color: colors.mainText,
+            margin: [0, topMargin, 0, 0]
+          },
+          
+          // Colonne 4: TVA
+          { 
+            text: `${travail.tauxTVA}%`, 
+            alignment: 'center',
+            fontSize: fontSizes.normal,
+            color: colors.mainText,
+            margin: [0, topMargin, 0, 0]
+          },
+          
+          // Colonne 5: Total HT
+          { 
+            text: formatPrice(totalHT), 
+            alignment: 'center',
+            fontSize: fontSizes.normal,
+            color: colors.mainText,
+            margin: [0, topMargin, 0, 0]
+          }
+        ]);
+        
+        // Ajouter une ligne d'espacement entre les prestations
+        if (index < travauxPiece.length - 1) {
+          tableBody.push([
+            { text: '', margin: [0, 2, 0, 2] },
+            {}, {}, {}, {}
+          ]);
+        }
+      });
+      
+      // Calculer le total HT pour cette pièce
+      const pieceTotalHT = travauxPiece.reduce((sum, t) => {
+        return sum + (t.prixFournitures + t.prixMainOeuvre) * t.quantite;
+      }, 0);
+      
+      // Ajouter la ligne de total pour cette pièce
+      tableBody.push([
+        { text: `Total HT ${room.name}`, colSpan: 4, alignment: 'left', fontSize: fontSizes.normal, bold: true, fillColor: colors.background },
+        {}, {}, {},
+        { text: formatPrice(pieceTotalHT), alignment: 'center', fontSize: fontSizes.normal, bold: true, fillColor: colors.background }
+      ]);
+      
+      // Ajouter le tableau au document
+      detailsContent.push({
+        table: {
+          headerRows: 0,
+          widths: TABLE_COLUMN_WIDTHS.DETAILS,
+          body: tableBody
+        },
+        layout: {
+          hLineWidth: function(i: number, node: any) {
+            if (i === 0 || i === node.table.body.length) {
+              return 1;
+            }
+            
+            const isEndOfPrestation = i < node.table.body.length && 
+              ((node.table.body[i][0] && 
+                node.table.body[i][0].text && 
+                node.table.body[i][0].text.toString().includes('Total HT')) ||
+              (i > 0 && node.table.body[i-1][0] && 
+                node.table.body[i-1][0].text && 
+                node.table.body[i-1][0].text.toString().includes('Total HT')));
+            
+            return isEndOfPrestation ? 1 : 0;
+          },
+          vLineWidth: function() {
+            return 0;
+          },
+          hLineColor: function() {
+            return colors.totalBoxLines;
+          },
+          paddingLeft: function() {
+            return 4;
+          },
+          paddingRight: function() {
+            return 4;
+          },
+          paddingTop: function() {
+            return 2;
+          },
+          paddingBottom: function() {
+            return 2;
+          }
+        },
+        margin: [0, 0, 0, 15]
+      });
+    });
+    
+    // Configurer les styles et polices en fonction des paramètres
+    const { styles, defaultStyle } = configurePdfStyles(pdfSettings);
+    
+    // Créer le document PDF
+    const docDefinition = {
+      content: detailsContent,
+      styles: styles,
+      defaultStyle: defaultStyle,
+      pageMargins: getDocumentMargins(pdfSettings, 'details'),
+      footer: function(currentPage: number, pageCount: number) {
+        return generateFooter(metadata, pdfSettings);
+      },
+      header: function(currentPage: number, pageCount: number) {
+        return generateHeaderContent(metadata, currentPage, pageCount, pdfSettings);
+      }
+    };
+    
+    // Générer et télécharger le PDF
+    pdfMake.createPdf(docDefinition).download(`devis-details-${metadata?.devisNumber || 'XXXX-XX'}.pdf`);
+    console.log('PDF des détails généré avec succès');
+    return true;
+  } catch (error) {
+    console.error('Erreur lors de la génération du PDF des détails:', error);
+    throw error;
+  }
+}
