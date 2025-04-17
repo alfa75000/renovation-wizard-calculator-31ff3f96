@@ -1,9 +1,9 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useAppState } from '@/hooks/useAppState';
 import { PdfSettings, PdfSettingsSchema } from '../config/pdfSettingsTypes';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
+import { getUserPdfSettings } from '@/services/pdfGenerationService';
 
 /**
  * Hook central pour gérer les paramètres de génération PDF
@@ -40,38 +40,11 @@ export const usePdfGenerationSettings = () => {
         } else if (currentUser?.id) {
           // Si on n'a pas de paramètres mais qu'on a un utilisateur, on essaie de les récupérer depuis la base
           console.log('[usePdfGenerationSettings] Récupération des paramètres depuis la base pour l\'utilisateur:', currentUser.id);
-          const { data, error } = await supabase
-            .from('app_state')
-            .select('pdf_settings')
-            .eq('user_id', currentUser.id)
-            .single();
-
-          if (error) {
-            console.error('[usePdfGenerationSettings] Erreur lors de la récupération:', error);
-            // En cas d'erreur, on utilise les valeurs par défaut
-            const defaultSettings = PdfSettingsSchema.parse({});
-            setPdfSettings(defaultSettings);
-            setError('Erreur lors de la récupération des paramètres. Utilisation des valeurs par défaut.');
-          } else if (data?.pdf_settings) {
-            try {
-              console.log('[usePdfGenerationSettings] Données récupérées:', data.pdf_settings);
-              // Validation avec Zod
-              const validatedSettings = PdfSettingsSchema.parse(data.pdf_settings);
-              setPdfSettings(validatedSettings);
-              console.log('[usePdfGenerationSettings] Paramètres validés et définis:', validatedSettings);
-            } catch (validationError) {
-              console.error('[usePdfGenerationSettings] Erreur de validation:', validationError);
-              // En cas d'erreur, on utilise les valeurs par défaut
-              const defaultSettings = PdfSettingsSchema.parse({});
-              setPdfSettings(defaultSettings);
-              setError('Format de paramètres invalide. Utilisation des valeurs par défaut.');
-            }
-          } else {
-            // Pas de paramètres trouvés, utilisation des valeurs par défaut
-            console.log('[usePdfGenerationSettings] Aucun paramètre trouvé, utilisation des valeurs par défaut');
-            const defaultSettings = PdfSettingsSchema.parse({});
-            setPdfSettings(defaultSettings);
-          }
+          
+          // Utiliser la fonction getUserPdfSettings du service
+          const userSettings = await getUserPdfSettings(currentUser.id);
+          setPdfSettings(userSettings);
+          console.log('[usePdfGenerationSettings] Paramètres récupérés et définis:', userSettings);
         } else {
           // Pas d'utilisateur connecté, utilisation des valeurs par défaut
           console.log('[usePdfGenerationSettings] Aucun utilisateur connecté, utilisation des valeurs par défaut');

@@ -1,6 +1,6 @@
 
 import { PdfSettings, PdfSettingsSchema } from '../config/pdfSettingsTypes';
-import { getUserPdfSettings } from '../hooks/usePdfGenerationSettings';
+import { getUserPdfSettings } from '@/services/pdfGenerationService';
 
 /**
  * Récupère les paramètres PDF pour un utilisateur donné

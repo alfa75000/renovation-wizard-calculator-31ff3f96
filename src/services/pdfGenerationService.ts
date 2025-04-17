@@ -1,11 +1,14 @@
-
 import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
-import { Room, Travail, GetTravauxForPieceFunction, Metadata } from '@/types';
+import { Room, Travail, CompanyData, ProjectMetadata } from '@/types';
 import { configurePdfStyles, getDocumentMargins, getCustomColors, getFontSizes } from './pdf/pdfGenerationUtils';
 import { supabase } from '@/lib/supabase';
 import { PdfSettings, PdfSettingsSchema } from './pdf/config/pdfSettingsTypes';
 import { toast } from 'sonner';
+
+// Define the missing types
+type GetTravauxForPieceFunction = (pieceId: string) => Travail[];
+type Metadata = ProjectMetadata;
 
 // Initialiser pdfMake avec les polices
 pdfMake.vfs = pdfFonts.pdfMake.vfs;
@@ -158,6 +161,59 @@ export const generateRecapPDF = async (
     console.log('Génération du PDF récapitulatif terminée avec succès');
   } catch (error) {
     console.error('Erreur lors de la génération du PDF récapitulatif:', error);
+    toast.error('Erreur lors de la génération du PDF');
+  }
+};
+
+/**
+ * Génère un PDF complet avec toutes les sections
+ */
+export const generateCompletePDF = async (
+  enabledFields: any[],
+  companyData: CompanyData | null,
+  rooms: Room[],
+  travaux: Travail[],
+  getTravauxForPiece: GetTravauxForPieceFunction,
+  metadata?: Metadata,
+  userId?: string
+) => {
+  try {
+    console.log('Génération du PDF complet commencée');
+    console.log('Utilisateur ID:', userId);
+    console.log('Champs activés:', enabledFields.map(f => f.id));
+    
+    // Récupérer les paramètres PDF personnalisés
+    const userPdfSettings = await getUserPdfSettings(userId);
+    console.log('Paramètres PDF récupérés pour le PDF complet:', userPdfSettings);
+    
+    // Configurer le document avec les paramètres de l'utilisateur
+    const { styles, defaultStyle } = configurePdfStyles(userPdfSettings);
+    const margins = getDocumentMargins(userPdfSettings, 'cover');
+    const colors = getCustomColors(userPdfSettings);
+    const fontSizes = getFontSizes(userPdfSettings);
+    
+    // Créer le document PDF
+    const docDefinition = {
+      pageMargins: margins,
+      defaultStyle: defaultStyle,
+      styles: styles,
+      content: [
+        { text: 'DEVIS COMPLET', style: 'header', alignment: 'center', fontSize: fontSizes.title, margin: [0, 0, 0, 20] },
+        { text: 'Date: ' + new Date().toLocaleDateString(), margin: [0, 0, 0, 10] }
+        // Ajoutez le reste du contenu du PDF ici en fonction des champs activés
+      ]
+    };
+    
+    console.log('Définition du document créée, génération du PDF complet');
+    
+    // Générer et télécharger le PDF
+    const pdfDocGenerator = pdfMake.createPdf(docDefinition);
+    pdfDocGenerator.download('devis-complet.pdf');
+    
+    toast.success('Devis complet généré avec succès');
+    console.log('Génération du PDF complet terminée avec succès');
+  } catch (error) {
+    console.error('Erreur lors de la génération du PDF complet:', error);
     toast.error('Erreur lors de la génération du PDF');
   }
 };

@@ -35,6 +35,8 @@ const Recapitulatif: React.FC = () => {
         metadata, 
         currentUser?.id
       );
+      
+      console.log("PDF récapitulatif généré avec succès depuis la page Recapitulatif");
     } catch (error) {
       console.error("Erreur lors de la génération du PDF:", error);
     }

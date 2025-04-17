@@ -25,7 +25,15 @@ const DevisRecapPreview: React.FC = () => {
         console.warn("Aucun utilisateur connecté, utilisation des paramètres par défaut");
       }
       
-      await generateRecapPDF(rooms, travaux, getTravauxForPiece, metadata, currentUser?.id);
+      await generateRecapPDF(
+        rooms, 
+        travaux, 
+        getTravauxForPiece, 
+        metadata, 
+        currentUser?.id
+      );
+      
+      console.log("PDF récapitulatif généré avec succès");
     } catch (error) {
       console.error("Erreur lors de la génération du PDF récapitulatif:", error);
     }
