@@ -8,29 +8,25 @@ import { ElementSettings } from './types/elementSettings';
 export const FontSettings = () => {
   const { pdfSettings, updatePdfSettings } = usePdfSettings();
   const [selectedElement, setSelectedElement] = React.useState('');
-  const [defaultColors, setDefaultColors] = React.useState([
-    '#1a1f2c', // Dark Purple
-    '#9b87f5', // Primary Purple
-    '#7E69AB', // Secondary Purple
-    '#6E59A5', // Tertiary Purple
-    '#D6BCFA'  // Light Purple
+  const [defaultColors] = React.useState([
+    '#1a1f2c',
+    '#9b87f5',
+    '#7E69AB',
+    '#6E59A5',
+    '#D6BCFA'
   ]);
 
   const handleElementSettingsChange = async (newSettings: ElementSettings) => {
     if (selectedElement && pdfSettings) {
+      const updatedElements = {
+        ...pdfSettings.elements,
+        [selectedElement]: newSettings
+      };
+      
       await updatePdfSettings({
-        elements: {
-          ...pdfSettings.elements,
-          [selectedElement]: newSettings
-        }
+        elements: updatedElements
       });
     }
-  };
-
-  const handleDefaultColorChange = (color: string) => {
-    // Ajouter la nouvelle couleur au début et garder seulement les 5 dernières
-    const newColors = [color, ...defaultColors.filter(c => c !== color)].slice(0, 5);
-    setDefaultColors(newColors);
   };
 
   return (
@@ -46,7 +42,7 @@ export const FontSettings = () => {
           settings={pdfSettings.elements[selectedElement]}
           onSave={handleElementSettingsChange}
           defaultColors={defaultColors}
-          onDefaultColorClick={handleDefaultColorChange}
+          onDefaultColorClick={() => {}}
         />
       )}
     </div>

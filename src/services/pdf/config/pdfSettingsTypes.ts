@@ -1,5 +1,5 @@
-
 import { z } from 'zod';
+import { ElementSettingsSchema } from '@/features/devis/components/pdf-settings/types/elementSettings';
 
 export const PdfSettingsSchema = z.object({
   fontFamily: z.string().default('Roboto'),
@@ -69,7 +69,47 @@ export const PdfSettingsSchema = z.object({
     width: 150,
     height: 70,
     alignment: 'left'
-  })
+  }),
+  elements: z.record(ElementSettingsSchema).default({})
+}).default({
+  fontFamily: 'Roboto',
+  fontSize: {
+    title: 18,
+    subtitle: 14,
+    heading: 12,
+    normal: 10,
+    small: 8,
+    details: 9
+  },
+  lineSpacing: {
+    coverSections: 1.5,
+    betweenFields: 1.2,
+    afterDescription: 1.8,
+    detailsDescription: 1.4,
+    afterDetailRow: 1.2,
+    betweenSections: 2
+  },
+  colors: {
+    mainText: '#333333',
+    detailsText: '#4D7C8A',
+    coverLines: '#002855',
+    detailsLines: '#4D7C8A',
+    totalBoxLines: '#e5e7eb',
+    background: '#F3F4F6'
+  },
+  margins: {
+    cover: [40, 40, 40, 40],
+    details: [30, 70, 30, 40],
+    recap: [40, 40, 40, 40]
+  },
+  logoSettings: {
+    useDefaultLogo: true,
+    logoUrl: null,
+    width: 150,
+    height: 70,
+    alignment: 'left'
+  },
+  elements: {}
 });
 
 export type PdfSettings = z.infer<typeof PdfSettingsSchema>;
