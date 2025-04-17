@@ -280,7 +280,7 @@ export const PdfSettingsForm: React.FC = () => {
                     <Input
                       key={`cover-${index}`}
                       type="number" 
-                      value={pdfSettings.margins.cover[index]} 
+                      value={String(pdfSettings.margins.cover[index])} 
                       onChange={(e) => {
                         const newMargins = [...pdfSettings.margins.cover];
                         newMargins[index] = Number(e.target.value);
@@ -303,7 +303,7 @@ export const PdfSettingsForm: React.FC = () => {
                     <Input
                       key={`details-${index}`}
                       type="number" 
-                      value={pdfSettings.margins.details[index]} 
+                      value={String(pdfSettings.margins.details[index])} 
                       onChange={(e) => {
                         const newMargins = [...pdfSettings.margins.details];
                         newMargins[index] = Number(e.target.value);
@@ -326,7 +326,7 @@ export const PdfSettingsForm: React.FC = () => {
                     <Input
                       key={`recap-${index}`}
                       type="number" 
-                      value={pdfSettings.margins.recap[index]} 
+                      value={String(pdfSettings.margins.recap[index])} 
                       onChange={(e) => {
                         const newMargins = [...pdfSettings.margins.recap];
                         newMargins[index] = Number(e.target.value);
