@@ -40,7 +40,11 @@ export const FontSettings: React.FC<FontSettingsProps> = ({
   };
 
   const getElementSettings = (elementId: string): ElementSettings => {
-    return pdfSettings?.elements?.[elementId] || {...defaultElementSettings};
+    const defaultSettings: ElementSettings = {
+      ...defaultElementSettings,
+      fontFamily: defaultElementSettings.fontFamily, // Ensure this is required
+    };
+    return pdfSettings?.elements?.[elementId] || defaultSettings;
   };
 
   return (
