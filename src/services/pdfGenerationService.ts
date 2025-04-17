@@ -13,7 +13,6 @@ pdfMake.vfs = pdfFonts.pdfMake ? pdfFonts.pdfMake.vfs : pdfFonts.vfs;
 
 // Define custom types needed
 type GetTravauxForPieceFunction = (pieceId: string) => Travail[];
-type Metadata = ProjectMetadata;
 
 /**
  * Récupère les paramètres PDF de l'utilisateur actuel
@@ -64,7 +63,7 @@ export const generateDetailsPDF = async (
   rooms: Room[],
   travaux: Travail[],
   getTravauxForPiece: GetTravauxForPieceFunction,
-  metadata?: Metadata,
+  metadata?: ProjectMetadata,
   userId?: string
 ) => {
   try {
@@ -92,7 +91,7 @@ export const generateDetailsPDF = async (
       defaultStyle: defaultStyle,
       styles: styles,
       content: [
-        { text: 'DEVIS DÉTAILLÉ', style: 'header', alignment: 'center', fontSize: fontSizes.title, margin: [0, 0, 0, 20] },
+        { text: 'DEVIS DÉTAILLÉ', style: 'header', alignment: 'center', margin: [0, 0, 0, 20] },
         { text: 'Date: ' + new Date().toLocaleDateString(), margin: [0, 0, 0, 10] }
         // Ajoutez le reste du contenu du PDF ici
       ]
@@ -119,7 +118,7 @@ export const generateRecapPDF = async (
   rooms: Room[],
   travaux: Travail[],
   getTravauxForPiece: GetTravauxForPieceFunction,
-  metadata?: Metadata,
+  metadata?: ProjectMetadata,
   userId?: string
 ) => {
   try {
@@ -147,7 +146,7 @@ export const generateRecapPDF = async (
       defaultStyle: defaultStyle,
       styles: styles,
       content: [
-        { text: 'RÉCAPITULATIF', style: 'header', alignment: 'center', fontSize: fontSizes.title, margin: [0, 0, 0, 20] },
+        { text: 'RÉCAPITULATIF', style: 'header', alignment: 'center', margin: [0, 0, 0, 20] },
         { text: 'Date: ' + new Date().toLocaleDateString(), margin: [0, 0, 0, 10] }
         // Ajoutez le reste du contenu du PDF ici
       ]
@@ -176,7 +175,7 @@ export const generateCompletePDF = async (
   rooms: Room[],
   travaux: Travail[],
   getTravauxForPiece: GetTravauxForPieceFunction,
-  metadata?: Metadata,
+  metadata?: ProjectMetadata,
   userId?: string
 ) => {
   try {
@@ -202,7 +201,6 @@ export const generateCompletePDF = async (
       text: 'DEVIS', 
       style: 'header', 
       alignment: 'center', 
-      fontSize: fontSizes.title, 
       margin: [0, 0, 0, 20] 
     });
     
@@ -210,8 +208,7 @@ export const generateCompletePDF = async (
     if (enabledFields.find(f => f.id === 'companyName')?.enabled) {
       content.push({ 
         text: companyData?.name || "Nom de la société", 
-        alignment: 'center', 
-        fontSize: fontSizes.subtitle,
+        alignment: 'center',
         bold: true,
         margin: [0, 0, 0, 10] 
       });
@@ -299,7 +296,6 @@ export const generateCompletePDF = async (
         text: 'RÉCAPITULATIF DES TRAVAUX', 
         style: 'header', 
         alignment: 'center', 
-        fontSize: fontSizes.subtitle, 
         margin: [0, 30, 0, 20],
         pageBreak: 'before'
       });
@@ -409,7 +405,6 @@ export const generateCompletePDF = async (
         return {
           text: `Page ${currentPage} / ${pageCount}`,
           alignment: 'center',
-          fontSize: fontSizes.small,
           margin: [0, 10, 0, 0]
         };
       }
