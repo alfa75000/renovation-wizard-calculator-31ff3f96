@@ -1,35 +1,27 @@
 
-import { supabase } from '@/lib/supabase';
 import { PdfSettings, PdfSettingsSchema } from '../config/pdfSettingsTypes';
+import { getUserPdfSettings } from '../hooks/usePdfGenerationSettings';
 
 /**
- * Fonction utilitaire qui récupère les paramètres PDF directement depuis Supabase
- * de manière synchrone pour être utilisée dans les services de génération PDF
+ * Récupère les paramètres PDF pour un utilisateur donné
+ * Si aucun ID utilisateur n'est fourni, utilise les paramètres par défaut
+ * 
+ * @param userId ID de l'utilisateur
+ * @returns Paramètres PDF récupérés ou par défaut
  */
 export const getPdfSettings = async (userId?: string): Promise<PdfSettings> => {
+  if (!userId) {
+    console.log('Utilisation des paramètres PDF par défaut (aucun ID utilisateur)');
+    return PdfSettingsSchema.parse({});
+  }
+  
   try {
-    if (!userId) {
-      console.warn('Aucun ID utilisateur fourni pour récupérer les paramètres PDF');
-      return PdfSettingsSchema.parse({}); // Retourne les valeurs par défaut
-    }
-
-    const { data, error } = await supabase
-      .from('app_state')
-      .select('pdf_settings')
-      .eq('user_id', userId)
-      .single();
-    
-    if (error) {
-      console.error('Erreur lors de la récupération des paramètres PDF:', error);
-      return PdfSettingsSchema.parse({}); // Retourne les valeurs par défaut
-    }
-    
-    // Valider les données avec Zod
-    const pdfSettings = PdfSettingsSchema.parse(data?.pdf_settings || {});
-    console.log('Paramètres PDF récupérés:', pdfSettings);
-    return pdfSettings;
+    const settings = await getUserPdfSettings(userId);
+    console.log('Paramètres PDF récupérés avec succès:', settings);
+    return settings;
   } catch (error) {
-    console.error('Exception lors de la récupération des paramètres PDF:', error);
-    return PdfSettingsSchema.parse({}); // Retourne les valeurs par défaut
+    console.error('Erreur lors de la récupération des paramètres PDF:', error);
+    console.log('Utilisation des paramètres PDF par défaut suite à une erreur');
+    return PdfSettingsSchema.parse({});
   }
 };

@@ -21,6 +21,12 @@ const Recapitulatif: React.FC = () => {
 
   const handlePrintDevis = async () => {
     try {
+      if (!currentUser?.id) {
+        console.warn("Aucun utilisateur connecté, utilisation des paramètres par défaut");
+      } else {
+        console.log("Génération du PDF avec les paramètres de l'utilisateur:", currentUser.id);
+      }
+      
       await generateDetailsPDF(
         rooms, 
         travaux, 

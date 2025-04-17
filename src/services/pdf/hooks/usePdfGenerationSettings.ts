@@ -22,6 +22,7 @@ export const usePdfGenerationSettings = (userId?: string) => {
       }
 
       try {
+        console.log(`Récupération des paramètres PDF pour l'utilisateur ${userId}`);
         const { data, error } = await supabase
           .from('app_state')
           .select('pdf_settings')
@@ -33,6 +34,7 @@ export const usePdfGenerationSettings = (userId?: string) => {
           setError(error);
           setSettings(PdfSettingsSchema.parse({}));
         } else {
+          console.log('Paramètres PDF récupérés:', data?.pdf_settings);
           setSettings(PdfSettingsSchema.parse(data?.pdf_settings || {}));
         }
       } catch (err) {
@@ -48,4 +50,35 @@ export const usePdfGenerationSettings = (userId?: string) => {
   }, [userId]);
 
   return { settings, isLoading, error };
+};
+
+/**
+ * Fonction utilitaire pour récupérer les paramètres PDF de manière asynchrone
+ * Utilisée par les services de génération PDF
+ */
+export const getUserPdfSettings = async (userId?: string): Promise<PdfSettings> => {
+  if (!userId) {
+    console.warn('Aucun ID utilisateur fourni pour récupérer les paramètres PDF');
+    return PdfSettingsSchema.parse({});
+  }
+
+  try {
+    console.log(`Récupération des paramètres PDF pour l'utilisateur ${userId}`);
+    const { data, error } = await supabase
+      .from('app_state')
+      .select('pdf_settings')
+      .eq('user_id', userId)
+      .single();
+    
+    if (error) {
+      console.error('Erreur lors de la récupération des paramètres PDF:', error);
+      return PdfSettingsSchema.parse({});
+    }
+    
+    console.log('Paramètres PDF récupérés:', data?.pdf_settings);
+    return PdfSettingsSchema.parse(data?.pdf_settings || {});
+  } catch (err) {
+    console.error('Exception lors de la récupération des paramètres PDF:', err);
+    return PdfSettingsSchema.parse({});
+  }
 };

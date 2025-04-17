@@ -18,6 +18,12 @@ const DevisRecapPreview: React.FC = () => {
   // Fonction pour générer le PDF
   const handlePrint = async () => {
     try {
+      if (!currentUser?.id) {
+        console.warn("Aucun utilisateur connecté, utilisation des paramètres par défaut");
+      } else {
+        console.log("Génération du PDF avec les paramètres de l'utilisateur:", currentUser.id);
+      }
+      
       await generateDetailsPDF(rooms, travaux, getTravauxForPiece, metadata, currentUser?.id);
     } catch (error) {
       console.error("Erreur lors de la génération du PDF:", error);
