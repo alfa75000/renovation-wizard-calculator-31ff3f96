@@ -3,8 +3,10 @@ import React from 'react';
 import { ElementSelector } from './components/ElementSelector';
 import { ElementSettingsForm } from './components/ElementSettingsForm';
 import { usePdfSettings } from '@/services/pdf/hooks/usePdfSettings';
-import { ElementSettings } from './types/elementSettings';
+import { ElementSettings, defaultElementSettings } from './types/elementSettings';
 import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
+import { PDF_ELEMENTS } from './types/typography';
+import { Card, CardContent } from '@/components/ui/card';
 
 interface FontSettingsProps {
   pdfSettings: PdfSettings;
@@ -37,21 +39,37 @@ export const FontSettings: React.FC<FontSettingsProps> = ({
     }
   };
 
+  // Vérifie si l'élément existe dans les paramètres, sinon utilise les valeurs par défaut
+  const getElementSettings = (elementId: string): ElementSettings => {
+    if (pdfSettings?.elements?.[elementId]) {
+      return pdfSettings.elements[elementId];
+    }
+    return defaultElementSettings;
+  };
+
   return (
     <div className="space-y-8">
-      <ElementSelector
-        value={selectedElement}
-        onChange={setSelectedElement}
-      />
+      <Card>
+        <CardContent className="pt-6">
+          <ElementSelector
+            value={selectedElement}
+            onChange={setSelectedElement}
+          />
+        </CardContent>
+      </Card>
       
-      {selectedElement && pdfSettings?.elements?.[selectedElement] && (
-        <ElementSettingsForm
-          selectedElement={selectedElement}
-          settings={pdfSettings.elements[selectedElement]}
-          onSave={handleElementSettingsChange}
-          defaultColors={defaultColors}
-          onDefaultColorClick={(color) => {}}
-        />
+      {selectedElement && (
+        <Card>
+          <CardContent className="pt-6">
+            <ElementSettingsForm
+              selectedElement={PDF_ELEMENTS.find(e => e.id === selectedElement)?.name || selectedElement}
+              settings={getElementSettings(selectedElement)}
+              onSave={handleElementSettingsChange}
+              defaultColors={defaultColors}
+              onDefaultColorClick={() => {}}
+            />
+          </CardContent>
+        </Card>
       )}
     </div>
   );

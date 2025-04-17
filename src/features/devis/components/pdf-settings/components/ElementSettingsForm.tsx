@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { ElementSettings } from '../types/elementSettings';
+import { ElementSettings, defaultElementSettings } from '../types/elementSettings';
 import { FontSelector } from './FontSelector';
 import { ColorPalette } from './ColorPalette';
 import { SpacingControl } from './SpacingControl';
@@ -24,7 +24,9 @@ export const ElementSettingsForm: React.FC<ElementSettingsFormProps> = ({
   defaultColors,
   onDefaultColorClick
 }) => {
-  const [currentSettings, setCurrentSettings] = React.useState<ElementSettings>(settings);
+  const [currentSettings, setCurrentSettings] = React.useState<ElementSettings>(
+    settings || defaultElementSettings
+  );
 
   const handleSave = () => {
     onSave(currentSettings);

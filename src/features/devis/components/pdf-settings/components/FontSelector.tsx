@@ -24,6 +24,7 @@ const AVAILABLE_FONTS = [
 interface FontSelectorProps {
   value: string;
   onChange: (value: string) => void;
+  label?: string;
   className?: string;
 }
 
@@ -33,11 +34,12 @@ interface FontSelectorProps {
 export const FontSelector: React.FC<FontSelectorProps> = ({ 
   value, 
   onChange, 
+  label = 'Police',
   className = '' 
 }) => {
   return (
     <div className={className}>
-      <Label>Police</Label>
+      <Label>{label}</Label>
       <Select 
         value={value}
         onValueChange={onChange}

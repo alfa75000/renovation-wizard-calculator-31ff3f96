@@ -92,4 +92,3 @@ export const ElementSettingsSchema = z.object({
     width: 1
   })
 });
-

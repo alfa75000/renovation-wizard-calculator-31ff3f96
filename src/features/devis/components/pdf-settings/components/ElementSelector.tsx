@@ -1,6 +1,12 @@
 
 import React from 'react';
-import { Select } from '@/components/ui/select';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { PDF_ELEMENTS } from '../types/typography';
 
@@ -27,15 +33,21 @@ export const ElementSelector: React.FC<ElementSelectorProps> = ({ value, onChang
         value={value}
         onValueChange={onChange}
       >
-        {Object.entries(groupedElements).map(([section, elements]) => (
-          <optgroup key={section} label={section}>
-            {elements.map(element => (
-              <option key={element.id} value={element.id}>
-                {element.name}
-              </option>
-            ))}
-          </optgroup>
-        ))}
+        <SelectTrigger>
+          <SelectValue placeholder="Sélectionner un élément" />
+        </SelectTrigger>
+        <SelectContent>
+          {Object.entries(groupedElements).map(([section, elements]) => (
+            <div key={section} className="py-2">
+              <div className="text-xs text-muted-foreground px-2 py-1 font-semibold">{section}</div>
+              {elements.map(element => (
+                <SelectItem key={element.id} value={element.id}>
+                  {element.name}
+                </SelectItem>
+              ))}
+            </div>
+          ))}
+        </SelectContent>
       </Select>
     </div>
   );
