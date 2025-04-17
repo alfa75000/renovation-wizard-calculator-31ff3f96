@@ -38,6 +38,14 @@ export const FontSettings: React.FC<FontSettingsProps> = ({
             right: newSettings.spacing?.right ?? 0,
             bottom: newSettings.spacing?.bottom ?? 0,
             left: newSettings.spacing?.left ?? 0
+          },
+          border: {
+            top: newSettings.border?.top ?? false,
+            right: newSettings.border?.right ?? false,
+            bottom: newSettings.border?.bottom ?? false,
+            left: newSettings.border?.left ?? false,
+            color: newSettings.border?.color ?? '#1a1f2c',
+            width: newSettings.border?.width ?? 1
           }
         }
       };
@@ -58,6 +66,14 @@ export const FontSettings: React.FC<FontSettingsProps> = ({
           right: pdfSettings.elements[elementId].spacing?.right ?? 0,
           bottom: pdfSettings.elements[elementId].spacing?.bottom ?? 0,
           left: pdfSettings.elements[elementId].spacing?.left ?? 0
+        },
+        border: {
+          top: pdfSettings.elements[elementId].border?.top ?? false,
+          right: pdfSettings.elements[elementId].border?.right ?? false,
+          bottom: pdfSettings.elements[elementId].border?.bottom ?? false,
+          left: pdfSettings.elements[elementId].border?.left ?? false,
+          color: pdfSettings.elements[elementId].border?.color ?? '#1a1f2c',
+          width: pdfSettings.elements[elementId].border?.width ?? 1
         }
       };
     }
@@ -91,4 +107,3 @@ export const FontSettings: React.FC<FontSettingsProps> = ({
     </div>
   );
 };
-
