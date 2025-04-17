@@ -31,7 +31,7 @@ export const FontSettings: React.FC<FontSettingsProps> = ({
       const updatedElements = {
         ...pdfSettings.elements,
         [selectedElement]: {
-          ...defaultElementSettings, // Assurons-nous d'avoir toutes les propriétés requises
+          ...defaultElementSettings,
           ...newSettings
         }
       };
@@ -49,7 +49,7 @@ export const FontSettings: React.FC<FontSettingsProps> = ({
         ...pdfSettings.elements[elementId]
       };
     }
-    return { ...defaultElementSettings };
+    return defaultElementSettings;
   };
 
   return (
