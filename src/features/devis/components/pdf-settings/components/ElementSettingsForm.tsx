@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ElementSettings, defaultElementSettings } from '../types/elementSettings';
 import { FontSelector } from './FontSelector';
@@ -28,7 +28,14 @@ export const ElementSettingsForm: React.FC<ElementSettingsFormProps> = ({
     settings || defaultElementSettings
   );
 
+  // Mettre à jour les paramètres affichés quand l'élément sélectionné change
+  useEffect(() => {
+    console.log('Settings updated in ElementSettingsForm:', settings);
+    setCurrentSettings(settings || defaultElementSettings);
+  }, [settings, selectedElement]);
+
   const handleSave = () => {
+    console.log('Saving settings in form:', currentSettings);
     onSave(currentSettings);
   };
 
