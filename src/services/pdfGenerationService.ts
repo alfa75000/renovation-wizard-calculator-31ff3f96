@@ -1,3 +1,4 @@
+
 import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
 import { Room, Travail, CompanyData, ProjectMetadata } from '@/types';
@@ -6,12 +7,12 @@ import { supabase } from '@/lib/supabase';
 import { PdfSettings, PdfSettingsSchema } from './pdf/config/pdfSettingsTypes';
 import { toast } from 'sonner';
 
-// Define the missing types
+// Initialize pdfMake with fonts
+pdfMake.vfs = pdfFonts.pdfMake ? pdfFonts.pdfMake.vfs : pdfFonts.vfs;
+
+// Define custom types needed
 type GetTravauxForPieceFunction = (pieceId: string) => Travail[];
 type Metadata = ProjectMetadata;
-
-// Initialiser pdfMake avec les polices
-pdfMake.vfs = pdfFonts.pdfMake.vfs;
 
 /**
  * Récupère les paramètres PDF de l'utilisateur actuel
