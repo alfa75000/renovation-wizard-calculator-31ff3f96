@@ -1,7 +1,7 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { PdfSettings, PdfSettingsSchema } from '@/services/pdf/config/pdfSettingsTypes';
 
 export type AutoSaveOptions = {
   enabled: boolean;
@@ -20,6 +20,7 @@ export type AppState = {
   user_id: string;
   current_project_id: string | null;
   auto_save_options: AutoSaveOptions;
+  pdf_settings?: PdfSettings;
 };
 
 export const useAppState = () => {
@@ -28,7 +29,6 @@ export const useAppState = () => {
   const [users, setUsers] = useState<AppUser[]>([]);
   const [appState, setAppState] = useState<AppState | null>(null);
 
-  // Charger tous les utilisateurs
   const loadUsers = useCallback(async () => {
     try {
       const { data, error } = await supabase
@@ -50,7 +50,6 @@ export const useAppState = () => {
     }
   }, []);
 
-  // Charger l'état de l'application pour un utilisateur spécifique
   const loadAppState = useCallback(async (userId: string) => {
     try {
       console.log('Chargement de l\'état de l\'application pour l\'utilisateur:', userId);
@@ -62,7 +61,6 @@ export const useAppState = () => {
       
       if (error) {
         if (error.code === 'PGRST116') {
-          // Aucun état trouvé pour cet utilisateur, on en crée un par défaut
           const defaultState: Omit<AppState, 'id'> = {
             user_id: userId,
             current_project_id: null,
@@ -73,7 +71,6 @@ export const useAppState = () => {
             }
           };
           
-          // Insérer ce nouvel état dans la base de données
           const { data: newData, error: insertError } = await supabase
             .from('app_state')
             .insert(defaultState)
@@ -101,7 +98,6 @@ export const useAppState = () => {
     }
   }, []);
 
-  // Charger les utilisateurs au démarrage
   useEffect(() => {
     const fetchUsers = async () => {
       setIsLoading(true);
@@ -109,7 +105,6 @@ export const useAppState = () => {
         const usersList = await loadUsers();
         setUsers(usersList);
         
-        // Par défaut, sélectionner l'Admin ou le premier utilisateur
         const adminUser = usersList.find(u => u.username === 'Admin');
         const defaultUser = adminUser || usersList[0];
         
@@ -130,7 +125,6 @@ export const useAppState = () => {
     fetchUsers();
   }, [loadUsers, loadAppState]);
 
-  // Changer d'utilisateur
   const switchUser = useCallback(async (userId: string) => {
     setIsLoading(true);
     try {
@@ -140,7 +134,6 @@ export const useAppState = () => {
         return false;
       }
       
-      // Charger l'état de l'application pour cet utilisateur
       const state = await loadAppState(userId);
       if (state) {
         setAppState(state);
@@ -158,7 +151,6 @@ export const useAppState = () => {
     }
   }, [users, loadAppState]);
 
-  // Mettre à jour les options d'auto-sauvegarde de manière simplifiée
   const updateAutoSaveOptions = useCallback(async (options: AutoSaveOptions) => {
     if (!appState || !currentUser) {
       console.error("Tentative de mise à jour des options d'auto-sauvegarde sans utilisateur ou état d'application");
@@ -166,7 +158,6 @@ export const useAppState = () => {
     }
     
     try {
-      // Mettre à jour l'état local immédiatement pour une réactivité de l'UI
       setAppState(prev => {
         if (!prev) return null;
         return { 
@@ -175,7 +166,6 @@ export const useAppState = () => {
         };
       });
       
-      // Persister dans la base de données
       const { error } = await supabase
         .from('app_state')
         .update({ 
@@ -187,7 +177,6 @@ export const useAppState = () => {
         console.error('Erreur lors de la mise à jour des options d\'auto-sauvegarde:', error);
         toast.error('Erreur lors de la mise à jour des options d\'auto-sauvegarde');
         
-        // Recharger l'état depuis la base de données en cas d'erreur
         const freshState = await loadAppState(currentUser.id);
         if (freshState) {
           setAppState(freshState);
@@ -201,7 +190,6 @@ export const useAppState = () => {
       console.error('Exception lors de la mise à jour des options d\'auto-sauvegarde:', error);
       toast.error('Erreur lors de la mise à jour des options d\'auto-sauvegarde');
       
-      // Recharger l'état depuis la base de données
       const freshState = await loadAppState(currentUser.id);
       if (freshState) {
         setAppState(freshState);
@@ -211,7 +199,6 @@ export const useAppState = () => {
     }
   }, [appState, currentUser, loadAppState]);
 
-  // Mettre à jour le projet en cours
   const updateCurrentProject = useCallback(async (projectId: string | null) => {
     if (!currentUser) {
       console.error("Tentative de mise à jour du projet en cours sans utilisateur");
@@ -219,7 +206,6 @@ export const useAppState = () => {
     }
     
     try {
-      // Mettre à jour l'état local immédiatement
       setAppState(prev => {
         if (!prev) return null;
         return { 
@@ -237,7 +223,6 @@ export const useAppState = () => {
         console.error('Erreur lors de la mise à jour du projet en cours:', error);
         toast.error('Erreur lors de la mise à jour du projet en cours');
         
-        // Recharger l'état en cas d'erreur
         const freshState = await loadAppState(currentUser.id);
         if (freshState) {
           setAppState(freshState);
@@ -251,7 +236,6 @@ export const useAppState = () => {
       console.error('Exception lors de la mise à jour du projet en cours:', error);
       toast.error('Erreur lors de la mise à jour du projet en cours');
       
-      // Recharger l'état
       const freshState = await loadAppState(currentUser.id);
       if (freshState) {
         setAppState(freshState);
