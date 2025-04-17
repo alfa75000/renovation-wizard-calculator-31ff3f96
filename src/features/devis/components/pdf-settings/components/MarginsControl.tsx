@@ -20,8 +20,13 @@ export const MarginsControl: React.FC<MarginsControlProps> = ({
   className = '' 
 }) => {
   const handleChange = (index: number, value: number) => {
-    const newValues = [...values] as [number, number, number, number];
-    newValues[index] = value;
+    // Crée une copie explicite du tuple
+    const newValues: [number, number, number, number] = [
+      index === 0 ? value : values[0],
+      index === 1 ? value : values[1],
+      index === 2 ? value : values[2],
+      index === 3 ? value : values[3]
+    ];
     onChange(newValues);
   };
 
