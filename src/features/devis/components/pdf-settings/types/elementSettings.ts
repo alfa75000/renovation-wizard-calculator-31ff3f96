@@ -34,25 +34,62 @@ export interface ElementSettings {
   border: BorderSettings;
 }
 
+// Valeurs par défaut pour les nouvelles instances d'ElementSettings
+export const defaultElementSettings: ElementSettings = {
+  fontFamily: 'Roboto',
+  fontSize: 12,
+  isBold: false,
+  isItalic: false,
+  color: '#1a1f2c',
+  alignment: 'left',
+  spacing: {
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0
+  },
+  border: {
+    top: false,
+    right: false,
+    bottom: false,
+    left: false,
+    color: '#1a1f2c',
+    width: 1
+  }
+};
+
 export const ElementSettingsSchema = z.object({
-  fontFamily: z.string(),
-  fontSize: z.number(),
-  isBold: z.boolean(),
-  isItalic: z.boolean(),
-  color: z.string(),
-  alignment: z.enum(['left', 'center', 'right', 'justify']),
+  fontFamily: z.string().default('Roboto'),
+  fontSize: z.number().default(12),
+  isBold: z.boolean().default(false),
+  isItalic: z.boolean().default(false),
+  color: z.string().default('#1a1f2c'),
+  alignment: z.enum(['left', 'center', 'right', 'justify']).default('left'),
   spacing: z.object({
-    top: z.number(),
-    right: z.number(),
-    bottom: z.number(),
-    left: z.number()
+    top: z.number().default(0),
+    right: z.number().default(0),
+    bottom: z.number().default(0),
+    left: z.number().default(0)
+  }).default({
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0
   }),
   border: z.object({
-    top: z.boolean(),
-    right: z.boolean(),
-    bottom: z.boolean(),
-    left: z.boolean(),
-    color: z.string(),
-    width: z.number()
+    top: z.boolean().default(false),
+    right: z.boolean().default(false),
+    bottom: z.boolean().default(false),
+    left: z.boolean().default(false),
+    color: z.string().default('#1a1f2c'),
+    width: z.number().default(1)
+  }).default({
+    top: false,
+    right: false,
+    bottom: false,
+    left: false,
+    color: '#1a1f2c',
+    width: 1
   })
 });
+

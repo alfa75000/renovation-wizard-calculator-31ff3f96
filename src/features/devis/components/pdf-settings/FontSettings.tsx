@@ -4,9 +4,17 @@ import { ElementSelector } from './components/ElementSelector';
 import { ElementSettingsForm } from './components/ElementSettingsForm';
 import { usePdfSettings } from '@/services/pdf/hooks/usePdfSettings';
 import { ElementSettings } from './types/elementSettings';
+import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
 
-export const FontSettings = () => {
-  const { pdfSettings, updatePdfSettings } = usePdfSettings();
+interface FontSettingsProps {
+  pdfSettings: PdfSettings;
+  updatePdfSettings: (newSettings: Partial<PdfSettings>) => Promise<boolean>;
+}
+
+export const FontSettings: React.FC<FontSettingsProps> = ({ 
+  pdfSettings, 
+  updatePdfSettings 
+}) => {
   const [selectedElement, setSelectedElement] = React.useState('');
   const [defaultColors] = React.useState([
     '#1a1f2c',
@@ -42,7 +50,7 @@ export const FontSettings = () => {
           settings={pdfSettings.elements[selectedElement]}
           onSave={handleElementSettingsChange}
           defaultColors={defaultColors}
-          onDefaultColorClick={() => {}}
+          onDefaultColorClick={(color) => {}}
         />
       )}
     </div>

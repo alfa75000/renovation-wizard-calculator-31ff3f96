@@ -22,7 +22,6 @@ const AVAILABLE_FONTS = [
 ];
 
 interface FontSelectorProps {
-  label: string;
   value: string;
   onChange: (value: string) => void;
   className?: string;
@@ -32,14 +31,13 @@ interface FontSelectorProps {
  * Composant qui permet de sélectionner une police parmi une liste prédéfinie
  */
 export const FontSelector: React.FC<FontSelectorProps> = ({ 
-  label, 
   value, 
   onChange, 
   className = '' 
 }) => {
   return (
     <div className={className}>
-      <Label>{label}</Label>
+      <Label>Police</Label>
       <Select 
         value={value}
         onValueChange={onChange}
