@@ -1,22 +1,23 @@
+
 import { z } from 'zod';
 import { ElementSettingsSchema } from '@/features/devis/components/pdf-settings/types/elementSettings';
 
 export const PdfSettingsSchema = z.object({
   fontFamily: z.string().default('Roboto'),
-  fontSize: z.object({
-    title: z.number().default(18),
-    subtitle: z.number().default(14),
-    heading: z.number().default(12),
-    normal: z.number().default(10),
-    small: z.number().default(8),
-    details: z.number().default(9)
+  colors: z.object({
+    mainText: z.string().default('#333333'),
+    detailsText: z.string().default('#4D7C8A'),
+    coverLines: z.string().default('#002855'),
+    detailsLines: z.string().default('#4D7C8A'),
+    totalBoxLines: z.string().default('#e5e7eb'),
+    background: z.string().default('#F3F4F6')
   }).default({
-    title: 18,
-    subtitle: 14,
-    heading: 12,
-    normal: 10,
-    small: 8,
-    details: 9
+    mainText: '#333333',
+    detailsText: '#4D7C8A',
+    coverLines: '#002855',
+    detailsLines: '#4D7C8A',
+    totalBoxLines: '#e5e7eb',
+    background: '#F3F4F6'
   }),
   lineSpacing: z.object({
     coverSections: z.number().default(1.5),
@@ -32,21 +33,6 @@ export const PdfSettingsSchema = z.object({
     detailsDescription: 1.4,
     afterDetailRow: 1.2,
     betweenSections: 2
-  }),
-  colors: z.object({
-    mainText: z.string().default('#333333'),
-    detailsText: z.string().default('#4D7C8A'),
-    coverLines: z.string().default('#002855'),
-    detailsLines: z.string().default('#4D7C8A'),
-    totalBoxLines: z.string().default('#e5e7eb'),
-    background: z.string().default('#F3F4F6')
-  }).default({
-    mainText: '#333333',
-    detailsText: '#4D7C8A',
-    coverLines: '#002855',
-    detailsLines: '#4D7C8A',
-    totalBoxLines: '#e5e7eb',
-    background: '#F3F4F6'
   }),
   margins: z.object({
     cover: z.tuple([z.number(), z.number(), z.number(), z.number()]).default([40, 40, 40, 40]),
@@ -73,13 +59,13 @@ export const PdfSettingsSchema = z.object({
   elements: z.record(ElementSettingsSchema).default({})
 }).default({
   fontFamily: 'Roboto',
-  fontSize: {
-    title: 18,
-    subtitle: 14,
-    heading: 12,
-    normal: 10,
-    small: 8,
-    details: 9
+  colors: {
+    mainText: '#333333',
+    detailsText: '#4D7C8A',
+    coverLines: '#002855',
+    detailsLines: '#4D7C8A',
+    totalBoxLines: '#e5e7eb',
+    background: '#F3F4F6'
   },
   lineSpacing: {
     coverSections: 1.5,
@@ -88,14 +74,6 @@ export const PdfSettingsSchema = z.object({
     detailsDescription: 1.4,
     afterDetailRow: 1.2,
     betweenSections: 2
-  },
-  colors: {
-    mainText: '#333333',
-    detailsText: '#4D7C8A',
-    coverLines: '#002855',
-    detailsLines: '#4D7C8A',
-    totalBoxLines: '#e5e7eb',
-    background: '#F3F4F6'
   },
   margins: {
     cover: [40, 40, 40, 40],
