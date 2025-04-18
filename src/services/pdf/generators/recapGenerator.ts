@@ -38,6 +38,7 @@ export const prepareRecapContent = (
       alignment: 'center',
       fontSize: 14,
       bold: true,
+      pageBreak: 'before',
       margin: [0, 10, 0, 20]
     },
     {
