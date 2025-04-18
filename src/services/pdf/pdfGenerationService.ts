@@ -95,7 +95,7 @@ export const generateCGVContent = () => {
     });
     
     // Sous-sections si présentes
-    if (section.subsections && section.subsections.length > 0) {
+    if (section.subsections) {
       section.subsections.forEach(subsection => {
         // Titre de sous-section
         content.push({
