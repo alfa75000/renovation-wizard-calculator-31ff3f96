@@ -1112,13 +1112,10 @@ function prepareRecapContent(
   ];
   
   // Ajout de la bordure si elle est définie
-  // Vérification de la présence des paramètres de bordure
   if (pdfSettings?.elements?.recap_title?.border) {
     const border = pdfSettings.elements.recap_title.border;
     console.log('Bordures récapitulatif trouvées:', border);
     
-    // Création de la structure de tableau pour appliquer des bordures
-    // Utiliser un tableau pour encapsuler le texte avec des bordures
     const hasBorder = border.top || border.right || border.bottom || border.left;
     
     if (hasBorder) {
@@ -1170,8 +1167,127 @@ function prepareRecapContent(
     }
   }
   
-  // ... Reste du code pour préparer le contenu du récapitulatif
-  // Cette partie doit être implémentée selon le même modèle que dans le code existant
+  // Créer un tableau pour afficher chaque pièce et ses travaux
+  roomsWithTravaux.forEach((room, index) => {
+    const travauxPiece = getTravauxForPiece(room.id);
+    
+    // Ajouter le titre de la pièce
+    docContent.push({
+      text: room.name,
+      fontSize: 10,
+      bold: true,
+      margin: [0, 10, 0, 5],
+      color: DARK_BLUE
+    });
+    
+    // Créer le corps du tableau pour cette pièce
+    const tableRows = [];
+    
+    // Ajouter l'en-tête
+    tableRows.push([
+      { text: 'Prestation', style: 'tableHeader', alignment: 'left' },
+      { text: 'Qté', style: 'tableHeader', alignment: 'center' },
+      { text: 'PU HT', style: 'tableHeader', alignment: 'right' },
+      { text: 'Total HT', style: 'tableHeader', alignment: 'right' }
+    ]);
+    
+    // Ajouter les lignes pour chaque travail
+    let totalHTRoom = 0;
+    
+    travauxPiece.forEach(travail => {
+      const prixUnitaireHT = travail.prixFournitures + travail.prixMainOeuvre;
+      const totalLigne = prixUnitaireHT * travail.quantite;
+      totalHTRoom += totalLigne;
+      
+      tableRows.push([
+        { text: `${travail.typeTravauxLabel}: ${travail.sousTypeLabel}`, fontSize: 9 },
+        { text: formatQuantity(travail.quantite), alignment: 'center', fontSize: 9 },
+        { text: formatPrice(prixUnitaireHT), alignment: 'right', fontSize: 9 },
+        { text: formatPrice(totalLigne), alignment: 'right', fontSize: 9 }
+      ]);
+    });
+    
+    // Ajouter la ligne de total pour cette pièce
+    tableRows.push([
+      { text: 'Sous-total HT', colSpan: 3, alignment: 'right', fontSize: 9, bold: true },
+      {}, {},
+      { text: formatPrice(totalHTRoom), alignment: 'right', fontSize: 9, bold: true }
+    ]);
+    
+    // Ajouter le tableau au document
+    docContent.push({
+      table: {
+        headerRows: 1,
+        widths: ['*', '10%', '20%', '20%'],
+        body: tableRows
+      },
+      layout: {
+        hLineWidth: function(i: number, node: any) {
+          return (i === 0 || i === 1 || i === node.table.body.length) ? 1 : 0;
+        },
+        vLineWidth: function() { return 0; },
+        hLineColor: function() { return pdfSettings?.colors?.detailsLines || '#e5e7eb'; }
+      },
+      margin: [0, 0, 0, 15]
+    });
+  });
+  
+  // Calculer les totaux généraux
+  const totalHT = travaux.reduce((sum, t) => {
+    return sum + (t.prixFournitures + t.prixMainOeuvre) * t.quantite;
+  }, 0);
+  
+  // Regrouper par taux de TVA
+  const tvaGroups: {[key: string]: number} = {};
+  travaux.forEach(t => {
+    const prixTotal = (t.prixFournitures + t.prixMainOeuvre) * t.quantite;
+    const tvaKey = t.tauxTVA.toString();
+    
+    if (!tvaGroups[tvaKey]) {
+      tvaGroups[tvaKey] = 0;
+    }
+    
+    tvaGroups[tvaKey] += prixTotal;
+  });
+  
+  // Calculer le montant total de TVA
+  let totalTVA = 0;
+  Object.entries(tvaGroups).forEach(([taux, montant]) => {
+    totalTVA += (montant * parseFloat(taux)) / 100;
+  });
+  
+  // Montant TTC
+  const totalTTC = totalHT + totalTVA;
+  
+  // Ajouter une section pour les totaux
+  docContent.push({ text: '', margin: [0, 10, 0, 0] });
+  docContent.push({
+    table: {
+      widths: ['*', '25%'],
+      body: [
+        [
+          { text: 'TOTAL HT', alignment: 'right', bold: true, fontSize: 10 },
+          { text: formatPrice(totalHT), alignment: 'right', bold: true, fontSize: 10 }
+        ],
+        [
+          { text: 'TOTAL TVA', alignment: 'right', fontSize: 9 },
+          { text: formatPrice(totalTVA), alignment: 'right', fontSize: 9 }
+        ],
+        [
+          { text: 'TOTAL TTC', alignment: 'right', bold: true, fontSize: 11 },
+          { text: formatPrice(totalTTC), alignment: 'right', bold: true, fontSize: 11 }
+        ]
+      ]
+    },
+    layout: {
+      hLineWidth: function(i: number, node: any) {
+        return (i === 0 || i === node.table.body.length) ? 1 : 0;
+      },
+      vLineWidth: function() { return 0; },
+      hLineColor: function() { return pdfSettings?.colors?.totalBoxLines || '#e5e7eb'; }
+    },
+    margin: [0, 0, 0, 20]
+  });
   
   return docContent;
 }
@@ -1184,5 +1300,74 @@ export const generateDetailsPDF = async (
   metadata?: ProjectMetadata,
   pdfSettings?: PdfSettings
 ) => {
-  // ... Le reste du code existant
+  try {
+    console.log("Génération du PDF détaillé avec paramètres:", pdfSettings);
+    
+    // Préparer le contenu des détails
+    const detailsContent = prepareDetailsContent(rooms, travaux, getTravauxForPiece, metadata, pdfSettings);
+    
+    // Construire la définition du document
+    const docDefinition = {
+      content: detailsContent,
+      styles: PDF_STYLES,
+      defaultStyle: {
+        fontSize: 9,
+        color: DARK_BLUE
+      },
+      pageMargins: pdfSettings?.margins?.details || PDF_MARGINS.DETAILS,
+      footer: function(currentPage: number, pageCount: number) {
+        return generateFooter(metadata);
+      },
+      header: function(currentPage: number, pageCount: number) {
+        return generateHeaderContent(metadata, currentPage, pageCount);
+      }
+    };
+    
+    // Générer et télécharger le PDF
+    pdfMake.createPdf(docDefinition).download(`devis-details-${metadata?.devisNumber || 'XXXX-XX'}.pdf`);
+    return true;
+  } catch (error) {
+    console.error("Erreur lors de la génération du PDF des détails:", error);
+    throw error;
+  }
+};
+
+// Fonction pour générer le PDF du récapitulatif
+export const generateRecapPDF = async (
+  rooms: Room[],
+  travaux: Travail[],
+  getTravauxForPiece: (pieceId: string) => Travail[],
+  metadata?: ProjectMetadata,
+  pdfSettings?: PdfSettings
+) => {
+  try {
+    console.log("Génération du PDF récapitulatif avec paramètres:", pdfSettings);
+    
+    // Préparer le contenu du récapitulatif
+    const recapContent = prepareRecapContent(rooms, travaux, getTravauxForPiece, metadata, pdfSettings);
+    
+    // Construire la définition du document
+    const docDefinition = {
+      content: recapContent,
+      styles: PDF_STYLES,
+      defaultStyle: {
+        fontSize: 9,
+        color: DARK_BLUE
+      },
+      pageMargins: pdfSettings?.margins?.recap || PDF_MARGINS.RECAP,
+      footer: function(currentPage: number, pageCount: number) {
+        return generateFooter(metadata);
+      },
+      header: function(currentPage: number, pageCount: number) {
+        return generateHeaderContent(metadata, currentPage, pageCount);
+      }
+    };
+    
+    // Générer et télécharger le PDF
+    pdfMake.createPdf(docDefinition).download(`devis-recap-${metadata?.devisNumber || 'XXXX-XX'}.pdf`);
+    return true;
+  } catch (error) {
+    console.error("Erreur lors de la génération du PDF du récapitulatif:", error);
+    throw error;
+  }
 };
