@@ -34,7 +34,7 @@ export const generateRecapContent = (
     text: 'RÉCAPITULATIF',
     style: 'header',
     alignment: 'center',
-    ...convertToPdfStyle(ELEMENT_IDS.RECAP_TITLE, settings),
+    ...(convertToPdfStyle(ELEMENT_IDS.RECAP_TITLE, settings) as object),
     color: colors.mainText,
     margin: [0, 10, 0, 20]
   });

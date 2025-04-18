@@ -44,7 +44,7 @@ export const generateDetailsContent = (
     content.push({
       text: room.name,
       style: 'roomTitle',
-      ...convertToPdfStyle(ELEMENT_IDS.ROOM_TITLE, settings),
+      ...(convertToPdfStyle(ELEMENT_IDS.ROOM_TITLE, settings) as object),
       color: colors.mainText,
       fillColor: colors.background,
       margin: [0, 10, 0, 5]

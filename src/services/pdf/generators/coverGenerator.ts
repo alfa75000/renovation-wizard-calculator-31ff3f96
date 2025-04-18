@@ -58,15 +58,15 @@ export const generateCoverContent = (
           stack: [
             { 
               text: 'Assurance MAAF PRO', 
-              ...convertToPdfStyle(ELEMENT_IDS.COVER_COMPANY_NAME, settings) 
+              ...(convertToPdfStyle(ELEMENT_IDS.COVER_COMPANY_NAME, settings) as object) 
             },
             { 
               text: 'Responsabilité civile', 
-              ...convertToPdfStyle(ELEMENT_IDS.COVER_COMPANY_NAME, settings) 
+              ...(convertToPdfStyle(ELEMENT_IDS.COVER_COMPANY_NAME, settings) as object) 
             },
             { 
               text: 'Responsabilité civile décennale', 
-              ...convertToPdfStyle(ELEMENT_IDS.COVER_COMPANY_NAME, settings) 
+              ...(convertToPdfStyle(ELEMENT_IDS.COVER_COMPANY_NAME, settings) as object) 
             }
           ],
           alignment: 'right'
