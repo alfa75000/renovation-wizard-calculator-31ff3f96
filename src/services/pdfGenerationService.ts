@@ -45,7 +45,7 @@ export const generateCompletePDF = async (
   try {
     // 1. Préparer les contenus des différentes parties
     // PARTIE 1: Contenu de la page de garde
-    const coverContent = prepareCoverContent(fields, company, metadata);
+    const coverContent = prepareCoverContent(fields, company, metadata, pdfSettings);
     
     // PARTIE 2: Contenu des détails des travaux
     const detailsContent = prepareDetailsContent(rooms, travaux, getTravauxForPiece, metadata, pdfSettings);
@@ -94,42 +94,9 @@ export const generateCompletePDF = async (
 };
 
 // Fonction auxiliaire pour préparer le contenu de la page de garde
-function prepareCoverContent(fields: any[], company: any, metadata?: ProjectMetadata) {
-  console.log('Préparation du contenu de la page de garde...');
+function prepareCoverContent(fields: any[], company: any, metadata?: ProjectMetadata, pdfSettings?: PdfSettings) {
+  console.log('Préparation du contenu de la page de garde avec paramètres:', pdfSettings);
   
-  // Extraction des données depuis fields
-  const devisNumber = fields.find(f => f.id === "devisNumber")?.content;
-  const devisDate = fields.find(f => f.id === "devisDate")?.content;
-  const validityOffer = fields.find(f => f.id === "validityOffer")?.content;
-  const client = fields.find(f => f.id === "client")?.content;
-  const projectDescription = fields.find(f => f.id === "projectDescription")?.content;
-  const projectAddress = fields.find(f => f.id === "projectAddress")?.content;
-  const occupant = fields.find(f => f.id === "occupant")?.content;
-  const additionalInfo = fields.find(f => f.id === "additionalInfo")?.content;
-  
-  // Définition des colonnes
-  const col1Width = 25; // Largeur fixe pour la première colonne
-  const col2Width = '*'; // Largeur automatique pour la deuxième colonne
-  
-  // Définition du slogan
-  const slogan = company?.slogan || 'Entreprise Générale du Bâtiment';
-  
-  // Fonction pour formater la date
-  const formatDate = (dateString: string | undefined) => {
-    if (!dateString) return "";
-    
-    try {
-      const date = new Date(dateString);
-      const day = date.getDate().toString().padStart(2, '0');
-      const month = (date.getMonth() + 1).toString().padStart(2, '0');
-      const year = date.getFullYear();
-      return `${day} / ${month} / ${year}`;
-    } catch (e) {
-      return dateString;
-    }
-  };
-  
-  // Construction du contenu
   const content = [
     // Logo et assurance sur la même ligne
     {
@@ -146,22 +113,73 @@ function prepareCoverContent(fields: any[], company: any, metadata?: ProjectMeta
             } : { text: '', margin: [0, 40, 0, 0] }
           ]
         },
-        // Assurance à droite
+        // Assurance à droite avec paramètres personnalisés
         {
           width: '40%',
           stack: [
-            { text: 'Assurance MAAF PRO', fontSize: 10, color: DARK_BLUE },
-            { text: 'Responsabilité civile', fontSize: 10, color: DARK_BLUE },
-            { text: 'Responsabilité civile décennale', fontSize: 10, color: DARK_BLUE }
+            {
+              text: 'Assurance MAAF PRO',
+              fontFamily: pdfSettings?.elements?.insurance_info?.fontFamily || 'Roboto',
+              fontSize: pdfSettings?.elements?.insurance_info?.fontSize || 10,
+              bold: pdfSettings?.elements?.insurance_info?.isBold || false,
+              italic: pdfSettings?.elements?.insurance_info?.isItalic || false,
+              color: pdfSettings?.elements?.insurance_info?.color || DARK_BLUE,
+              alignment: pdfSettings?.elements?.insurance_info?.alignment || 'right',
+              margin: [
+                pdfSettings?.elements?.insurance_info?.spacing?.left || 0,
+                pdfSettings?.elements?.insurance_info?.spacing?.top || 0,
+                pdfSettings?.elements?.insurance_info?.spacing?.right || 0,
+                pdfSettings?.elements?.insurance_info?.spacing?.bottom || 0
+              ]
+            },
+            {
+              text: 'Responsabilité civile',
+              fontFamily: pdfSettings?.elements?.insurance_info?.fontFamily || 'Roboto',
+              fontSize: pdfSettings?.elements?.insurance_info?.fontSize || 10,
+              bold: pdfSettings?.elements?.insurance_info?.isBold || false,
+              italic: pdfSettings?.elements?.insurance_info?.isItalic || false,
+              color: pdfSettings?.elements?.insurance_info?.color || DARK_BLUE,
+              alignment: pdfSettings?.elements?.insurance_info?.alignment || 'right',
+              margin: [
+                pdfSettings?.elements?.insurance_info?.spacing?.left || 0,
+                pdfSettings?.elements?.insurance_info?.spacing?.top || 0,
+                pdfSettings?.elements?.insurance_info?.spacing?.right || 0,
+                pdfSettings?.elements?.insurance_info?.spacing?.bottom || 0
+              ]
+            },
+            {
+              text: 'Responsabilité civile décennale',
+              fontFamily: pdfSettings?.elements?.insurance_info?.fontFamily || 'Roboto',
+              fontSize: pdfSettings?.elements?.insurance_info?.fontSize || 10,
+              bold: pdfSettings?.elements?.insurance_info?.isBold || false,
+              italic: pdfSettings?.elements?.insurance_info?.isItalic || false,
+              color: pdfSettings?.elements?.insurance_info?.color || DARK_BLUE,
+              alignment: pdfSettings?.elements?.insurance_info?.alignment || 'right',
+              margin: [
+                pdfSettings?.elements?.insurance_info?.spacing?.left || 0,
+                pdfSettings?.elements?.insurance_info?.spacing?.top || 0,
+                pdfSettings?.elements?.insurance_info?.spacing?.right || 0,
+                pdfSettings?.elements?.insurance_info?.spacing?.bottom || 0
+              ]
+            }
           ],
-          alignment: 'right'
+          // Appliquer les bordures au conteneur stack si définies
+          ...(pdfSettings?.elements?.insurance_info?.border && {
+            border: [
+              pdfSettings.elements.insurance_info.border.top ? pdfSettings.elements.insurance_info.border.width || 1 : 0,
+              pdfSettings.elements.insurance_info.border.right ? pdfSettings.elements.insurance_info.border.width || 1 : 0,
+              pdfSettings.elements.insurance_info.border.bottom ? pdfSettings.elements.insurance_info.border.width || 1 : 0,
+              pdfSettings.elements.insurance_info.border.left ? pdfSettings.elements.insurance_info.border.width || 1 : 0
+            ],
+            borderColor: pdfSettings.elements.insurance_info.border.color || DARK_BLUE
+          })
         }
       ]
     },
     
     // Slogan
     {
-      text: slogan,
+      text: company?.slogan || 'Entreprise Générale du Bâtiment',
       fontSize: 12,
       bold: true,
       color: DARK_BLUE,
@@ -181,13 +199,13 @@ function prepareCoverContent(fields: any[], company: any, metadata?: ProjectMeta
     {
       columns: [
         {
-          width: col1Width,
+          width: '50%',
           text: 'Tél:',
           fontSize: 10,
           color: DARK_BLUE
         },
         {
-          width: col2Width,
+          width: '50%',
           text: company?.tel1 || '',
           fontSize: 10,
           color: DARK_BLUE
@@ -200,12 +218,12 @@ function prepareCoverContent(fields: any[], company: any, metadata?: ProjectMeta
     company?.tel2 ? {
       columns: [
         {
-          width: col1Width,
+          width: '50%',
           text: '',
           fontSize: 10
         },
         {
-          width: col2Width,
+          width: '50%',
           text: company.tel2,
           fontSize: 10,
           color: DARK_BLUE
@@ -218,13 +236,13 @@ function prepareCoverContent(fields: any[], company: any, metadata?: ProjectMeta
     {
       columns: [
         {
-          width: col1Width,
+          width: '50%',
           text: 'Mail:',
           fontSize: 10,
           color: DARK_BLUE
         },
         {
-          width: col2Width,
+          width: '50%',
           text: company?.email || '',
           fontSize: 10,
           color: DARK_BLUE
@@ -241,14 +259,14 @@ function prepareCoverContent(fields: any[], company: any, metadata?: ProjectMeta
     {
       columns: [
         {
-          width: col1Width,
+          width: '50%',
           text: '',
           fontSize: 10
         },
         {
-          width: col2Width,
+          width: '50%',
           text: [
-            { text: `Devis n°: ${devisNumber || ''} Du ${formatDate(devisDate)} `, fontSize: 10, color: DARK_BLUE },
+            { text: `Devis n°: ${fields.find(f => f.id === "devisNumber")?.content || ''} Du ${formatDate(fields.find(f => f.id === "devisDate")?.content)} `, fontSize: 10, color: DARK_BLUE },
             { text: ` (Validité de l'offre : 3 mois.)`, fontSize: 9, italics: true, color: DARK_BLUE }
           ]
         }
@@ -263,9 +281,9 @@ function prepareCoverContent(fields: any[], company: any, metadata?: ProjectMeta
     // Client - Titre
     {
       columns: [
-        { width: col1Width, text: '', fontSize: 10 },
+        { width: '50%', text: '', fontSize: 10 },
         { 
-          width: col2Width, 
+          width: '50%', 
           text: 'Client / Maître d\'ouvrage',
           fontSize: 10,
           color: DARK_BLUE
@@ -277,10 +295,10 @@ function prepareCoverContent(fields: any[], company: any, metadata?: ProjectMeta
     // Client - Contenu
     {
       columns: [
-        { width: col1Width, text: '', fontSize: 10 },
+        { width: '50%', text: '', fontSize: 10 },
         { 
-          width: col2Width, 
-          text: client || '',
+          width: '50%', 
+          text: fields.find(f => f.id === "client")?.content || '',
           fontSize: 10,
           color: DARK_BLUE,
           lineHeight: 1.3
@@ -305,18 +323,18 @@ function prepareCoverContent(fields: any[], company: any, metadata?: ProjectMeta
       margin: [0, 0, 0, 5]
     }
   ];
-  
+
   // Ajouter les informations conditionnelles
-  if (occupant) {
+  if (fields.find(f => f.id === "occupant")?.content) {
     content.push({
-      text: occupant,
+      text: fields.find(f => f.id === "occupant")?.content,
       fontSize: 10,
       color: DARK_BLUE,
       margin: [0, 5, 0, 0]
     });
   }
   
-  if (projectAddress) {
+  if (fields.find(f => f.id === "projectAddress")?.content) {
     content.push({
       text: 'Adresse du chantier / lieu d\'intervention:',
       fontSize: 10,
@@ -325,14 +343,14 @@ function prepareCoverContent(fields: any[], company: any, metadata?: ProjectMeta
     });
     
     content.push({
-      text: projectAddress,
+      text: fields.find(f => f.id === "projectAddress")?.content,
       fontSize: 10,
       color: DARK_BLUE,
       margin: [10, 3, 0, 0]
     });
   }
   
-  if (projectDescription) {
+  if (fields.find(f => f.id === "projectDescription")?.content) {
     content.push({
       text: 'Descriptif:',
       fontSize: 10,
@@ -341,16 +359,16 @@ function prepareCoverContent(fields: any[], company: any, metadata?: ProjectMeta
     });
     
     content.push({
-      text: projectDescription,
+      text: fields.find(f => f.id === "projectDescription")?.content,
       fontSize: 10,
       color: DARK_BLUE,
       margin: [10, 3, 0, 0]
     });
   }
   
-  if (additionalInfo) {
+  if (fields.find(f => f.id === "additionalInfo")?.content) {
     content.push({
-      text: additionalInfo,
+      text: fields.find(f => f.id === "additionalInfo")?.content,
       fontSize: 10,
       color: DARK_BLUE,
       margin: [10, 15, 0, 0]
