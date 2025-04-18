@@ -1,6 +1,5 @@
-
 import { z } from 'zod';
-import { ElementSettingsSchema } from '@/features/devis/components/pdf-settings/types/elementSettings';
+import { ElementSettingsSchema, defaultElements } from '@/features/devis/components/pdf-settings/types/elementSettings';
 
 export const PdfSettingsSchema = z.object({
   fontFamily: z.string().default('Roboto'),
@@ -56,7 +55,7 @@ export const PdfSettingsSchema = z.object({
     height: 70,
     alignment: 'left'
   }),
-  elements: z.record(ElementSettingsSchema).default({})
+  elements: z.record(ElementSettingsSchema).default(defaultElements)
 }).default({
   fontFamily: 'Roboto',
   colors: {

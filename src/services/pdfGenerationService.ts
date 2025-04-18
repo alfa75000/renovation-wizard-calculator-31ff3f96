@@ -45,7 +45,7 @@ export const generateCompletePDF = async (
   try {
     // 1. Préparer les contenus des différentes parties
     // PARTIE 1: Contenu de la page de garde
-    const coverContent = prepareCoverContent(fields, company, metadata);
+    const coverContent = prepareCoverContent(fields, company, metadata, pdfSettings);
     
     // PARTIE 2: Contenu des détails des travaux
     const detailsContent = prepareDetailsContent(rooms, travaux, getTravauxForPiece, metadata, pdfSettings);
@@ -94,8 +94,8 @@ export const generateCompletePDF = async (
 };
 
 // Fonction auxiliaire pour préparer le contenu de la page de garde
-function prepareCoverContent(fields: any[], company: any, metadata?: ProjectMetadata) {
-  console.log('Préparation du contenu de la page de garde...');
+function prepareCoverContent(fields: any[], company: any, metadata?: ProjectMetadata, pdfSettings?: PdfSettings) {
+  console.log('Préparation du contenu de la page de garde avec paramètres PDF:', pdfSettings);
   
   // Extraction des données depuis fields
   const devisNumber = fields.find(f => f.id === "devisNumber")?.content;
@@ -106,254 +106,351 @@ function prepareCoverContent(fields: any[], company: any, metadata?: ProjectMeta
   const projectAddress = fields.find(f => f.id === "projectAddress")?.content;
   const occupant = fields.find(f => f.id === "occupant")?.content;
   const additionalInfo = fields.find(f => f.id === "additionalInfo")?.content;
-  
-  // Définition des colonnes
-  const col1Width = 25; // Largeur fixe pour la première colonne
-  const col2Width = '*'; // Largeur automatique pour la deuxième colonne
-  
-  // Définition du slogan
-  const slogan = company?.slogan || 'Entreprise Générale du Bâtiment';
-  
-  // Fonction pour formater la date
-  const formatDate = (dateString: string | undefined) => {
-    if (!dateString) return "";
-    
-    try {
-      const date = new Date(dateString);
-      const day = date.getDate().toString().padStart(2, '0');
-      const month = (date.getMonth() + 1).toString().padStart(2, '0');
-      const year = date.getFullYear();
-      return `${day} / ${month} / ${year}`;
-    } catch (e) {
-      return dateString;
-    }
+
+  const content = [];
+
+  // Logo et assurance sur la même ligne
+  content.push({
+    columns: [
+      {
+        width: '60%',
+        stack: [
+          company?.logo_url ? {
+            image: company.logo_url,
+            width: 172,
+            height: 72,
+            margin: [0, 0, 0, 0]
+          } : { text: '', margin: [0, 40, 0, 0] }
+        ]
+      },
+      {
+        width: '40%',
+        stack: [
+          {
+            text: 'Assurance MAAF PRO',
+            fontSize: pdfSettings?.elements?.company_info?.fontSize || 10,
+            color: pdfSettings?.elements?.company_info?.color || DARK_BLUE,
+            alignment: pdfSettings?.elements?.company_info?.alignment || 'right'
+          },
+          {
+            text: 'Responsabilité civile',
+            fontSize: pdfSettings?.elements?.company_info?.fontSize || 10,
+            color: pdfSettings?.elements?.company_info?.color || DARK_BLUE,
+            alignment: pdfSettings?.elements?.company_info?.alignment || 'right'
+          },
+          {
+            text: 'Responsabilité civile décennale',
+            fontSize: pdfSettings?.elements?.company_info?.fontSize || 10,
+            color: pdfSettings?.elements?.company_info?.color || DARK_BLUE,
+            alignment: pdfSettings?.elements?.company_info?.alignment || 'right'
+          }
+        ],
+        alignment: 'right'
+      }
+    ]
+  });
+
+  // Slogan de l'entreprise
+  const sloganElement = {
+    text: company?.slogan || 'Entreprise Générale du Bâtiment',
+    fontFamily: pdfSettings?.elements?.company_slogan?.fontFamily || 'Roboto',
+    fontSize: pdfSettings?.elements?.company_slogan?.fontSize || 12,
+    bold: pdfSettings?.elements?.company_slogan?.isBold !== undefined ? pdfSettings.elements.company_slogan.isBold : true,
+    italic: pdfSettings?.elements?.company_slogan?.isItalic || false,
+    color: pdfSettings?.elements?.company_slogan?.color || DARK_BLUE,
+    alignment: pdfSettings?.elements?.company_slogan?.alignment || 'left',
+    margin: [
+      pdfSettings?.elements?.company_slogan?.spacing?.left || 0,
+      pdfSettings?.elements?.company_slogan?.spacing?.top || 10,
+      pdfSettings?.elements?.company_slogan?.spacing?.right || 0,
+      pdfSettings?.elements?.company_slogan?.spacing?.bottom || 20
+    ]
   };
-  
-  // Construction du contenu
-  const content = [
-    // Logo et assurance sur la même ligne
-    {
-      columns: [
-        // Logo à gauche
-        {
-          width: '60%',
-          stack: [
-            company?.logo_url ? {
-              image: company.logo_url,
-              width: 172,
-              height: 72,
-              margin: [0, 0, 0, 0]
-            } : { text: '', margin: [0, 40, 0, 0] }
-          ]
+
+  if (pdfSettings?.elements?.company_slogan?.border) {
+    const border = pdfSettings.elements.company_slogan.border;
+    const hasBorder = border.top || border.right || border.bottom || border.left;
+    
+    if (hasBorder) {
+      content.push({
+        table: {
+          widths: ['*'],
+          body: [[sloganElement]]
         },
-        // Assurance à droite
-        {
-          width: '40%',
-          stack: [
-            { text: 'Assurance MAAF PRO', fontSize: 10, color: DARK_BLUE },
-            { text: 'Responsabilité civile', fontSize: 10, color: DARK_BLUE },
-            { text: 'Responsabilité civile décennale', fontSize: 10, color: DARK_BLUE }
-          ],
-          alignment: 'right'
+        layout: {
+          hLineWidth: (i: number) => {
+            if (i === 0) return border.top ? border.width || 1 : 0;
+            if (i === 1) return border.bottom ? border.width || 1 : 0;
+            return 0;
+          },
+          vLineWidth: (i: number) => {
+            if (i === 0) return border.left ? border.width || 1 : 0;
+            if (i === 1) return border.right ? border.width || 1 : 0;
+            return 0;
+          },
+          hLineColor: () => border.color || DARK_BLUE,
+          vLineColor: () => border.color || DARK_BLUE
         }
-      ]
-    },
-    
-    // Slogan
-    {
-      text: slogan,
-      fontSize: 12,
-      bold: true,
-      color: DARK_BLUE,
-      margin: [0, 10, 0, 20]
-    },
-    
-    // Coordonnées société - Nom et adresse combinés
-    {
-      text: `Société  ${company?.name || ''} - ${company?.address || ''} - ${company?.postal_code || ''} ${company?.city || ''}`,
-      fontSize: 11,
-      bold: true,
-      color: DARK_BLUE,
-      margin: [0, 0, 0, 3]
-    },
-    
-    // Tél et Mail
-    {
-      columns: [
-        {
-          width: col1Width,
-          text: 'Tél:',
-          fontSize: 10,
-          color: DARK_BLUE
-        },
-        {
-          width: col2Width,
-          text: company?.tel1 || '',
-          fontSize: 10,
-          color: DARK_BLUE
-        }
-      ],
-      columnGap: 1,
-      margin: [0, 3, 0, 0]
-    },
-    
-    company?.tel2 ? {
-      columns: [
-        {
-          width: col1Width,
-          text: '',
-          fontSize: 10
-        },
-        {
-          width: col2Width,
-          text: company.tel2,
-          fontSize: 10,
-          color: DARK_BLUE
-        }
-      ],
-      columnGap: 1,
-      margin: [0, 0, 0, 0]
-    } : null,
-    
-    {
-      columns: [
-        {
-          width: col1Width,
-          text: 'Mail:',
-          fontSize: 10,
-          color: DARK_BLUE
-        },
-        {
-          width: col2Width,
-          text: company?.email || '',
-          fontSize: 10,
-          color: DARK_BLUE
-        }
-      ],
-      columnGap: 1,
-      margin: [0, 5, 0, 0]
-    },
-    
-    // Espace avant devis
-    { text: '', margin: [0, 30, 0, 0] },
-    
-    // Numéro et date du devis
-    {
-      columns: [
-        {
-          width: col1Width,
-          text: '',
-          fontSize: 10
-        },
-        {
-          width: col2Width,
-          text: [
-            { text: `Devis n°: ${devisNumber || ''} Du ${formatDate(devisDate)} `, fontSize: 10, color: DARK_BLUE },
-            { text: ` (Validité de l'offre : 3 mois.)`, fontSize: 9, italics: true, color: DARK_BLUE }
-          ]
-        }
-      ],
-      columnGap: 1,
-      margin: [0, 0, 0, 0]
-    },
-    
-    // Espace avant Client
-    { text: '', margin: [0, 35, 0, 0] },
-    
-    // Client - Titre
-    {
-      columns: [
-        { width: col1Width, text: '', fontSize: 10 },
-        { 
-          width: col2Width, 
-          text: 'Client / Maître d\'ouvrage',
-          fontSize: 10,
-          color: DARK_BLUE
-        }
-      ],
-      columnGap: 1
-    },
-    
-    // Client - Contenu
-    {
-      columns: [
-        { width: col1Width, text: '', fontSize: 10 },
-        { 
-          width: col2Width, 
-          text: client || '',
-          fontSize: 10,
-          color: DARK_BLUE,
-          lineHeight: 1.3
-        }
-      ],
-      columnGap: 15,
-      margin: [0, 5, 0, 0]
-    },
-    
-    // Espaces après les données client
-    { text: '', margin: [0, 5, 0, 0] },
-    { text: '', margin: [0, 5, 0, 0] },
-    { text: '', margin: [0, 5, 0, 0] },
-    { text: '', margin: [0, 5, 0, 0] },
-    { text: '', margin: [0, 5, 0, 0] },
-    
-    // Chantier - Titre
-    {
-      text: 'Chantier / Travaux',
-      fontSize: 10,
-      color: DARK_BLUE,
-      margin: [0, 0, 0, 5]
+      });
+    } else {
+      content.push(sloganElement);
     }
-  ];
+  } else {
+    content.push(sloganElement);
+  }
+
+  // Coordonnées société
+  const companyInfoElement = {
+    text: `Société ${company?.name || ''} - ${company?.address || ''} - ${company?.postal_code || ''} ${company?.city || ''}`,
+    fontFamily: pdfSettings?.elements?.company_info?.fontFamily || 'Roboto',
+    fontSize: pdfSettings?.elements?.company_info?.fontSize || 11,
+    bold: pdfSettings?.elements?.company_info?.isBold !== undefined ? pdfSettings.elements.company_info.isBold : true,
+    italic: pdfSettings?.elements?.company_info?.isItalic || false,
+    color: pdfSettings?.elements?.company_info?.color || DARK_BLUE,
+    alignment: pdfSettings?.elements?.company_info?.alignment || 'left',
+    margin: [
+      pdfSettings?.elements?.company_info?.spacing?.left || 0,
+      pdfSettings?.elements?.company_info?.spacing?.top || 0,
+      pdfSettings?.elements?.company_info?.spacing?.right || 0,
+      pdfSettings?.elements?.company_info?.spacing?.bottom || 3
+    ]
+  };
+
+  // Appliquer les bordures aux coordonnées société si définies
+  if (pdfSettings?.elements?.company_info?.border) {
+    const border = pdfSettings.elements.company_info.border;
+    const hasBorder = border.top || border.right || border.bottom || border.left;
+    
+    if (hasBorder) {
+      content.push({
+        table: {
+          widths: ['*'],
+          body: [[companyInfoElement]]
+        },
+        layout: {
+          hLineWidth: (i: number) => {
+            if (i === 0) return border.top ? border.width || 1 : 0;
+            if (i === 1) return border.bottom ? border.width || 1 : 0;
+            return 0;
+          },
+          vLineWidth: (i: number) => {
+            if (i === 0) return border.left ? border.width || 1 : 0;
+            if (i === 1) return border.right ? border.width || 1 : 0;
+            return 0;
+          },
+          hLineColor: () => border.color || DARK_BLUE,
+          vLineColor: () => border.color || DARK_BLUE
+        }
+      });
+    } else {
+      content.push(companyInfoElement);
+    }
+  } else {
+    content.push(companyInfoElement);
+  }
+
+  // Téléphone et Email
+  content.push({
+    columns: [
+      {
+        width: 25,
+        text: 'Tél:',
+        fontSize: pdfSettings?.elements?.contact_labels?.fontSize || 10,
+        color: pdfSettings?.elements?.contact_labels?.color || DARK_BLUE,
+        bold: pdfSettings?.elements?.contact_labels?.isBold || false
+      },
+      {
+        width: '*',
+        text: company?.tel1 || '',
+        fontSize: pdfSettings?.elements?.contact_values?.fontSize || 10,
+        color: pdfSettings?.elements?.contact_values?.color || DARK_BLUE,
+        bold: pdfSettings?.elements?.contact_values?.isBold || false
+      }
+    ],
+    columnGap: 1,
+    margin: [0, 3, 0, 0]
+  });
+
+  if (company?.tel2) {
+    content.push({
+      columns: [
+        {
+          width: 25,
+          text: '',
+          fontSize: pdfSettings?.elements?.contact_labels?.fontSize || 10
+        },
+        {
+          width: '*',
+          text: company.tel2,
+          fontSize: pdfSettings?.elements?.contact_values?.fontSize || 10,
+          color: pdfSettings?.elements?.contact_values?.color || DARK_BLUE,
+          bold: pdfSettings?.elements?.contact_values?.isBold || false
+        }
+      ],
+      columnGap: 1,
+      margin: [0, 0, 0, 0]
+    });
+  }
+
+  content.push({
+    columns: [
+      {
+        width: 25,
+        text: 'Mail:',
+        fontSize: pdfSettings?.elements?.contact_labels?.fontSize || 10,
+        color: pdfSettings?.elements?.contact_labels?.color || DARK_BLUE,
+        bold: pdfSettings?.elements?.contact_labels?.isBold || false
+      },
+      {
+        width: '*',
+        text: company?.email || '',
+        fontSize: pdfSettings?.elements?.contact_values?.fontSize || 10,
+        color: pdfSettings?.elements?.contact_values?.color || DARK_BLUE,
+        bold: pdfSettings?.elements?.contact_values?.isBold || false
+      }
+    ],
+    columnGap: 1,
+    margin: [0, 5, 0, 0]
+  });
+
+  // Espace avant devis
+  { content.push({ text: '', margin: [0, 30, 0, 0] }) };
+    
+  // Numéro et date du devis
+  content.push({
+    columns: [
+      {
+        width: 25,
+        text: '',
+        fontSize: pdfSettings?.elements?.devis_number?.fontSize || 10
+      },
+      {
+        width: '*',
+        text: [
+          { 
+            text: `Devis n°: ${devisNumber || ''} Du ${formatDate(devisDate)} `, 
+            fontSize: pdfSettings?.elements?.devis_number?.fontSize || 10, 
+            color: pdfSettings?.elements?.devis_number?.color || DARK_BLUE,
+            bold: pdfSettings?.elements?.devis_number?.isBold || false
+          },
+          { 
+            text: ` (Validité de l'offre : 3 mois.)`, 
+            fontSize: pdfSettings?.elements?.devis_validity?.fontSize || 9, 
+            italics: pdfSettings?.elements?.devis_validity?.isItalic || true, 
+            color: pdfSettings?.elements?.devis_validity?.color || DARK_BLUE 
+          }
+        ]
+      }
+    ],
+    columnGap: 1,
+    margin: [0, 0, 0, 0]
+  });
+    
+  // Espace avant Client
+  { content.push({ text: '', margin: [0, 35, 0, 0] }) };
+    
+  // Client - Titre
+  content.push({
+    columns: [
+      { width: 25, text: '', fontSize: pdfSettings?.elements?.client_title?.fontSize || 10 },
+      { 
+        width: '*', 
+        text: 'Client / Maître d\'ouvrage',
+        fontSize: pdfSettings?.elements?.client_title?.fontSize || 10,
+        color: pdfSettings?.elements?.client_title?.color || DARK_BLUE,
+        bold: pdfSettings?.elements?.client_title?.isBold || false
+      }
+    ],
+    columnGap: 1
+  });
+    
+  // Client - Contenu
+  content.push({
+    columns: [
+      { width: 25, text: '', fontSize: pdfSettings?.elements?.client_content?.fontSize || 10 },
+      { 
+        width: '*', 
+        text: client || '',
+        fontSize: pdfSettings?.elements?.client_content?.fontSize || 10,
+        color: pdfSettings?.elements?.client_content?.color || DARK_BLUE,
+        lineHeight: 1.3,
+        bold: pdfSettings?.elements?.client_content?.isBold || false
+      }
+    ],
+    columnGap: 15,
+    margin: [0, 5, 0, 0]
+  });
+    
+  // Espaces après les données client
+  { content.push({ text: '', margin: [0, 5, 0, 0] }) };
+  { content.push({ text: '', margin: [0, 5, 0, 0] }) };
+  { content.push({ text: '', margin: [0, 5, 0, 0] }) };
+  { content.push({ text: '', margin: [0, 5, 0, 0] }) };
+  { content.push({ text: '', margin: [0, 5, 0, 0] }) };
+    
+  // Chantier - Titre
+  content.push({
+    text: 'Chantier / Travaux',
+    fontSize: pdfSettings?.elements?.chantier_title?.fontSize || 10,
+    color: pdfSettings?.elements?.chantier_title?.color || DARK_BLUE,
+    margin: [0, 0, 0, 5],
+    bold: pdfSettings?.elements?.chantier_title?.isBold || false
+  });
   
   // Ajouter les informations conditionnelles
   if (occupant) {
     content.push({
       text: occupant,
-      fontSize: 10,
-      color: DARK_BLUE,
-      margin: [0, 5, 0, 0]
+      fontSize: pdfSettings?.elements?.chantier_values?.fontSize || 10,
+      color: pdfSettings?.elements?.chantier_values?.color || DARK_BLUE,
+      margin: [0, 5, 0, 0],
+      bold: pdfSettings?.elements?.chantier_values?.isBold || false
     });
   }
   
   if (projectAddress) {
     content.push({
       text: 'Adresse du chantier / lieu d\'intervention:',
-      fontSize: 10,
-      color: DARK_BLUE,
-      margin: [0, 5, 0, 0]
+      fontSize: pdfSettings?.elements?.chantier_labels?.fontSize || 10,
+      color: pdfSettings?.elements?.chantier_labels?.color || DARK_BLUE,
+      margin: [0, 5, 0, 0],
+      bold: pdfSettings?.elements?.chantier_labels?.isBold || false
     });
     
     content.push({
       text: projectAddress,
-      fontSize: 10,
-      color: DARK_BLUE,
-      margin: [10, 3, 0, 0]
+      fontSize: pdfSettings?.elements?.chantier_values?.fontSize || 10,
+      color: pdfSettings?.elements?.chantier_values?.color || DARK_BLUE,
+      margin: [10, 3, 0, 0],
+      bold: pdfSettings?.elements?.chantier_values?.isBold || false
     });
   }
   
   if (projectDescription) {
     content.push({
       text: 'Descriptif:',
-      fontSize: 10,
-      color: DARK_BLUE,
-      margin: [0, 8, 0, 0]
+      fontSize: pdfSettings?.elements?.chantier_labels?.fontSize || 10,
+      color: pdfSettings?.elements?.chantier_labels?.color || DARK_BLUE,
+      margin: [0, 8, 0, 0],
+      bold: pdfSettings?.elements?.chantier_labels?.isBold || false
     });
     
     content.push({
       text: projectDescription,
-      fontSize: 10,
-      color: DARK_BLUE,
-      margin: [10, 3, 0, 0]
+      fontSize: pdfSettings?.elements?.chantier_values?.fontSize || 10,
+      color: pdfSettings?.elements?.chantier_values?.color || DARK_BLUE,
+      margin: [10, 3, 0, 0],
+      bold: pdfSettings?.elements?.chantier_values?.isBold || false
     });
   }
   
   if (additionalInfo) {
     content.push({
       text: additionalInfo,
-      fontSize: 10,
-      color: DARK_BLUE,
-      margin: [10, 15, 0, 0]
+      fontSize: pdfSettings?.elements?.chantier_values?.fontSize || 10,
+      color: pdfSettings?.elements?.chantier_values?.color || DARK_BLUE,
+      margin: [10, 15, 0, 0],
+      bold: pdfSettings?.elements?.chantier_values?.isBold || false
     });
   }
   
@@ -682,254 +779,3 @@ function prepareRecapContent(
         pageBreak: 'before',
         margin: [0, 0, 0, 20]
       };
-    }
-  } else {
-    console.log('Aucune bordure définie pour le récapitulatif');
-  }
-  
-  // Créer la table des totaux par pièce
-  const roomTotalsTableBody = [];
-  
-  // Ajouter l'en-tête de la table
-  roomTotalsTableBody.push([
-    { text: '', style: 'tableHeader', alignment: 'left', color: DARK_BLUE, fontSize: 8 },
-    { text: 'Montant HT', style: 'tableHeader', alignment: 'right', color: DARK_BLUE, fontSize: 8 }
-  ]);
-    
-  // Pour chaque pièce avec des travaux
-  let totalHT = 0;
-  let totalTVA = 0;
-  
-  roomsWithTravaux.forEach(room => {
-    const travauxPiece = getTravauxForPiece(room.id);
-    if (travauxPiece.length === 0) return;
-    
-    // Calculer le total HT pour cette pièce
-    const roomTotalHT = travauxPiece.reduce((sum, t) => {
-      return sum + (t.prixFournitures + t.prixMainOeuvre) * t.quantite;
-    }, 0);
-    
-    // Calculer la TVA pour cette pièce
-    const roomTVA = travauxPiece.reduce((sum, t) => {
-      const totalHT = (t.prixFournitures + t.prixMainOeuvre) * t.quantite;
-      return sum + (totalHT * t.tauxTVA / 100);
-    }, 0);
-    
-    // Ajouter à nos totaux
-    totalHT += roomTotalHT;
-    totalTVA += roomTVA;
-    
-    // Ajouter la ligne à la table
-    roomTotalsTableBody.push([
-      { text: `Total ${room.name}`, alignment: 'left', fontSize: 8, bold: true },
-      { text: formatPrice(roomTotalHT), alignment: 'right', fontSize: 8, color: DARK_BLUE }
-    ]);
-  });
-  
-  // Ajouter la table au document
-  docContent.push({
-    table: {
-      headerRows: 1,
-      widths: ['*', 100],
-      body: roomTotalsTableBody
-    },
-    layout: {
-      hLineWidth: function(i: number, node: any) {
-        return (i === 0 || i === 1 || i === node.table.body.length) ? 1 : 0;
-      },
-      vLineWidth: function() {
-        return 0;
-      },
-      hLineColor: function() {
-        return '#e5e7eb';
-      },
-      paddingLeft: function() {
-        return 10;
-      },
-      paddingRight: function() {
-        return 10;
-      },
-      paddingTop: function() {
-        return 5;
-      },
-      paddingBottom: function() {
-        return 5;
-      }
-    },
-    margin: [0, 0, 0, 20]
-  });
-  
-  // Table des totaux généraux
-  const totalTTC = totalHT + totalTVA;
-
-  // Structure de la page récapitulative
-  docContent.push({
-    columns: [
-      // Colonne gauche - Texte de signature (environ 70% de la largeur)
-      {
-        width: '70%',
-        stack: [
-          // Contenu de signature généré
-          ...generateSignatureContent(),
-          
-          // 10 lignes vides pour la signature
-          { text: "", margin: [0, 5, 0, 0] },
-          { text: "", margin: [0, 5, 0, 0] },
-          { text: "", margin: [0, 5, 0, 0] },
-          { text: "", margin: [0, 5, 0, 0] },
-          { text: "", margin: [0, 5, 0, 0] },
-          { text: "", margin: [0, 5, 0, 0] },
-          { text: "", margin: [0, 5, 0, 0] },
-          { text: "", margin: [0, 5, 0, 0] },
-          { text: "", margin: [0, 5, 0, 0] },
-          { text: "", margin: [0, 5, 0, 0] }
-        ]
-      },
-      // Colonne droite - Tableaux des totaux (environ 30% de la largeur)
-      {
-        width: '30%',
-        stack: [
-          // D'abord le tableau standard sans bordures
-          generateStandardTotalsTable(totalHT, totalTVA),
-          // Ensuite le tableau du Total TTC avec bordure complète
-          generateTTCTable(totalTTC)
-        ]
-      }
-    ],
-    margin: [0, 0, 0, 20]
-  });
-
-  // Ajouter le texte de salutation sur toute la largeur
-  docContent.push(generateSalutationContent());
-  
-  // Ajouter les conditions générales de vente
-  const cgvContent = generateCGVContent();
-  
-  // Ajouter chaque élément du contenu CGV
-  docContent.push(...cgvContent);
-  
-  return docContent;
-}
-
-export const generateCoverPDF = async (fields: any[], company: any) => {
-  console.log('Génération du PDF de la page de garde', { fields, company });
-  
-  // Cette fonction est probablement déjà implémentée ailleurs
-};
-
-export const generateDetailsPDF = async (
-  rooms: Room[], 
-  travaux: Travail[], 
-  getTravauxForPiece: (pieceId: string) => Travail[],
-  metadata?: ProjectMetadata,
-  pdfSettings?: PdfSettings
-) => {
-  console.log('Génération du PDF des détails des travaux avec pdfMake:', { pdfSettings });
-
-  // On filtre les pièces qui n'ont pas de travaux
-  const roomsWithTravaux = rooms.filter(room => getTravauxForPiece(room.id).length > 0);
-  
-  // Obtenir le contenu des détails avec les paramètres PDF
-  const detailsContent = prepareDetailsContent(rooms, travaux, getTravauxForPiece, metadata, pdfSettings);
-  
-  // Définir le document avec contenu et styles
-  const docDefinition = {
-    header: function(currentPage: number, pageCount: number) {
-      // Ajustement de la numérotation de page
-      const adjustedCurrentPage = currentPage + 1;
-      const adjustedTotalPages = pageCount + 3;
-      
-      return [
-        // En-tête avec le numéro de devis et la pagination ajustée
-        generateHeaderContent(metadata, adjustedCurrentPage, adjustedTotalPages),
-        // En-tête du tableau
-        {
-          table: {
-            headerRows: 1,
-            widths: TABLE_COLUMN_WIDTHS.DETAILS,
-            body: [
-              [
-                { text: 'Description', style: 'tableHeader', alignment: 'left', color: DARK_BLUE },
-                { text: 'Quantité', style: 'tableHeader', alignment: 'center', color: DARK_BLUE },
-                { text: 'Prix HT Unit.', style: 'tableHeader', alignment: 'center', color: DARK_BLUE },
-                { text: 'TVA', style: 'tableHeader', alignment: 'center', color: DARK_BLUE },
-                { text: 'Total HT', style: 'tableHeader', alignment: 'center', color: DARK_BLUE }
-              ]
-            ]
-          },
-          layout: {
-            hLineWidth: function() { return 1; },
-            vLineWidth: function() { return 0; },
-            hLineColor: function() { return '#e5e7eb'; },
-            fillColor: function(rowIndex: number) { return (rowIndex === 0) ? '#f3f4f6' : null; }
-          },
-          margin: [30, 0, 30, 10]
-        }
-      ];
-    },
-    footer: function(currentPage: number, pageCount: number) {
-      return generateFooter(metadata);
-    },
-    content: detailsContent,
-    styles: PDF_STYLES,
-    pageMargins: pdfSettings?.margins?.details || PDF_MARGINS.DETAILS,
-    defaultStyle: {
-      fontSize: 9,
-      color: pdfSettings?.colors?.mainText || DARK_BLUE
-    }
-  };
-  
-  try {
-    // Créer et télécharger le PDF
-    pdfMake.createPdf(docDefinition).download(`devis_details_${metadata?.devisNumber || 'XXXX-XX'}.pdf`);
-    console.log('PDF généré avec succès');
-  } catch (error) {
-    console.error('Erreur lors de la génération du PDF:', error);
-    throw error;
-  }
-};
-
-export const generateRecapPDF = async (
-  rooms: Room[], 
-  travaux: Travail[], 
-  getTravauxForPiece: (pieceId: string) => Travail[],
-  metadata?: ProjectMetadata,
-  pdfSettings?: PdfSettings
-) => {
-  console.log('Génération du PDF récapitulatif avec pdfMake:', { pdfSettings });
-
-  // Obtenir le contenu du récapitulatif avec les paramètres PDF
-  const recapContent = prepareRecapContent(rooms, travaux, getTravauxForPiece, metadata, pdfSettings);
-  
-  // Définir le document avec contenu et styles
-  const docDefinition = {
-    // En-tête avec numéro de devis et pagination - Toujours afficher l'en-tête, même sur la première page
-    header: function(currentPage, pageCount) {
-      // Calculer la numérotation des pages
-      const pageNumber = currentPage + 1;
-      const totalPages = pageCount + 2;
-      
-      return generateHeaderContent(metadata, pageNumber, totalPages);
-    },
-    // Pied de page avec les informations de la société
-    footer: function(currentPage, pageCount) {
-      return generateFooter(metadata);
-    },
-    content: recapContent,
-    styles: PDF_STYLES,
-    pageMargins: pdfSettings?.margins?.recap || PDF_MARGINS.RECAP,
-    defaultStyle: {
-      fontSize: 9,
-      color: pdfSettings?.colors?.mainText || DARK_BLUE
-    }
-  };
-  
-  try {
-    // Créer et télécharger le PDF
-    pdfMake.createPdf(docDefinition).download(`devis_recap_${metadata?.devisNumber || 'XXXX-XX'}.pdf`);
-    console.log('PDF récapitulatif généré avec succès', { pdfSettings });
-  } catch (error) {
-    console.error('Erreur lors de la génération du PDF récapitulatif:', error);
-    throw error;
-  }
-};
