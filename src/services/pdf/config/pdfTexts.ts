@@ -5,7 +5,8 @@ export const PDF_TEXTS = {
     SECTIONS: [
       {
         title: 'Article 1 - Objet et champ d\'application',
-        content: 'Les présentes conditions générales de vente s\'appliquent à toutes les prestations de services conclues...'
+        content: 'Les présentes conditions générales de vente s\'appliquent à toutes les prestations de services conclues...',
+        subsections: [] // Ajout de la propriété subsections (même vide)
       },
       // Add other CGV sections as needed
     ]
