@@ -37,6 +37,10 @@ export const usePdfSettings = () => {
           // Ajout d'un log détaillé pour débogage
           Object.entries(validatedSettings.elements).forEach(([key, element]) => {
             console.log(`Element ${key}:`, element);
+            // Vérifier spécifiquement les bordures
+            if (element.border) {
+              console.log(`Bordures de l'élément ${key}:`, element.border);
+            }
           });
         } else {
           console.log("Aucun élément personnalisé trouvé");

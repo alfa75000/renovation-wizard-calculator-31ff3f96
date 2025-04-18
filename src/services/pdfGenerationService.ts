@@ -600,6 +600,7 @@ function prepareRecapContent(
   pdfSettings?: PdfSettings
 ) {
   console.log('Préparation du contenu du récapitulatif avec paramètres PDF:', pdfSettings);
+  console.log('Éléments de récapitulatif:', pdfSettings?.elements?.recap_title);
   
   // On filtre les pièces qui n'ont pas de travaux
   const roomsWithTravaux = rooms.filter(room => getTravauxForPiece(room.id).length > 0);
@@ -621,22 +622,70 @@ function prepareRecapContent(
         pdfSettings?.elements?.recap_title?.spacing?.right || 0,
         pdfSettings?.elements?.recap_title?.spacing?.bottom || 20
       ],
-      border: pdfSettings?.elements?.recap_title?.border?.top || 
-              pdfSettings?.elements?.recap_title?.border?.right || 
-              pdfSettings?.elements?.recap_title?.border?.bottom || 
-              pdfSettings?.elements?.recap_title?.border?.left 
-        ? [
-            pdfSettings?.elements?.recap_title?.border?.top || false,
-            pdfSettings?.elements?.recap_title?.border?.right || false,
-            pdfSettings?.elements?.recap_title?.border?.bottom || false,
-            pdfSettings?.elements?.recap_title?.border?.left || false
-          ] 
-        : undefined,
-      borderColor: pdfSettings?.elements?.recap_title?.border?.color || DARK_BLUE,
-      borderWidth: pdfSettings?.elements?.recap_title?.border?.width || 1,
       pageBreak: 'before'
     }
   ];
+  
+  // Ajout de la bordure si elle est définie
+  // Vérification de la présence des paramètres de bordure
+  if (pdfSettings?.elements?.recap_title?.border) {
+    const border = pdfSettings.elements.recap_title.border;
+    console.log('Bordures récapitulatif trouvées:', border);
+    
+    // Création de la structure de tableau pour appliquer des bordures
+    // Utiliser un tableau pour encapsuler le texte avec des bordures
+    const hasBorder = border.top || border.right || border.bottom || border.left;
+    
+    if (hasBorder) {
+      // Remplacer l'élément de texte simple par un tableau avec bordures
+      docContent[0] = {
+        table: {
+          widths: ['*'],
+          body: [
+            [
+              {
+                text: 'RÉCAPITULATIF',
+                fontFamily: pdfSettings?.elements?.recap_title?.fontFamily || 'Roboto',
+                fontSize: pdfSettings?.elements?.recap_title?.fontSize || 12,
+                bold: pdfSettings?.elements?.recap_title?.isBold !== undefined ? pdfSettings.elements.recap_title.isBold : true,
+                italic: pdfSettings?.elements?.recap_title?.isItalic || false,
+                color: pdfSettings?.elements?.recap_title?.color || DARK_BLUE,
+                alignment: pdfSettings?.elements?.recap_title?.alignment || 'center',
+                margin: [
+                  pdfSettings?.elements?.recap_title?.spacing?.left || 0,
+                  pdfSettings?.elements?.recap_title?.spacing?.top || 10,
+                  pdfSettings?.elements?.recap_title?.spacing?.right || 0,
+                  pdfSettings?.elements?.recap_title?.spacing?.bottom || 20
+                ]
+              }
+            ]
+          ]
+        },
+        layout: {
+          hLineWidth: function(i: number, node: any) {
+            if (i === 0) return border.top ? border.width || 1 : 0;
+            if (i === 1) return border.bottom ? border.width || 1 : 0;
+            return 0;
+          },
+          vLineWidth: function(i: number, node: any) {
+            if (i === 0) return border.left ? border.width || 1 : 0;
+            if (i === 1) return border.right ? border.width || 1 : 0;
+            return 0;
+          },
+          hLineColor: function() {
+            return border.color || DARK_BLUE;
+          },
+          vLineColor: function() {
+            return border.color || DARK_BLUE;
+          }
+        },
+        pageBreak: 'before',
+        margin: [0, 0, 0, 20]
+      };
+    }
+  } else {
+    console.log('Aucune bordure définie pour le récapitulatif');
+  }
   
   // Créer la table des totaux par pièce
   const roomTotalsTableBody = [];

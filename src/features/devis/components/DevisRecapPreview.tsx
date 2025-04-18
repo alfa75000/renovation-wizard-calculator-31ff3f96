@@ -19,12 +19,20 @@ const DevisRecapPreview: React.FC = () => {
   useEffect(() => {
     console.log("DevisRecapPreview - Paramètres PDF disponibles:", pdfSettings);
     console.log("DevisRecapPreview - Éléments personnalisés:", pdfSettings?.elements);
+    
+    // Vérifier spécifiquement les bordures du récapitulatif
+    if (pdfSettings?.elements?.recap_title) {
+      console.log("DevisRecapPreview - Bordures du récapitulatif:", pdfSettings.elements.recap_title.border);
+    }
   }, [pdfSettings]);
 
   // Fonction pour générer le PDF
   const handlePrint = async () => {
     try {
       console.log("Impression du récapitulatif avec les paramètres:", pdfSettings);
+      if (pdfSettings?.elements?.recap_title) {
+        console.log("Impression - Bordures du récapitulatif:", pdfSettings.elements.recap_title.border);
+      }
       await generateRecapPDF(rooms, travaux, getTravauxForPiece, metadata, pdfSettings);
     } catch (error) {
       console.error("Erreur lors de la génération du PDF:", error);
