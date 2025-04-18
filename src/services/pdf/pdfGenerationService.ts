@@ -2,7 +2,7 @@ import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
 import { Room, Travail, ProjectMetadata } from '@/types';
 import { PDF_ELEMENT_STYLES } from './config/elementStyles';
-import { getPdfSettings } from './config/pdfSettingsManager';
+import { usePdfSettings } from './hooks/usePdfSettings';
 
 // Importer les constantes et les utilitaires
 import { 
@@ -13,8 +13,6 @@ import {
   formatPrice,
   formatQuantity
 } from './pdfConstants';
-
-import { PDF_TEXTS } from './config/pdfTexts';
 
 /**
  * Génère le contenu de l'en-tête pour les documents PDF
@@ -243,110 +241,69 @@ export const generateTTCTable = (totalTTC: number) => {
   };
 };
 
-/**
- * Fonction auxiliaire pour préparer le contenu du récapitulatif
- */
-function prepareRecapContent(
+import { PDF_TEXTS } from './config/pdfTexts';
+
+// Nouvelle fonction pour générer le PDF complet du devis
+export const generateCompletePDF = async (
+  fields: any[],
+  company: any,
   rooms: Room[], 
   travaux: Travail[], 
   getTravauxForPiece: (pieceId: string) => Travail[],
   metadata?: ProjectMetadata
-) {
-  // Récupérer les paramètres PDF sans hook
-  const pdfSettings = getPdfSettings();
-  console.log('Préparation du contenu du récapitulatif avec les paramètres PDF:', pdfSettings);
-
-  // On filtre les pièces qui n'ont pas de travaux
-  const roomsWithTravaux = rooms.filter(room => getTravauxForPiece(room.id).length > 0);
+) => {
+  console.log('Génération du PDF complet du devis...');
   
-  // Créer le contenu du document
-  const docContent: any[] = [
-    // Titre du récapitulatif - Utilise les paramètres globaux maintenant
-    {
-      text: 'RÉCAPITULATIF',
-      style: 'header',
-      alignment: pdfSettings?.elements?.recap_title?.alignment || 'center',
-      fontSize: pdfSettings?.elements?.recap_title?.fontSize || 12,
-      bold: pdfSettings?.elements?.recap_title?.isBold || true,
-      color: pdfSettings?.elements?.recap_title?.color || DARK_BLUE,
-      margin: [0, 10, 0, 20]
-    }
-  ];
-  
-  // Créer la table des totaux par pièce
-  const roomTotalsTableBody = [];
-  
-  // Ajouter l'en-tête de la table
-  roomTotalsTableBody.push([
-    { text: '', style: 'tableHeader', alignment: 'left', color: DARK_BLUE, fontSize: 8 },
-    { text: 'Montant HT', style: 'tableHeader', alignment: 'right', color: DARK_BLUE, fontSize: 8 }
-  ]);
+  try {
+    // 1. Préparer les contenus des différentes parties
+    // PARTIE 1: Contenu de la page de garde
+    const coverContent = prepareCoverContent(fields, company, metadata);
     
-  // Pour chaque pièce avec des travaux
-  let totalHT = 0;
-  let totalTVA = 0;
-  
-  roomsWithTravaux.forEach(room => {
-    const travauxPiece = getTravauxForPiece(room.id);
-    if (travauxPiece.length === 0) return;
+    // PARTIE 2: Contenu des détails des travaux
+    const detailsContent = prepareDetailsContent(rooms, travaux, getTravauxForPiece, metadata);
     
-    // Calculer le total HT pour cette pièce
-    const roomTotalHT = travauxPiece.reduce((sum, t) => {
-      return sum + (t.prixFournitures + t.prixMainOeuvre) * t.quantite;
-    }, 0);
+    // PARTIE 3: Contenu du récapitulatif
+    const recapContent = prepareRecapContent(rooms, travaux, getTravauxForPiece, metadata);
     
-    // Calculer la TVA pour cette pièce
-    const roomTVA = travauxPiece.reduce((sum, t) => {
-      const totalHT = (t.prixFournitures + t.prixMainOeuvre) * t.quantite;
-      return sum + (totalHT * t.tauxTVA / 100);
-    }, 0);
-    
-    // Ajouter à nos totaux
-    totalHT += roomTotalHT;
-    totalTVA += roomTVA;
-    
-    // Ajouter la ligne à la table
-    roomTotalsTableBody.push([
-      { text: `Total ${room.name}`, alignment: 'left', fontSize: 8, bold: true },
-      { text: formatPrice(roomTotalHT), alignment: 'right', fontSize: 8, color: DARK_BLUE }
-    ]);
-  });
-  
-  // Ajouter la table au document
-  docContent.push({
-    table: {
-      headerRows: 1,
-      widths: ['*', 100],
-      body: roomTotalsTableBody
-    },
-    layout: {
-      hLineWidth: function(i: number, node: any) {
-        return (i === 0 || i === 1 || i === node.table.body.length) ? 1 : 0;
+    // 2. Fusionner tous les contenus dans un seul document
+    const docDefinition = {
+      content: [
+        // Page de garde
+        ...coverContent,
+        // Page(s) de détails
+        { text: '', pageBreak: 'before' }, // Forcer un saut de page
+        ...detailsContent,
+        // Page(s) de récapitulatif
+        { text: '', pageBreak: 'before' }, // Forcer un saut de page
+        ...recapContent
+      ],
+      styles: PDF_STYLES,
+      defaultStyle: {
+        fontSize: 9,
+        color: DARK_BLUE
       },
-      vLineWidth: function() {
-        return 0;
+      pageMargins: PDF_MARGINS.COVER, // Utiliser les marges de la page de garde pour tout le document
+      footer: function(currentPage: number, pageCount: number) {
+        return generateFooter(metadata);
       },
-      hLineColor: function() {
-        return '#e5e7eb';
-      },
-      paddingLeft: function() {
-        return 4;
-      },
-      paddingRight: function() {
-        return 4;
-      },
-      paddingTop: function() {
-        return 2;
-      },
-      paddingBottom: function() {
-        return 2;
+      header: function(currentPage: number, pageCount: number) {
+        // Ne pas afficher d'en-tête sur la première page (page de garde)
+        if (currentPage === 1) return null;
+        
+        // Sur les autres pages, afficher l'en-tête standard
+        return generateHeaderContent(metadata, currentPage, pageCount);
       }
-    },
-    margin: [0, 0, 0, 15]
-  });
-  
-  return docContent;
-}
+    };
+    
+    // 3. Générer et télécharger le PDF complet
+    pdfMake.createPdf(docDefinition).download(`devis-complet-${metadata?.devisNumber || 'XXXX-XX'}.pdf`);
+    console.log('PDF complet généré avec succès');
+    return true;
+  } catch (error) {
+    console.error('Erreur lors de la génération du PDF complet:', error);
+    throw error;
+  }
+};
 
 // Fonction auxiliaire pour préparer le contenu de la page de garde
 function prepareCoverContent(fields: any[], company: any, metadata?: ProjectMetadata) {
@@ -839,64 +796,80 @@ function prepareDetailsContent(
   return docContent;
 }
 
-// Nouvelle fonction pour générer le PDF complet du devis
-export const generateCompletePDF = async (
-  fields: any[],
-  company: any,
+function prepareRecapContent(
   rooms: Room[], 
   travaux: Travail[], 
   getTravauxForPiece: (pieceId: string) => Travail[],
   metadata?: ProjectMetadata
-) => {
-  console.log('Génération du PDF complet du devis...');
+) {
+  const { pdfSettings } = usePdfSettings();
+  console.log('Préparation du contenu du récapitulatif...');
+
+  // On filtre les pièces qui n'ont pas de travaux
+  const roomsWithTravaux = rooms.filter(room => getTravauxForPiece(room.id).length > 0);
   
-  try {
-    // 1. Préparer les contenus des différentes parties
-    // PARTIE 1: Contenu de la page de garde
-    const coverContent = prepareCoverContent(fields, company, metadata);
+  // Créer le contenu du document
+  const docContent: any[] = [
+    // Titre du récapitulatif - Maintenant utilise les paramètres du Hook
+    {
+      text: 'RÉCAPITULATIF',
+      style: 'header',
+      alignment: pdfSettings?.elements?.recap_title?.alignment || 'center',
+      fontSize: pdfSettings?.elements?.recap_title?.fontSize || 12,
+      bold: pdfSettings?.elements?.recap_title?.isBold || true,
+      color: pdfSettings?.elements?.recap_title?.color || DARK_BLUE,
+      margin: [0, 10, 0, 20]
+    }
+  ];
+  
+  // Créer la table des totaux par pièce
+  const roomTotalsTableBody = [];
+  
+  // Ajouter l'en-tête de la table
+  roomTotalsTableBody.push([
+    { text: '', style: 'tableHeader', alignment: 'left', color: DARK_BLUE, fontSize: 8 },
+    { text: 'Montant HT', style: 'tableHeader', alignment: 'right', color: DARK_BLUE, fontSize: 8 }
+  ]);
     
-    // PARTIE 2: Contenu des détails des travaux
-    const detailsContent = prepareDetailsContent(rooms, travaux, getTravauxForPiece, metadata);
+  // Pour chaque pièce avec des travaux
+  let totalHT = 0;
+  let totalTVA = 0;
+  
+  roomsWithTravaux.forEach(room => {
+    const travauxPiece = getTravauxForPiece(room.id);
+    if (travauxPiece.length === 0) return;
     
-    // PARTIE 3: Contenu du récapitulatif
-    const recapContent = prepareRecapContent(rooms, travaux, getTravauxForPiece, metadata);
+    // Calculer le total HT pour cette pièce
+    const roomTotalHT = travauxPiece.reduce((sum, t) => {
+      return sum + (t.prixFournitures + t.prixMainOeuvre) * t.quantite;
+    }, 0);
     
-    // 2. Fusionner tous les contenus dans un seul document
-    const docDefinition = {
-      content: [
-        // Page de garde
-        ...coverContent,
-        // Page(s) de détails
-        { text: '', pageBreak: 'before' }, // Forcer un saut de page
-        ...detailsContent,
-        // Page(s) de récapitulatif
-        { text: '', pageBreak: 'before' }, // Forcer un saut de page
-        ...recapContent
-      ],
-      styles: PDF_STYLES,
-      defaultStyle: {
-        fontSize: 9,
-        color: DARK_BLUE
+    // Calculer la TVA pour cette pièce
+    const roomTVA = travauxPiece.reduce((sum, t) => {
+      const totalHT = (t.prixFournitures + t.prixMainOeuvre) * t.quantite;
+      return sum + (totalHT * t.tauxTVA / 100);
+    }, 0);
+    
+    // Ajouter à nos totaux
+    totalHT += roomTotalHT;
+    totalTVA += roomTVA;
+    
+    // Ajouter la ligne à la table
+    roomTotalsTableBody.push([
+      { text: `Total ${room.name}`, alignment: 'left', fontSize: 8, bold: true },
+      { text: formatPrice(roomTotalHT), alignment: 'right', fontSize: 8, color: DARK_BLUE }
+    ]);
+  });
+  
+  // Ajouter la table au document
+  docContent.push({
+    table: {
+      headerRows: 1,
+      widths: ['*', 100],
+      body: roomTotalsTableBody
+    },
+    layout: {
+      hLineWidth: function(i: number, node: any) {
+        return (i === 0 || i === 1 || i === node.table.body.length) ? 1 : 0;
       },
-      pageMargins: PDF_MARGINS.COVER, // Utiliser les marges de la page de garde pour tout le document
-      footer: function(currentPage: number, pageCount: number) {
-        return generateFooter(metadata);
-      },
-      header: function(currentPage: number, pageCount: number) {
-        // Ne pas afficher d'en-tête sur la première page (page de garde)
-        if (currentPage === 1) return null;
-        
-        // Sur les autres pages, afficher l'en-tête standard
-        return generateHeaderContent(metadata, currentPage, pageCount);
-      }
-    };
-    
-    // 3. Générer et télécharger le PDF complet
-    pdfMake.createPdf(docDefinition).download(`devis-complet-${metadata?.devisNumber || 'XXXX-XX'}.pdf`);
-    console.log('PDF complet généré avec succès');
-    return true;
-  } catch (error) {
-    console.error('Erreur lors de la génération du PDF complet:', error);
-    throw error;
-  }
-};
+      vLineWidth: function

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -14,10 +15,8 @@ import { DevisCoverPreview } from "./DevisCoverPreview";
 import { DevisDetailsPreview } from "./DevisDetailsPreview";
 import DevisRecapPreview from "./DevisRecapPreview";
 import { CompanyData } from "@/types";
-import { generateCompletePDF } from "@/services/pdf/pdfGenerationService";
+import { generateCompletePDF } from "@/services/pdfGenerationService";
 import { useTravaux } from "@/features/travaux/hooks/useTravaux";
-import { usePdfSettings } from "@/services/pdf/hooks/usePdfSettings";
-import { setPdfSettingsForGeneration } from "@/services/pdf/config/pdfSettingsManager";
 
 interface PrintableField {
   id: string;
@@ -30,7 +29,6 @@ export const PrintableFieldsForm: React.FC = () => {
   const { state, dispatch } = useProject();
   const { metadata, property, rooms } = state;
   const { travaux, getTravauxForPiece } = useTravaux();
-  const { pdfSettings } = usePdfSettings();
   
   const [clientName, setClientName] = useState<string>("Chargement...");
   const [companyName, setCompanyName] = useState<string>("LRS Rénovation");
@@ -162,9 +160,6 @@ export const PrintableFieldsForm: React.FC = () => {
     try {
       // Filtrer uniquement les champs activés
       const enabledFields = printableFields.filter(field => field.enabled);
-      
-      // Définir les paramètres actuels avant de générer le PDF
-      setPdfSettingsForGeneration(pdfSettings);
       
       // Générer le PDF complet avec toutes les sections
       await generateCompletePDF(
