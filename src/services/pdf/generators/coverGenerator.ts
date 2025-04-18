@@ -58,22 +58,21 @@ export const generateCoverContent = (
           stack: [
             { 
               text: 'Assurance MAAF PRO', 
-              ...(convertToPdfStyle(ELEMENT_IDS.COVER_COMPANY_NAME, settings) as object) 
+              ...(convertToPdfStyle(ELEMENT_IDS.COVER_COMPANY_NAME, settings))
             },
             { 
               text: 'Responsabilité civile', 
-              ...(convertToPdfStyle(ELEMENT_IDS.COVER_COMPANY_NAME, settings) as object) 
+              ...(convertToPdfStyle(ELEMENT_IDS.COVER_COMPANY_NAME, settings))
             },
             { 
               text: 'Responsabilité civile décennale', 
-              ...(convertToPdfStyle(ELEMENT_IDS.COVER_COMPANY_NAME, settings) as object) 
+              ...(convertToPdfStyle(ELEMENT_IDS.COVER_COMPANY_NAME, settings))
             }
           ],
           alignment: 'right'
         }
       ]
     }
-    // ... Reste du contenu
   ];
 
   return content;

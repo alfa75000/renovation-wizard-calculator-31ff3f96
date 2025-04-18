@@ -1,5 +1,5 @@
 
-import { ElementSettings, defaultElementSettings } from '@/features/devis/components/pdf-settings/types/elementSettings';
+import { ElementSettings, defaultElementSettings, SpacingSettings } from '@/features/devis/components/pdf-settings/types/elementSettings';
 import { PdfSettings } from '../config/pdfSettingsTypes';
 import { Content } from 'pdfmake/interfaces';
 
@@ -49,9 +49,25 @@ export function getElementSettings(elementId: string, settings?: PdfSettings | n
   }
   
   // Fusion avec les valeurs par défaut pour s'assurer que tous les paramètres sont présents
+  const elementSettings = settings.elements[elementId];
   return {
     ...defaultElementSettings,
-    ...settings.elements[elementId]
+    ...elementSettings,
+    // S'assurer que les objets spacing et border sont complets
+    spacing: {
+      top: elementSettings.spacing?.top ?? defaultElementSettings.spacing.top,
+      right: elementSettings.spacing?.right ?? defaultElementSettings.spacing.right,
+      bottom: elementSettings.spacing?.bottom ?? defaultElementSettings.spacing.bottom,
+      left: elementSettings.spacing?.left ?? defaultElementSettings.spacing.left
+    },
+    border: {
+      top: elementSettings.border?.top ?? defaultElementSettings.border.top,
+      right: elementSettings.border?.right ?? defaultElementSettings.border.right,
+      bottom: elementSettings.border?.bottom ?? defaultElementSettings.border.bottom,
+      left: elementSettings.border?.left ?? defaultElementSettings.border.left,
+      color: elementSettings.border?.color ?? defaultElementSettings.border.color,
+      width: elementSettings.border?.width ?? defaultElementSettings.border.width
+    }
   };
 }
 
@@ -72,6 +88,7 @@ export function convertToPdfStyle(elementId: string, settings?: PdfSettings | nu
     italics: elementSettings.isItalic,
     color: elementSettings.color,
     alignment: elementSettings.alignment,
+    // Conversion de spacing en margin pour pdfmake
     margin: [
       elementSettings.spacing.left,
       elementSettings.spacing.top, 

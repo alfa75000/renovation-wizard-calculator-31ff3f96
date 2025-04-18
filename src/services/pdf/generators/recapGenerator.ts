@@ -32,11 +32,9 @@ export const generateRecapContent = (
   // Titre
   content.push({
     text: 'RÉCAPITULATIF',
-    style: 'header',
+    ...(convertToPdfStyle(ELEMENT_IDS.RECAP_TITLE, settings)),
     alignment: 'center',
-    ...(convertToPdfStyle(ELEMENT_IDS.RECAP_TITLE, settings) as object),
-    color: colors.mainText,
-    margin: [0, 10, 0, 20]
+    color: colors.mainText
   });
   
   // Tableau récapitulatif

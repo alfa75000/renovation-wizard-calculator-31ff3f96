@@ -11,8 +11,7 @@ import { getPdfSettings } from '../config/pdfSettingsManager';
 import { 
   ELEMENT_IDS, 
   convertToPdfStyle, 
-  getPdfColors, 
-  createTableBorderLayout 
+  getPdfColors
 } from '../utils/styleUtils';
 
 /**
@@ -43,11 +42,8 @@ export const generateDetailsContent = (
     // Titre de la pièce
     content.push({
       text: room.name,
-      style: 'roomTitle',
-      ...(convertToPdfStyle(ELEMENT_IDS.ROOM_TITLE, settings) as object),
-      color: colors.mainText,
-      fillColor: colors.background,
-      margin: [0, 10, 0, 5]
+      ...(convertToPdfStyle(ELEMENT_IDS.ROOM_TITLE, settings)),
+      fillColor: colors.background
     });
     
     // Table des travaux

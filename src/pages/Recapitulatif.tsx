@@ -6,7 +6,7 @@ import { Link } from "react-router-dom";
 import { Layout } from "@/components/Layout";
 import { useProject } from "@/contexts/ProjectContext";
 import { useTravaux } from "@/features/travaux/hooks/useTravaux";
-import { generateDetailsPDF } from "@/services/pdfGenerationService";
+import { generateDetailsPDF } from "@/services/pdf/pdfMainGenerator";
 
 // Import des composants refactorisés
 import PropertyInfoCard from "@/features/recap/components/PropertyInfoCard";

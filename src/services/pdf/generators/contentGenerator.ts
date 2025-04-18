@@ -19,15 +19,15 @@ export const generateSignatureContent = (): Content[] => {
   // Contenu principal
   elements.push({
     text: PDF_TEXTS.SIGNATURE.CONTENT,
-    ...(convertToPdfStyle(ELEMENT_IDS.RECAP_SIGNATURE, settings) as object)
+    ...(convertToPdfStyle(ELEMENT_IDS.RECAP_SIGNATURE, settings))
   });
   
   // Points avec puces
   PDF_TEXTS.SIGNATURE.POINTS.forEach(point => {
     elements.push({
       text: point.text,
-      bold: point.bold || getElementSettings(ELEMENT_IDS.RECAP_SIGNATURE).isBold,
-      ...(convertToPdfStyle(ELEMENT_IDS.RECAP_SIGNATURE, settings) as object)
+      ...(convertToPdfStyle(ELEMENT_IDS.RECAP_SIGNATURE, settings)),
+      bold: point.bold || getElementSettings(ELEMENT_IDS.RECAP_SIGNATURE).isBold
     });
   });
   
@@ -43,6 +43,6 @@ export const generateSalutationContent = (): Content => {
   
   return {
     text: PDF_TEXTS.SALUTATION,
-    ...(convertToPdfStyle(ELEMENT_IDS.RECAP_SALUTATION, settings) as object)
+    ...(convertToPdfStyle(ELEMENT_IDS.RECAP_SALUTATION, settings))
   };
 };
