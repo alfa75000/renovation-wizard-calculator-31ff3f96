@@ -1,4 +1,3 @@
-
 // Fonctions utilitaires pour générer des parties spécifiques des PDF
 
 import { Room, Travail, ProjectMetadata } from '@/types';
@@ -352,6 +351,52 @@ function prepareRecapContent(
     margin: [0, 0, 0, 15]
   });
   
+  // Table des totaux généraux
+  const totalTTC = totalHT + totalTVA;
+
+  // Structure de la page récapitulative
+  docContent.push({
+    columns: [
+      // Colonne gauche - Texte de signature (environ 70% de la largeur)
+      {
+        width: '70%',
+        stack: [
+          // Contenu de signature généré
+          ...generateSignatureContent(),
+          
+          // 10 lignes vides pour la signature
+          { text: "", margin: [0, 5, 0, 0] },
+          { text: "", margin: [0, 5, 0, 0] },
+          { text: "", margin: [0, 5, 0, 0] },
+          { text: "", margin: [0, 5, 0, 0] },
+          { text: "", margin: [0, 5, 0, 0] },
+          { text: "", margin: [0, 5, 0, 0] },
+          { text: "", margin: [0, 5, 0, 0] },
+          { text: "", margin: [0, 5, 0, 0] },
+          { text: "", margin: [0, 5, 0, 0] },
+          { text: "", margin: [0, 5, 0, 0] }
+        ]
+      },
+      // Colonne droite - Tableaux des totaux (environ 30% de la largeur)
+      {
+        width: '30%',
+        stack: [
+          // D'abord le tableau standard sans bordures
+          generateStandardTotalsTable(totalHT, totalTVA),
+          // Ensuite le tableau du Total TTC avec bordure complète
+          generateTTCTable(totalTTC)
+        ]
+      }
+    ],
+    margin: [0, 0, 0, 20]
+  });
+
+  // Ajouter le texte de salutation sur toute la largeur
+  docContent.push(generateSalutationContent());
+  
+  // Ajouter les conditions générales de vente
+  const cgvContent = generateCGVContent();
+  docContent.push(...cgvContent);
+  
   return docContent;
 }
-
