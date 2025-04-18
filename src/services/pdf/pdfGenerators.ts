@@ -1,3 +1,4 @@
+
 // Fonctions utilitaires pour générer des parties spécifiques des PDF
 
 import { Room, Travail, ProjectMetadata } from '@/types';
@@ -353,3 +354,4 @@ function prepareRecapContent(
   
   return docContent;
 }
+
