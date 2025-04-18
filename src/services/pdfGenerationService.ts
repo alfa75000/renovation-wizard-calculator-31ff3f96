@@ -1,14 +1,23 @@
 
 // Fonctions utilitaires pour générer des parties spécifiques des PDF
 
-import { Travail, ProjectMetadata } from '@/types';
+import { Travail, ProjectMetadata, Room } from '@/types';
 import { 
   PDF_TEXTS, 
   DARK_BLUE, 
   formatPrice, 
   formatQuantity,
-  TABLE_COLUMN_WIDTHS
+  TABLE_COLUMN_WIDTHS,
+  PDF_STYLES,
+  PDF_MARGINS,
+  formatMOFournitures
 } from './pdf/pdfConstants';
+import { PdfSettings } from './pdf/config/pdfSettingsTypes';
+import * as pdfMake from 'pdfmake/build/pdfmake';
+import * as pdfFonts from 'pdfmake/build/vfs_fonts';
+
+// Initialize pdfMake with fonts
+(pdfMake as any).vfs = pdfFonts.pdfMake.vfs;
 
 /**
  * Fonction utilitaire pour formater une date en format français DD/MM/YYYY
@@ -74,19 +83,6 @@ export const generateFooter = (metadata?: ProjectMetadata) => {
     alignment: 'center',
     margin: [40, 0, 40, 20]
   };
-};
-
-/**
- * Génère le format MO/Fournitures avec TVA
- * Modifié: Retiré le Total HT par unité et augmenté la taille de police
- */
-export const formatMOFournitures = (travail: Travail): string => {
-  const prixUnitaireHT = travail.prixFournitures + travail.prixMainOeuvre;
-  const totalHT = prixUnitaireHT * travail.quantite;
-  const montantTVA = (totalHT * travail.tauxTVA) / 100;
-  
-  // Retiré "[ Total HT: XX€/u ]" de la chaîne formatée
-  return `[ MO: ${formatPrice(travail.prixMainOeuvre)}/u ] [ Fourn: ${formatPrice(travail.prixFournitures)}/u ] [ Total TVA (${travail.tauxTVA}%): ${formatPrice(montantTVA)} ]`;
 };
 
 /**
@@ -258,7 +254,7 @@ export const generateTTCTable = (totalTTC: number) => {
     },
     layout: {
       hLineWidth: function() { return 1; },
-      vLineWidth: function(i, node) { 
+      vLineWidth: function(i: number) { 
         // Supprimer la ligne verticale centrale (i=1)
         return i === 0 || i === 2 ? 1 : 0; // Modifier cette ligne qui était avant: return 1;
       },
@@ -273,71 +269,71 @@ export const generateTTCTable = (totalTTC: number) => {
   };
 };
 
-// Nouvelle fonction pour générer le PDF complet du devis
-export const generateCompletePDF = async (
-  fields: any[],
-  company: any,
+// Fonction auxiliaire pour préparer le contenu des détails
+const prepareDetailsContent = (
   rooms: Room[], 
   travaux: Travail[], 
   getTravauxForPiece: (pieceId: string) => Travail[],
   metadata?: ProjectMetadata,
   pdfSettings?: PdfSettings
 ) => {
-  console.log('Génération du PDF complet du devis avec paramètres:', pdfSettings);
+  // Implémentation temporaire
+  return [{
+    text: 'DÉTAILS DES TRAVAUX',
+    fontSize: 12,
+    bold: true,
+    alignment: 'center',
+    margin: [0, 0, 0, 20]
+  }];
+};
+
+// Fonction auxiliaire pour préparer le contenu du récapitulatif
+const prepareRecapContent = (
+  rooms: Room[], 
+  travaux: Travail[], 
+  getTravauxForPiece: (pieceId: string) => Travail[],
+  metadata?: ProjectMetadata,
+  pdfSettings?: PdfSettings
+) => {
+  // Contenu du récapitulatif
+  const content = [];
   
-  try {
-    // 1. Préparer les contenus des différentes parties
-    // PARTIE 1: Contenu de la page de garde
-    const coverContent = prepareCoverContent(fields, company, metadata, pdfSettings);
-    
-    // PARTIE 2: Contenu des détails des travaux
-    const detailsContent = prepareDetailsContent(rooms, travaux, getTravauxForPiece, metadata, pdfSettings);
-    
-    // PARTIE 3: Contenu du récapitulatif
-    const recapContent = prepareRecapContent(rooms, travaux, getTravauxForPiece, metadata, pdfSettings);
-    
-    // 2. Fusionner tous les contenus dans un seul document
-    const docDefinition = {
-      content: [
-        // Page de garde
-        ...coverContent,
-        // Page(s) de détails
-        { text: '', pageBreak: 'before' }, // Forcer un saut de page
-        ...detailsContent,
-        // Page(s) de récapitulatif
-        { text: '', pageBreak: 'before' }, // Forcer un saut de page
-        ...recapContent
-      ],
-      styles: PDF_STYLES,
-      defaultStyle: {
-        fontSize: 9,
-        color: DARK_BLUE
-      },
-      pageMargins: PDF_MARGINS.COVER, // Utiliser les marges de la page de garde pour tout le document
-      footer: function(currentPage: number, pageCount: number) {
-        return generateFooter(metadata);
-      },
-      header: function(currentPage: number, pageCount: number) {
-        // Ne pas afficher d'en-tête sur la première page (page de garde)
-        if (currentPage === 1) return null;
-        
-        // Sur les autres pages, afficher l'en-tête standard
-        return generateHeaderContent(metadata, currentPage, pageCount);
-      }
-    };
-    
-    // 3. Générer et télécharger le PDF complet
-    pdfMake.createPdf(docDefinition).download(`devis-complet-${metadata?.devisNumber || 'XXXX-XX'}.pdf`);
-    console.log('PDF complet généré avec succès');
-    return true;
-  } catch (error) {
-    console.error('Erreur lors de la génération du PDF complet:', error);
-    throw error;
-  }
+  // Titre du récapitulatif
+  content.push({
+    text: 'RÉCAPITULATIF',
+    fontFamily: pdfSettings?.elements?.recap_title?.fontFamily || 'Roboto',
+    fontSize: pdfSettings?.elements?.recap_title?.fontSize || 12,
+    bold: pdfSettings?.elements?.recap_title?.isBold || false,
+    italic: pdfSettings?.elements?.recap_title?.isItalic || false,
+    color: pdfSettings?.elements?.recap_title?.color || DARK_BLUE,
+    alignment: pdfSettings?.elements?.recap_title?.alignment || 'center',
+    margin: [
+      pdfSettings?.elements?.recap_title?.spacing?.left || 0,
+      pdfSettings?.elements?.recap_title?.spacing?.top || 10,
+      pdfSettings?.elements?.recap_title?.spacing?.right || 0,
+      pdfSettings?.elements?.recap_title?.spacing?.bottom || 20
+    ],
+    border: pdfSettings?.elements?.recap_title?.border ? [
+      pdfSettings?.elements?.recap_title?.border?.top || false,
+      pdfSettings?.elements?.recap_title?.border?.right || false,
+      pdfSettings?.elements?.recap_title?.border?.bottom || false,
+      pdfSettings?.elements?.recap_title?.border?.left || false
+    ] : undefined,
+    borderColor: pdfSettings?.elements?.recap_title?.border?.color || DARK_BLUE,
+    borderWidth: pdfSettings?.elements?.recap_title?.border?.width || 1,
+    pageBreak: 'before'
+  });
+  
+  return content;
 };
 
 // Fonction auxiliaire pour préparer le contenu de la page de garde
-function prepareCoverContent(fields: any[], company: any, metadata?: ProjectMetadata, pdfSettings?: PdfSettings) {
+const prepareCoverContent = (
+  fields: any[], 
+  company: any, 
+  metadata?: ProjectMetadata, 
+  pdfSettings?: PdfSettings
+) => {
   console.log('Préparation du contenu de la page de garde avec paramètres:', pdfSettings);
   
   const content = [
@@ -610,4 +606,136 @@ function prepareCoverContent(fields: any[], company: any, metadata?: ProjectMeta
   
   // Filtrer les éléments null
   return content.filter(Boolean);
-}
+};
+
+// Nouvelle fonction pour générer le PDF complet du devis
+export const generateCompletePDF = async (
+  fields: any[],
+  company: any,
+  rooms: Room[], 
+  travaux: Travail[], 
+  getTravauxForPiece: (pieceId: string) => Travail[],
+  metadata?: ProjectMetadata,
+  pdfSettings?: PdfSettings
+) => {
+  console.log('Génération du PDF complet du devis avec paramètres:', pdfSettings);
+  
+  try {
+    // 1. Préparer les contenus des différentes parties
+    // PARTIE 1: Contenu de la page de garde
+    const coverContent = prepareCoverContent(fields, company, metadata, pdfSettings);
+    
+    // PARTIE 2: Contenu des détails des travaux
+    const detailsContent = prepareDetailsContent(rooms, travaux, getTravauxForPiece, metadata, pdfSettings);
+    
+    // PARTIE 3: Contenu du récapitulatif
+    const recapContent = prepareRecapContent(rooms, travaux, getTravauxForPiece, metadata, pdfSettings);
+    
+    // 2. Fusionner tous les contenus dans un seul document
+    const docDefinition = {
+      content: [
+        // Page de garde
+        ...coverContent,
+        // Page(s) de détails
+        { text: '', pageBreak: 'before' }, // Forcer un saut de page
+        ...detailsContent,
+        // Page(s) de récapitulatif
+        { text: '', pageBreak: 'before' }, // Forcer un saut de page
+        ...recapContent
+      ],
+      styles: PDF_STYLES,
+      defaultStyle: {
+        fontSize: 9,
+        color: DARK_BLUE
+      },
+      pageMargins: PDF_MARGINS.COVER, // Utiliser les marges de la page de garde pour tout le document
+      footer: function(currentPage: number, pageCount: number) {
+        return generateFooter(metadata);
+      },
+      header: function(currentPage: number, pageCount: number) {
+        // Ne pas afficher d'en-tête sur la première page (page de garde)
+        if (currentPage === 1) return null;
+        
+        // Sur les autres pages, afficher l'en-tête standard
+        return generateHeaderContent(metadata, currentPage, pageCount);
+      }
+    };
+    
+    // 3. Générer et télécharger le PDF complet
+    pdfMake.createPdf(docDefinition).download(`devis-complet-${metadata?.devisNumber || 'XXXX-XX'}.pdf`);
+    console.log('PDF complet généré avec succès');
+    return true;
+  } catch (error) {
+    console.error('Erreur lors de la génération du PDF complet:', error);
+    throw error;
+  }
+};
+
+// Export functions used by other components
+export const generateDetailsPDF = async (
+  rooms: Room[],
+  travaux: Travail[],
+  getTravauxForPiece: (pieceId: string) => Travail[],
+  metadata?: ProjectMetadata,
+  pdfSettings?: PdfSettings
+) => {
+  try {
+    const content = prepareDetailsContent(rooms, travaux, getTravauxForPiece, metadata, pdfSettings);
+    
+    const docDefinition = {
+      content,
+      styles: PDF_STYLES,
+      defaultStyle: {
+        fontSize: 9,
+        color: DARK_BLUE
+      },
+      pageMargins: PDF_MARGINS.DETAILS,
+      footer: function(currentPage: number, pageCount: number) {
+        return generateFooter(metadata);
+      },
+      header: function(currentPage: number, pageCount: number) {
+        return generateHeaderContent(metadata, currentPage, pageCount);
+      }
+    };
+    
+    pdfMake.createPdf(docDefinition).download(`details-travaux-${metadata?.devisNumber || 'XXXX-XX'}.pdf`);
+    return true;
+  } catch (error) {
+    console.error('Erreur lors de la génération du PDF de détails:', error);
+    throw error;
+  }
+};
+
+export const generateRecapPDF = async (
+  rooms: Room[],
+  travaux: Travail[],
+  getTravauxForPiece: (pieceId: string) => Travail[],
+  metadata?: ProjectMetadata,
+  pdfSettings?: PdfSettings
+) => {
+  try {
+    const content = prepareRecapContent(rooms, travaux, getTravauxForPiece, metadata, pdfSettings);
+    
+    const docDefinition = {
+      content,
+      styles: PDF_STYLES,
+      defaultStyle: {
+        fontSize: 9,
+        color: DARK_BLUE
+      },
+      pageMargins: PDF_MARGINS.RECAP,
+      footer: function(currentPage: number, pageCount: number) {
+        return generateFooter(metadata);
+      },
+      header: function(currentPage: number, pageCount: number) {
+        return generateHeaderContent(metadata, currentPage, pageCount);
+      }
+    };
+    
+    pdfMake.createPdf(docDefinition).download(`recap-travaux-${metadata?.devisNumber || 'XXXX-XX'}.pdf`);
+    return true;
+  } catch (error) {
+    console.error('Erreur lors de la génération du PDF de récapitulatif:', error);
+    throw error;
+  }
+};

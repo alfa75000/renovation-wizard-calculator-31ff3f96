@@ -1,13 +1,13 @@
 
 import React from 'react';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { BorderSettings } from '../types/elementSettings';
+import { Input } from '@/components/ui/input';
 import { ColorPicker } from './ColorPicker';
+import { BorderSettings } from '../types/elementSettings';
 
 interface BorderControlProps {
-  border: BorderSettings;
+  border?: BorderSettings;
   defaultColors: string[];
   onChange: (border: BorderSettings) => void;
 }
@@ -17,85 +17,126 @@ export const BorderControl: React.FC<BorderControlProps> = ({
   defaultColors,
   onChange
 }) => {
-  const handleBorderChange = (key: keyof BorderSettings, value: any) => {
+  // Default/initial values
+  const currentBorder = border || {
+    top: false,
+    right: false,
+    bottom: false,
+    left: false,
+    color: '#002855',
+    width: 1
+  };
+
+  const handleBorderChange = (position: 'top' | 'right' | 'bottom' | 'left', checked: boolean) => {
     onChange({
-      ...border,
-      [key]: value
+      ...currentBorder,
+      [position]: checked
     });
   };
 
-  // Générer un aperçu visuel des bordures
-  const borderPreviewStyle = {
-    borderTop: border.top ? `${border.width}px solid ${border.color}` : '1px dashed #e5e7eb',
-    borderRight: border.right ? `${border.width}px solid ${border.color}` : '1px dashed #e5e7eb',
-    borderBottom: border.bottom ? `${border.width}px solid ${border.color}` : '1px dashed #e5e7eb',
-    borderLeft: border.left ? `${border.width}px solid ${border.color}` : '1px dashed #e5e7eb',
-    padding: '12px',
-    marginBottom: '12px',
-    textAlign: 'center' as const,
-    fontSize: '12px',
-    color: '#666'
+  const handleColorChange = (color: string) => {
+    onChange({
+      ...currentBorder,
+      color
+    });
+  };
+
+  const handleWidthChange = (width: number) => {
+    onChange({
+      ...currentBorder,
+      width
+    });
+  };
+
+  // Preview component to show how the border will look
+  const BorderPreview = () => {
+    const borderStyle = {
+      borderTopWidth: currentBorder.top ? `${currentBorder.width}px` : 0,
+      borderRightWidth: currentBorder.right ? `${currentBorder.width}px` : 0,
+      borderBottomWidth: currentBorder.bottom ? `${currentBorder.width}px` : 0,
+      borderLeftWidth: currentBorder.left ? `${currentBorder.width}px` : 0,
+      borderStyle: 'solid',
+      borderColor: currentBorder.color,
+      width: '100%',
+      height: '60px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+    };
+
+    return (
+      <div className="mt-3 mb-4">
+        <Label className="mb-2 block">Aperçu</Label>
+        <div style={borderStyle} className="bg-gray-50 text-sm">
+          Aperçu des bordures
+        </div>
+      </div>
+    );
   };
 
   return (
     <div className="space-y-4">
-      <Label>Bordures</Label>
+      <h3 className="text-sm font-medium">Bordures</h3>
       
-      {/* Aperçu visuel des bordures */}
-      <div style={borderPreviewStyle}>
-        Aperçu des bordures
-      </div>
+      <BorderPreview />
       
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <div className="flex items-center space-x-2">
-            <Checkbox
+            <Checkbox 
               id="border-top"
-              checked={border.top}
-              onCheckedChange={(checked) => handleBorderChange('top', checked)}
+              checked={currentBorder.top}
+              onCheckedChange={(checked) => handleBorderChange('top', checked === true)}
             />
-            <Label htmlFor="border-top">Haut</Label>
+            <Label htmlFor="border-top" className="text-sm">Haut</Label>
           </div>
+          
           <div className="flex items-center space-x-2">
-            <Checkbox
+            <Checkbox 
               id="border-right"
-              checked={border.right}
-              onCheckedChange={(checked) => handleBorderChange('right', checked)}
+              checked={currentBorder.right}
+              onCheckedChange={(checked) => handleBorderChange('right', checked === true)}
             />
-            <Label htmlFor="border-right">Droite</Label>
+            <Label htmlFor="border-right" className="text-sm">Droite</Label>
           </div>
+          
           <div className="flex items-center space-x-2">
-            <Checkbox
+            <Checkbox 
               id="border-bottom"
-              checked={border.bottom}
-              onCheckedChange={(checked) => handleBorderChange('bottom', checked)}
+              checked={currentBorder.bottom}
+              onCheckedChange={(checked) => handleBorderChange('bottom', checked === true)}
             />
-            <Label htmlFor="border-bottom">Bas</Label>
+            <Label htmlFor="border-bottom" className="text-sm">Bas</Label>
           </div>
+          
           <div className="flex items-center space-x-2">
-            <Checkbox
+            <Checkbox 
               id="border-left"
-              checked={border.left}
-              onCheckedChange={(checked) => handleBorderChange('left', checked)}
+              checked={currentBorder.left}
+              onCheckedChange={(checked) => handleBorderChange('left', checked === true)}
             />
-            <Label htmlFor="border-left">Gauche</Label>
+            <Label htmlFor="border-left" className="text-sm">Gauche</Label>
           </div>
         </div>
-        <div className="space-y-2">
+        
+        <div className="space-y-4">
           <div>
-            <Label>Épaisseur</Label>
+            <Label htmlFor="border-width" className="text-sm">Épaisseur (px)</Label>
             <Input
+              id="border-width"
               type="number"
-              value={border.width}
-              onChange={(e) => handleBorderChange('width', Number(e.target.value))}
-              min={0.5}
-              step={0.5}
+              min="1"
+              max="10"
+              value={currentBorder.width}
+              onChange={(e) => handleWidthChange(parseInt(e.target.value))}
+              className="w-full"
             />
           </div>
+          
           <ColorPicker
             label="Couleur"
-            value={border.color}
-            onChange={(color) => handleBorderChange('color', color)}
+            value={currentBorder.color}
+            onChange={handleColorChange}
           />
         </div>
       </div>
