@@ -1,8 +1,8 @@
-
 import React, { useRef, useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { X, Printer, Download } from "lucide-react";
+import { usePdfSettings } from '@/services/pdf/hooks/usePdfSettings';
 import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
 
@@ -56,6 +56,7 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
   company, 
   onClose
 }) => {
+  const { pdfSettings } = usePdfSettings();
   const printContentRef = useRef<HTMLDivElement>(null);
   const [logoError, setLogoError] = useState(false);
   const [logoExists, setLogoExists] = useState(false);
@@ -530,4 +531,31 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
       </DialogContent>
     </Dialog>
   );
+
+  // Afficher les paramètres PDF au montage du composant pour le débogage
+  useEffect(() => {
+    console.log("DevisCoverPreview - Paramètres PDF disponibles:", pdfSettings);
+    
+    // Log pour chaque élément personnalisable
+    const elementsToCheck = [
+      'cover_title',
+      'company_info',
+      'company_slogan',
+      'devis_number',
+      'devis_date',
+      'devis_validity',
+      'client_section',
+      'chantier_section',
+      'footer'
+    ];
+
+    elementsToCheck.forEach(element => {
+      if (pdfSettings?.elements?.[element]) {
+        console.log(`DevisCoverPreview - Élément ${element}:`, pdfSettings.elements[element]);
+        if (pdfSettings.elements[element].border) {
+          console.log(`DevisCoverPreview - Bordures de ${element}:`, pdfSettings.elements[element].border);
+        }
+      }
+    });
+  }, [pdfSettings]);
 };
