@@ -359,9 +359,9 @@ function prepareRecapContent(
       style: 'header',
       alignment: titleSettings.alignment || 'center',
       fontSize: titleSettings.fontSize || 12,
-      bold: titleSettings.isBold !== undefined ? titleSettings.isBold : true,
       color: titleSettings.color || DARK_BLUE,
-      margin: [0, 10, 0, 20]
+      margin: [0, 10, 0, 20],
+      ...(titleSettings.isBold === false ? {} : { bold: true })
     }
   ];
   
@@ -558,17 +558,16 @@ function prepareCoverContent(fields: any[], company: any, metadata?: ProjectMeta
     {
       text: slogan,
       fontSize: sloganSettings.fontSize || 12,
-      bold: sloganSettings.isBold || true,
       color: sloganSettings.color || DARK_BLUE,
       alignment: sloganSettings.alignment || 'left',
-      margin: [0, 10, 0, 20]
+      margin: [0, 10, 0, 20],
+      ...(sloganSettings.isBold === false ? {} : { bold: true })
     },
     
     // Coordonnées société - Nom et adresse combinés
     {
       text: `Société  ${company?.name || ''} - ${company?.address || ''} - ${company?.postal_code || ''} ${company?.city || ''}`,
       fontSize: companyAddressSettings.fontSize || 11,
-      bold: companyAddressSettings.isBold || true,
       color: companyAddressSettings.color || DARK_BLUE,
       alignment: companyAddressSettings.alignment || 'left',
       margin: [0, 0, 0, 3]
@@ -834,7 +833,7 @@ function prepareDetailsContent(
       alignment: tableHeaderSettings.alignment || 'left', 
       color: tableHeaderSettings.color || DARK_BLUE,
       fontSize: tableHeaderSettings.fontSize || 9,
-      bold: tableHeaderSettings.isBold || true
+      ...(tableHeaderSettings.isBold === false ? {} : { bold: true })
     },
     { 
       text: 'Quantité', 
@@ -842,355 +841,6 @@ function prepareDetailsContent(
       alignment: 'center', 
       color: tableHeaderSettings.color || DARK_BLUE,
       fontSize: tableHeaderSettings.fontSize || 9,
-      bold: tableHeaderSettings.isBold || true
+      ...(tableHeaderSettings.isBold === false ? {} : { bold: true })
     },
-    { 
-      text: 'Prix HT Unit.', 
-      style: 'tableHeader', 
-      alignment: 'center', 
-      color: tableHeaderSettings.color || DARK_BLUE,
-      fontSize: tableHeaderSettings.fontSize || 9,
-      bold: tableHeaderSettings.isBold || true
-    },
-    { 
-      text: 'TVA', 
-      style: 'tableHeader', 
-      alignment: 'center', 
-      color: tableHeaderSettings.color || DARK_BLUE,
-      fontSize: tableHeaderSettings.fontSize || 9,
-      bold: tableHeaderSettings.isBold || true
-    },
-    { 
-      text: 'Total HT', 
-      style: 'tableHeader', 
-      alignment: 'center', 
-      color: tableHeaderSettings.color || DARK_BLUE,
-      fontSize: tableHeaderSettings.fontSize || 9,
-      bold: tableHeaderSettings.isBold || true
-    }
-  ];
-  
-  // Créer le contenu du document
-  const docContent: any[] = [
-    // Titre de la section
     {
-      text: 'DÉTAILS DES TRAVAUX',
-      style: 'header',
-      alignment: detailTitleSettings.alignment || 'center',
-      fontSize: detailTitleSettings.fontSize || 12,
-      bold: detailTitleSettings.isBold || true,
-      color: detailTitleSettings.color || DARK_BLUE,
-      margin: [0, 10, 0, 20]
-    },
-    // En-tête du tableau
-    {
-      table: {
-        headerRows: 1,
-        widths: TABLE_COLUMN_WIDTHS.DETAILS,
-        body: [tableHeaderRow]
-      },
-      layout: {
-        hLineWidth: function() { return 1; },
-        vLineWidth: function() { return 0; },
-        hLineColor: function() { return tableLineColor; },
-        fillColor: function(rowIndex: number) { return (rowIndex === 0) ? tableBackgroundColor : null; }
-      },
-      margin: [0, 0, 0, 10]
-    }
-  ];
-  
-  // Pour chaque pièce avec des travaux
-  roomsWithTravaux.forEach((room, roomIndex) => {
-    const travauxPiece = getTravauxForPiece(room.id);
-    if (travauxPiece.length === 0) return;
-    
-    // Ajouter le titre de la pièce
-    docContent.push({
-      text: room.name,
-      style: 'roomTitle',
-      fontSize: roomTitleSettings.fontSize || 9,
-      bold: roomTitleSettings.isBold || true,
-      color: roomTitleSettings.color || DARK_BLUE,
-      alignment: roomTitleSettings.alignment || 'left',
-      fillColor: tableBackgroundColor,
-      margin: [0, 10, 0, 5]
-    });
-    
-    // Créer le tableau pour cette pièce
-    const tableBody = [];
-    
-    // Ajouter chaque travail au tableau
-    travauxPiece.forEach((travail, index) => {
-      const prixUnitaireHT = travail.prixFournitures + travail.prixMainOeuvre;
-      const totalHT = prixUnitaireHT * travail.quantite;
-      
-      // Construire le contenu de la description
-      let descriptionLines = [];
-      descriptionLines.push(`${travail.typeTravauxLabel}: ${travail.sousTypeLabel}`);
-      
-      if (travail.description) {
-        descriptionLines.push(travail.description);
-      }
-      
-      if (travail.personnalisation) {
-        descriptionLines.push(travail.personnalisation);
-      }
-      
-      // Utiliser le nouveau format pour MO/Fournitures
-      const moFournText = formatMOFournitures(travail);
-      
-      // Estimer le nombre de lignes dans la description
-      let totalLines = 0;
-      
-      // Largeur approximative de la colonne de description en caractères
-      const columnCharWidth = 80;
-      
-      // Estimer le nombre réel de lignes pour chaque portion de texte
-      descriptionLines.forEach(line => {
-        const textLines = Math.ceil(line.length / columnCharWidth);
-        totalLines += textLines;
-      });
-      
-      // Estimer aussi les lignes pour le texte MO/Fournitures
-      const moFournLines = Math.ceil(moFournText.length / columnCharWidth);
-      totalLines += moFournLines;
-      
-      // Calculer les marges supérieures pour centrer verticalement
-      const topMargin = Math.max(0, 3 + (totalLines - 2) * 4);
-      
-      // Ajouter la ligne au tableau
-      tableBody.push([
-        // Colonne 1: Description
-        { 
-          stack: [
-            { 
-              text: descriptionLines.join('\n'), 
-              fontSize: workDetailsSettings.fontSize || 9, 
-              color: workDetailsSettings.color || DARK_BLUE,
-              bold: workDetailsSettings.isBold || false,
-              alignment: workDetailsSettings.alignment || 'left',
-              lineHeight: 1.4 
-            },
-            { 
-              text: moFournText, 
-              fontSize: moSuppliesSettings.fontSize || 7, 
-              color: moSuppliesSettings.color || DARK_BLUE,
-              bold: moSuppliesSettings.isBold || false,
-              alignment: moSuppliesSettings.alignment || 'left',
-              lineHeight: 1.4 
-            }
-          ]
-        },
-        
-        // Colonne 2: Quantité
-        { 
-          stack: [
-            { 
-              text: formatQuantity(travail.quantite), 
-              alignment: 'center', 
-              fontSize: qtyColumnSettings.fontSize || 9,
-              bold: qtyColumnSettings.isBold || false,
-              color: qtyColumnSettings.color || DARK_BLUE
-            },
-            { 
-              text: travail.unite, 
-              alignment: 'center', 
-              fontSize: qtyColumnSettings.fontSize || 9,
-              bold: qtyColumnSettings.isBold || false,
-              color: qtyColumnSettings.color || DARK_BLUE
-            }
-          ],
-          alignment: 'center',
-          margin: [0, topMargin, 0, 0]
-        },
-        
-        // Colonne 3: Prix unitaire
-        { 
-          text: formatPrice(prixUnitaireHT), 
-          alignment: 'center',
-          fontSize: priceColumnSettings.fontSize || 9,
-          bold: priceColumnSettings.isBold || false,
-          color: priceColumnSettings.color || DARK_BLUE,
-          margin: [0, topMargin, 0, 0]
-        },
-        
-        // Colonne 4: TVA
-        { 
-          text: `${travail.tauxTVA}%`, 
-          alignment: 'center',
-          fontSize: vatColumnSettings.fontSize || 9,
-          bold: vatColumnSettings.isBold || false,
-          color: vatColumnSettings.color || DARK_BLUE,
-          margin: [0, topMargin, 0, 0]
-        },
-        
-        // Colonne 5: Total HT
-        { 
-          text: formatPrice(totalHT), 
-          alignment: 'center',
-          fontSize: totalColumnSettings.fontSize || 9,
-          bold: totalColumnSettings.isBold || false,
-          color: totalColumnSettings.color || DARK_BLUE,
-          margin: [0, topMargin, 0, 0]
-        }
-      ]);
-      
-      // Ajouter une ligne d'espacement entre les prestations
-      if (index < travauxPiece.length - 1) {
-        tableBody.push([
-          { text: '', margin: [0, 2, 0, 2] },
-          {}, {}, {}, {}
-        ]);
-      }
-    });
-    
-    // Calculer le total HT pour cette pièce
-    const pieceTotalHT = travauxPiece.reduce((sum, t) => {
-      return sum + (t.prixFournitures + t.prixMainOeuvre) * t.quantite;
-    }, 0);
-    
-    // Ajouter la ligne de total pour cette pièce
-    tableBody.push([
-      { 
-        text: `Total HT ${room.name}`, 
-        colSpan: 4, 
-        alignment: roomTotalSettings.alignment || 'left', 
-        fontSize: roomTotalSettings.fontSize || 9, 
-        bold: roomTotalSettings.isBold || true, 
-        color: roomTotalSettings.color || DARK_BLUE,
-        fillColor: tableBackgroundColor 
-      },
-      {}, {}, {},
-      { 
-        text: formatPrice(pieceTotalHT), 
-        alignment: 'center', 
-        fontSize: roomTotalSettings.fontSize || 9, 
-        bold: roomTotalSettings.isBold || true, 
-        color: roomTotalSettings.color || DARK_BLUE,
-        fillColor: tableBackgroundColor 
-      }
-    ]);
-    
-    // Ajouter le tableau au document
-    docContent.push({
-      table: {
-        headerRows: 0,
-        widths: TABLE_COLUMN_WIDTHS.DETAILS,
-        body: tableBody
-      },
-      layout: {
-        hLineWidth: function(i: number, node: any) {
-          if (i === 0 || i === node.table.body.length) {
-            return 1;
-          }
-          
-          const isEndOfPrestation = i < node.table.body.length && 
-            ((node.table.body[i][0] && 
-              node.table.body[i][0].text && 
-              node.table.body[i][0].text.toString().includes('Total HT')) ||
-            (i > 0 && node.table.body[i-1][0] && 
-              node.table.body[i-1][0].text && 
-              node.table.body[i-1][0].text.toString().includes('Total HT')));
-          
-          return isEndOfPrestation ? 1 : 0;
-        },
-        vLineWidth: function() {
-          return 0;
-        },
-        hLineColor: function() {
-          return tableLineColor;
-        },
-        paddingLeft: function() {
-          return 4;
-        },
-        paddingRight: function() {
-          return 4;
-        },
-        paddingTop: function() {
-          return 2;
-        },
-        paddingBottom: function() {
-          return 2;
-        }
-      },
-      margin: [0, 0, 0, 15]
-    });
-  });
-  
-  return docContent;
-}
-
-// Nouvelle fonction pour générer le PDF complet du devis
-export const generateCompletePDF = async (
-  fields: any[],
-  company: any,
-  rooms: Room[], 
-  travaux: Travail[], 
-  getTravauxForPiece: (pieceId: string) => Travail[],
-  metadata?: ProjectMetadata
-) => {
-  console.log('Génération du PDF complet du devis...');
-  
-  try {
-    // Récupérer les paramètres PDF
-    const pdfSettings = getPdfSettings();
-    console.log('Paramètres PDF utilisés:', pdfSettings);
-    
-    // 1. Préparer les contenus des différentes parties
-    // PARTIE 1: Contenu de la page de garde
-    const coverContent = prepareCoverContent(fields, company, metadata);
-    
-    // PARTIE 2: Contenu des détails des travaux
-    const detailsContent = prepareDetailsContent(rooms, travaux, getTravauxForPiece, metadata);
-    
-    // PARTIE 3: Contenu du récapitulatif
-    const recapContent = prepareRecapContent(rooms, travaux, getTravauxForPiece, metadata);
-    
-    // Utiliser les marges personnalisées si définies
-    const coverMargins = pdfSettings?.margins?.cover || PDF_MARGINS.COVER;
-    const detailsMargins = pdfSettings?.margins?.details || PDF_MARGINS.DETAILS;
-    const recapMargins = pdfSettings?.margins?.recap || PDF_MARGINS.RECAP;
-    
-    // Calculer le nombre de pages approximatif
-    const estimatedPageCount = 1 + Math.ceil(detailsContent.length / 10) + Math.ceil(recapContent.length / 10);
-    
-    // 2. Fusionner tous les contenus dans un seul document
-    const docDefinition = {
-      content: [
-        // Page de garde
-        ...coverContent,
-        // Page(s) de détails
-        { text: '', pageBreak: 'before' }, // Forcer un saut de page
-        ...detailsContent,
-        // Page(s) de récapitulatif
-        { text: '', pageBreak: 'before' }, // Forcer un saut de page
-        ...recapContent
-      ],
-      styles: PDF_STYLES,
-      defaultStyle: {
-        fontSize: 9,
-        color: pdfSettings?.colors?.mainText || DARK_BLUE,
-        font: pdfSettings?.fontFamily || 'Roboto'
-      },
-      pageMargins: coverMargins, // Utiliser les marges de la page de garde pour tout le document
-      footer: function(currentPage: number, pageCount: number) {
-        return generateFooter(metadata);
-      },
-      header: function(currentPage: number, pageCount: number) {
-        // Ne pas afficher d'en-tête sur la première page (page de garde)
-        if (currentPage === 1) return null;
-        
-        // Sur les autres pages, afficher l'en-tête standard
-        return generateHeaderContent(metadata, currentPage, pageCount);
-      }
-    };
-    
-    // 3. Générer et télécharger le PDF complet
-    pdfMake.createPdf(docDefinition).download(`devis-complet-${metadata?.devisNumber || 'XXXX-XX'}.pdf`);
-    console.log('PDF complet généré avec succès');
-    return true;
-  } catch (error) {
-    console.error('Erreur lors de la génération du PDF complet:', error);
-    throw error;
-  }
-};
