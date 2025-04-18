@@ -37,9 +37,10 @@ export const generateCompletePDF = async (
   rooms: Room[], 
   travaux: Travail[], 
   getTravauxForPiece: (pieceId: string) => Travail[],
-  metadata?: ProjectMetadata
+  metadata?: ProjectMetadata,
+  pdfSettings?: PdfSettings
 ) => {
-  console.log('Génération du PDF complet du devis...');
+  console.log('Génération du PDF complet du devis avec paramètres:', pdfSettings);
   
   try {
     // 1. Préparer les contenus des différentes parties
@@ -47,10 +48,10 @@ export const generateCompletePDF = async (
     const coverContent = prepareCoverContent(fields, company, metadata);
     
     // PARTIE 2: Contenu des détails des travaux
-    const detailsContent = prepareDetailsContent(rooms, travaux, getTravauxForPiece, metadata);
+    const detailsContent = prepareDetailsContent(rooms, travaux, getTravauxForPiece, metadata, pdfSettings);
     
     // PARTIE 3: Contenu du récapitulatif
-    const recapContent = prepareRecapContent(rooms, travaux, getTravauxForPiece, metadata);
+    const recapContent = prepareRecapContent(rooms, travaux, getTravauxForPiece, metadata, pdfSettings);
     
     // 2. Fusionner tous les contenus dans un seul document
     const docDefinition = {
@@ -774,7 +775,7 @@ export const generateDetailsPDF = async (
   metadata?: ProjectMetadata,
   pdfSettings?: PdfSettings
 ) => {
-  console.log('Génération du PDF des détails des travaux avec pdfMake', { pdfSettings });
+  console.log('Génération du PDF des détails des travaux avec pdfMake:', { pdfSettings });
 
   // On filtre les pièces qui n'ont pas de travaux
   const roomsWithTravaux = rooms.filter(room => getTravauxForPiece(room.id).length > 0);
@@ -846,7 +847,7 @@ export const generateRecapPDF = async (
   metadata?: ProjectMetadata,
   pdfSettings?: PdfSettings
 ) => {
-  console.log('Génération du PDF récapitulatif avec pdfMake', { pdfSettings });
+  console.log('Génération du PDF récapitulatif avec pdfMake:', { pdfSettings });
 
   // Obtenir le contenu du récapitulatif avec les paramètres PDF
   const recapContent = prepareRecapContent(rooms, travaux, getTravauxForPiece, metadata, pdfSettings);

@@ -34,6 +34,10 @@ export const usePdfSettings = () => {
         // Vérifier si des éléments sont définis
         if (validatedSettings.elements && Object.keys(validatedSettings.elements).length > 0) {
           console.log("Éléments personnalisés trouvés:", Object.keys(validatedSettings.elements));
+          // Ajout d'un log détaillé pour débogage
+          Object.entries(validatedSettings.elements).forEach(([key, element]) => {
+            console.log(`Element ${key}:`, element);
+          });
         } else {
           console.log("Aucun élément personnalisé trouvé");
         }

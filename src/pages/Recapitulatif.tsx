@@ -21,6 +21,7 @@ const Recapitulatif: React.FC = () => {
 
   const handlePrintDevis = async () => {
     try {
+      console.log("Impression du devis détaillé avec les paramètres:", pdfSettings);
       await generateDetailsPDF(rooms, travaux, getTravauxForPiece, metadata, pdfSettings);
     } catch (error) {
       console.error("Erreur lors de la génération du PDF:", error);

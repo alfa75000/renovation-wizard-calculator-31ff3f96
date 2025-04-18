@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -17,6 +16,7 @@ import DevisRecapPreview from "./DevisRecapPreview";
 import { CompanyData } from "@/types";
 import { generateCompletePDF } from "@/services/pdfGenerationService";
 import { useTravaux } from "@/features/travaux/hooks/useTravaux";
+import { usePdfSettings } from "@/services/pdf/hooks/usePdfSettings";
 
 interface PrintableField {
   id: string;
@@ -29,6 +29,7 @@ export const PrintableFieldsForm: React.FC = () => {
   const { state, dispatch } = useProject();
   const { metadata, property, rooms } = state;
   const { travaux, getTravauxForPiece } = useTravaux();
+  const { pdfSettings } = usePdfSettings();
   
   const [clientName, setClientName] = useState<string>("Chargement...");
   const [companyName, setCompanyName] = useState<string>("LRS Rénovation");
@@ -161,6 +162,8 @@ export const PrintableFieldsForm: React.FC = () => {
       // Filtrer uniquement les champs activés
       const enabledFields = printableFields.filter(field => field.enabled);
       
+      console.log("Génération du PDF avec les paramètres:", pdfSettings);
+      
       // Générer le PDF complet avec toutes les sections
       await generateCompletePDF(
         enabledFields,
@@ -168,7 +171,8 @@ export const PrintableFieldsForm: React.FC = () => {
         rooms,
         travaux,
         getTravauxForPiece,
-        metadata
+        metadata,
+        pdfSettings
       );
       
       toast.success("PDF du devis complet généré avec succès");
