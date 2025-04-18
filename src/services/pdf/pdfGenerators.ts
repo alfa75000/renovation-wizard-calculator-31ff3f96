@@ -1,6 +1,6 @@
 // Fonctions utilitaires pour générer des parties spécifiques des PDF
 
-import { Travail, ProjectMetadata } from '@/types';
+import { Room, Travail, ProjectMetadata } from '@/types';
 import { 
   PDF_TEXTS, 
   DARK_BLUE, 
@@ -245,8 +245,9 @@ export const generateTTCTable = (totalTTC: number) => {
     margin: [0, 0, 0, 0]
   };
 };
+
 /**
- * Fonction auxiliaire pour préparer le contenu du récapitulatif
+ * Fonction auxiliaire pour préparer le contenu du r��capitulatif
  */
 function prepareRecapContent(
   rooms: Room[], 
