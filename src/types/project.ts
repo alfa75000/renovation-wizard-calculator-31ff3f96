@@ -71,6 +71,10 @@ export interface CompanyData {
   code_ape: string;
   tva_intracom: string;
   logo_url?: string;
+  tel1?: string;
+  tel2?: string;
+  email?: string;
+  slogan?: string;
 }
 
 // Métadonnées du projet

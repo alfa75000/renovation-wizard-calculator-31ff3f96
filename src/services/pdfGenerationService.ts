@@ -1,3 +1,4 @@
+
 import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
 import { Room, Travail, ProjectMetadata, CompanyData } from '@/types';
@@ -5,8 +6,9 @@ import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
 import { prepareCoverContent } from '@/services/pdf/generators/coverGenerator';
 import { prepareDetailsContent } from '@/services/pdf/generators/detailsGenerator';
 import { prepareRecapContent } from '@/services/pdf/generators/recapGenerator';
-import { PDF_STYLES, PDF_MARGINS } from '@/services/pdf/constants/pdfConstants';
+import { PDF_STYLES, PDF_MARGINS, DARK_BLUE } from '@/services/pdf/constants/pdfConstants';
 import { generateHeaderContent, generateFooter } from '@/services/pdf/components/pdfComponents';
+import { TABLE_COLUMN_WIDTHS } from '@/services/pdf/utils/pdfUtils';
 
 // Initialize pdfMake with fonts
 if (pdfMake && pdfFonts && pdfFonts.pdfMake) {
