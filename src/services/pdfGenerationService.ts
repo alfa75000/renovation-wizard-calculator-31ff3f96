@@ -587,7 +587,8 @@ function prepareRecapContent(
   rooms: Room[], 
   travaux: Travail[], 
   getTravauxForPiece: (pieceId: string) => Travail[],
-  metadata?: ProjectMetadata
+  metadata?: ProjectMetadata,
+  pdfSettings?: PdfSettings
 ) {
   console.log('Préparation du contenu du récapitulatif...');
   
@@ -1003,7 +1004,8 @@ export const generateRecapPDF = async (
   rooms: Room[], 
   travaux: Travail[], 
   getTravauxForPiece: (pieceId: string) => Travail[],
-  metadata?: ProjectMetadata
+  metadata?: ProjectMetadata,
+  pdfSettings?: PdfSettings
 ) => {
   console.log('Génération du PDF récapitulatif avec pdfMake');
 
