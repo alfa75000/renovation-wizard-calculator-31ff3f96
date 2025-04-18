@@ -1,3 +1,4 @@
+
 import { z } from 'zod';
 import { ElementSettingsSchema, defaultElements } from '@/features/devis/components/pdf-settings/types/elementSettings';
 
@@ -86,7 +87,7 @@ export const PdfSettingsSchema = z.object({
     height: 70,
     alignment: 'left'
   },
-  elements: {}
+  elements: defaultElements
 });
 
 export type PdfSettings = z.infer<typeof PdfSettingsSchema>;

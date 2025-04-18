@@ -1,3 +1,4 @@
+
 import { z } from 'zod';
 
 // Types d'alignement possibles
@@ -106,5 +107,7 @@ export const defaultElements = {
   chantier_title: defaultElementSettings,
   chantier_labels: defaultElementSettings,
   chantier_values: defaultElementSettings,
+  details_title: defaultElementSettings,
+  recap_title: defaultElementSettings,
   footer: defaultElementSettings
 };
