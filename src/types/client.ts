@@ -1,43 +1,40 @@
+
+// Types pour les clients
+
+// Client
 export interface Client {
   id: string;
-  firstName: string;
-  lastName: string;
+  nom: string;
+  prenom: string;
+  telephone: string;
   email: string;
-  phone: string;
-  address: string;
-  city: string;
-  postalCode: string;
-  companyId?: string;
-  userId?: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-export interface CompanyData {
-  id: string;
-  name: string;
-  address: string;
-  postal_code: string;
-  city: string;
-  tel1: string;
+  adresse: string;
+  codePostal: string;
+  ville: string;
+  tel1?: string;
   tel2?: string;
-  email: string;
-  siret: string;
-  logo_url?: string;
-  slogan?: string; // Ajout du champ slogan
-  user_id?: string;
-  created_at?: string;
+  typeClient?: string;
+  autreInfo?: string;
+  infosComplementaires?: string;
 }
 
-export interface Property {
-  id: string;
-  name: string;
-  address: string;
-  city: string;
-  postalCode: string;
-  clientId: string;
-  companyId: string;
-  userId: string;
-  createdAt: string;
-  updatedAt: string;
+// Types de clients
+export const typesClients = [
+  { id: 'particulier', label: 'Particulier' },
+  { id: 'entreprise', label: 'Entreprise' },
+  { id: 'collectivite', label: 'Collectivité' },
+  { id: 'autre', label: 'Autre' }
+];
+
+// État du contexte pour les clients
+export interface ClientsState {
+  clients: Client[];
 }
+
+// Actions pour les clients
+export type ClientsAction =
+  | { type: 'ADD_CLIENT'; payload: Client }
+  | { type: 'UPDATE_CLIENT'; payload: { id: string; client: Client } }
+  | { type: 'DELETE_CLIENT'; payload: string }
+  | { type: 'LOAD_CLIENTS'; payload: Client[] }
+  | { type: 'RESET_CLIENTS' };

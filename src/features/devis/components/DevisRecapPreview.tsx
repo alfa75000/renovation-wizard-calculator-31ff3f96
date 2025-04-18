@@ -1,91 +1,47 @@
 
-import React, { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { generateRecapPDF } from '@/services/pdf/pdfMainGenerator';
-import { useTravaux } from '@/features/travaux/hooks/useTravaux';
-import { useProject } from '@/contexts/ProjectContext';
-import { Printer } from 'lucide-react';
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { Printer } from "lucide-react";
+import { useProject } from "@/contexts/ProjectContext";
+import { useTravaux } from "@/features/travaux/hooks/useTravaux";
+import RecapitulatifTravaux from "@/features/recap/components/RecapitulatifTravaux";
+import { generateRecapPDF } from "@/services/pdfGenerationService";
 
+// Composant affichant l'aperçu du récapitulatif pour l'impression
 const DevisRecapPreview: React.FC = () => {
+  const { state } = useProject();
+  const { rooms, metadata } = state;
   const { travaux, getTravauxForPiece } = useTravaux();
-  const { state: { rooms, metadata } } = useProject();
-  const [isLoading, setIsLoading] = useState(false);
 
-  const handlePrintRecap = async () => {
-    setIsLoading(true);
+  // Fonction pour générer le PDF
+  const handlePrint = async () => {
     try {
       await generateRecapPDF(rooms, travaux, getTravauxForPiece, metadata);
     } catch (error) {
-      console.error("Erreur lors de la génération du PDF récapitulatif:", error);
-    } finally {
-      setIsLoading(false);
+      console.error("Erreur lors de la génération du PDF:", error);
     }
   };
 
   return (
-    <div className="border rounded-lg p-4 bg-white shadow-sm">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-medium">Aperçu du récapitulatif</h3>
+    <div className="p-4 border rounded-lg bg-white">
+      <div className="mb-4 flex justify-between items-center">
+        <h2 className="text-lg font-bold">Aperçu du Récapitulatif</h2>
         <Button 
-          onClick={handlePrintRecap}
-          disabled={isLoading}
-          className="flex items-center gap-2"
+          variant="outline" 
+          className="flex items-center gap-2" 
+          onClick={handlePrint}
         >
           <Printer className="h-4 w-4" />
-          {isLoading ? "Génération..." : "Imprimer le récapitulatif"}
+          Imprimer
         </Button>
       </div>
-
-      <div className="border rounded p-4 min-h-[400px] bg-gray-50">
-        <div className="text-center text-xl font-bold mb-6">RÉCAPITULATIF</div>
-        
-        {/* Aperçu simplifié des pièces */}
-        {rooms.map(room => {
-          const travauxPiece = getTravauxForPiece(room.id);
-          if (travauxPiece.length === 0) return null;
-          
-          const roomTotal = travauxPiece.reduce((sum, t) => {
-            return sum + (t.prixFournitures + t.prixMainOeuvre) * t.quantite;
-          }, 0);
-          
-          return (
-            <div key={room.id} className="mb-2 flex justify-between border-b pb-1">
-              <span>{room.name}</span>
-              <span className="font-medium">{roomTotal.toLocaleString('fr-FR')} €</span>
-            </div>
-          );
-        })}
-        
-        {/* Calcul des totaux */}
-        {(() => {
-          const totalHT = travaux.reduce((sum, t) => {
-            return sum + (t.prixFournitures + t.prixMainOeuvre) * t.quantite;
-          }, 0);
-          
-          const totalTVA = travaux.reduce((sum, t) => {
-            const total = (t.prixFournitures + t.prixMainOeuvre) * t.quantite;
-            return sum + (total * t.tauxTVA / 100);
-          }, 0);
-          
-          const totalTTC = totalHT + totalTVA;
-          
-          return (
-            <div className="mt-6 space-y-2">
-              <div className="flex justify-between">
-                <span>Total HT</span>
-                <span>{totalHT.toLocaleString('fr-FR')} €</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Total TVA</span>
-                <span>{totalTVA.toLocaleString('fr-FR')} €</span>
-              </div>
-              <div className="flex justify-between font-bold border-t pt-2 mt-2">
-                <span>Total TTC</span>
-                <span>{totalTTC.toLocaleString('fr-FR')} €</span>
-              </div>
-            </div>
-          );
-        })()}
+      
+      <div className="p-4 border rounded shadow-sm bg-white">
+        <RecapitulatifTravaux 
+          rooms={rooms}
+          travaux={travaux}
+          getTravauxForPiece={getTravauxForPiece}
+        />
       </div>
     </div>
   );

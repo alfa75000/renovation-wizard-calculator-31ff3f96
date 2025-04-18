@@ -1,82 +1,142 @@
 
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Printer } from 'lucide-react';
-import { useTravaux } from '@/features/travaux/hooks/useTravaux';
-import { useProject } from '@/contexts/ProjectContext';
-import { generateDetailsPDF } from '@/services/pdf/pdfMainGenerator';
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { X } from "lucide-react";
+import { useProject } from "@/contexts/ProjectContext";
+import { useTravaux } from "@/features/travaux/hooks/useTravaux";
+import { generateDetailsPDF } from "@/services/pdfGenerationService";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { formaterPrix, formaterQuantite } from "@/lib/utils";
 
-const DevisDetailsPreview: React.FC = () => {
+interface DevisDetailsPreviewProps {
+  open: boolean;
+  onClose: () => void;
+}
+
+export const DevisDetailsPreview: React.FC<DevisDetailsPreviewProps> = ({ 
+  open, 
+  onClose 
+}) => {
+  const { state } = useProject();
+  const { rooms, metadata } = state;
   const { travaux, getTravauxForPiece } = useTravaux();
-  const { state: { rooms, metadata } } = useProject();
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handlePrintDetails = async () => {
-    setIsLoading(true);
+  
+  const handleGeneratePDF = async () => {
     try {
       await generateDetailsPDF(rooms, travaux, getTravauxForPiece, metadata);
     } catch (error) {
-      console.error("Erreur lors de la génération du PDF des détails:", error);
-    } finally {
-      setIsLoading(false);
+      console.error("Erreur lors de la génération du PDF:", error);
     }
   };
 
   return (
-    <div className="border rounded-lg p-4 bg-white shadow-sm">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-medium">Aperçu des détails</h3>
-        <Button 
-          onClick={handlePrintDetails}
-          disabled={isLoading}
-          className="flex items-center gap-2"
-        >
-          <Printer className="h-4 w-4" />
-          {isLoading ? "Génération..." : "Imprimer les détails"}
-        </Button>
-      </div>
-
-      <div className="border rounded p-4 min-h-[400px] bg-gray-50">
-        <div className="text-center text-xl font-bold mb-6">DÉTAILS DES TRAVAUX</div>
+    <Dialog open={open} onOpenChange={() => onClose()}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="flex flex-row items-center justify-between">
+          <DialogTitle>Aperçu des Détails des Travaux</DialogTitle>
+          <Button variant="ghost" size="icon" onClick={onClose}>
+            <X className="h-4 w-4" />
+          </Button>
+        </DialogHeader>
         
-        {/* Aperçu simplifié des pièces et travaux */}
-        {rooms.map(room => {
-          const travauxPiece = getTravauxForPiece(room.id);
-          if (travauxPiece.length === 0) return null;
-          
-          return (
-            <div key={room.id} className="mb-6">
-              <div className="font-medium text-lg mb-2 bg-gray-100 p-1">{room.name}</div>
-              
-              {travauxPiece.map((travail, index) => {
-                const total = (travail.prixFournitures + travail.prixMainOeuvre) * travail.quantite;
+        <div className="space-y-4">
+          {/* Document d'aperçu */}
+          <div className="border rounded-md p-6 bg-white shadow-sm print:shadow-none min-h-[600px] relative">
+            {/* En-tête avec numéro de devis */}
+            <div className="absolute top-6 right-6 text-[9pt]">
+              DEVIS N° {metadata?.devisNumber || 'XXXX-XX'} - page 1/1
+            </div>
+
+            <div className="mt-8">
+              {rooms.map((room) => {
+                const travauxPiece = getTravauxForPiece(room.id);
+                if (travauxPiece.length === 0) return null;
                 
                 return (
-                  <div key={travail.id} className="mb-3 pl-2 border-l-2 border-gray-200">
-                    <div className="font-medium">{travail.typeTravauxLabel}: {travail.sousTypeLabel}</div>
-                    <div className="text-sm text-gray-600">{travail.description}</div>
-                    <div className="flex justify-between text-sm mt-1">
-                      <span>
-                        {travail.quantite} {travail.unite} × {(travail.prixFournitures + travail.prixMainOeuvre).toLocaleString('fr-FR')} €
-                      </span>
-                      <span className="font-medium">{total.toLocaleString('fr-FR')} €</span>
+                  <div key={room.id} className="mb-6">
+                    <div className="text-[9pt] font-semibold bg-gray-100 p-2 mb-2">
+                      {room.name}
                     </div>
+                    
+                    <table className="w-full mb-4 text-[9pt]">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left p-1">Description</th>
+                          <th className="text-center p-1">Quantité</th>
+                          <th className="text-center p-1">Prix HT Unit.</th>
+                          <th className="text-center p-1">TVA</th>
+                          <th className="text-center p-1">Total HT</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {travauxPiece.map((travail) => {
+                          const prixUnitaireHT = travail.prixFournitures + travail.prixMainOeuvre;
+                          const totalHT = prixUnitaireHT * travail.quantite;
+                          
+                          return (
+                            <tr key={travail.id} className="border-b">
+                              <td className="p-1">
+                                <div className="text-[9pt] font-medium">
+                                  {travail.typeTravauxLabel}: {travail.sousTypeLabel}
+                                </div>
+                                {travail.description && (
+                                  <div className="text-[8pt] text-gray-600">
+                                    {travail.description}
+                                  </div>
+                                )}
+                                {travail.personnalisation && (
+                                  <div className="text-[8pt] text-gray-600 italic">
+                                    {travail.personnalisation}
+                                  </div>
+                                )}
+                                <div className="text-[9pt] text-gray-600 mt-4">
+                                  MO: {formaterPrix(travail.prixMainOeuvre)}/u, Fourn: {formaterPrix(travail.prixFournitures)}/u 
+                                  (TVA {travail.tauxTVA}%)
+                                </div>
+                              </td>
+                              <td className="text-center p-1">
+                                <div className="flex flex-col items-center">
+                                  <span>{formaterQuantite(travail.quantite)}</span>
+                                  <span>{travail.unite}</span>
+                                </div>
+                              </td>
+                              <td className="text-center p-1">{formaterPrix(prixUnitaireHT)}</td>
+                              <td className="text-center p-1">{travail.tauxTVA}%</td>
+                              <td className="text-center p-1 font-medium">{formaterPrix(totalHT)}</td>
+                            </tr>
+                          );
+                        })}
+                        
+                        {/* Total de la pièce */}
+                        <tr className="bg-gray-50">
+                          <td colSpan={4} className="text-left p-1 text-[9pt] font-medium">
+                            Total HT {room.name}
+                          </td>
+                          <td className="text-center p-1 text-[9pt] font-medium">
+                            {formaterPrix(travauxPiece.reduce((sum, t) => {
+                              return sum + (t.prixFournitures + t.prixMainOeuvre) * t.quantite;
+                            }, 0))}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
                 );
               })}
-              
-              <div className="flex justify-between font-medium border-t pt-1 mt-2">
-                <span>Total {room.name}</span>
-                <span>
-                  {travauxPiece.reduce((sum, t) => sum + (t.prixFournitures + t.prixMainOeuvre) * t.quantite, 0).toLocaleString('fr-FR')} €
-                </span>
-              </div>
             </div>
-          );
-        })}
-      </div>
-    </div>
+          </div>
+          
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" onClick={onClose}>
+              Fermer
+            </Button>
+            <Button onClick={handleGeneratePDF}>
+              Générer PDF
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 
-export default DevisDetailsPreview;
