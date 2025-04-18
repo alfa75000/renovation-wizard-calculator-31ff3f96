@@ -1,14 +1,24 @@
 
 import { Room, Travail, ProjectMetadata } from '@/types';
 import { Content } from 'pdfmake/interfaces';
-import { 
-  generateRecapTableBody,
-  generateStandardTotalsTable,
-  generateTTCTable 
-} from './tables/totalsTableGenerator';
+import { generateRecapTableBody } from './tables/recapTableGenerator';
+import { generateStandardTotalsTable, generateTTCTable } from './tables/totalsTableGenerator';
 import { getPdfSettings } from '../config/pdfSettingsManager';
 import { generateSignatureContent, generateSalutationContent } from './contentGenerator';
+import { 
+  ELEMENT_IDS, 
+  convertToPdfStyle, 
+  getPdfColors 
+} from '../utils/styleUtils';
 
+/**
+ * Génère le contenu pour la page récapitulative
+ * @param rooms - Liste des pièces
+ * @param travaux - Liste des travaux
+ * @param getTravauxForPiece - Fonction pour récupérer les travaux d'une pièce
+ * @param metadata - Métadonnées du projet
+ * @returns Content[] - Contenu formaté pour la page récapitulative
+ */
 export const generateRecapContent = (
   rooms: Room[], 
   travaux: Travail[], 
@@ -16,6 +26,7 @@ export const generateRecapContent = (
   metadata?: ProjectMetadata
 ): Content[] => {
   const settings = getPdfSettings();
+  const colors = getPdfColors(settings);
   const content: Content[] = [];
   
   // Titre
@@ -23,9 +34,8 @@ export const generateRecapContent = (
     text: 'RÉCAPITULATIF',
     style: 'header',
     alignment: 'center',
-    fontSize: settings?.fontSize?.header || 12,
-    bold: true,
-    color: settings?.colors?.mainText || '#1a1f2c',
+    ...convertToPdfStyle(ELEMENT_IDS.RECAP_TITLE, settings),
+    color: colors.mainText,
     margin: [0, 10, 0, 20]
   });
   

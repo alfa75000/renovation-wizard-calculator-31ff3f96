@@ -1,3 +1,24 @@
+/**
+ * Représente les données d'une entreprise
+ */
+export interface CompanyData {
+  id: string;
+  name: string;
+  address?: string;
+  postal_code?: string;
+  city?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
+  siret?: string;
+  tva_intracom?: string;
+  code_ape?: string;
+  capital_social?: string;
+  created_at?: string;
+  updated_at?: string;
+  logo_url?: string | null;
+  slogan?: string;
+}
 
 // Types pour les clients
 

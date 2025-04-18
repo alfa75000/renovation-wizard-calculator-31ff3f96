@@ -8,7 +8,21 @@ import {
 } from './tables/detailsTableGenerator';
 import { TABLE_COLUMN_WIDTHS } from '../pdfConstants';
 import { getPdfSettings } from '../config/pdfSettingsManager';
+import { 
+  ELEMENT_IDS, 
+  convertToPdfStyle, 
+  getPdfColors, 
+  createTableBorderLayout 
+} from '../utils/styleUtils';
 
+/**
+ * Génère le contenu pour les pages de détails
+ * @param rooms - Liste des pièces
+ * @param travaux - Liste des travaux
+ * @param getTravauxForPiece - Fonction pour récupérer les travaux d'une pièce
+ * @param metadata - Métadonnées du projet
+ * @returns Content[] - Contenu formaté pour les pages de détails
+ */
 export const generateDetailsContent = (
   rooms: Room[], 
   travaux: Travail[], 
@@ -16,6 +30,7 @@ export const generateDetailsContent = (
   metadata?: ProjectMetadata
 ): Content[] => {
   const settings = getPdfSettings();
+  const colors = getPdfColors(settings);
   const content: Content[] = [];
   
   // Filtrer les pièces avec des travaux
@@ -29,10 +44,9 @@ export const generateDetailsContent = (
     content.push({
       text: room.name,
       style: 'roomTitle',
-      fontSize: settings?.fontSize?.roomTitle || 9,
-      bold: true,
-      color: settings?.colors?.mainText || '#1a1f2c',
-      fillColor: settings?.colors?.background || '#f3f4f6',
+      ...convertToPdfStyle(ELEMENT_IDS.ROOM_TITLE, settings),
+      color: colors.mainText,
+      fillColor: colors.background,
       margin: [0, 10, 0, 5]
     });
     
@@ -47,7 +61,7 @@ export const generateDetailsContent = (
         body: tableBody
       },
       layout: {
-        hLineWidth: (i, node) => {
+        hLineWidth: (i: number, node: any) => {
           if (i === 0 || i === node.table.body.length) return 1;
           const isEndOfPrestation = i < node.table.body.length && 
             ((node.table.body[i][0]?.text?.includes('Total HT')) ||
@@ -55,7 +69,7 @@ export const generateDetailsContent = (
           return isEndOfPrestation ? 1 : 0;
         },
         vLineWidth: () => 0,
-        hLineColor: () => settings?.colors?.detailsLines || '#e5e7eb',
+        hLineColor: () => colors.detailsLines,
         paddingLeft: () => 4,
         paddingRight: () => 4,
         paddingTop: () => 2,

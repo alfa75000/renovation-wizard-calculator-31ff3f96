@@ -10,22 +10,81 @@ import {
   formatQuantity
 } from '../../pdfConstants';
 import { formatMOFournitures } from '../../formatters';
+import { getPdfSettings } from '../../config/pdfSettingsManager';
+import { 
+  ELEMENT_IDS, 
+  getElementSettings, 
+  getPdfColors 
+} from '../../utils/styleUtils';
 
+/**
+ * Génère l'en-tête du tableau de détails
+ * @returns TableCell[] - Cellules d'en-tête du tableau
+ */
 export const generateDetailsTableHeader = (): TableCell[] => {
+  const settings = getPdfSettings();
+  const colors = getPdfColors(settings);
+  const descriptionSettings = getElementSettings(ELEMENT_IDS.DETAILS_DESCRIPTION);
+  
   return [
-    { text: 'Description', style: 'tableHeader', alignment: 'left', color: '#1a1f2c' },
-    { text: 'Quantité', style: 'tableHeader', alignment: 'center', color: '#1a1f2c' },
-    { text: 'Prix HT Unit.', style: 'tableHeader', alignment: 'center', color: '#1a1f2c' },
-    { text: 'TVA', style: 'tableHeader', alignment: 'center', color: '#1a1f2c' },
-    { text: 'Total HT', style: 'tableHeader', alignment: 'center', color: '#1a1f2c' }
+    { 
+      text: 'Description', 
+      style: 'tableHeader', 
+      alignment: 'left', 
+      color: colors.mainText,
+      fontSize: descriptionSettings.fontSize 
+    },
+    { 
+      text: 'Quantité', 
+      style: 'tableHeader', 
+      alignment: 'center', 
+      color: colors.mainText,
+      fontSize: descriptionSettings.fontSize 
+    },
+    { 
+      text: 'Prix HT Unit.', 
+      style: 'tableHeader', 
+      alignment: 'center', 
+      color: colors.mainText,
+      fontSize: descriptionSettings.fontSize 
+    },
+    { 
+      text: 'TVA', 
+      style: 'tableHeader', 
+      alignment: 'center', 
+      color: colors.mainText,
+      fontSize: descriptionSettings.fontSize 
+    },
+    { 
+      text: 'Total HT', 
+      style: 'tableHeader', 
+      alignment: 'center', 
+      color: colors.mainText,
+      fontSize: descriptionSettings.fontSize 
+    }
   ];
 };
 
+/**
+ * Génère le corps du tableau de détails
+ * @param room - Pièce concernée
+ * @param travaux - Liste des travaux pour cette pièce
+ * @returns TableCell[][] - Corps du tableau
+ */
 export const generateDetailsTableBody = (
   room: Room,
   travaux: Travail[]
-): any[] => {
-  const tableBody = [];
+): TableCell[][] => {
+  const settings = getPdfSettings();
+  const colors = getPdfColors(settings);
+  const descriptionSettings = getElementSettings(ELEMENT_IDS.DETAILS_DESCRIPTION);
+  const quantitySettings = getElementSettings(ELEMENT_IDS.DETAILS_QUANTITY);
+  const priceSettings = getElementSettings(ELEMENT_IDS.DETAILS_PRICE);
+  const tvaSettings = getElementSettings(ELEMENT_IDS.DETAILS_TVA);
+  const totalSettings = getElementSettings(ELEMENT_IDS.DETAILS_TOTAL);
+  const extrasSettings = getElementSettings(ELEMENT_IDS.DETAILS_EXTRAS);
+  
+  const tableBody: TableCell[][] = [];
   
   travaux.forEach((travail, index) => {
     const prixUnitaireHT = travail.prixFournitures + travail.prixMainOeuvre;
@@ -44,31 +103,48 @@ export const generateDetailsTableBody = (
     tableBody.push([
       { 
         stack: [
-          { text: descriptionLines.join('\n'), fontSize: 9, lineHeight: 1.4 },
-          { text: moFournText, fontSize: 7, lineHeight: 1.4 }
+          { 
+            text: descriptionLines.join('\n'), 
+            fontSize: descriptionSettings.fontSize,
+            lineHeight: 1.4
+          },
+          { 
+            text: moFournText, 
+            fontSize: extrasSettings.fontSize,
+            lineHeight: 1.4,
+            color: colors.detailsText
+          }
         ]
       },
       { 
         stack: [
-          { text: formatQuantity(travail.quantite), alignment: 'center', fontSize: 9 },
-          { text: travail.unite, alignment: 'center', fontSize: 9 }
+          { 
+            text: formatQuantity(travail.quantite), 
+            alignment: quantitySettings.alignment || 'center', 
+            fontSize: quantitySettings.fontSize
+          },
+          { 
+            text: travail.unite, 
+            alignment: quantitySettings.alignment || 'center', 
+            fontSize: quantitySettings.fontSize
+          }
         ],
         alignment: 'center'
       },
       { 
         text: formatPrice(prixUnitaireHT), 
-        alignment: 'center',
-        fontSize: 9
+        alignment: priceSettings.alignment || 'center',
+        fontSize: priceSettings.fontSize
       },
       { 
         text: `${travail.tauxTVA}%`, 
-        alignment: 'center',
-        fontSize: 9
+        alignment: tvaSettings.alignment || 'center',
+        fontSize: tvaSettings.fontSize
       },
       { 
         text: formatPrice(totalHT), 
-        alignment: 'center',
-        fontSize: 9
+        alignment: totalSettings.alignment || 'center',
+        fontSize: totalSettings.fontSize
       }
     ]);
     
@@ -84,7 +160,17 @@ export const generateDetailsTableBody = (
   return tableBody;
 };
 
+/**
+ * Génère la ligne de total pour une pièce
+ * @param room - Pièce concernée
+ * @param travaux - Liste des travaux pour cette pièce
+ * @returns TableCell[] - Ligne de total
+ */
 export const generateRoomTotalRow = (room: Room, travaux: Travail[]): TableCell[] => {
+  const settings = getPdfSettings();
+  const colors = getPdfColors(settings);
+  const roomTotalSettings = getElementSettings(ELEMENT_IDS.DETAILS_ROOM_TOTAL);
+  
   const pieceTotalHT = travaux.reduce((sum, t) => {
     return sum + (t.prixFournitures + t.prixMainOeuvre) * t.quantite;
   }, 0);
@@ -94,17 +180,17 @@ export const generateRoomTotalRow = (room: Room, travaux: Travail[]): TableCell[
       text: `Total HT ${room.name}`, 
       colSpan: 4, 
       alignment: 'left', 
-      fontSize: 9, 
-      bold: true, 
-      fillColor: '#f9fafb' 
+      fontSize: roomTotalSettings.fontSize, 
+      bold: roomTotalSettings.isBold, 
+      fillColor: colors.background 
     },
     {}, {}, {},
     { 
       text: formatPrice(pieceTotalHT), 
-      alignment: 'center', 
-      fontSize: 9, 
-      bold: true, 
-      fillColor: '#f9fafb' 
+      alignment: roomTotalSettings.alignment || 'center', 
+      fontSize: roomTotalSettings.fontSize, 
+      bold: roomTotalSettings.isBold, 
+      fillColor: colors.background 
     }
   ];
 };
