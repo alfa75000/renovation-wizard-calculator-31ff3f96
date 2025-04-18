@@ -1,4 +1,3 @@
-
 import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
 import { Room, Travail, ProjectMetadata } from '@/types';
@@ -50,6 +49,36 @@ function formatDate(dateString?: string): string {
   }
 }
 
+// Fonction auxiliaire pour appliquer des bordures à un élément
+function applyBorders(element: any, borderSettings: any) {
+  if (!borderSettings) return element;
+  
+  const hasBorder = borderSettings.top || borderSettings.right || borderSettings.bottom || borderSettings.left;
+  
+  if (!hasBorder) return element;
+  
+  return {
+    table: {
+      widths: ['*'],
+      body: [[element]]
+    },
+    layout: {
+      hLineWidth: function(i: number) {
+        if (i === 0) return borderSettings.top ? borderSettings.width || 1 : 0;
+        if (i === 1) return borderSettings.bottom ? borderSettings.width || 1 : 0;
+        return 0;
+      },
+      vLineWidth: function(i: number) {
+        if (i === 0) return borderSettings.left ? borderSettings.width || 1 : 0;
+        if (i === 1) return borderSettings.right ? borderSettings.width || 1 : 0;
+        return 0;
+      },
+      hLineColor: function() { return borderSettings.color || DARK_BLUE; },
+      vLineColor: function() { return borderSettings.color || DARK_BLUE; }
+    }
+  };
+}
+
 // Nouvelle fonction pour générer le PDF complet du devis
 export const generateCompletePDF = async (
   fields: any[],
@@ -79,10 +108,10 @@ export const generateCompletePDF = async (
         // Page de garde
         ...coverContent,
         // Page(s) de détails
-        { text: '', pageBreak: 'before' }, // Forcer un saut de page
+        { text: '', pageBreak: 'before' },
         ...detailsContent,
         // Page(s) de récapitulatif
-        { text: '', pageBreak: 'before' }, // Forcer un saut de page
+        { text: '', pageBreak: 'before' },
         ...recapContent
       ],
       styles: PDF_STYLES,
@@ -187,34 +216,9 @@ function prepareCoverContent(fields: any[], company: any, metadata?: ProjectMeta
     ]
   };
 
+  // Appliquer les bordures au slogan si configurées
   if (pdfSettings?.elements?.company_slogan?.border) {
-    const border = pdfSettings.elements.company_slogan.border;
-    const hasBorder = border.top || border.right || border.bottom || border.left;
-    
-    if (hasBorder) {
-      content.push({
-        table: {
-          widths: ['*'],
-          body: [[sloganElement]]
-        },
-        layout: {
-          hLineWidth: (i: number) => {
-            if (i === 0) return border.top ? border.width || 1 : 0;
-            if (i === 1) return border.bottom ? border.width || 1 : 0;
-            return 0;
-          },
-          vLineWidth: (i: number) => {
-            if (i === 0) return border.left ? border.width || 1 : 0;
-            if (i === 1) return border.right ? border.width || 1 : 0;
-            return 0;
-          },
-          hLineColor: () => border.color || DARK_BLUE,
-          vLineColor: () => border.color || DARK_BLUE
-        }
-      });
-    } else {
-      content.push(sloganElement);
-    }
+    content.push(applyBorders(sloganElement, pdfSettings.elements.company_slogan.border));
   } else {
     content.push(sloganElement);
   }
@@ -236,35 +240,9 @@ function prepareCoverContent(fields: any[], company: any, metadata?: ProjectMeta
     ]
   };
 
-  // Appliquer les bordures aux coordonnées société si définies
+  // Appliquer les bordures aux coordonnées société si configurées
   if (pdfSettings?.elements?.company_info?.border) {
-    const border = pdfSettings.elements.company_info.border;
-    const hasBorder = border.top || border.right || border.bottom || border.left;
-    
-    if (hasBorder) {
-      content.push({
-        table: {
-          widths: ['*'],
-          body: [[companyInfoElement]]
-        },
-        layout: {
-          hLineWidth: (i: number) => {
-            if (i === 0) return border.top ? border.width || 1 : 0;
-            if (i === 1) return border.bottom ? border.width || 1 : 0;
-            return 0;
-          },
-          vLineWidth: (i: number) => {
-            if (i === 0) return border.left ? border.width || 1 : 0;
-            if (i === 1) return border.right ? border.width || 1 : 0;
-            return 0;
-          },
-          hLineColor: () => border.color || DARK_BLUE,
-          vLineColor: () => border.color || DARK_BLUE
-        }
-      });
-    } else {
-      content.push(companyInfoElement);
-    }
+    content.push(applyBorders(companyInfoElement, pdfSettings.elements.company_info.border));
   } else {
     content.push(companyInfoElement);
   }
@@ -344,7 +322,7 @@ function prepareCoverContent(fields: any[], company: any, metadata?: ProjectMeta
   });
 
   // Espace avant devis
-  { content.push({ text: '', margin: [0, 30, 0, 0] }) };
+  content.push({ text: '', margin: [0, 30, 0, 0] });
     
   // Numéro et date du devis
   const devisNumberElement = {
@@ -382,7 +360,7 @@ function prepareCoverContent(fields: any[], company: any, metadata?: ProjectMeta
   });
     
   // Espace avant Client
-  { content.push({ text: '', margin: [0, 35, 0, 0] }) };
+  content.push({ text: '', margin: [0, 35, 0, 0] });
     
   // Client - Titre
   const clientTitleElement = {
@@ -395,48 +373,18 @@ function prepareCoverContent(fields: any[], company: any, metadata?: ProjectMeta
     alignment: pdfSettings?.elements?.client_title?.alignment || 'left'
   };
 
-  // Application des bordures pour le titre client si nécessaire
+  // Appliquer les bordures pour le titre client
   if (pdfSettings?.elements?.client_title?.border) {
-    const border = pdfSettings.elements.client_title.border;
-    const hasBorder = border.top || border.right || border.bottom || border.left;
-    
-    if (hasBorder) {
-      content.push({
-        columns: [
-          { width: 25, text: '', fontSize: pdfSettings?.elements?.client_title?.fontSize || 10 },
-          { 
-            width: '*', 
-            table: {
-              widths: ['*'],
-              body: [[clientTitleElement]]
-            },
-            layout: {
-              hLineWidth: (i: number) => {
-                if (i === 0) return border.top ? border.width || 1 : 0;
-                if (i === 1) return border.bottom ? border.width || 1 : 0;
-                return 0;
-              },
-              vLineWidth: (i: number) => {
-                if (i === 0) return border.left ? border.width || 1 : 0;
-                if (i === 1) return border.right ? border.width || 1 : 0;
-                return 0;
-              },
-              hLineColor: () => border.color || DARK_BLUE,
-              vLineColor: () => border.color || DARK_BLUE
-            }
-          }
-        ],
-        columnGap: 1
-      });
-    } else {
-      content.push({
-        columns: [
-          { width: 25, text: '', fontSize: pdfSettings?.elements?.client_title?.fontSize || 10 },
-          { width: '*', ...clientTitleElement }
-        ],
-        columnGap: 1
-      });
-    }
+    content.push({
+      columns: [
+        { width: 25, text: '', fontSize: pdfSettings?.elements?.client_title?.fontSize || 10 },
+        { 
+          width: '*', 
+          ...applyBorders(clientTitleElement, pdfSettings.elements.client_title.border)
+        }
+      ],
+      columnGap: 1
+    });
   } else {
     content.push({
       columns: [
@@ -459,50 +407,19 @@ function prepareCoverContent(fields: any[], company: any, metadata?: ProjectMeta
     alignment: pdfSettings?.elements?.client_content?.alignment || 'left'
   };
 
-  // Application des bordures pour le contenu client si nécessaire
+  // Appliquer les bordures pour le contenu client
   if (pdfSettings?.elements?.client_content?.border) {
-    const border = pdfSettings.elements.client_content.border;
-    const hasBorder = border.top || border.right || border.bottom || border.left;
-    
-    if (hasBorder) {
-      content.push({
-        columns: [
-          { width: 25, text: '', fontSize: pdfSettings?.elements?.client_content?.fontSize || 10 },
-          { 
-            width: '*', 
-            table: {
-              widths: ['*'],
-              body: [[clientContentElement]]
-            },
-            layout: {
-              hLineWidth: (i: number) => {
-                if (i === 0) return border.top ? border.width || 1 : 0;
-                if (i === 1) return border.bottom ? border.width || 1 : 0;
-                return 0;
-              },
-              vLineWidth: (i: number) => {
-                if (i === 0) return border.left ? border.width || 1 : 0;
-                if (i === 1) return border.right ? border.width || 1 : 0;
-                return 0;
-              },
-              hLineColor: () => border.color || DARK_BLUE,
-              vLineColor: () => border.color || DARK_BLUE
-            }
-          }
-        ],
-        columnGap: 15,
-        margin: [0, 5, 0, 0]
-      });
-    } else {
-      content.push({
-        columns: [
-          { width: 25, text: '', fontSize: pdfSettings?.elements?.client_content?.fontSize || 10 },
-          { width: '*', ...clientContentElement }
-        ],
-        columnGap: 15,
-        margin: [0, 5, 0, 0]
-      });
-    }
+    content.push({
+      columns: [
+        { width: 25, text: '', fontSize: pdfSettings?.elements?.client_content?.fontSize || 10 },
+        { 
+          width: '*', 
+          ...applyBorders(clientContentElement, pdfSettings.elements.client_content.border)
+        }
+      ],
+      columnGap: 15,
+      margin: [0, 5, 0, 0]
+    });
   } else {
     content.push({
       columns: [
@@ -515,11 +432,11 @@ function prepareCoverContent(fields: any[], company: any, metadata?: ProjectMeta
   }
     
   // Espaces après les données client
-  { content.push({ text: '', margin: [0, 5, 0, 0] }) };
-  { content.push({ text: '', margin: [0, 5, 0, 0] }) };
-  { content.push({ text: '', margin: [0, 5, 0, 0] }) };
-  { content.push({ text: '', margin: [0, 5, 0, 0] }) };
-  { content.push({ text: '', margin: [0, 5, 0, 0] }) };
+  content.push({ text: '', margin: [0, 5, 0, 0] });
+  content.push({ text: '', margin: [0, 5, 0, 0] });
+  content.push({ text: '', margin: [0, 5, 0, 0] });
+  content.push({ text: '', margin: [0, 5, 0, 0] });
+  content.push({ text: '', margin: [0, 5, 0, 0] });
     
   // Chantier - Titre
   const chantierTitleElement = {
@@ -533,35 +450,9 @@ function prepareCoverContent(fields: any[], company: any, metadata?: ProjectMeta
     alignment: pdfSettings?.elements?.chantier_title?.alignment || 'left'
   };
 
-  // Application des bordures pour le titre chantier si nécessaire
+  // Appliquer les bordures pour le titre chantier
   if (pdfSettings?.elements?.chantier_title?.border) {
-    const border = pdfSettings.elements.chantier_title.border;
-    const hasBorder = border.top || border.right || border.bottom || border.left;
-    
-    if (hasBorder) {
-      content.push({
-        table: {
-          widths: ['*'],
-          body: [[chantierTitleElement]]
-        },
-        layout: {
-          hLineWidth: (i: number) => {
-            if (i === 0) return border.top ? border.width || 1 : 0;
-            if (i === 1) return border.bottom ? border.width || 1 : 0;
-            return 0;
-          },
-          vLineWidth: (i: number) => {
-            if (i === 0) return border.left ? border.width || 1 : 0;
-            if (i === 1) return border.right ? border.width || 1 : 0;
-            return 0;
-          },
-          hLineColor: () => border.color || DARK_BLUE,
-          vLineColor: () => border.color || DARK_BLUE
-        }
-      });
-    } else {
-      content.push(chantierTitleElement);
-    }
+    content.push(applyBorders(chantierTitleElement, pdfSettings.elements.chantier_title.border));
   } else {
     content.push(chantierTitleElement);
   }
@@ -579,35 +470,9 @@ function prepareCoverContent(fields: any[], company: any, metadata?: ProjectMeta
       alignment: pdfSettings?.elements?.chantier_values?.alignment || 'left'
     };
 
-    // Application des bordures pour les valeurs chantier si nécessaire
+    // Appliquer les bordures pour les valeurs chantier
     if (pdfSettings?.elements?.chantier_values?.border) {
-      const border = pdfSettings.elements.chantier_values.border;
-      const hasBorder = border.top || border.right || border.bottom || border.left;
-      
-      if (hasBorder) {
-        content.push({
-          table: {
-            widths: ['*'],
-            body: [[occupantElement]]
-          },
-          layout: {
-            hLineWidth: (i: number) => {
-              if (i === 0) return border.top ? border.width || 1 : 0;
-              if (i === 1) return border.bottom ? border.width || 1 : 0;
-              return 0;
-            },
-            vLineWidth: (i: number) => {
-              if (i === 0) return border.left ? border.width || 1 : 0;
-              if (i === 1) return border.right ? border.width || 1 : 0;
-              return 0;
-            },
-            hLineColor: () => border.color || DARK_BLUE,
-            vLineColor: () => border.color || DARK_BLUE
-          }
-        });
-      } else {
-        content.push(occupantElement);
-      }
+      content.push(applyBorders(occupantElement, pdfSettings.elements.chantier_values.border));
     } else {
       content.push(occupantElement);
     }
@@ -625,35 +490,9 @@ function prepareCoverContent(fields: any[], company: any, metadata?: ProjectMeta
       alignment: pdfSettings?.elements?.chantier_labels?.alignment || 'left'
     };
 
-    // Application des bordures pour les labels chantier si nécessaire
+    // Appliquer les bordures pour les labels chantier
     if (pdfSettings?.elements?.chantier_labels?.border) {
-      const border = pdfSettings.elements.chantier_labels.border;
-      const hasBorder = border.top || border.right || border.bottom || border.left;
-      
-      if (hasBorder) {
-        content.push({
-          table: {
-            widths: ['*'],
-            body: [[addressLabelElement]]
-          },
-          layout: {
-            hLineWidth: (i: number) => {
-              if (i === 0) return border.top ? border.width || 1 : 0;
-              if (i === 1) return border.bottom ? border.width || 1 : 0;
-              return 0;
-            },
-            vLineWidth: (i: number) => {
-              if (i === 0) return border.left ? border.width || 1 : 0;
-              if (i === 1) return border.right ? border.width || 1 : 0;
-              return 0;
-            },
-            hLineColor: () => border.color || DARK_BLUE,
-            vLineColor: () => border.color || DARK_BLUE
-          }
-        });
-      } else {
-        content.push(addressLabelElement);
-      }
+      content.push(applyBorders(addressLabelElement, pdfSettings.elements.chantier_labels.border));
     } else {
       content.push(addressLabelElement);
     }
@@ -669,36 +508,11 @@ function prepareCoverContent(fields: any[], company: any, metadata?: ProjectMeta
       alignment: pdfSettings?.elements?.chantier_values?.alignment || 'left'
     };
 
-    // Application des bordures pour les valeurs chantier si nécessaire
+    // Appliquer les bordures pour les valeurs chantier
     if (pdfSettings?.elements?.chantier_values?.border) {
-      const border = pdfSettings.elements.chantier_values.border;
-      const hasBorder = border.top || border.right || border.bottom || border.left;
-      
-      if (hasBorder) {
-        content.push({
-          table: {
-            widths: ['*'],
-            body: [[addressValueElement]]
-          },
-          layout: {
-            hLineWidth: (i: number) => {
-              if (i === 0) return border.top ? border.width || 1 : 0;
-              if (i === 1) return border.bottom ? border.width || 1 : 0;
-              return 0;
-            },
-            vLineWidth: (i: number) => {
-              if (i === 0) return border.left ? border.width || 1 : 0;
-              if (i === 1) return border.right ? border.width || 1 : 0;
-              return 0;
-            },
-            hLineColor: () => border.color || DARK_BLUE,
-            vLineColor: () => border.color || DARK_BLUE
-          },
-          margin: [10, 3, 0, 0]
-        });
-      } else {
-        content.push(addressValueElement);
-      }
+      const borderedElement = applyBorders(addressValueElement, pdfSettings.elements.chantier_values.border);
+      borderedElement.margin = [10, 3, 0, 0];
+      content.push(borderedElement);
     } else {
       content.push(addressValueElement);
     }
@@ -716,35 +530,9 @@ function prepareCoverContent(fields: any[], company: any, metadata?: ProjectMeta
       alignment: pdfSettings?.elements?.chantier_labels?.alignment || 'left'
     };
 
-    // Application des bordures pour les labels chantier si nécessaire
+    // Appliquer les bordures pour les labels chantier
     if (pdfSettings?.elements?.chantier_labels?.border) {
-      const border = pdfSettings.elements.chantier_labels.border;
-      const hasBorder = border.top || border.right || border.bottom || border.left;
-      
-      if (hasBorder) {
-        content.push({
-          table: {
-            widths: ['*'],
-            body: [[descLabelElement]]
-          },
-          layout: {
-            hLineWidth: (i: number) => {
-              if (i === 0) return border.top ? border.width || 1 : 0;
-              if (i === 1) return border.bottom ? border.width || 1 : 0;
-              return 0;
-            },
-            vLineWidth: (i: number) => {
-              if (i === 0) return border.left ? border.width || 1 : 0;
-              if (i === 1) return border.right ? border.width || 1 : 0;
-              return 0;
-            },
-            hLineColor: () => border.color || DARK_BLUE,
-            vLineColor: () => border.color || DARK_BLUE
-          }
-        });
-      } else {
-        content.push(descLabelElement);
-      }
+      content.push(applyBorders(descLabelElement, pdfSettings.elements.chantier_labels.border));
     } else {
       content.push(descLabelElement);
     }
@@ -760,36 +548,11 @@ function prepareCoverContent(fields: any[], company: any, metadata?: ProjectMeta
       alignment: pdfSettings?.elements?.chantier_values?.alignment || 'left'
     };
 
-    // Application des bordures pour les valeurs chantier si nécessaire
+    // Appliquer les bordures pour les valeurs chantier
     if (pdfSettings?.elements?.chantier_values?.border) {
-      const border = pdfSettings.elements.chantier_values.border;
-      const hasBorder = border.top || border.right || border.bottom || border.left;
-      
-      if (hasBorder) {
-        content.push({
-          table: {
-            widths: ['*'],
-            body: [[descValueElement]]
-          },
-          layout: {
-            hLineWidth: (i: number) => {
-              if (i === 0) return border.top ? border.width || 1 : 0;
-              if (i === 1) return border.bottom ? border.width || 1 : 0;
-              return 0;
-            },
-            vLineWidth: (i: number) => {
-              if (i === 0) return border.left ? border.width || 1 : 0;
-              if (i === 1) return border.right ? border.width || 1 : 0;
-              return 0;
-            },
-            hLineColor: () => border.color || DARK_BLUE,
-            vLineColor: () => border.color || DARK_BLUE
-          },
-          margin: [10, 3, 0, 0]
-        });
-      } else {
-        content.push(descValueElement);
-      }
+      const borderedElement = applyBorders(descValueElement, pdfSettings.elements.chantier_values.border);
+      borderedElement.margin = [10, 3, 0, 0];
+      content.push(borderedElement);
     } else {
       content.push(descValueElement);
     }
@@ -807,36 +570,11 @@ function prepareCoverContent(fields: any[], company: any, metadata?: ProjectMeta
       alignment: pdfSettings?.elements?.chantier_values?.alignment || 'left'
     };
 
-    // Application des bordures pour les valeurs chantier si nécessaire
+    // Appliquer les bordures pour les valeurs chantier
     if (pdfSettings?.elements?.chantier_values?.border) {
-      const border = pdfSettings.elements.chantier_values.border;
-      const hasBorder = border.top || border.right || border.bottom || border.left;
-      
-      if (hasBorder) {
-        content.push({
-          table: {
-            widths: ['*'],
-            body: [[additionalInfoElement]]
-          },
-          layout: {
-            hLineWidth: (i: number) => {
-              if (i === 0) return border.top ? border.width || 1 : 0;
-              if (i === 1) return border.bottom ? border.width || 1 : 0;
-              return 0;
-            },
-            vLineWidth: (i: number) => {
-              if (i === 0) return border.left ? border.width || 1 : 0;
-              if (i === 1) return border.right ? border.width || 1 : 0;
-              return 0;
-            },
-            hLineColor: () => border.color || DARK_BLUE,
-            vLineColor: () => border.color || DARK_BLUE
-          },
-          margin: [10, 15, 0, 0]
-        });
-      } else {
-        content.push(additionalInfoElement);
-      }
+      const borderedElement = applyBorders(additionalInfoElement, pdfSettings.elements.chantier_values.border);
+      borderedElement.margin = [10, 15, 0, 0];
+      content.push(borderedElement);
     } else {
       content.push(additionalInfoElement);
     }
@@ -859,11 +597,11 @@ function prepareDetailsContent(
   // On filtre les pièces qui n'ont pas de travaux
   const roomsWithTravaux = rooms.filter(room => getTravauxForPiece(room.id).length > 0);
   
-  // Créer l'en-tête du tableau commun
+  // Créer l'en-tête du tableau
   const tableHeaderRow = [
     { text: 'Description', style: 'tableHeader', alignment: 'left', color: DARK_BLUE },
     { text: 'Quantité', style: 'tableHeader', alignment: 'center', color: DARK_BLUE },
-    { text: 'Prix HT Unit.', style: 'tableHeader', alignment: 'center', color: DARK_BLUE },
+    { text: 'Prix HT', style: 'tableHeader', alignment: 'center', color: DARK_BLUE },
     { text: 'TVA', style: 'tableHeader', alignment: 'center', color: DARK_BLUE },
     { text: 'Total HT', style: 'tableHeader', alignment: 'center', color: DARK_BLUE }
   ];
@@ -915,7 +653,6 @@ function prepareDetailsContent(
       fontSize: 9,
       bold: true,
       color: DARK_BLUE,
-      fillColor: '#f3f4f6',
       margin: [0, 10, 0, 5]
     });
     
@@ -939,39 +676,35 @@ function prepareDetailsContent(
         descriptionLines.push(travail.personnalisation);
       }
       
-      // Utiliser le nouveau format pour MO/Fournitures
+      // Utiliser le format MO/Fournitures
       const moFournText = formatMOFournitures(travail);
       
       // Estimer le nombre de lignes dans la description
       let totalLines = 0;
       
-      // Largeur approximative de la colonne de description en caractères
-      const columnCharWidth = 80;
-      
-      // Estimer le nombre réel de lignes pour chaque portion de texte
+      // Estimer le nombre de lignes pour chaque partie de la description
       descriptionLines.forEach(line => {
-        const textLines = Math.ceil(line.length / columnCharWidth);
+        const textLines = Math.ceil(line.length / 80);
         totalLines += textLines;
       });
       
-      // Estimer aussi les lignes pour le texte MO/Fournitures
-      const moFournLines = Math.ceil(moFournText.length / columnCharWidth);
+      // Estimer les lignes pour le texte MO/Fournitures
+      const moFournLines = Math.ceil(moFournText.length / 80);
       totalLines += moFournLines;
       
       // Calculer les marges supérieures pour centrer verticalement
-      const topMargin = Math.max(0, 3 + (totalLines - 2) * 4);
+      const topMargin = Math.max(0, 3 + (totalLines - 2) * 2);
       
       // Ajouter la ligne au tableau
       tableBody.push([
-        // Colonne 1: Description
+        // Colonne Description
         { 
           stack: [
-            { text: descriptionLines.join('\n'), fontSize: 9, lineHeight: 1.4 },
-            { text: moFournText, fontSize: 7, lineHeight: 1.4 }
+            { text: descriptionLines.join('\n'), fontSize: 9 },
+            { text: moFournText, fontSize: 7 }
           ]
         },
-        
-        // Colonne 2: Quantité
+        // Colonne Quantité
         { 
           stack: [
             { text: formatQuantity(travail.quantite), alignment: 'center', fontSize: 9 },
@@ -980,24 +713,21 @@ function prepareDetailsContent(
           alignment: 'center',
           margin: [0, topMargin, 0, 0]
         },
-        
-        // Colonne 3: Prix unitaire
+        // Colonne Prix unitaire
         { 
           text: formatPrice(prixUnitaireHT), 
           alignment: 'center',
           fontSize: 9,
           margin: [0, topMargin, 0, 0]
         },
-        
-        // Colonne 4: TVA
+        // Colonne TVA
         { 
           text: `${travail.tauxTVA}%`, 
           alignment: 'center',
           fontSize: 9,
           margin: [0, topMargin, 0, 0]
         },
-        
-        // Colonne 5: Total HT
+        // Colonne Total HT
         { 
           text: formatPrice(totalHT), 
           alignment: 'center',
@@ -1106,64 +836,18 @@ function prepareRecapContent(
         pdfSettings?.elements?.recap_title?.spacing?.top || 10,
         pdfSettings?.elements?.recap_title?.spacing?.right || 0,
         pdfSettings?.elements?.recap_title?.spacing?.bottom || 20
-      ],
-      pageBreak: 'before'
+      ]
     }
   ];
   
-  // Ajout de la bordure si elle est définie
+  // Appliquer les bordures au titre si configurées
   if (pdfSettings?.elements?.recap_title?.border) {
     const border = pdfSettings.elements.recap_title.border;
-    console.log('Bordures récapitulatif trouvées:', border);
-    
     const hasBorder = border.top || border.right || border.bottom || border.left;
     
     if (hasBorder) {
       // Remplacer l'élément de texte simple par un tableau avec bordures
-      docContent[0] = {
-        table: {
-          widths: ['*'],
-          body: [
-            [
-              {
-                text: 'RÉCAPITULATIF',
-                fontFamily: pdfSettings?.elements?.recap_title?.fontFamily || 'Roboto',
-                fontSize: pdfSettings?.elements?.recap_title?.fontSize || 12,
-                bold: pdfSettings?.elements?.recap_title?.isBold !== undefined ? pdfSettings.elements.recap_title.isBold : true,
-                italic: pdfSettings?.elements?.recap_title?.isItalic || false,
-                color: pdfSettings?.elements?.recap_title?.color || DARK_BLUE,
-                alignment: pdfSettings?.elements?.recap_title?.alignment || 'center',
-                margin: [
-                  pdfSettings?.elements?.recap_title?.spacing?.left || 0,
-                  pdfSettings?.elements?.recap_title?.spacing?.top || 10,
-                  pdfSettings?.elements?.recap_title?.spacing?.right || 0,
-                  pdfSettings?.elements?.recap_title?.spacing?.bottom || 20
-                ]
-              }
-            ]
-          ]
-        },
-        layout: {
-          hLineWidth: function(i: number, node: any) {
-            if (i === 0) return border.top ? border.width || 1 : 0;
-            if (i === 1) return border.bottom ? border.width || 1 : 0;
-            return 0;
-          },
-          vLineWidth: function(i: number, node: any) {
-            if (i === 0) return border.left ? border.width || 1 : 0;
-            if (i === 1) return border.right ? border.width || 1 : 0;
-            return 0;
-          },
-          hLineColor: function() {
-            return border.color || DARK_BLUE;
-          },
-          vLineColor: function() {
-            return border.color || DARK_BLUE;
-          }
-        },
-        pageBreak: 'before',
-        margin: [0, 0, 0, 20]
-      };
+      docContent[0] = applyBorders(docContent[0], border);
     }
   }
   
@@ -1274,14 +958,14 @@ function prepareRecapContent(
           { text: formatPrice(totalTVA), alignment: 'right', fontSize: 9 }
         ],
         [
-          { text: 'TOTAL TTC', alignment: 'right', bold: true, fontSize: 11 },
-          { text: formatPrice(totalTTC), alignment: 'right', bold: true, fontSize: 11 }
+          { text: 'TOTAL TTC', alignment: 'right', bold: true, fontSize: 10 },
+          { text: formatPrice(totalTTC), alignment: 'right', bold: true, fontSize: 10 }
         ]
       ]
     },
     layout: {
-      hLineWidth: function(i: number, node: any) {
-        return (i === 0 || i === node.table.body.length) ? 1 : 0;
+      hLineWidth: function(i: number) {
+        return (i === 0 || i === 3) ? 1 : 0;
       },
       vLineWidth: function() { return 0; },
       hLineColor: function() { return pdfSettings?.colors?.totalBoxLines || '#e5e7eb'; }
