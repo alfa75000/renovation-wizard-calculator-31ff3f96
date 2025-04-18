@@ -272,15 +272,26 @@ function prepareRecapContent(
       margin: [0, 10, 0, 20]
     }
   ];
-  
-  // Créer la table des totaux par pièce
-  const roomTotalsTableBody = [];
-  
-  // Ajouter l'en-tête de la table
-  roomTotalsTableBody.push([
-    { text: '', style: 'tableHeader', alignment: 'left', color: DARK_BLUE, fontSize: 8 },
-    { text: 'Montant HT', style: 'tableHeader', alignment: 'right', color: DARK_BLUE, fontSize: 8 }
-  ]);
+
+  // Créer la table des totaux par pièce avec les paramètres
+  const roomTotalsTableBody = [
+    [
+      { 
+        text: '', 
+        style: 'tableHeader', 
+        alignment: pdfSettings?.elements?.room_table_header?.alignment || 'left',
+        color: pdfSettings?.elements?.room_table_header?.color || DARK_BLUE,
+        fontSize: pdfSettings?.elements?.room_table_header?.fontSize || 8
+      },
+      { 
+        text: 'Montant HT', 
+        style: 'tableHeader', 
+        alignment: pdfSettings?.elements?.room_table_header?.alignment || 'right',
+        color: pdfSettings?.elements?.room_table_header?.color || DARK_BLUE,
+        fontSize: pdfSettings?.elements?.room_table_header?.fontSize || 8
+      }
+    ]
+  ];
     
   // Pour chaque pièce avec des travaux
   let totalHT = 0;
@@ -312,7 +323,7 @@ function prepareRecapContent(
     ]);
   });
   
-  // Ajouter la table au document
+  // Ajouter la table au document avec les paramètres de style
   docContent.push({
     table: {
       headerRows: 1,
@@ -342,16 +353,64 @@ function prepareRecapContent(
         return 2;
       }
     },
-    margin: [0, 0, 0, 15]
+    margin: pdfSettings?.elements?.room_table?.margins || [0, 0, 0, 20]
   });
+  
+  // Table des totaux généraux
+  const totalTTC = totalHT + totalTVA;
+
+  // Structure de la page récapitulative
+  docContent.push({
+    columns: [
+      // Colonne gauche - Texte de signature (environ 70% de la largeur)
+      {
+        width: '70%',
+        stack: [
+          // Contenu de signature généré
+          ...generateSignatureContent(),
+          
+          // 10 lignes vides pour la signature
+          { text: "", margin: [0, 5, 0, 0] },
+          { text: "", margin: [0, 5, 0, 0] },
+          { text: "", margin: [0, 5, 0, 0] },
+          { text: "", margin: [0, 5, 0, 0] },
+          { text: "", margin: [0, 5, 0, 0] },
+          { text: "", margin: [0, 5, 0, 0] },
+          { text: "", margin: [0, 5, 0, 0] },
+          { text: "", margin: [0, 5, 0, 0] },
+          { text: "", margin: [0, 5, 0, 0] },
+          { text: "", margin: [0, 5, 0, 0] }
+        ]
+      },
+      // Colonne droite - Tableaux des totaux (environ 30% de la largeur)
+      {
+        width: '30%',
+        stack: [
+          // D'abord le tableau standard sans bordures
+          generateStandardTotalsTable(totalHT, totalTVA),
+          // Ensuite le tableau du Total TTC avec bordure complète
+          generateTTCTable(totalTTC)
+        ]
+      }
+    ],
+    margin: pdfSettings?.elements?.recap_columns?.margins || [0, 0, 0, 20]
+  });
+
+  // Ajouter le texte de salutation sur toute la largeur
+  docContent.push(generateSalutationContent());
+  
+  // Ajouter les conditions générales de vente
+  const cgvContent = generateCGVContent();
+  docContent.push(...cgvContent);
   
   return docContent;
 }
 
-// Fonction auxiliaire pour préparer le contenu de la page de garde
+// Modifier les autres fonctions qui génèrent le contenu pour utiliser les paramètres
 function prepareCoverContent(fields: any[], company: any, metadata?: ProjectMetadata) {
-  console.log('Préparation du contenu de la page de garde...');
-  
+  const pdfSettings = getPdfSettings();
+  console.log('Préparation du contenu de la page de garde avec les paramètres PDF:', pdfSettings);
+
   // Extraction des données depuis fields
   const devisNumber = fields.find(f => f.id === "devisNumber")?.content;
   const devisDate = fields.find(f => f.id === "devisDate")?.content;
@@ -385,23 +444,22 @@ function prepareCoverContent(fields: any[], company: any, metadata?: ProjectMeta
   };
   
   // Construction du contenu
+  
+  // Appliquer les paramètres aux éléments
   const content = [
-    // Logo et assurance sur la même ligne
     {
       columns: [
-        // Logo à gauche
         {
           width: '60%',
           stack: [
             company?.logo_url ? {
               image: company.logo_url,
-              width: 172,
-              height: 72,
-              margin: [0, 0, 0, 0]
+              width: pdfSettings?.elements?.company_logo?.width || 172,
+              height: pdfSettings?.elements?.company_logo?.height || 72,
+              margin: pdfSettings?.elements?.company_logo?.margins || [0, 0, 0, 0]
             } : { text: '', margin: [0, 40, 0, 0] }
           ]
         },
-        // Assurance à droite
         {
           width: '40%',
           stack: [
@@ -417,10 +475,10 @@ function prepareCoverContent(fields: any[], company: any, metadata?: ProjectMeta
     // Slogan
     {
       text: slogan,
-      fontSize: 12,
-      bold: true,
-      color: DARK_BLUE,
-      margin: [0, 10, 0, 20]
+      fontSize: pdfSettings?.elements?.slogan?.fontSize || 12,
+      bold: pdfSettings?.elements?.slogan?.isBold || true,
+      color: pdfSettings?.elements?.slogan?.color || DARK_BLUE,
+      margin: pdfSettings?.elements?.slogan?.margins || [0, 10, 0, 20]
     },
     
     // Coordonnées société - Nom et adresse combinés
@@ -560,59 +618,7 @@ function prepareCoverContent(fields: any[], company: any, metadata?: ProjectMeta
       margin: [0, 0, 0, 5]
     }
   ];
-  
-  // Ajouter les informations conditionnelles
-  if (occupant) {
-    content.push({
-      text: occupant,
-      fontSize: 10,
-      color: DARK_BLUE,
-      margin: [0, 5, 0, 0]
-    });
-  }
-  
-  if (projectAddress) {
-    content.push({
-      text: 'Adresse du chantier / lieu d\'intervention:',
-      fontSize: 10,
-      color: DARK_BLUE,
-      margin: [0, 5, 0, 0]
-    });
-    
-    content.push({
-      text: projectAddress,
-      fontSize: 10,
-      color: DARK_BLUE,
-      margin: [10, 3, 0, 0]
-    });
-  }
-  
-  if (projectDescription) {
-    content.push({
-      text: 'Descriptif:',
-      fontSize: 10,
-      color: DARK_BLUE,
-      margin: [0, 8, 0, 0]
-    });
-    
-    content.push({
-      text: projectDescription,
-      fontSize: 10,
-      color: DARK_BLUE,
-      margin: [10, 3, 0, 0]
-    });
-  }
-  
-  if (additionalInfo) {
-    content.push({
-      text: additionalInfo,
-      fontSize: 10,
-      color: DARK_BLUE,
-      margin: [10, 15, 0, 0]
-    });
-  }
-  
-  // Filtrer les éléments null
+
   return content.filter(Boolean);
 }
 
@@ -851,52 +857,4 @@ export const generateCompletePDF = async (
   console.log('Génération du PDF complet du devis...');
   
   try {
-    // 1. Préparer les contenus des différentes parties
-    // PARTIE 1: Contenu de la page de garde
-    const coverContent = prepareCoverContent(fields, company, metadata);
-    
-    // PARTIE 2: Contenu des détails des travaux
-    const detailsContent = prepareDetailsContent(rooms, travaux, getTravauxForPiece, metadata);
-    
-    // PARTIE 3: Contenu du récapitulatif
-    const recapContent = prepareRecapContent(rooms, travaux, getTravauxForPiece, metadata);
-    
-    // 2. Fusionner tous les contenus dans un seul document
-    const docDefinition = {
-      content: [
-        // Page de garde
-        ...coverContent,
-        // Page(s) de détails
-        { text: '', pageBreak: 'before' }, // Forcer un saut de page
-        ...detailsContent,
-        // Page(s) de récapitulatif
-        { text: '', pageBreak: 'before' }, // Forcer un saut de page
-        ...recapContent
-      ],
-      styles: PDF_STYLES,
-      defaultStyle: {
-        fontSize: 9,
-        color: DARK_BLUE
-      },
-      pageMargins: PDF_MARGINS.COVER, // Utiliser les marges de la page de garde pour tout le document
-      footer: function(currentPage: number, pageCount: number) {
-        return generateFooter(metadata);
-      },
-      header: function(currentPage: number, pageCount: number) {
-        // Ne pas afficher d'en-tête sur la première page (page de garde)
-        if (currentPage === 1) return null;
-        
-        // Sur les autres pages, afficher l'en-tête standard
-        return generateHeaderContent(metadata, currentPage, pageCount);
-      }
-    };
-    
-    // 3. Générer et télécharger le PDF complet
-    pdfMake.createPdf(docDefinition).download(`devis-complet-${metadata?.devisNumber || 'XXXX-XX'}.pdf`);
-    console.log('PDF complet généré avec succès');
-    return true;
-  } catch (error) {
-    console.error('Erreur lors de la génération du PDF complet:', error);
-    throw error;
-  }
-};
+    // 1. Prépar
