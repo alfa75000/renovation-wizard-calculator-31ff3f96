@@ -45,7 +45,7 @@ export const generateCompletePDF = async (
   try {
     // 1. Préparer les contenus des différentes parties
     // PARTIE 1: Contenu de la page de garde
-    const coverContent = prepareCoverContent(fields, company, metadata, pdfSettings);
+    const coverContent = prepareCoverContent(fields, company, metadata);
     
     // PARTIE 2: Contenu des détails des travaux
     const detailsContent = prepareDetailsContent(rooms, travaux, getTravauxForPiece, metadata, pdfSettings);
@@ -94,43 +94,13 @@ export const generateCompletePDF = async (
 };
 
 // Fonction auxiliaire pour préparer le contenu de la page de garde
-function prepareCoverContent(fields: any[], company: any, metadata?: ProjectMetadata, pdfSettings?: PdfSettings) {
-  console.log('Préparation du contenu de la page de garde avec paramètres:', pdfSettings);
+function prepareCoverContent(fields: any[], company: any, metadata?: ProjectMetadata) {
+  console.log('Préparation du contenu de la page de garde...');
   
-  // Fonction utilitaire pour créer un élément avec bordures
-  const createBorderedElement = (content: any, elementSettings: any) => {
-    if (!elementSettings?.border || 
-        !(elementSettings.border.top || elementSettings.border.right || 
-          elementSettings.border.bottom || elementSettings.border.left)) {
-      return content;
-    }
-
-    return {
-      table: {
-        widths: ['*'],
-        body: [[content]]
-      },
-      layout: {
-        hLineWidth: function(i: number) {
-          if (i === 0) return elementSettings.border.top ? elementSettings.border.width || 1 : 0;
-          if (i === 1) return elementSettings.border.bottom ? elementSettings.border.width || 1 : 0;
-          return 0;
-        },
-        vLineWidth: function(i: number) {
-          if (i === 0) return elementSettings.border.left ? elementSettings.border.width || 1 : 0;
-          if (i === 1) return elementSettings.border.right ? elementSettings.border.width || 1 : 0;
-          return 0;
-        },
-        hLineColor: function() { return elementSettings.border.color || DARK_BLUE; },
-        vLineColor: function() { return elementSettings.border.color || DARK_BLUE; }
-      }
-    };
-  };
-
   // Extraction des données depuis fields
-  const devisNumberValue = fields.find(f => f.id === "devisNumber")?.content;
-  const devisDateValue = fields.find(f => f.id === "devisDate")?.content;
-  const validityOfferValue = fields.find(f => f.id === "validityOffer")?.content;
+  const devisNumber = fields.find(f => f.id === "devisNumber")?.content;
+  const devisDate = fields.find(f => f.id === "devisDate")?.content;
+  const validityOffer = fields.find(f => f.id === "validityOffer")?.content;
   const client = fields.find(f => f.id === "client")?.content;
   const projectDescription = fields.find(f => f.id === "projectDescription")?.content;
   const projectAddress = fields.find(f => f.id === "projectAddress")?.content;
@@ -158,161 +128,6 @@ function prepareCoverContent(fields: any[], company: any, metadata?: ProjectMeta
       return dateString;
     }
   };
-  
-  // Titre principal avec bordures si nécessaire
-  const titleContent = {
-    text: 'DEVIS',
-    fontFamily: pdfSettings?.elements?.cover_title?.fontFamily || 'Roboto',
-    fontSize: pdfSettings?.elements?.cover_title?.fontSize || 12,
-    bold: pdfSettings?.elements?.cover_title?.isBold !== undefined ? pdfSettings.elements.cover_title.isBold : true,
-    italic: pdfSettings?.elements?.cover_title?.isItalic || false,
-    color: pdfSettings?.elements?.cover_title?.color || DARK_BLUE,
-    alignment: pdfSettings?.elements?.cover_title?.alignment || 'center',
-    margin: [
-      pdfSettings?.elements?.cover_title?.spacing?.left || 0,
-      pdfSettings?.elements?.cover_title?.spacing?.top || 10,
-      pdfSettings?.elements?.cover_title?.spacing?.right || 0,
-      pdfSettings?.elements?.cover_title?.spacing?.bottom || 20
-    ]
-  };
-  
-  const titleElement = createBorderedElement(titleContent, pdfSettings?.elements?.cover_title);
-
-  // Informations société
-  const companyInfoContent = {
-    text: `Société  ${company?.name || ''} - ${company?.address || ''} - ${company?.postal_code || ''} ${company?.city || ''}`,
-    fontFamily: pdfSettings?.elements?.company_info?.fontFamily || 'Roboto',
-    fontSize: pdfSettings?.elements?.company_info?.fontSize || 11,
-    bold: pdfSettings?.elements?.company_info?.isBold !== undefined ? pdfSettings.elements.company_info.isBold : true,
-    italic: pdfSettings?.elements?.company_info?.isItalic || false,
-    color: pdfSettings?.elements?.company_info?.color || DARK_BLUE,
-    alignment: pdfSettings?.elements?.company_info?.alignment || 'left',
-    margin: [
-      pdfSettings?.elements?.company_info?.spacing?.left || 0,
-      pdfSettings?.elements?.company_info?.spacing?.top || 0,
-      pdfSettings?.elements?.company_info?.spacing?.right || 0,
-      pdfSettings?.elements?.company_info?.spacing?.bottom || 3
-    ]
-  };
-  
-  const companyInfo = createBorderedElement(companyInfoContent, pdfSettings?.elements?.company_info);
-
-  // Slogan
-  const sloganContent = {
-    text: slogan,
-    fontFamily: pdfSettings?.elements?.company_slogan?.fontFamily || 'Roboto',
-    fontSize: pdfSettings?.elements?.company_slogan?.fontSize || 12,
-    bold: pdfSettings?.elements?.company_slogan?.isBold !== undefined ? pdfSettings.elements.company_slogan.isBold : true,
-    italic: pdfSettings?.elements?.company_slogan?.isItalic || false,
-    color: pdfSettings?.elements?.company_slogan?.color || DARK_BLUE,
-    alignment: pdfSettings?.elements?.company_slogan?.alignment || 'left',
-    margin: [
-      pdfSettings?.elements?.company_slogan?.spacing?.left || 0,
-      pdfSettings?.elements?.company_slogan?.spacing?.top || 10,
-      pdfSettings?.elements?.company_slogan?.spacing?.right || 0,
-      pdfSettings?.elements?.company_slogan?.spacing?.bottom || 20
-    ]
-  };
-  
-  const sloganElement = createBorderedElement(sloganContent, pdfSettings?.elements?.company_slogan);
-
-  // Numéro de devis, date et validité séparés
-  const devisNumberLabelContent = { 
-    text: 'Devis n°: ',
-    fontFamily: pdfSettings?.elements?.devis_number_label?.fontFamily || 'Roboto',
-    fontSize: pdfSettings?.elements?.devis_number_label?.fontSize || 10,
-    bold: pdfSettings?.elements?.devis_number_label?.isBold !== undefined ? pdfSettings.elements.devis_number_label.isBold : false,
-    italic: pdfSettings?.elements?.devis_number_label?.isItalic || false,
-    color: pdfSettings?.elements?.devis_number_label?.color || DARK_BLUE
-  };
-  
-  const devisNumberContent = { 
-    text: `${devisNumberValue || ''} `,
-    fontFamily: pdfSettings?.elements?.devis_number?.fontFamily || 'Roboto',
-    fontSize: pdfSettings?.elements?.devis_number?.fontSize || 10,
-    bold: pdfSettings?.elements?.devis_number?.isBold !== undefined ? pdfSettings.elements.devis_number.isBold : false,
-    italic: pdfSettings?.elements?.devis_number?.isItalic || false,
-    color: pdfSettings?.elements?.devis_number?.color || DARK_BLUE
-  };
-
-  const devisDateLabelContent = { 
-    text: 'Du ',
-    fontFamily: pdfSettings?.elements?.devis_date_label?.fontFamily || 'Roboto',
-    fontSize: pdfSettings?.elements?.devis_date_label?.fontSize || 10,
-    bold: pdfSettings?.elements?.devis_date_label?.isBold !== undefined ? pdfSettings.elements.devis_date_label.isBold : false,
-    italic: pdfSettings?.elements?.devis_date_label?.isItalic || false,
-    color: pdfSettings?.elements?.devis_date_label?.color || DARK_BLUE
-  };
-  
-  const devisDateContent = { 
-    text: formatDate(devisDateValue),
-    fontFamily: pdfSettings?.elements?.devis_date?.fontFamily || 'Roboto',
-    fontSize: pdfSettings?.elements?.devis_date?.fontSize || 10,
-    bold: pdfSettings?.elements?.devis_date?.isBold !== undefined ? pdfSettings.elements.devis_date.isBold : false,
-    italic: pdfSettings?.elements?.devis_date?.isItalic || false,
-    color: pdfSettings?.elements?.devis_date?.color || DARK_BLUE
-  };
-
-  const devisValidityContent = {
-    text: `(Validité de l'offre : 3 mois.)`,
-    fontFamily: pdfSettings?.elements?.devis_validity?.fontFamily || 'Roboto',
-    fontSize: pdfSettings?.elements?.devis_validity?.fontSize || 9,
-    bold: pdfSettings?.elements?.devis_validity?.isBold !== undefined ? pdfSettings.elements.devis_validity.isBold : false,
-    italic: pdfSettings?.elements?.devis_validity?.isItalic !== undefined ? pdfSettings.elements.devis_validity.isItalic : true,
-    color: pdfSettings?.elements?.devis_validity?.color || DARK_BLUE
-  };
-
-  // Section client - Séparation du titre et du contenu
-  const clientSectionTitleContent = { 
-    text: 'Client / Maître d\'ouvrage',
-    fontFamily: pdfSettings?.elements?.client_section_title?.fontFamily || 'Roboto',
-    fontSize: pdfSettings?.elements?.client_section_title?.fontSize || 10,
-    bold: pdfSettings?.elements?.client_section_title?.isBold !== undefined ? pdfSettings.elements.client_section_title.isBold : true,
-    italic: pdfSettings?.elements?.client_section_title?.isItalic || false,
-    color: pdfSettings?.elements?.client_section_title?.color || DARK_BLUE,
-    alignment: pdfSettings?.elements?.client_section_title?.alignment || 'left'
-  };
-  
-  const clientSectionTitle = createBorderedElement(clientSectionTitleContent, pdfSettings?.elements?.client_section_title);
-
-  const clientSectionContentContent = { 
-    text: client || '',
-    fontFamily: pdfSettings?.elements?.client_section_content?.fontFamily || 'Roboto',
-    fontSize: pdfSettings?.elements?.client_section_content?.fontSize || 10,
-    bold: pdfSettings?.elements?.client_section_content?.isBold !== undefined ? pdfSettings.elements.client_section_content.isBold : false,
-    italic: pdfSettings?.elements?.client_section_content?.isItalic || false,
-    color: pdfSettings?.elements?.client_section_content?.color || DARK_BLUE,
-    lineHeight: 1.3
-  };
-  
-  const clientSectionContent = createBorderedElement(clientSectionContentContent, pdfSettings?.elements?.client_section_content);
-
-  // Section chantier - Séparation du titre et du contenu
-  const chantierSectionTitleContent = {
-    text: 'Chantier / Travaux',
-    fontFamily: pdfSettings?.elements?.chantier_section_title?.fontFamily || 'Roboto',
-    fontSize: pdfSettings?.elements?.chantier_section_title?.fontSize || 10,
-    bold: pdfSettings?.elements?.chantier_section_title?.isBold !== undefined ? pdfSettings.elements.chantier_section_title.isBold : true,
-    italic: pdfSettings?.elements?.chantier_section_title?.isItalic || false,
-    color: pdfSettings?.elements?.chantier_section_title?.color || DARK_BLUE,
-    alignment: pdfSettings?.elements?.chantier_section_title?.alignment || 'left',
-    margin: [0, 0, 0, 5]
-  };
-  
-  const chantierSectionTitle = createBorderedElement(chantierSectionTitleContent, pdfSettings?.elements?.chantier_section_title);
-
-  // Pied de page
-  const footerContent = {
-    text: `${company?.name || ''} - SASU au Capital de ${company?.capital_social || '10000'} € - ${company?.address || ''} ${company?.postal_code || ''} ${company?.city || ''} - Siret : ${company?.siret || ''} - Code APE : ${company?.code_ape || ''} - N° TVA Intracommunautaire : ${company?.tva_intracom || ''}`,
-    fontFamily: pdfSettings?.elements?.footer?.fontFamily || 'Roboto',
-    fontSize: pdfSettings?.elements?.footer?.fontSize || 7,
-    color: pdfSettings?.elements?.footer?.color || DARK_BLUE,
-    alignment: pdfSettings?.elements?.footer?.alignment || 'center',
-    margin: [0, 50, 0, 0],
-    absolutePosition: { x: 20, y: 800 }
-  };
-  
-  const footerElement = createBorderedElement(footerContent, pdfSettings?.elements?.footer);
   
   // Construction du contenu
   const content = [
@@ -345,10 +160,22 @@ function prepareCoverContent(fields: any[], company: any, metadata?: ProjectMeta
     },
     
     // Slogan
-    sloganElement,
+    {
+      text: slogan,
+      fontSize: 12,
+      bold: true,
+      color: DARK_BLUE,
+      margin: [0, 10, 0, 20]
+    },
     
     // Coordonnées société - Nom et adresse combinés
-    companyInfo,
+    {
+      text: `Société  ${company?.name || ''} - ${company?.address || ''} - ${company?.postal_code || ''} ${company?.city || ''}`,
+      fontSize: 11,
+      bold: true,
+      color: DARK_BLUE,
+      margin: [0, 0, 0, 3]
+    },
     
     // Tél et Mail
     {
@@ -410,35 +237,20 @@ function prepareCoverContent(fields: any[], company: any, metadata?: ProjectMeta
     // Espace avant devis
     { text: '', margin: [0, 30, 0, 0] },
     
-    // Numéro et date du devis - maintenant avec éléments séparés
+    // Numéro et date du devis
     {
       columns: [
         {
           width: col1Width,
-          text: '', // Colonne 1 vide
+          text: '',
           fontSize: 10
         },
         {
           width: col2Width,
           text: [
-            devisNumberLabelContent,
-            devisNumberContent,
-            devisDateLabelContent,
-            devisDateContent,
+            { text: `Devis n°: ${devisNumber || ''} Du ${formatDate(devisDate)} `, fontSize: 10, color: DARK_BLUE },
+            { text: ` (Validité de l'offre : 3 mois.)`, fontSize: 9, italics: true, color: DARK_BLUE }
           ]
-        }
-      ],
-      columnGap: 1,
-      margin: [0, 0, 0, 0]
-    },
-    
-    // Validité comme ligne séparée
-    {
-      columns: [
-        { width: col1Width, text: '', fontSize: 10 },
-        { 
-          width: col2Width, 
-          text: devisValidityContent
         }
       ],
       columnGap: 1,
@@ -454,7 +266,9 @@ function prepareCoverContent(fields: any[], company: any, metadata?: ProjectMeta
         { width: col1Width, text: '', fontSize: 10 },
         { 
           width: col2Width, 
-          stack: [clientSectionTitle]
+          text: 'Client / Maître d\'ouvrage',
+          fontSize: 10,
+          color: DARK_BLUE
         }
       ],
       columnGap: 1
@@ -466,7 +280,10 @@ function prepareCoverContent(fields: any[], company: any, metadata?: ProjectMeta
         { width: col1Width, text: '', fontSize: 10 },
         { 
           width: col2Width, 
-          stack: [clientSectionContent]
+          text: client || '',
+          fontSize: 10,
+          color: DARK_BLUE,
+          lineHeight: 1.3
         }
       ],
       columnGap: 15,
@@ -481,22 +298,22 @@ function prepareCoverContent(fields: any[], company: any, metadata?: ProjectMeta
     { text: '', margin: [0, 5, 0, 0] },
     
     // Chantier - Titre
-    chantierSectionTitle,
+    {
+      text: 'Chantier / Travaux',
+      fontSize: 10,
+      color: DARK_BLUE,
+      margin: [0, 0, 0, 5]
+    }
   ];
   
-  // Ajouter les informations conditionnelles du chantier
+  // Ajouter les informations conditionnelles
   if (occupant) {
-    const occupantContent = {
+    content.push({
       text: occupant,
-      fontFamily: pdfSettings?.elements?.chantier_section_content?.fontFamily || 'Roboto',
-      fontSize: pdfSettings?.elements?.chantier_section_content?.fontSize || 10,
-      bold: pdfSettings?.elements?.chantier_section_content?.isBold !== undefined ? pdfSettings.elements.chantier_section_content.isBold : false,
-      italic: pdfSettings?.elements?.chantier_section_content?.isItalic || false,
-      color: pdfSettings?.elements?.chantier_section_content?.color || DARK_BLUE,
+      fontSize: 10,
+      color: DARK_BLUE,
       margin: [0, 5, 0, 0]
-    };
-    
-    content.push(createBorderedElement(occupantContent, pdfSettings?.elements?.chantier_section_content));
+    });
   }
   
   if (projectAddress) {
@@ -507,17 +324,12 @@ function prepareCoverContent(fields: any[], company: any, metadata?: ProjectMeta
       margin: [0, 5, 0, 0]
     });
     
-    const addressContent = {
+    content.push({
       text: projectAddress,
-      fontFamily: pdfSettings?.elements?.chantier_section_content?.fontFamily || 'Roboto',
-      fontSize: pdfSettings?.elements?.chantier_section_content?.fontSize || 10,
-      bold: pdfSettings?.elements?.chantier_section_content?.isBold !== undefined ? pdfSettings.elements.chantier_section_content.isBold : false,
-      italic: pdfSettings?.elements?.chantier_section_content?.isItalic || false,
-      color: pdfSettings?.elements?.chantier_section_content?.color || DARK_BLUE,
+      fontSize: 10,
+      color: DARK_BLUE,
       margin: [10, 3, 0, 0]
-    };
-    
-    content.push(createBorderedElement(addressContent, pdfSettings?.elements?.chantier_section_content));
+    });
   }
   
   if (projectDescription) {
@@ -528,52 +340,25 @@ function prepareCoverContent(fields: any[], company: any, metadata?: ProjectMeta
       margin: [0, 8, 0, 0]
     });
     
-    const descriptionContent = {
+    content.push({
       text: projectDescription,
-      fontFamily: pdfSettings?.elements?.chantier_section_content?.fontFamily || 'Roboto',
-      fontSize: pdfSettings?.elements?.chantier_section_content?.fontSize || 10,
-      bold: pdfSettings?.elements?.chantier_section_content?.isBold !== undefined ? pdfSettings.elements.chantier_section_content.isBold : false,
-      italic: pdfSettings?.elements?.chantier_section_content?.isItalic || false,
-      color: pdfSettings?.elements?.chantier_section_content?.color || DARK_BLUE,
+      fontSize: 10,
+      color: DARK_BLUE,
       margin: [10, 3, 0, 0]
-    };
-    
-    content.push(createBorderedElement(descriptionContent, pdfSettings?.elements?.chantier_section_content));
+    });
   }
   
   if (additionalInfo) {
-    const additionalInfoContent = {
+    content.push({
       text: additionalInfo,
-      fontFamily: pdfSettings?.elements?.chantier_section_content?.fontFamily || 'Roboto',
-      fontSize: pdfSettings?.elements?.chantier_section_content?.fontSize || 10,
-      bold: pdfSettings?.elements?.chantier_section_content?.isBold !== undefined ? pdfSettings.elements.chantier_section_content.isBold : false,
-      italic: pdfSettings?.elements?.chantier_section_content?.isItalic || false,
-      color: pdfSettings?.elements?.chantier_section_content?.color || DARK_BLUE,
+      fontSize: 10,
+      color: DARK_BLUE,
       margin: [10, 15, 0, 0]
-    };
-    
-    content.push(createBorderedElement(additionalInfoContent, pdfSettings?.elements?.chantier_section_content));
+    });
   }
-  
-  content.push(footerElement);
   
   // Filtrer les éléments null
   return content.filter(Boolean);
-}
-
-// Fonction utilitaire pour appliquer les styles d'un élément
-function applyElementStyles(elementKey: string, pdfSettings?: PdfSettings) {
-  const element = pdfSettings?.elements?.[elementKey];
-  if (!element) return {};
-
-  return {
-    fontFamily: element.fontFamily,
-    fontSize: element.fontSize,
-    bold: element.isBold,
-    italic: element.isItalic,
-    color: element.color,
-    alignment: element.alignment
-  };
 }
 
 // Fonction auxiliaire pour préparer le contenu des détails des travaux
@@ -747,4 +532,404 @@ function prepareDetailsContent(
     
     // Calculer le total HT pour cette pièce
     const pieceTotalHT = travauxPiece.reduce((sum, t) => {
-      return sum + (t
+      return sum + (t.prixFournitures + t.prixMainOeuvre) * t.quantite;
+    }, 0);
+    
+    // Ajouter la ligne de total pour cette pièce
+    tableBody.push([
+      { text: `Total HT ${room.name}`, colSpan: 4, alignment: 'left', fontSize: 9, bold: true, fillColor: '#f9fafb' },
+      {}, {}, {},
+      { text: formatPrice(pieceTotalHT), alignment: 'center', fontSize: 9, bold: true, fillColor: '#f9fafb' }
+    ]);
+    
+    // Ajouter le tableau au document
+    docContent.push({
+      table: {
+        headerRows: 0,
+        widths: TABLE_COLUMN_WIDTHS.DETAILS,
+        body: tableBody
+      },
+      layout: {
+        hLineWidth: function(i: number, node: any) {
+          if (i === 0 || i === node.table.body.length) {
+            return 1;
+          }
+          
+          const isEndOfPrestation = i < node.table.body.length && 
+            ((node.table.body[i][0] && 
+              node.table.body[i][0].text && 
+              node.table.body[i][0].text.toString().includes('Total HT')) ||
+            (i > 0 && node.table.body[i-1][0] && 
+              node.table.body[i-1][0].text && 
+              node.table.body[i-1][0].text.toString().includes('Total HT')));
+          
+          return isEndOfPrestation ? 1 : 0;
+        },
+        vLineWidth: function() {
+          return 0;
+        },
+        hLineColor: function() {
+          return '#e5e7eb';
+        },
+        paddingLeft: function() {
+          return 4;
+        },
+        paddingRight: function() {
+          return 4;
+        },
+        paddingTop: function() {
+          return 2;
+        },
+        paddingBottom: function() {
+          return 2;
+        }
+      },
+      margin: [0, 0, 0, 15]
+    });
+  });
+  
+  return docContent;
+}
+
+// Fonction auxiliaire pour préparer le contenu du récapitulatif
+function prepareRecapContent(
+  rooms: Room[], 
+  travaux: Travail[], 
+  getTravauxForPiece: (pieceId: string) => Travail[],
+  metadata?: ProjectMetadata,
+  pdfSettings?: PdfSettings
+) {
+  console.log('Préparation du contenu du récapitulatif avec paramètres PDF:', pdfSettings);
+  console.log('Éléments de récapitulatif:', pdfSettings?.elements?.recap_title);
+  
+  // On filtre les pièces qui n'ont pas de travaux
+  const roomsWithTravaux = rooms.filter(room => getTravauxForPiece(room.id).length > 0);
+  
+  // Créer le contenu du document
+  const docContent: any[] = [
+    // Titre du récapitulatif avec les paramètres personnalisés
+    {
+      text: 'RÉCAPITULATIF',
+      fontFamily: pdfSettings?.elements?.recap_title?.fontFamily || 'Roboto',
+      fontSize: pdfSettings?.elements?.recap_title?.fontSize || 12,
+      bold: pdfSettings?.elements?.recap_title?.isBold !== undefined ? pdfSettings.elements.recap_title.isBold : true,
+      italic: pdfSettings?.elements?.recap_title?.isItalic || false,
+      color: pdfSettings?.elements?.recap_title?.color || DARK_BLUE,
+      alignment: pdfSettings?.elements?.recap_title?.alignment || 'center',
+      margin: [
+        pdfSettings?.elements?.recap_title?.spacing?.left || 0,
+        pdfSettings?.elements?.recap_title?.spacing?.top || 10,
+        pdfSettings?.elements?.recap_title?.spacing?.right || 0,
+        pdfSettings?.elements?.recap_title?.spacing?.bottom || 20
+      ],
+      pageBreak: 'before'
+    }
+  ];
+  
+  // Ajout de la bordure si elle est définie
+  // Vérification de la présence des paramètres de bordure
+  if (pdfSettings?.elements?.recap_title?.border) {
+    const border = pdfSettings.elements.recap_title.border;
+    console.log('Bordures récapitulatif trouvées:', border);
+    
+    // Création de la structure de tableau pour appliquer des bordures
+    // Utiliser un tableau pour encapsuler le texte avec des bordures
+    const hasBorder = border.top || border.right || border.bottom || border.left;
+    
+    if (hasBorder) {
+      // Remplacer l'élément de texte simple par un tableau avec bordures
+      docContent[0] = {
+        table: {
+          widths: ['*'],
+          body: [
+            [
+              {
+                text: 'RÉCAPITULATIF',
+                fontFamily: pdfSettings?.elements?.recap_title?.fontFamily || 'Roboto',
+                fontSize: pdfSettings?.elements?.recap_title?.fontSize || 12,
+                bold: pdfSettings?.elements?.recap_title?.isBold !== undefined ? pdfSettings.elements.recap_title.isBold : true,
+                italic: pdfSettings?.elements?.recap_title?.isItalic || false,
+                color: pdfSettings?.elements?.recap_title?.color || DARK_BLUE,
+                alignment: pdfSettings?.elements?.recap_title?.alignment || 'center',
+                margin: [
+                  pdfSettings?.elements?.recap_title?.spacing?.left || 0,
+                  pdfSettings?.elements?.recap_title?.spacing?.top || 10,
+                  pdfSettings?.elements?.recap_title?.spacing?.right || 0,
+                  pdfSettings?.elements?.recap_title?.spacing?.bottom || 20
+                ]
+              }
+            ]
+          ]
+        },
+        layout: {
+          hLineWidth: function(i: number, node: any) {
+            if (i === 0) return border.top ? border.width || 1 : 0;
+            if (i === 1) return border.bottom ? border.width || 1 : 0;
+            return 0;
+          },
+          vLineWidth: function(i: number, node: any) {
+            if (i === 0) return border.left ? border.width || 1 : 0;
+            if (i === 1) return border.right ? border.width || 1 : 0;
+            return 0;
+          },
+          hLineColor: function() {
+            return border.color || DARK_BLUE;
+          },
+          vLineColor: function() {
+            return border.color || DARK_BLUE;
+          }
+        },
+        pageBreak: 'before',
+        margin: [0, 0, 0, 20]
+      };
+    }
+  } else {
+    console.log('Aucune bordure définie pour le récapitulatif');
+  }
+  
+  // Créer la table des totaux par pièce
+  const roomTotalsTableBody = [];
+  
+  // Ajouter l'en-tête de la table
+  roomTotalsTableBody.push([
+    { text: '', style: 'tableHeader', alignment: 'left', color: DARK_BLUE, fontSize: 8 },
+    { text: 'Montant HT', style: 'tableHeader', alignment: 'right', color: DARK_BLUE, fontSize: 8 }
+  ]);
+    
+  // Pour chaque pièce avec des travaux
+  let totalHT = 0;
+  let totalTVA = 0;
+  
+  roomsWithTravaux.forEach(room => {
+    const travauxPiece = getTravauxForPiece(room.id);
+    if (travauxPiece.length === 0) return;
+    
+    // Calculer le total HT pour cette pièce
+    const roomTotalHT = travauxPiece.reduce((sum, t) => {
+      return sum + (t.prixFournitures + t.prixMainOeuvre) * t.quantite;
+    }, 0);
+    
+    // Calculer la TVA pour cette pièce
+    const roomTVA = travauxPiece.reduce((sum, t) => {
+      const totalHT = (t.prixFournitures + t.prixMainOeuvre) * t.quantite;
+      return sum + (totalHT * t.tauxTVA / 100);
+    }, 0);
+    
+    // Ajouter à nos totaux
+    totalHT += roomTotalHT;
+    totalTVA += roomTVA;
+    
+    // Ajouter la ligne à la table
+    roomTotalsTableBody.push([
+      { text: `Total ${room.name}`, alignment: 'left', fontSize: 8, bold: true },
+      { text: formatPrice(roomTotalHT), alignment: 'right', fontSize: 8, color: DARK_BLUE }
+    ]);
+  });
+  
+  // Ajouter la table au document
+  docContent.push({
+    table: {
+      headerRows: 1,
+      widths: ['*', 100],
+      body: roomTotalsTableBody
+    },
+    layout: {
+      hLineWidth: function(i: number, node: any) {
+        return (i === 0 || i === 1 || i === node.table.body.length) ? 1 : 0;
+      },
+      vLineWidth: function() {
+        return 0;
+      },
+      hLineColor: function() {
+        return '#e5e7eb';
+      },
+      paddingLeft: function() {
+        return 10;
+      },
+      paddingRight: function() {
+        return 10;
+      },
+      paddingTop: function() {
+        return 5;
+      },
+      paddingBottom: function() {
+        return 5;
+      }
+    },
+    margin: [0, 0, 0, 20]
+  });
+  
+  // Table des totaux généraux
+  const totalTTC = totalHT + totalTVA;
+
+  // Structure de la page récapitulative
+  docContent.push({
+    columns: [
+      // Colonne gauche - Texte de signature (environ 70% de la largeur)
+      {
+        width: '70%',
+        stack: [
+          // Contenu de signature généré
+          ...generateSignatureContent(),
+          
+          // 10 lignes vides pour la signature
+          { text: "", margin: [0, 5, 0, 0] },
+          { text: "", margin: [0, 5, 0, 0] },
+          { text: "", margin: [0, 5, 0, 0] },
+          { text: "", margin: [0, 5, 0, 0] },
+          { text: "", margin: [0, 5, 0, 0] },
+          { text: "", margin: [0, 5, 0, 0] },
+          { text: "", margin: [0, 5, 0, 0] },
+          { text: "", margin: [0, 5, 0, 0] },
+          { text: "", margin: [0, 5, 0, 0] },
+          { text: "", margin: [0, 5, 0, 0] }
+        ]
+      },
+      // Colonne droite - Tableaux des totaux (environ 30% de la largeur)
+      {
+        width: '30%',
+        stack: [
+          // D'abord le tableau standard sans bordures
+          generateStandardTotalsTable(totalHT, totalTVA),
+          // Ensuite le tableau du Total TTC avec bordure complète
+          generateTTCTable(totalTTC)
+        ]
+      }
+    ],
+    margin: [0, 0, 0, 20]
+  });
+
+  // Ajouter le texte de salutation sur toute la largeur
+  docContent.push(generateSalutationContent());
+  
+  // Ajouter les conditions générales de vente
+  const cgvContent = generateCGVContent();
+  
+  // Ajouter chaque élément du contenu CGV
+  docContent.push(...cgvContent);
+  
+  return docContent;
+}
+
+export const generateCoverPDF = async (fields: any[], company: any) => {
+  console.log('Génération du PDF de la page de garde', { fields, company });
+  
+  // Cette fonction est probablement déjà implémentée ailleurs
+};
+
+export const generateDetailsPDF = async (
+  rooms: Room[], 
+  travaux: Travail[], 
+  getTravauxForPiece: (pieceId: string) => Travail[],
+  metadata?: ProjectMetadata,
+  pdfSettings?: PdfSettings
+) => {
+  console.log('Génération du PDF des détails des travaux avec pdfMake:', { pdfSettings });
+
+  // On filtre les pièces qui n'ont pas de travaux
+  const roomsWithTravaux = rooms.filter(room => getTravauxForPiece(room.id).length > 0);
+  
+  // Obtenir le contenu des détails avec les paramètres PDF
+  const detailsContent = prepareDetailsContent(rooms, travaux, getTravauxForPiece, metadata, pdfSettings);
+  
+  // Définir le document avec contenu et styles
+  const docDefinition = {
+    header: function(currentPage: number, pageCount: number) {
+      // Ajustement de la numérotation de page
+      const adjustedCurrentPage = currentPage + 1;
+      const adjustedTotalPages = pageCount + 3;
+      
+      return [
+        // En-tête avec le numéro de devis et la pagination ajustée
+        generateHeaderContent(metadata, adjustedCurrentPage, adjustedTotalPages),
+        // En-tête du tableau
+        {
+          table: {
+            headerRows: 1,
+            widths: TABLE_COLUMN_WIDTHS.DETAILS,
+            body: [
+              [
+                { text: 'Description', style: 'tableHeader', alignment: 'left', color: DARK_BLUE },
+                { text: 'Quantité', style: 'tableHeader', alignment: 'center', color: DARK_BLUE },
+                { text: 'Prix HT Unit.', style: 'tableHeader', alignment: 'center', color: DARK_BLUE },
+                { text: 'TVA', style: 'tableHeader', alignment: 'center', color: DARK_BLUE },
+                { text: 'Total HT', style: 'tableHeader', alignment: 'center', color: DARK_BLUE }
+              ]
+            ]
+          },
+          layout: {
+            hLineWidth: function() { return 1; },
+            vLineWidth: function() { return 0; },
+            hLineColor: function() { return '#e5e7eb'; },
+            fillColor: function(rowIndex: number) { return (rowIndex === 0) ? '#f3f4f6' : null; }
+          },
+          margin: [30, 0, 30, 10]
+        }
+      ];
+    },
+    footer: function(currentPage: number, pageCount: number) {
+      return generateFooter(metadata);
+    },
+    content: detailsContent,
+    styles: PDF_STYLES,
+    pageMargins: pdfSettings?.margins?.details || PDF_MARGINS.DETAILS,
+    defaultStyle: {
+      fontSize: 9,
+      color: pdfSettings?.colors?.mainText || DARK_BLUE
+    }
+  };
+  
+  try {
+    // Créer et télécharger le PDF
+    pdfMake.createPdf(docDefinition).download(`devis_details_${metadata?.devisNumber || 'XXXX-XX'}.pdf`);
+    console.log('PDF généré avec succès');
+  } catch (error) {
+    console.error('Erreur lors de la génération du PDF:', error);
+    throw error;
+  }
+};
+
+export const generateRecapPDF = async (
+  rooms: Room[], 
+  travaux: Travail[], 
+  getTravauxForPiece: (pieceId: string) => Travail[],
+  metadata?: ProjectMetadata,
+  pdfSettings?: PdfSettings
+) => {
+  console.log('Génération du PDF récapitulatif avec pdfMake:', { pdfSettings });
+
+  // Obtenir le contenu du récapitulatif avec les paramètres PDF
+  const recapContent = prepareRecapContent(rooms, travaux, getTravauxForPiece, metadata, pdfSettings);
+  
+  // Définir le document avec contenu et styles
+  const docDefinition = {
+    // En-tête avec numéro de devis et pagination - Toujours afficher l'en-tête, même sur la première page
+    header: function(currentPage, pageCount) {
+      // Calculer la numérotation des pages
+      const pageNumber = currentPage + 1;
+      const totalPages = pageCount + 2;
+      
+      return generateHeaderContent(metadata, pageNumber, totalPages);
+    },
+    // Pied de page avec les informations de la société
+    footer: function(currentPage, pageCount) {
+      return generateFooter(metadata);
+    },
+    content: recapContent,
+    styles: PDF_STYLES,
+    pageMargins: pdfSettings?.margins?.recap || PDF_MARGINS.RECAP,
+    defaultStyle: {
+      fontSize: 9,
+      color: pdfSettings?.colors?.mainText || DARK_BLUE
+    }
+  };
+  
+  try {
+    // Créer et télécharger le PDF
+    pdfMake.createPdf(docDefinition).download(`devis_recap_${metadata?.devisNumber || 'XXXX-XX'}.pdf`);
+    console.log('PDF récapitulatif généré avec succès', { pdfSettings });
+  } catch (error) {
+    console.error('Erreur lors de la génération du PDF récapitulatif:', error);
+    throw error;
+  }
+};
