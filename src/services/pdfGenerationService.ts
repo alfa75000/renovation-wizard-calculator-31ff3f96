@@ -1,34 +1,276 @@
-import pdfMake from 'pdfmake/build/pdfmake';
-import pdfFonts from 'pdfmake/build/vfs_fonts';
-import { Room, Travail, ProjectMetadata } from '@/types';
-import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
+// Fonctions utilitaires pour générer des parties spécifiques des PDF
 
-// Importer les constantes et les utilitaires
+import { Travail, ProjectMetadata } from '@/types';
 import { 
+  PDF_TEXTS, 
   DARK_BLUE, 
-  PDF_STYLES, 
-  PDF_MARGINS, 
-  TABLE_COLUMN_WIDTHS,
-  formatPrice,
-  formatQuantity
+  formatPrice, 
+  formatQuantity,
+  TABLE_COLUMN_WIDTHS
 } from './pdf/pdfConstants';
 
-// Importer les générateurs
-import {
-  generateFooter,
-  formatMOFournitures,
-  generateHeaderContent,
-  generateCGVContent,
-  generateSignatureContent,
-  generateSalutationContent,
-  generateStandardTotalsTable,
-  generateTTCTable
-} from './pdf/pdfGenerators';
+/**
+ * Fonction utilitaire pour formater une date en format français DD/MM/YYYY
+ * @param dateString Chaîne de date à formater
+ * @returns Date formatée ou chaîne vide si non valide
+ */
+const formatDate = (dateString?: string): string => {
+  if (!dateString) return '';
+  
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return dateString; // Si la date n'est pas valide, retourne la chaîne originale
+    
+    // Format DD/MM/YYYY
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    
+    return `${day}/${month}/${year}`;
+  } catch (error) {
+    console.error('Erreur lors du formatage de la date:', error);
+    return dateString || '';
+  }
+};
 
-// Initialiser pdfMake avec les polices
-if (pdfMake && pdfFonts && pdfFonts.pdfMake) {
-  pdfMake.vfs = pdfFonts.pdfMake.vfs;
-}
+/**
+ * Génère le contenu de l'en-tête pour les documents PDF
+ */
+export const generateHeaderContent = (metadata?: ProjectMetadata, currentPage: number = 1, totalPages: number = 1) => {
+  return {
+    text: `DEVIS N° ${metadata?.devisNumber || 'XXXX-XX'} - page ${currentPage}/${totalPages}`,
+    alignment: 'right',
+    fontSize: 8,
+    color: DARK_BLUE,
+    margin: [40, 20, 40, 10]
+  };
+};
+
+/**
+ * Génère le pied de page standard pour tous les documents PDF
+ * Utilise les données de l'entreprise stockées dans metadata.company
+ */
+export const generateFooter = (metadata?: ProjectMetadata) => {
+  console.log("Données de l'entreprise dans generateFooter:", metadata?.company);
+  
+  // Récupérer les informations de la société directement de l'objet company
+  const company = metadata?.company;
+  
+  // Utiliser les données de company si disponibles, sinon utiliser des valeurs par défaut
+  const companyName = company?.name || '';
+  const capitalSocial = company?.capital_social || '10000';
+  const address = company?.address || '';
+  const postalCode = company?.postal_code || '';
+  const city = company?.city || '';
+  const siret = company?.siret || '';
+  const codeApe = company?.code_ape || '';
+  const tvaIntracom = company?.tva_intracom || '';
+  
+  return {
+    text: `${companyName} - SASU au Capital de ${capitalSocial} € - ${address} ${postalCode} ${city} - Siret : ${siret} - Code APE : ${codeApe} - N° TVA Intracommunautaire : ${tvaIntracom}`,
+    fontSize: 7,
+    color: DARK_BLUE,
+    alignment: 'center',
+    margin: [40, 0, 40, 20]
+  };
+};
+
+/**
+ * Génère le format MO/Fournitures avec TVA
+ * Modifié: Retiré le Total HT par unité et augmenté la taille de police
+ */
+export const formatMOFournitures = (travail: Travail): string => {
+  const prixUnitaireHT = travail.prixFournitures + travail.prixMainOeuvre;
+  const totalHT = prixUnitaireHT * travail.quantite;
+  const montantTVA = (totalHT * travail.tauxTVA) / 100;
+  
+  // Retiré "[ Total HT: XX€/u ]" de la chaîne formatée
+  return `[ MO: ${formatPrice(travail.prixMainOeuvre)}/u ] [ Fourn: ${formatPrice(travail.prixFournitures)}/u ] [ Total TVA (${travail.tauxTVA}%): ${formatPrice(montantTVA)} ]`;
+};
+
+/**
+ * Génère le contenu pour la section des Conditions Générales de Vente
+ */
+export const generateCGVContent = () => {
+  const content: any[] = [];
+  
+  // Titre principal
+  content.push({
+    text: PDF_TEXTS.CGV.TITLE,
+    style: 'header',
+    alignment: 'center',
+    fontSize: 12, // Taille diminuée de 1pt
+    bold: true,
+    color: DARK_BLUE,
+    margin: [0, 0, 0, 20],
+    pageBreak: 'before'
+  });
+  
+  // Générer chaque section des CGV
+  PDF_TEXTS.CGV.SECTIONS.forEach(section => {
+    // Titre de section
+    content.push({
+      text: section.title,
+      bold: true,
+      fontSize: 9, // Taille diminuée de 1pt
+      margin: [0, 0, 0, 5]
+    });
+    
+    // Contenu principal
+    content.push({
+      text: section.content,
+      fontSize: 9, // Taille diminuée de 1pt
+      margin: [0, 0, 0, section.subsections ? 5 : 10]
+    });
+    
+    // Sous-sections si présentes
+    if (section.subsections) {
+      section.subsections.forEach(subsection => {
+        // Titre de sous-section
+        content.push({
+          text: subsection.title,
+          bold: true,
+          fontSize: 9, // Taille diminuée de 1pt
+          margin: [0, 0, 0, 5]
+        });
+        
+        // Contenu principal de la sous-section
+        if (subsection.content) {
+          content.push({
+            text: subsection.content,
+            fontSize: 9, // Taille diminuée de 1pt
+            margin: [0, 0, 0, subsection.bullets ? 5 : 10]
+          });
+        }
+        
+        // Points à puces si présents
+        if (subsection.bullets) {
+          subsection.bullets.forEach(bullet => {
+            content.push({
+              text: `• ${bullet}`,
+              fontSize: 9, // Taille diminuée de 1pt
+              margin: [10, 0, 0, 3]
+            });
+          });
+          
+          // Contenu après les puces si présent
+          if (subsection.content_after) {
+            content.push({
+              text: subsection.content_after,
+              fontSize: 9, // Taille diminuée de 1pt
+              margin: [0, 5, 0, 10]
+            });
+          }
+        }
+      });
+    }
+  });
+  
+  return content;
+};
+
+/**
+ * Génère le contenu pour la section de signature - Version mise à jour
+ */
+export const generateSignatureContent = () => {
+  const elements = [];
+  
+  // Contenu principal
+  elements.push({
+    text: PDF_TEXTS.SIGNATURE.CONTENT,
+    fontSize: 8, // Changer fontSize: 9 à fontSize: 8
+    margin: [0, 0, 0, 5]
+  });
+  
+  // Points avec puces
+  PDF_TEXTS.SIGNATURE.POINTS.forEach(point => {
+    elements.push({
+      text: point.text,
+      bold: point.bold,
+      fontSize: 8, // Changer fontSize: 9 à fontSize: 8
+      margin: [0, 3, 0, 0]
+    });
+  });
+  
+  // Espacement après
+  elements.push({ text: "", margin: [0, 10, 0, 0] });
+  
+  return elements;
+};
+
+/**
+ * Génère le texte de salutation - Version mise à jour
+ * Maintenant centré sur toute la largeur de la page
+ */
+export const generateSalutationContent = () => {
+  return {
+    text: PDF_TEXTS.SALUTATION,
+    fontSize: 9,
+    margin: [0, 10, 0, 0],
+    alignment: 'justify' // Texte étalé sur toute la largeur
+  };
+};
+
+/**
+ * Génère une structure de tableau pour les totaux (HT et TVA) sans bordures
+ */
+export const generateStandardTotalsTable = (totalHT: number, totalTVA: number) => {
+  return {
+    table: {
+      widths: TABLE_COLUMN_WIDTHS.TOTALS,
+      body: [
+        [
+          { text: 'Total HT', alignment: 'left', fontSize: 8, bold: false }, // Changer fontSize: 10 à fontSize: 8
+          { text: formatPrice(totalHT), alignment: 'right', fontSize: 8, color: DARK_BLUE } // Changer fontSize: 10 à fontSize: 8
+        ],
+        [
+          { text: 'Total TVA', alignment: 'left', fontSize: 8, bold: false }, // Changer fontSize: 10 à fontSize: 8
+          { text: formatPrice(totalTVA), alignment: 'right', fontSize: 8, color: DARK_BLUE } // Changer fontSize: 10 à fontSize: 8
+        ]
+      ]
+    },
+    layout: {
+      hLineWidth: function() { return 0; },
+      vLineWidth: function() { return 0; },
+      paddingLeft: function() { return 5; },
+      paddingRight: function() { return 5; },
+      paddingTop: function() { return 5; }, // Changer de 8 à 5
+      paddingBottom: function() { return 5; } // Changer de 8 à 5
+    },
+    margin: [0, 0, 0, 0]
+  };
+};
+
+/**
+ * Génère une structure de tableau pour le Total TTC avec bordure complète
+ */
+export const generateTTCTable = (totalTTC: number) => {
+  return {
+    table: {
+      widths: TABLE_COLUMN_WIDTHS.TOTALS,
+      body: [
+        [
+          { text: 'Total TTC', alignment: 'left', fontSize: 8, bold: true }, // Changer fontSize: 10 à fontSize: 8
+          { text: formatPrice(totalTTC), alignment: 'right', fontSize: 8, color: DARK_BLUE, bold: true } // Changer fontSize: 10 à fontSize: 8
+        ]
+      ]
+    },
+    layout: {
+      hLineWidth: function() { return 1; },
+      vLineWidth: function(i, node) { 
+        // Supprimer la ligne verticale centrale (i=1)
+        return i === 0 || i === 2 ? 1 : 0; // Modifier cette ligne qui était avant: return 1;
+      },
+      hLineColor: function() { return '#e5e7eb'; },
+      vLineColor: function() { return '#e5e7eb'; },
+      paddingLeft: function() { return 5; },
+      paddingRight: function() { return 5; },
+      paddingTop: function() { return 5; }, // Changer de 8 à 5
+      paddingBottom: function() { return 5; } // Changer de 8 à 5
+    },
+    margin: [0, 0, 0, 0]
+  };
+};
 
 // Nouvelle fonction pour générer le PDF complet du devis
 export const generateCompletePDF = async (
@@ -581,373 +823,4 @@ function prepareDetailsContent(
               node.table.body[i-1][0].text && 
               node.table.body[i-1][0].text.toString().includes('Total HT')));
           
-          return isEndOfPrestation ? 1 : 0;
-        },
-        vLineWidth: function() {
-          return 0;
-        },
-        hLineColor: function() {
-          return '#e5e7eb';
-        },
-        paddingLeft: function() {
-          return 4;
-        },
-        paddingRight: function() {
-          return 4;
-        },
-        paddingTop: function() {
-          return 2;
-        },
-        paddingBottom: function() {
-          return 2;
-        }
-      },
-      margin: [0, 0, 0, 15]
-    });
-  });
-  
-  return docContent;
-}
-
-// Fonction auxiliaire pour préparer le contenu du récapitulatif
-function prepareRecapContent(
-  rooms: Room[], 
-  travaux: Travail[], 
-  getTravauxForPiece: (pieceId: string) => Travail[],
-  metadata?: ProjectMetadata,
-  pdfSettings?: PdfSettings
-) {
-  console.log('Préparation du contenu du récapitulatif avec paramètres PDF:', pdfSettings);
-  console.log('Éléments de récapitulatif:', pdfSettings?.elements?.recap_title);
-  
-  // On filtre les pièces qui n'ont pas de travaux
-  const roomsWithTravaux = rooms.filter(room => getTravauxForPiece(room.id).length > 0);
-  
-  // Créer le contenu du document
-  const docContent: any[] = [
-    // Titre du récapitulatif avec les paramètres personnalisés
-    {
-      text: 'RÉCAPITULATIF',
-      fontFamily: pdfSettings?.elements?.recap_title?.fontFamily || 'Roboto',
-      fontSize: pdfSettings?.elements?.recap_title?.fontSize || 12,
-      bold: pdfSettings?.elements?.recap_title?.isBold !== undefined ? pdfSettings.elements.recap_title.isBold : true,
-      italic: pdfSettings?.elements?.recap_title?.isItalic || false,
-      color: pdfSettings?.elements?.recap_title?.color || DARK_BLUE,
-      alignment: pdfSettings?.elements?.recap_title?.alignment || 'center',
-      margin: [
-        pdfSettings?.elements?.recap_title?.spacing?.left || 0,
-        pdfSettings?.elements?.recap_title?.spacing?.top || 10,
-        pdfSettings?.elements?.recap_title?.spacing?.right || 0,
-        pdfSettings?.elements?.recap_title?.spacing?.bottom || 20
-      ],
-      pageBreak: 'before'
-    }
-  ];
-  
-  // Ajout de la bordure si elle est définie
-  // Vérification de la présence des paramètres de bordure
-  if (pdfSettings?.elements?.recap_title?.border) {
-    const border = pdfSettings.elements.recap_title.border;
-    console.log('Bordures récapitulatif trouvées:', border);
-    
-    // Création de la structure de tableau pour appliquer des bordures
-    // Utiliser un tableau pour encapsuler le texte avec des bordures
-    const hasBorder = border.top || border.right || border.bottom || border.left;
-    
-    if (hasBorder) {
-      // Remplacer l'élément de texte simple par un tableau avec bordures
-      docContent[0] = {
-        table: {
-          widths: ['*'],
-          body: [
-            [
-              {
-                text: 'RÉCAPITULATIF',
-                fontFamily: pdfSettings?.elements?.recap_title?.fontFamily || 'Roboto',
-                fontSize: pdfSettings?.elements?.recap_title?.fontSize || 12,
-                bold: pdfSettings?.elements?.recap_title?.isBold !== undefined ? pdfSettings.elements.recap_title.isBold : true,
-                italic: pdfSettings?.elements?.recap_title?.isItalic || false,
-                color: pdfSettings?.elements?.recap_title?.color || DARK_BLUE,
-                alignment: pdfSettings?.elements?.recap_title?.alignment || 'center',
-                margin: [
-                  pdfSettings?.elements?.recap_title?.spacing?.left || 0,
-                  pdfSettings?.elements?.recap_title?.spacing?.top || 10,
-                  pdfSettings?.elements?.recap_title?.spacing?.right || 0,
-                  pdfSettings?.elements?.recap_title?.spacing?.bottom || 20
-                ]
-              }
-            ]
-          ]
-        },
-        layout: {
-          hLineWidth: function(i: number, node: any) {
-            if (i === 0) return border.top ? border.width || 1 : 0;
-            if (i === 1) return border.bottom ? border.width || 1 : 0;
-            return 0;
-          },
-          vLineWidth: function(i: number, node: any) {
-            if (i === 0) return border.left ? border.width || 1 : 0;
-            if (i === 1) return border.right ? border.width || 1 : 0;
-            return 0;
-          },
-          hLineColor: function() {
-            return border.color || DARK_BLUE;
-          },
-          vLineColor: function() {
-            return border.color || DARK_BLUE;
-          }
-        },
-        pageBreak: 'before',
-        margin: [0, 0, 0, 20]
-      };
-    }
-  } else {
-    console.log('Aucune bordure définie pour le récapitulatif');
-  }
-  
-  // Créer la table des totaux par pièce
-  const roomTotalsTableBody = [];
-  
-  // Ajouter l'en-tête de la table
-  roomTotalsTableBody.push([
-    { text: '', style: 'tableHeader', alignment: 'left', color: DARK_BLUE, fontSize: 8 },
-    { text: 'Montant HT', style: 'tableHeader', alignment: 'right', color: DARK_BLUE, fontSize: 8 }
-  ]);
-    
-  // Pour chaque pièce avec des travaux
-  let totalHT = 0;
-  let totalTVA = 0;
-  
-  roomsWithTravaux.forEach(room => {
-    const travauxPiece = getTravauxForPiece(room.id);
-    if (travauxPiece.length === 0) return;
-    
-    // Calculer le total HT pour cette pièce
-    const roomTotalHT = travauxPiece.reduce((sum, t) => {
-      return sum + (t.prixFournitures + t.prixMainOeuvre) * t.quantite;
-    }, 0);
-    
-    // Calculer la TVA pour cette pièce
-    const roomTVA = travauxPiece.reduce((sum, t) => {
-      const totalHT = (t.prixFournitures + t.prixMainOeuvre) * t.quantite;
-      return sum + (totalHT * t.tauxTVA / 100);
-    }, 0);
-    
-    // Ajouter à nos totaux
-    totalHT += roomTotalHT;
-    totalTVA += roomTVA;
-    
-    // Ajouter la ligne à la table
-    roomTotalsTableBody.push([
-      { text: `Total ${room.name}`, alignment: 'left', fontSize: 8, bold: true },
-      { text: formatPrice(roomTotalHT), alignment: 'right', fontSize: 8, color: DARK_BLUE }
-    ]);
-  });
-  
-  // Ajouter la table au document
-  docContent.push({
-    table: {
-      headerRows: 1,
-      widths: ['*', 100],
-      body: roomTotalsTableBody
-    },
-    layout: {
-      hLineWidth: function(i: number, node: any) {
-        return (i === 0 || i === 1 || i === node.table.body.length) ? 1 : 0;
-      },
-      vLineWidth: function() {
-        return 0;
-      },
-      hLineColor: function() {
-        return '#e5e7eb';
-      },
-      paddingLeft: function() {
-        return 10;
-      },
-      paddingRight: function() {
-        return 10;
-      },
-      paddingTop: function() {
-        return 5;
-      },
-      paddingBottom: function() {
-        return 5;
-      }
-    },
-    margin: [0, 0, 0, 20]
-  });
-  
-  // Table des totaux généraux
-  const totalTTC = totalHT + totalTVA;
-
-  // Structure de la page récapitulative
-  docContent.push({
-    columns: [
-      // Colonne gauche - Texte de signature (environ 70% de la largeur)
-      {
-        width: '70%',
-        stack: [
-          // Contenu de signature généré
-          ...generateSignatureContent(),
-          
-          // 10 lignes vides pour la signature
-          { text: "", margin: [0, 5, 0, 0] },
-          { text: "", margin: [0, 5, 0, 0] },
-          { text: "", margin: [0, 5, 0, 0] },
-          { text: "", margin: [0, 5, 0, 0] },
-          { text: "", margin: [0, 5, 0, 0] },
-          { text: "", margin: [0, 5, 0, 0] },
-          { text: "", margin: [0, 5, 0, 0] },
-          { text: "", margin: [0, 5, 0, 0] },
-          { text: "", margin: [0, 5, 0, 0] },
-          { text: "", margin: [0, 5, 0, 0] }
-        ]
-      },
-      // Colonne droite - Tableaux des totaux (environ 30% de la largeur)
-      {
-        width: '30%',
-        stack: [
-          // D'abord le tableau standard sans bordures
-          generateStandardTotalsTable(totalHT, totalTVA),
-          // Ensuite le tableau du Total TTC avec bordure complète
-          generateTTCTable(totalTTC)
-        ]
-      }
-    ],
-    margin: [0, 0, 0, 20]
-  });
-
-  // Ajouter le texte de salutation sur toute la largeur
-  docContent.push(generateSalutationContent());
-  
-  // Ajouter les conditions générales de vente
-  const cgvContent = generateCGVContent();
-  
-  // Ajouter chaque élément du contenu CGV
-  docContent.push(...cgvContent);
-  
-  return docContent;
-}
-
-export const generateCoverPDF = async (fields: any[], company: any) => {
-  console.log('Génération du PDF de la page de garde', { fields, company });
-  
-  // Cette fonction est probablement déjà implémentée ailleurs
-};
-
-export const generateDetailsPDF = async (
-  rooms: Room[], 
-  travaux: Travail[], 
-  getTravauxForPiece: (pieceId: string) => Travail[],
-  metadata?: ProjectMetadata,
-  pdfSettings?: PdfSettings
-) => {
-  console.log('Génération du PDF des détails des travaux avec pdfMake:', { pdfSettings });
-
-  // On filtre les pièces qui n'ont pas de travaux
-  const roomsWithTravaux = rooms.filter(room => getTravauxForPiece(room.id).length > 0);
-  
-  // Obtenir le contenu des détails avec les paramètres PDF
-  const detailsContent = prepareDetailsContent(rooms, travaux, getTravauxForPiece, metadata, pdfSettings);
-  
-  // Définir le document avec contenu et styles
-  const docDefinition = {
-    header: function(currentPage: number, pageCount: number) {
-      // Ajustement de la numérotation de page
-      const adjustedCurrentPage = currentPage + 1;
-      const adjustedTotalPages = pageCount + 3;
-      
-      return [
-        // En-tête avec le numéro de devis et la pagination ajustée
-        generateHeaderContent(metadata, adjustedCurrentPage, adjustedTotalPages),
-        // En-tête du tableau
-        {
-          table: {
-            headerRows: 1,
-            widths: TABLE_COLUMN_WIDTHS.DETAILS,
-            body: [
-              [
-                { text: 'Description', style: 'tableHeader', alignment: 'left', color: DARK_BLUE },
-                { text: 'Quantité', style: 'tableHeader', alignment: 'center', color: DARK_BLUE },
-                { text: 'Prix HT Unit.', style: 'tableHeader', alignment: 'center', color: DARK_BLUE },
-                { text: 'TVA', style: 'tableHeader', alignment: 'center', color: DARK_BLUE },
-                { text: 'Total HT', style: 'tableHeader', alignment: 'center', color: DARK_BLUE }
-              ]
-            ]
-          },
-          layout: {
-            hLineWidth: function() { return 1; },
-            vLineWidth: function() { return 0; },
-            hLineColor: function() { return '#e5e7eb'; },
-            fillColor: function(rowIndex: number) { return (rowIndex === 0) ? '#f3f4f6' : null; }
-          },
-          margin: [30, 0, 30, 10]
-        }
-      ];
-    },
-    footer: function(currentPage: number, pageCount: number) {
-      return generateFooter(metadata);
-    },
-    content: detailsContent,
-    styles: PDF_STYLES,
-    pageMargins: pdfSettings?.margins?.details || PDF_MARGINS.DETAILS,
-    defaultStyle: {
-      fontSize: 9,
-      color: pdfSettings?.colors?.mainText || DARK_BLUE
-    }
-  };
-  
-  try {
-    // Créer et télécharger le PDF
-    pdfMake.createPdf(docDefinition).download(`devis_details_${metadata?.devisNumber || 'XXXX-XX'}.pdf`);
-    console.log('PDF généré avec succès');
-  } catch (error) {
-    console.error('Erreur lors de la génération du PDF:', error);
-    throw error;
-  }
-};
-
-export const generateRecapPDF = async (
-  rooms: Room[], 
-  travaux: Travail[], 
-  getTravauxForPiece: (pieceId: string) => Travail[],
-  metadata?: ProjectMetadata,
-  pdfSettings?: PdfSettings
-) => {
-  console.log('Génération du PDF récapitulatif avec pdfMake:', { pdfSettings });
-
-  // Obtenir le contenu du récapitulatif avec les paramètres PDF
-  const recapContent = prepareRecapContent(rooms, travaux, getTravauxForPiece, metadata, pdfSettings);
-  
-  // Définir le document avec contenu et styles
-  const docDefinition = {
-    // En-tête avec numéro de devis et pagination - Toujours afficher l'en-tête, même sur la première page
-    header: function(currentPage, pageCount) {
-      // Calculer la numérotation des pages
-      const pageNumber = currentPage + 1;
-      const totalPages = pageCount + 2;
-      
-      return generateHeaderContent(metadata, pageNumber, totalPages);
-    },
-    // Pied de page avec les informations de la société
-    footer: function(currentPage, pageCount) {
-      return generateFooter(metadata);
-    },
-    content: recapContent,
-    styles: PDF_STYLES,
-    pageMargins: pdfSettings?.margins?.recap || PDF_MARGINS.RECAP,
-    defaultStyle: {
-      fontSize: 9,
-      color: pdfSettings?.colors?.mainText || DARK_BLUE
-    }
-  };
-  
-  try {
-    // Créer et télécharger le PDF
-    pdfMake.createPdf(docDefinition).download(`devis_recap_${metadata?.devisNumber || 'XXXX-XX'}.pdf`);
-    console.log('PDF récapitulatif généré avec succès', { pdfSettings });
-  } catch (error) {
-    console.error('Erreur lors de la génération du PDF récapitulatif:', error);
-    throw error;
-  }
-};
+          return isEndOfPrestation ?

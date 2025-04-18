@@ -31,19 +31,14 @@ export const ColorPalette: React.FC<ColorPaletteProps> = ({
         <div className="col-span-4 grid grid-cols-5 gap-2">
           {defaultColors.map((color, index) => (
             <div key={index} className="space-y-1">
-              <ColorPicker
-                label={`Couleur ${index + 1}`}
-                value={color}
-                onChange={(newColor) => onDefaultColorClick(newColor)}
-                className="w-full"
-              />
               <Button 
-                size="sm" 
                 variant="outline" 
-                className="w-full"
+                className="w-full h-10"
+                style={{ backgroundColor: color }}
+                title={color}
                 onClick={() => onColorChange(color)}
               >
-                Appliquer
+                <span className="sr-only">Couleur {index + 1}</span>
               </Button>
             </div>
           ))}

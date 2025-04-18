@@ -24,9 +24,28 @@ export const BorderControl: React.FC<BorderControlProps> = ({
     });
   };
 
+  // Générer un aperçu visuel des bordures
+  const borderPreviewStyle = {
+    borderTop: border.top ? `${border.width}px solid ${border.color}` : '1px dashed #e5e7eb',
+    borderRight: border.right ? `${border.width}px solid ${border.color}` : '1px dashed #e5e7eb',
+    borderBottom: border.bottom ? `${border.width}px solid ${border.color}` : '1px dashed #e5e7eb',
+    borderLeft: border.left ? `${border.width}px solid ${border.color}` : '1px dashed #e5e7eb',
+    padding: '12px',
+    marginBottom: '12px',
+    textAlign: 'center' as const,
+    fontSize: '12px',
+    color: '#666'
+  };
+
   return (
     <div className="space-y-4">
       <Label>Bordures</Label>
+      
+      {/* Aperçu visuel des bordures */}
+      <div style={borderPreviewStyle}>
+        Aperçu des bordures
+      </div>
+      
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <div className="flex items-center space-x-2">
