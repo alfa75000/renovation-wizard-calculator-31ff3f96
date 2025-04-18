@@ -1,3 +1,4 @@
+
 import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
 import { Room, Travail, ProjectMetadata } from '@/types';
@@ -680,10 +681,60 @@ function prepareRecapContent(
     margin: [0, 0, 0, 20]
   });
   
+  // Table des totaux généraux
+  const totalTTC = totalHT + totalTVA;
+
+  // Structure de la page récapitulative
+  docContent.push({
+    columns: [
+      // Colonne gauche - Texte de signature (environ 70% de la largeur)
+      {
+        width: '70%',
+        stack: [
+          // Contenu de signature généré
+          ...generateSignatureContent(),
+          
+          // 10 lignes vides pour la signature
+          { text: "", margin: [0, 5, 0, 0] },
+          { text: "", margin: [0, 5, 0, 0] },
+          { text: "", margin: [0, 5, 0, 0] },
+          { text: "", margin: [0, 5, 0, 0] },
+          { text: "", margin: [0, 5, 0, 0] },
+          { text: "", margin: [0, 5, 0, 0] },
+          { text: "", margin: [0, 5, 0, 0] },
+          { text: "", margin: [0, 5, 0, 0] },
+          { text: "", margin: [0, 5, 0, 0] },
+          { text: "", margin: [0, 5, 0, 0] }
+        ]
+      },
+      // Colonne droite - Tableaux des totaux (environ 30% de la largeur)
+      {
+        width: '30%',
+        stack: [
+          // D'abord le tableau standard sans bordures
+          generateStandardTotalsTable(totalHT, totalTVA),
+          // Ensuite le tableau du Total TTC avec bordure complète
+          generateTTCTable(totalTTC)
+        ]
+      }
+    ],
+    margin: [0, 0, 0, 20]
+  });
+
+  // Ajouter le texte de salutation sur toute la largeur
+  docContent.push(generateSalutationContent());
+  
+  // Ajouter les conditions générales de vente
+  const cgvContent = generateCGVContent();
+  
+  // Ajouter chaque élément du contenu CGV
+  docContent.push(...cgvContent);
+  
   return docContent;
 }
 
 export const generateCoverPDF = async (fields: any[], company: any) => {
+  // La logique existante pour la page de garde reste inchangée
   console.log('Génération du PDF de la page de garde', { fields, company });
   
   // Cette fonction est probablement déjà implémentée ailleurs
@@ -964,8 +1015,8 @@ export const generateRecapPDF = async (
   
   // Ajouter l'en-tête de la table
   roomTotalsTableBody.push([
-    { text: '', style: 'tableHeader', alignment: 'left', color: DARK_BLUE, fontSize: 8 },
-    { text: 'Montant HT', style: 'tableHeader', alignment: 'right', color: DARK_BLUE, fontSize: 8 }
+    { text: '', style: 'tableHeader', alignment: 'left', color: DARK_BLUE, fontSize: 8 }, // Ajouter fontSize: 8
+    { text: 'Montant HT', style: 'tableHeader', alignment: 'right', color: DARK_BLUE, fontSize: 8 } // Ajouter fontSize: 8
   ]);
     
   // Pour chaque pièce avec des travaux
