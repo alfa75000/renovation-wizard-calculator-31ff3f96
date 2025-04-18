@@ -35,7 +35,6 @@ export const ColorPalette: React.FC<ColorPaletteProps> = ({
                 label={`Couleur ${index + 1}`}
                 value={color}
                 onChange={(newColor) => onDefaultColorClick(newColor)}
-                className="w-full"
               />
               <Button 
                 size="sm" 
