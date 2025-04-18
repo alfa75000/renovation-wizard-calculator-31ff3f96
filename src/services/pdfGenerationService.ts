@@ -1,3 +1,4 @@
+
 import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
 import { Room, Travail, ProjectMetadata } from '@/types';
@@ -1166,5 +1167,22 @@ function prepareRecapContent(
         pageBreak: 'before',
         margin: [0, 0, 0, 20]
       };
+    }
+  }
+  
+  // ... Reste du code pour préparer le contenu du récapitulatif
+  // Cette partie doit être implémentée selon le même modèle que dans le code existant
+  
+  return docContent;
+}
 
-</edits_to_apply>
+// Fonction pour générer le PDF des détails
+export const generateDetailsPDF = async (
+  rooms: Room[],
+  travaux: Travail[],
+  getTravauxForPiece: (pieceId: string) => Travail[],
+  metadata?: ProjectMetadata,
+  pdfSettings?: PdfSettings
+) => {
+  // ... Le reste du code existant
+};
