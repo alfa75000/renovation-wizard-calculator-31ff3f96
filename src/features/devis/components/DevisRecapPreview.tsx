@@ -6,17 +6,19 @@ import { useProject } from "@/contexts/ProjectContext";
 import { useTravaux } from "@/features/travaux/hooks/useTravaux";
 import RecapitulatifTravaux from "@/features/recap/components/RecapitulatifTravaux";
 import { generateRecapPDF } from "@/services/pdfGenerationService";
+import { usePdfSettings } from "@/services/pdf/hooks/usePdfSettings";
 
 // Composant affichant l'aperçu du récapitulatif pour l'impression
 const DevisRecapPreview: React.FC = () => {
   const { state } = useProject();
   const { rooms, metadata } = state;
   const { travaux, getTravauxForPiece } = useTravaux();
+  const { pdfSettings } = usePdfSettings(); // Récupérer les paramètres PDF
 
   // Fonction pour générer le PDF
   const handlePrint = async () => {
     try {
-      await generateRecapPDF(rooms, travaux, getTravauxForPiece, metadata);
+      await generateRecapPDF(rooms, travaux, getTravauxForPiece, metadata, pdfSettings);
     } catch (error) {
       console.error("Erreur lors de la génération du PDF:", error);
     }

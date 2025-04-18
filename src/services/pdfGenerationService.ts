@@ -365,7 +365,8 @@ function prepareDetailsContent(
   rooms: Room[], 
   travaux: Travail[], 
   getTravauxForPiece: (pieceId: string) => Travail[],
-  metadata?: ProjectMetadata
+  metadata?: ProjectMetadata,
+  pdfSettings?: PdfSettings
 ) {
   console.log('Préparation du contenu des détails des travaux...');
   
@@ -760,9 +761,10 @@ export const generateDetailsPDF = async (
   rooms: Room[], 
   travaux: Travail[], 
   getTravauxForPiece: (pieceId: string) => Travail[],
-  metadata?: ProjectMetadata
+  metadata?: ProjectMetadata,
+  pdfSettings?: PdfSettings
 ) => {
-  console.log('Génération du PDF des détails des travaux avec pdfMake');
+  console.log('Génération du PDF des détails des travaux avec pdfMake', { pdfSettings });
 
   // On filtre les pièces qui n'ont pas de travaux
   const roomsWithTravaux = rooms.filter(room => getTravauxForPiece(room.id).length > 0);
