@@ -1,4 +1,3 @@
-
 import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
 import { Room, Travail, ProjectMetadata } from '@/types';
@@ -597,15 +596,30 @@ function prepareRecapContent(
   
   // Créer le contenu du document
   const docContent: any[] = [
-    // Titre du récapitulatif
+    // Titre du récapitulatif avec les paramètres dynamiques
     {
       text: 'RÉCAPITULATIF',
-      style: 'header',
-      alignment: 'center',
-      fontSize: 12,
-      bold: true,
-      color: DARK_BLUE,
-      margin: [0, 10, 0, 20]
+      fontFamily: pdfSettings?.elements?.recap_title?.fontFamily || 'Roboto',
+      fontSize: pdfSettings?.elements?.recap_title?.fontSize || 12,
+      bold: pdfSettings?.elements?.recap_title?.isBold || false,
+      italic: pdfSettings?.elements?.recap_title?.isItalic || false,
+      color: pdfSettings?.elements?.recap_title?.color || DARK_BLUE,
+      alignment: pdfSettings?.elements?.recap_title?.alignment || 'center',
+      margin: [
+        pdfSettings?.elements?.recap_title?.spacing?.left || 0,
+        pdfSettings?.elements?.recap_title?.spacing?.top || 10,
+        pdfSettings?.elements?.recap_title?.spacing?.right || 0,
+        pdfSettings?.elements?.recap_title?.spacing?.bottom || 20
+      ],
+      border: pdfSettings?.elements?.recap_title?.border ? [
+        pdfSettings?.elements?.recap_title?.border?.top || false,
+        pdfSettings?.elements?.recap_title?.border?.right || false,
+        pdfSettings?.elements?.recap_title?.border?.bottom || false,
+        pdfSettings?.elements?.recap_title?.border?.left || false
+      ] : undefined,
+      borderColor: pdfSettings?.elements?.recap_title?.border?.color || DARK_BLUE,
+      borderWidth: pdfSettings?.elements?.recap_title?.border?.width || 1,
+      pageBreak: 'before'
     }
   ];
   
@@ -1015,8 +1029,8 @@ export const generateRecapPDF = async (
   
   // Ajouter l'en-tête de la table
   roomTotalsTableBody.push([
-    { text: '', style: 'tableHeader', alignment: 'left', color: DARK_BLUE, fontSize: 8 }, // Ajouter fontSize: 8
-    { text: 'Montant HT', style: 'tableHeader', alignment: 'right', color: DARK_BLUE, fontSize: 8 } // Ajouter fontSize: 8
+    { text: '', style: 'tableHeader', alignment: 'left', color: DARK_BLUE, fontSize: 8 },
+    { text: 'Montant HT', style: 'tableHeader', alignment: 'right', color: DARK_BLUE, fontSize: 8 }
   ]);
     
   // Pour chaque pièce avec des travaux
