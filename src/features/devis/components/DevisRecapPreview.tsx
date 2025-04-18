@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
 import { useProject } from "@/contexts/ProjectContext";
@@ -15,9 +15,16 @@ const DevisRecapPreview: React.FC = () => {
   const { travaux, getTravauxForPiece } = useTravaux();
   const { pdfSettings } = usePdfSettings(); // Récupérer les paramètres PDF
 
+  // Afficher les paramètres PDF au montage du composant pour le débogage
+  useEffect(() => {
+    console.log("DevisRecapPreview - Paramètres PDF disponibles:", pdfSettings);
+    console.log("DevisRecapPreview - Éléments personnalisés:", pdfSettings?.elements);
+  }, [pdfSettings]);
+
   // Fonction pour générer le PDF
   const handlePrint = async () => {
     try {
+      console.log("Impression du récapitulatif avec les paramètres:", pdfSettings);
       await generateRecapPDF(rooms, travaux, getTravauxForPiece, metadata, pdfSettings);
     } catch (error) {
       console.error("Erreur lors de la génération du PDF:", error);

@@ -8,8 +8,14 @@ export const usePdfSettings = () => {
   const { currentUser, appState, updatePdfSettings: updateAppStatePdfSettings } = useAppState();
   const [pdfSettings, setPdfSettings] = useState<PdfSettings>(() => {
     try {
+      if (!appState?.pdf_settings) {
+        console.log("Aucun paramètre PDF trouvé, utilisation des valeurs par défaut");
+        return PdfSettingsSchema.parse({});
+      }
+      
       // Valider les données avec le schéma Zod
-      return PdfSettingsSchema.parse(appState?.pdf_settings || {});
+      console.log("Paramètres PDF trouvés dans appState:", appState.pdf_settings);
+      return PdfSettingsSchema.parse(appState.pdf_settings);
     } catch (error) {
       console.error("Erreur de validation des paramètres PDF:", error);
       // Retourner les valeurs par défaut en cas d'erreur
@@ -21,8 +27,16 @@ export const usePdfSettings = () => {
   useEffect(() => {
     if (appState?.pdf_settings) {
       try {
+        console.log("Mise à jour des paramètres PDF depuis appState:", appState.pdf_settings);
         const validatedSettings = PdfSettingsSchema.parse(appState.pdf_settings);
         setPdfSettings(validatedSettings);
+        
+        // Vérifier si des éléments sont définis
+        if (validatedSettings.elements && Object.keys(validatedSettings.elements).length > 0) {
+          console.log("Éléments personnalisés trouvés:", Object.keys(validatedSettings.elements));
+        } else {
+          console.log("Aucun élément personnalisé trouvé");
+        }
       } catch (error) {
         console.error("Erreur lors de la validation des paramètres PDF depuis l'appState:", error);
         // En cas d'erreur, rester avec les paramètres actuels
@@ -43,6 +57,8 @@ export const usePdfSettings = () => {
         ...newSettings
       });
 
+      console.log("Mise à jour des paramètres PDF:", updatedSettings);
+      
       // Mettre à jour l'état local
       setPdfSettings(updatedSettings);
       
