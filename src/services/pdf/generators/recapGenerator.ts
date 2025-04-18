@@ -1,6 +1,6 @@
 import { Room, Travail, ProjectMetadata } from '@/types';
 import { PdfContent } from '@/services/pdf/types/pdfTypes';
-import { formatPrice } from '@/services/pdf/utils/priceUtils';
+import { formatPrice } from '@/services/pdf/utils/pdfUtils';
 import { PDF_TEXTS } from '@/services/pdf/constants/pdfConstants';
 import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
 
@@ -22,8 +22,9 @@ export const prepareRecapContent = (
   roomsWithTravaux.forEach(room => {
     const travauxForRoom = getTravauxForPiece(room.id);
     travauxForRoom.forEach(travail => {
-      totalHT += travail.prixTotalHT || 0;
-      totalTVA += travail.montantTVA || 0;
+      // Utilisation des calculs de pdfUtils
+      totalHT += travail.prixFournitures * travail.quantite + travail.prixMainOeuvre * travail.quantite;
+      totalTVA += (travail.prixFournitures * travail.quantite + travail.prixMainOeuvre * travail.quantite) * (travail.tauxTVA / 100);
     });
   });
 
@@ -37,7 +38,6 @@ export const prepareRecapContent = (
       alignment: 'center',
       fontSize: 14,
       bold: true,
-      // Suppression de pageBreak: 'before' pour éviter la page vide
       margin: [0, 10, 0, 20]
     },
     {
