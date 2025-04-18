@@ -1,6 +1,6 @@
 // Fonctions utilitaires pour générer des parties spécifiques des PDF
 
-import { Room, Travail, ProjectMetadata } from '@/types';
+import { Travail, ProjectMetadata } from '@/types';
 import { 
   PDF_TEXTS, 
   DARK_BLUE, 
@@ -8,44 +8,46 @@ import {
   formatQuantity,
   TABLE_COLUMN_WIDTHS
 } from './pdfConstants';
-import { getElementStyles } from './utils/pdfStyleUtils';
 
 /**
  * Génère le contenu de l'en-tête pour les documents PDF
  */
 export const generateHeaderContent = (metadata?: ProjectMetadata, currentPage: number = 1, totalPages: number = 1) => {
-  const headerDefaultStyles = {
-    alignment: 'right' as const,
+  return {
+    text: `DEVIS N° ${metadata?.devisNumber || 'XXXX-XX'} - page ${currentPage}/${totalPages}`,
+    alignment: 'right',
     fontSize: 8,
     color: DARK_BLUE,
     margin: [40, 20, 40, 10]
-  };
-
-  const headerStyles = getElementStyles('detail_header', headerDefaultStyles);
-
-  return {
-    text: `DEVIS N° ${metadata?.devisNumber || 'XXXX-XX'} - page ${currentPage}/${totalPages}`,
-    ...headerStyles
   };
 };
 
 /**
  * Génère le pied de page standard pour tous les documents PDF
+ * Utilise les données de l'entreprise stockées dans metadata.company
  */
 export const generateFooter = (metadata?: ProjectMetadata) => {
-  const footerDefaultStyles = {
-    fontSize: 7,
-    color: DARK_BLUE,
-    alignment: 'center' as const,
-    margin: [40, 0, 40, 20]
-  };
-
-  const footerStyles = getElementStyles('cover_footer', footerDefaultStyles);
+  console.log("Données de l'entreprise dans generateFooter:", metadata?.company);
+  
+  // Récupérer les informations de la société directement de l'objet company
   const company = metadata?.company;
   
+  // Utiliser les données de company si disponibles, sinon utiliser des valeurs par défaut
+  const companyName = company?.name || '';
+  const capitalSocial = company?.capital_social || '10000';
+  const address = company?.address || '';
+  const postalCode = company?.postal_code || '';
+  const city = company?.city || '';
+  const siret = company?.siret || '';
+  const codeApe = company?.code_ape || '';
+  const tvaIntracom = company?.tva_intracom || '';
+  
   return {
-    text: `${company?.name || ''} - SASU au Capital de ${company?.capital_social || '10000'} € - ${company?.address || ''} ${company?.postal_code || ''} ${company?.city || ''} - Siret : ${company?.siret || ''} - Code APE : ${company?.code_ape || ''} - N° TVA Intracommunautaire : ${company?.tva_intracom || ''}`,
-    ...footerStyles
+    text: `${companyName} - SASU au Capital de ${capitalSocial} € - ${address} ${postalCode} ${city} - Siret : ${siret} - Code APE : ${codeApe} - N° TVA Intracommunautaire : ${tvaIntracom}`,
+    fontSize: 7,
+    color: DARK_BLUE,
+    alignment: 'center',
+    margin: [40, 0, 40, 20]
   };
 };
 
@@ -245,111 +247,3 @@ export const generateTTCTable = (totalTTC: number) => {
     margin: [0, 0, 0, 0]
   };
 };
-
-/**
- * Fonction auxiliaire pour préparer le contenu du r��capitulatif
- */
-function prepareRecapContent(
-  rooms: Room[], 
-  travaux: Travail[], 
-  getTravauxForPiece: (pieceId: string) => Travail[],
-  metadata?: ProjectMetadata
-) {
-  const recapTitleDefaultStyles = {
-    text: 'RÉCAPITULATIF',
-    style: 'header',
-    alignment: 'center' as const,
-    fontSize: 12,
-    bold: true as const,
-    color: DARK_BLUE,
-    margin: [0, 10, 0, 20]
-  };
-
-  const recapTitleStyles = getElementStyles('recap_title', recapTitleDefaultStyles);
-  
-  const docContent: any[] = [
-    // Titre du récapitulatif
-    {
-      ...recapTitleStyles,
-      text: recapTitleStyles.text,
-      pageBreak: 'before'
-    }
-  ];
-
-  // On filtre les pièces qui n'ont pas de travaux
-  const roomsWithTravaux = rooms.filter(room => getTravauxForPiece(room.id).length > 0);
-  
-  // Créer la table des totaux par pièce
-  const roomTotalsTableBody = [];
-  
-  // Ajouter l'en-tête de la table
-  roomTotalsTableBody.push([
-    { text: '', style: 'tableHeader', alignment: 'left', color: DARK_BLUE, fontSize: 8 },
-    { text: 'Montant HT', style: 'tableHeader', alignment: 'right', color: DARK_BLUE, fontSize: 8 }
-  ]);
-    
-  // Pour chaque pièce avec des travaux
-  let totalHT = 0;
-  let totalTVA = 0;
-  
-  roomsWithTravaux.forEach(room => {
-    const travauxPiece = getTravauxForPiece(room.id);
-    if (travauxPiece.length === 0) return;
-    
-    // Calculer le total HT pour cette pièce
-    const roomTotalHT = travauxPiece.reduce((sum, t) => {
-      return sum + (t.prixFournitures + t.prixMainOeuvre) * t.quantite;
-    }, 0);
-    
-    // Calculer la TVA pour cette pièce
-    const roomTVA = travauxPiece.reduce((sum, t) => {
-      const totalHT = (t.prixFournitures + t.prixMainOeuvre) * t.quantite;
-      return sum + (totalHT * t.tauxTVA / 100);
-    }, 0);
-    
-    // Ajouter à nos totaux
-    totalHT += roomTotalHT;
-    totalTVA += roomTVA;
-    
-    // Ajouter la ligne à la table
-    roomTotalsTableBody.push([
-      { text: `Total ${room.name}`, alignment: 'left', fontSize: 8, bold: true },
-      { text: formatPrice(roomTotalHT), alignment: 'right', fontSize: 8, color: DARK_BLUE }
-    ]);
-  });
-  
-  // Ajouter la table au document
-  docContent.push({
-    table: {
-      headerRows: 1,
-      widths: ['*', 100],
-      body: roomTotalsTableBody
-    },
-    layout: {
-      hLineWidth: function(i: number, node: any) {
-        return (i === 0 || i === 1 || i === node.table.body.length) ? 1 : 0;
-      },
-      vLineWidth: function() {
-        return 0;
-      },
-      hLineColor: function() {
-        return '#e5e7eb';
-      },
-      paddingLeft: function() {
-        return 4;
-      },
-      paddingRight: function() {
-        return 4;
-      },
-      paddingTop: function() {
-        return 2;
-      },
-      paddingBottom: function() {
-        return 2;
-      }
-    },
-    margin: [0, 0, 0, 15]
-  });
-  
-  return docContent;
-}
