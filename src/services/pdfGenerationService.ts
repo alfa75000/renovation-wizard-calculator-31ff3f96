@@ -1,6 +1,7 @@
 import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
 import { Room, Travail, ProjectMetadata } from '@/types';
+import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
 
 // Importer les constantes et les utilitaires
 import { 
