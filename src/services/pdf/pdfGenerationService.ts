@@ -27,10 +27,10 @@ export const generateHeaderContent = (metadata?: ProjectMetadata, currentPage: n
   return {
     text: `DEVIS N° ${metadata?.devisNumber || 'XXXX-XX'} - page ${currentPage}/${totalPages}`,
     fontSize: elementSettings.fontSize || 10,
-    bold: elementSettings.isBold === true ? true : true,
     color: elementSettings.color || DARK_BLUE,
     alignment: elementSettings.alignment || 'right',
-    margin: [0, 10, 0, 20]
+    margin: [0, 10, 0, 20],
+    ...(elementSettings.isBold === false ? {} : { bold: true })
   };
 };
 
@@ -98,10 +98,10 @@ export const generateCGVContent = () => {
     style: 'header',
     alignment: titleSettings.alignment || 'center',
     fontSize: titleSettings.fontSize || 14,
-    bold: titleSettings.isBold === true ? true : true,
     color: titleSettings.color || DARK_BLUE,
     margin: [0, 10, 0, 20],
-    pageBreak: 'before'
+    pageBreak: 'before',
+    ...(titleSettings.isBold === false ? {} : { bold: true })
   });
   
   // Générer chaque section des CGV
@@ -110,9 +110,9 @@ export const generateCGVContent = () => {
     content.push({
       text: section.title,
       fontSize: sectionTitleSettings.fontSize || 11,
-      bold: sectionTitleSettings.isBold === true ? true : true,
       color: sectionTitleSettings.color || DARK_BLUE,
-      margin: [0, 10, 0, 5]
+      margin: [0, 10, 0, 5],
+      ...(sectionTitleSettings.isBold === false ? {} : { bold: true })
     });
     
     // Contenu principal
@@ -194,11 +194,11 @@ export const generateSignatureContent = () => {
   PDF_TEXTS.SIGNATURE.POINTS.forEach(point => {
     elements.push({
       text: point.text,
-      bold: point.bold || (approvalSettings.isBold === true ? true : false),
       fontSize: approvalSettings.fontSize || 8,
       color: approvalSettings.color || DARK_BLUE,
       alignment: approvalSettings.alignment || 'left',
-      margin: [0, 3, 0, 0]
+      margin: [0, 3, 0, 0],
+      ...(point.bold ? { bold: true } : approvalSettings.isBold === true ? { bold: true } : {})
     });
   });
   
@@ -243,8 +243,8 @@ export const generateStandardTotalsTable = (totalHT: number, totalTVA: number) =
             text: 'Total HT', 
             alignment: totalsTableSettings.alignment || 'left', 
             fontSize: totalsTableSettings.fontSize || 8, 
-            bold: totalsTableSettings.isBold === true ? true : false,
-            color: totalsTableSettings.color || DARK_BLUE
+            color: totalsTableSettings.color || DARK_BLUE,
+            ...(totalsTableSettings.isBold === true ? { bold: true } : {})
           },
           { 
             text: formatPrice(totalHT), 
@@ -258,8 +258,8 @@ export const generateStandardTotalsTable = (totalHT: number, totalTVA: number) =
             text: 'Total TVA', 
             alignment: totalsTableSettings.alignment || 'left', 
             fontSize: totalsTableSettings.fontSize || 8, 
-            bold: totalsTableSettings.isBold === true ? true : false,
-            color: totalsTableSettings.color || DARK_BLUE
+            color: totalsTableSettings.color || DARK_BLUE,
+            ...(totalsTableSettings.isBold === true ? { bold: true } : {})
           },
           { 
             text: formatPrice(totalTVA), 
@@ -299,16 +299,16 @@ export const generateTTCTable = (totalTTC: number) => {
           { 
             text: 'Total TTC', 
             alignment: ttcSettings.alignment || 'left', 
-            fontSize: ttcSettings.fontSize || 8, 
-            bold: ttcSettings.isBold === true ? true : true,
-            color: ttcSettings.color || DARK_BLUE
+            fontSize: ttcSettings.fontSize || 8,
+            color: ttcSettings.color || DARK_BLUE,
+            ...(ttcSettings.isBold === false ? {} : { bold: true })
           }, 
           { 
             text: formatPrice(totalTTC), 
             alignment: 'right', 
             fontSize: ttcSettings.fontSize || 8, 
-            color: ttcSettings.color || DARK_BLUE, 
-            bold: ttcSettings.isBold === true ? true : true 
+            color: ttcSettings.color || DARK_BLUE,
+            ...(ttcSettings.isBold === false ? {} : { bold: true })
           }
         ]
       ]
