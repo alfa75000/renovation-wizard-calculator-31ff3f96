@@ -71,24 +71,18 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
   const occupant = fields.find(f => f.id === "occupant")?.content;
   const additionalInfo = fields.find(f => f.id === "additionalInfo")?.content;
 
-  // Vérifier si le logo existe et le charger en Data URL
   useEffect(() => {
-    // Fonction pour charger l'image et la convertir en Data URL
     const loadImage = async () => {
       try {
-        // Créer une image
         const img = new Image();
         
-        // Configurer les gestionnaires d'événements
         img.onload = () => {
-          // Créer un canvas pour convertir l'image en Data URL
           const canvas = document.createElement('canvas');
           canvas.width = img.width;
           canvas.height = img.height;
           const ctx = canvas.getContext('2d');
           if (ctx) {
             ctx.drawImage(img, 0, 0);
-            // Convertir en Data URL
             const dataUrl = canvas.toDataURL('image/jpeg');
             setLogoDataUrl(dataUrl);
             setLogoExists(true);
@@ -101,9 +95,7 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
           setLogoDataUrl(null);
         };
         
-        // Déclencher le chargement avec le chemin de l'image
         img.src = LOGO_PATH;
-        
       } catch (error) {
         console.error("Erreur lors du chargement de l'image:", error);
         setLogoExists(false);
@@ -128,9 +120,7 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
     }
   };
 
-  // Création du PDF avec pdfMake
   const createDocDefinition = () => {
-    // Définition des colonnes
     const col1Width = COLUMN1_WIDTH; // Largeur fixe pour la première colonne
     const col2Width = '*'; // Largeur automatique pour la deuxième colonne
     
@@ -139,10 +129,8 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
       pageMargins: [30, 30, 30, 30], // Marges augmentées de 50%
       
       content: [
-        // Logo et assurance sur la même ligne
         {
           columns: [
-            // Logo à gauche
             {
               width: '60%',
               stack: [
@@ -154,7 +142,6 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
                 } : { text: '', margin: [0, 40, 0, 0] }
               ]
             },
-            // Assurance à droite
             {
               width: '40%',
               stack: [
@@ -167,7 +154,6 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
           ]
         },
         
-        // Slogan - Aligné en colonne 1
         {
           text: company?.slogan || 'Entreprise Générale du Bâtiment',
           fontSize: 12,
@@ -176,7 +162,6 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
           margin: [0, 10, 0, 20] // Plus d'espace après le slogan
         },
         
-        // Coordonnées société - Nom et adresse combinés
         {
           text: `Société  ${company?.name || ''} - ${company?.address || ''} - ${company?.postal_code || ''} ${company?.city || ''}`,
           //fontSize: DEFAULT_FONT_SIZE,
@@ -186,7 +171,6 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
           margin: [0, 0, 0, 3]
         },
         
-        // Tél et Mail
         {
           columns: [
             {
@@ -241,15 +225,13 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
           margin: [0, 5, 0, 0] // Plus d'espace après le mail
         },
         
-        // Espace avant devis
         { text: '', margin: [0, 30, 0, 0] },
         
-        // Numéro et date du devis - TOUT aligné en colonne 2
         {
           columns: [
             {
               width: col1Width,
-              text: '', // Colonne 1 vide
+              text: '',
               fontSize: DEFAULT_FONT_SIZE
             },
             {
@@ -264,10 +246,8 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
           margin: [0, 0, 0, 0]
         },
         
-        // Espace avant Client
         { text: '', margin: [0, 35, 0, 0] },
         
-        // Client - Titre aligné en colonne 2
         {
           columns: [
             { width: col1Width, text: '', fontSize: DEFAULT_FONT_SIZE },
@@ -281,7 +261,6 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
           columnGap: 1 // Espacement augmenté
         },
         
-        // Client - Contenu avec sauts de ligne préservés
         {
           columns: [
             { width: col1Width, text: '', fontSize: DEFAULT_FONT_SIZE },
@@ -297,14 +276,12 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
           margin: [0, 5, 0, 0]
         },
         
-        // 5 lignes vides après les données client
         { text: '', margin: [0, 5, 0, 0] },
         { text: '', margin: [0, 5, 0, 0] },
         { text: '', margin: [0, 5, 0, 0] },
         { text: '', margin: [0, 5, 0, 0] },
         { text: '', margin: [0, 5, 0, 0] },
         
-        // Chantier - Titre et contenu alignés en colonne 1
         {
           text: 'Chantier / Travaux',
           fontSize: DEFAULT_FONT_SIZE,
@@ -312,7 +289,6 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
           margin: [0, 0, 0, 5]
         },
         
-        // Occupant
         occupant ? {
           text: occupant,
           fontSize: DEFAULT_FONT_SIZE,
@@ -320,7 +296,6 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
           margin: [0, 5, 0, 0]
         } : null,
         
-        // Adresse du chantier
         projectAddress ? {
           text: 'Adresse du chantier / lieu d\'intervention:',
           fontSize: DEFAULT_FONT_SIZE,
@@ -328,15 +303,13 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
           margin: [0, 5, 0, 0]
         } : null,
         
-        // Ensuite, uniquement la valeur de l'adresse en C2
         projectAddress ? {
           text: projectAddress,
           fontSize: DEFAULT_FONT_SIZE,
           color: DARK_BLUE,
-          margin: [10, 3, 0, 0]  // Ajouter 15 points de marge à gauche au lieu de 0
+          margin: [10, 3, 0, 0]
         } : null,
-
-        // Descriptif
+        
         projectDescription ? {
           text: 'Descriptif:',
           fontSize: DEFAULT_FONT_SIZE,
@@ -351,7 +324,6 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
           margin: [10, 3, 0, 0]
         } : null,
         
-        // Informations complémentaires
         additionalInfo ? {
           text: additionalInfo,
           fontSize: DEFAULT_FONT_SIZE,
@@ -359,16 +331,15 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
           margin: [10, 15, 0, 0]
         } : null,
         
-        // Pied de page avec taille réduite pour tenir sur une ligne
         {
           text: `${company?.name || ''} - SASU au Capital de ${company?.capital_social || '10000'} € - ${company?.address || ''} ${company?.postal_code || ''} ${company?.city || ''} - Siret : ${company?.siret || ''} - Code APE : ${company?.code_ape || ''} - N° TVA Intracommunautaire : ${company?.tva_intracom || ''}`,
-          fontSize: 7, // Réduit à 7px pour tenir sur une ligne
+          fontSize: 7,
           color: DARK_BLUE,
           alignment: 'center',
           margin: [0, 50, 0, 0],
-          absolutePosition: { x: 20, y: 800 } // Position fixe en bas de page
+          absolutePosition: { x: 20, y: 800 }
         }
-      ].filter(Boolean), // Filtre les éléments null (champs vides)
+      ].filter(Boolean),
       
       defaultStyle: {
         font: 'Roboto',
@@ -380,16 +351,13 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
   };
 
   const handleExportPDF = () => {
-    // Génération du PDF avec le document défini
     pdfMake.createPdf(createDocDefinition()).download(`devis-${devisNumber || 'preview'}.pdf`);
   };
 
   const handlePrint = () => {
-    // Utiliser la même fonction pour l'impression
     pdfMake.createPdf(createDocDefinition()).open();
   };
 
-  // Aperçu HTML pour affichage dans l'interface
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent 
@@ -408,9 +376,7 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
           </DialogTitle>
         </DialogHeader>
         
-        {/* Contenu principal - Cet aperçu est uniquement visuel, le vrai PDF est généré par pdfMake */}
         <div ref={printContentRef} className="p-5 rounded-md my-4 bg-white">
-          {/* Logo et informations d'assurance */}
           <div className="flex justify-between items-start">
             <div className="max-w-[60%]">
               {logoExists && logoDataUrl ? (
@@ -432,12 +398,10 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
             {company?.slogan || 'Entreprise Générale du Bâtiment'}
           </p>
           
-          {/* Coordonnées société - Nom et adresse combinés */}
           <div className="text-xs leading-relaxed font-bold" style={{ color: DARK_BLUE, fontSize: '11px' }}>
             <p>Société {company?.name} - {company?.address} - {company?.postal_code} {company?.city}</p>
           </div>
           
-          {/* Tél et Mail avec structure en 2 colonnes */}
           <div className="grid grid-cols-[25px_1fr] gap-1 text-xs leading-relaxed mt-2" style={{ color: DARK_BLUE }}>
             <div>Tél:</div>
             <div>{company?.tel1}</div>
@@ -453,10 +417,8 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
             <div>{company?.email}</div>
           </div>
           
-          {/* Espace avant devis */}
           <div className="mt-8"></div>
           
-          {/* Numéro et date du devis - TOUT dans la colonne 2 */}
           <div className="grid grid-cols-[25px_1fr] gap-1 text-xs" style={{ color: DARK_BLUE }}>
             <div></div>
             <div>
@@ -465,10 +427,8 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
             </div>
           </div>
           
-          {/* Espace avant Client */}
           <div className="mt-8"></div>
           
-          {/* Client - aligné en colonne 2 avec retours à la ligne */}
           <div className="grid grid-cols-[25px_1fr] gap-1 text-xs" style={{ color: DARK_BLUE }}>
             <div></div>
             <div>
@@ -477,10 +437,8 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
             </div>
           </div>
           
-          {/* 5 retours à la ligne au lieu de 10 */}
           <div className="h-20"></div>
           
-          {/* Chantier - aligné à gauche (colonne 1) */}
           <div className="text-xs" style={{ color: DARK_BLUE }}>
             <p className="mb-1">Chantier / Travaux</p>
             
@@ -507,7 +465,6 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
             )}
           </div>
           
-          {/* Pied de page */}
           <div className="text-center text-[7px] mt-24 absolute bottom-2 left-0 right-0" style={{ color: DARK_BLUE }}>
             {company?.name} - SASU au Capital de {company?.capital_social || "10000"} € - {company?.address} {company?.postal_code} {company?.city} - Siret : {company?.siret} - Code APE : {company?.code_ape} - N° TVA Intracommunautaire : {company?.tva_intracom}
           </div>
@@ -532,11 +489,9 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
     </Dialog>
   );
 
-  // Afficher les paramètres PDF au montage du composant pour le débogage
   useEffect(() => {
     console.log("DevisCoverPreview - Paramètres PDF disponibles:", pdfSettings);
     
-    // Log pour chaque élément personnalisable
     const elementsToCheck = [
       'cover_title',
       'company_info',
@@ -544,8 +499,10 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
       'devis_number',
       'devis_date',
       'devis_validity',
-      'client_section',
-      'chantier_section',
+      'client_section_title',
+      'client_section_content',
+      'chantier_section_title',
+      'chantier_section_content',
       'footer'
     ];
 
