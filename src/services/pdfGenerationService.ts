@@ -25,15 +25,12 @@ import {
   generateTTCTable
 } from './pdf/pdfGenerators';
 
-// Importer les textes
-import { PDF_TEXTS } from './pdf/config/pdfTexts';
-
 // Initialiser pdfMake avec les polices
 if (pdfMake && pdfFonts && pdfFonts.pdfMake) {
   pdfMake.vfs = pdfFonts.pdfMake.vfs;
 }
 
-// Exporter la fonction pour générer le PDF complet du devis
+// Nouvelle fonction pour générer le PDF complet du devis
 export const generateCompletePDF = async (
   fields: any[],
   company: any,
