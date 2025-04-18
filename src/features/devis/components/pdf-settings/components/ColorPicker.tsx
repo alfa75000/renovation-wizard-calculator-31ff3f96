@@ -20,6 +20,15 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
   onChange, 
   className = '' 
 }) => {
+  // Prévisualisation de la couleur
+  const previewStyle = {
+    backgroundColor: value,
+    width: '100%',
+    height: '10px',
+    borderRadius: '2px',
+    marginTop: '2px'
+  };
+
   return (
     <div className={className}>
       <Label>{label}</Label>
@@ -36,6 +45,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
           onChange={(e) => onChange(e.target.value)}
         />
       </div>
+      <div style={previewStyle}></div>
     </div>
   );
 };

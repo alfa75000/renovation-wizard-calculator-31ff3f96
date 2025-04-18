@@ -24,6 +24,18 @@ export const BorderControl: React.FC<BorderControlProps> = ({
     });
   };
 
+  // Prévisualisation des bordures
+  const previewStyle = {
+    borderTop: border.top ? `${border.width}px solid ${border.color}` : 'none',
+    borderRight: border.right ? `${border.width}px solid ${border.color}` : 'none',
+    borderBottom: border.bottom ? `${border.width}px solid ${border.color}` : 'none',
+    borderLeft: border.left ? `${border.width}px solid ${border.color}` : 'none',
+    padding: '10px',
+    marginTop: '5px',
+    textAlign: 'center' as const,
+    fontSize: '12px'
+  };
+
   return (
     <div className="space-y-4">
       <Label>Bordures</Label>
@@ -78,6 +90,14 @@ export const BorderControl: React.FC<BorderControlProps> = ({
             value={border.color}
             onChange={(color) => handleBorderChange('color', color)}
           />
+        </div>
+      </div>
+
+      {/* Prévisualisation */}
+      <div>
+        <Label>Aperçu</Label>
+        <div style={previewStyle}>
+          Prévisualisation
         </div>
       </div>
     </div>
