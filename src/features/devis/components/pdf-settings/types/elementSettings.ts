@@ -92,22 +92,3 @@ export const ElementSettingsSchema = z.object({
     width: 1
   })
 });
-
-export const defaultElements = {
-  cover_title: defaultElementSettings,
-  company_info: defaultElementSettings,
-  contact_labels: defaultElementSettings,
-  contact_values: defaultElementSettings,
-  company_slogan: defaultElementSettings,
-  devis_number: defaultElementSettings,
-  devis_date: defaultElementSettings,
-  devis_validity: defaultElementSettings,
-  client_title: defaultElementSettings,
-  client_content: defaultElementSettings,
-  chantier_title: defaultElementSettings,
-  chantier_labels: defaultElementSettings,
-  chantier_values: defaultElementSettings,
-  details_title: defaultElementSettings,
-  recap_title: defaultElementSettings,
-  footer: defaultElementSettings
-};

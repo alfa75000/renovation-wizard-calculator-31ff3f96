@@ -24,22 +24,6 @@ export const BorderControl: React.FC<BorderControlProps> = ({
     });
   };
 
-  // Visualisation de l'aperçu des bordures
-  const getBorderPreviewStyle = () => {
-    return {
-      width: '100%',
-      height: '60px',
-      borderTopWidth: border.top ? `${border.width}px` : '0',
-      borderRightWidth: border.right ? `${border.width}px` : '0',
-      borderBottomWidth: border.bottom ? `${border.width}px` : '0',
-      borderLeftWidth: border.left ? `${border.width}px` : '0',
-      borderStyle: 'solid',
-      borderColor: border.color,
-      marginTop: '10px',
-      backgroundColor: '#f9fafb'
-    };
-  };
-
   return (
     <div className="space-y-4">
       <Label>Bordures</Label>
@@ -93,16 +77,7 @@ export const BorderControl: React.FC<BorderControlProps> = ({
             label="Couleur"
             value={border.color}
             onChange={(color) => handleBorderChange('color', color)}
-            defaultColors={defaultColors}
           />
-        </div>
-      </div>
-      
-      {/* Aperçu des bordures */}
-      <div>
-        <Label className="mb-2 block">Aperçu</Label>
-        <div style={getBorderPreviewStyle()} className="flex items-center justify-center">
-          <span className="text-sm text-gray-500">Bordures</span>
         </div>
       </div>
     </div>
