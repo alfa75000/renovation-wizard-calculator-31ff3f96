@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { PdfSettings } from '../config/pdfSettingsTypes';
 import { DEFAULT_FONT } from '../constants/pdfConstants';
@@ -69,5 +70,32 @@ export const usePdfSettings = () => {
     });
   };
 
-  return { pdfSettings, updatePdfSettings };
+  // Ajout de la fonction resetPdfSettings pour réinitialiser les paramètres
+  const resetPdfSettings = async (): Promise<boolean> => {
+    return new Promise<boolean>((resolve) => {
+      const defaultSettings: PdfSettings = {
+        fontFamily: DEFAULT_FONT,
+        fontSize: 10,
+        margins: {
+          cover: { top: 20, right: 20, bottom: 20, left: 20 },
+          details: { top: 20, right: 20, bottom: 20, left: 20 },
+          recap: { top: 20, right: 20, bottom: 20, left: 20 }
+        },
+        logoSettings: {
+          useDefaultLogo: true,
+          logoUrl: localStorage.getItem('lrs_logo_data_url') || null,
+          width: 172,
+          height: 72,
+          alignment: 'left',
+        },
+      };
+      
+      setPdfSettings(defaultSettings);
+      localStorage.setItem('pdf_settings', JSON.stringify(defaultSettings));
+      console.log('Paramètres PDF réinitialisés aux valeurs par défaut');
+      resolve(true);
+    });
+  };
+
+  return { pdfSettings, updatePdfSettings, resetPdfSettings };
 };
