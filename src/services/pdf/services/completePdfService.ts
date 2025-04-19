@@ -18,6 +18,7 @@ export const generateCompletePDF = async (
   pdfSettings?: PdfSettings
 ) => {
   try {
+    console.log('### COMPLETE PDF SERVICE - DÉBUT DE GÉNÉRATION ###');
     console.log('Génération du PDF complet avec les paramètres:', pdfSettings);
     console.log('Company data reçu pour le PDF complet:', companyData);
     console.log('Logo dans companyData:', companyData?.logo_url);
@@ -40,45 +41,80 @@ export const generateCompletePDF = async (
       }));
 
     console.log('Fields préparés pour la page de garde:', fields);
-    console.log('Logo activé?', enabledFields.find(field => field.id === 'companyLogo')?.enabled);
     
     // Si logo est activé, assurons-nous qu'il est bien passé
     const logoEnabled = enabledFields.find(field => field.id === 'companyLogo')?.enabled || false;
     console.log('Logo est activé:', logoEnabled);
     
-    // Si metadata a déjà company, assurons-nous que le logo_url est présent
-    if (metadata?.company && companyData?.logo_url) {
-      console.log('Avant update: metadata.company.logo_url =', metadata.company.logo_url);
+    // Récupérer le contenu du logo s'il existe
+    const logoContent = enabledFields.find(field => field.id === 'companyLogo')?.content;
+    console.log('Logo content dans les champs activés:', logoContent);
+    
+    // Si un logo_url est fourni dans le champ content, utilisons-le
+    if (logoContent && typeof logoContent === 'string' && logoContent.trim() !== '') {
+      console.log('Logo trouvé dans le contenu du champ:', logoContent);
       
-      // Mettre à jour le logo dans metadata si nécessaire
-      if (!metadata.company.logo_url && companyData.logo_url) {
-        metadata = {
-          ...metadata,
-          company: {
-            ...metadata.company,
-            logo_url: companyData.logo_url
-          }
+      // Si companyData existe, mettons à jour le logo_url
+      if (companyData) {
+        companyData = {
+          ...companyData,
+          logo_url: logoContent
         };
-        console.log('Logo URL mis à jour dans metadata:', metadata.company.logo_url);
+        console.log('Logo URL mis à jour dans companyData:', companyData.logo_url);
       }
     }
     
+    // Si pdfSettings a un logoUrl et que useDefaultLogo est true, utilisons-le
+    if (safeSettings?.logoSettings?.useDefaultLogo && safeSettings?.logoSettings?.logoUrl) {
+      console.log('Utilisation du logo par défaut des paramètres:', safeSettings.logoSettings.logoUrl);
+      
+      if (companyData) {
+        companyData = {
+          ...companyData,
+          logo_url: safeSettings.logoSettings.logoUrl
+        };
+        console.log('Logo URL mis à jour dans companyData avec le logo par défaut:', companyData.logo_url);
+      }
+    }
+
     // Assurons-nous que company est inclus dans metadata
-    if (!metadata?.company && companyData) {
-      metadata = {
-        ...metadata,
+    let updatedMetadata = metadata || {};
+    
+    if (!updatedMetadata.company && companyData) {
+      updatedMetadata = {
+        ...updatedMetadata,
         company: companyData
       };
       console.log('Company data ajouté à metadata');
     }
+    
+    // Si metadata a déjà company, assurons-nous que le logo_url est présent
+    if (updatedMetadata.company && companyData?.logo_url) {
+      console.log('Avant update: metadata.company.logo_url =', updatedMetadata.company.logo_url);
+      
+      // Mettre à jour le logo dans metadata si nécessaire
+      if ((!updatedMetadata.company.logo_url || updatedMetadata.company.logo_url === '') && companyData.logo_url) {
+        updatedMetadata = {
+          ...updatedMetadata,
+          company: {
+            ...updatedMetadata.company,
+            logo_url: companyData.logo_url
+          }
+        };
+        console.log('Logo URL mis à jour dans metadata:', updatedMetadata.company.logo_url);
+      }
+    }
 
     // Générer les contenus
     console.log('Début génération du contenu de couverture avec logo');
-    const coverContent = prepareCoverContent(fields, companyData, metadata, safeSettings);
+    console.log('Données company envoyées à coverGenerator:', companyData);
+    console.log('Logo URL dans company avant génération:', companyData?.logo_url);
+    
+    const coverContent = prepareCoverContent(fields, companyData, updatedMetadata, safeSettings);
     console.log('Contenu de couverture généré, premier élément:', coverContent[0]);
     
-    const detailsContent = prepareDetailsContent(rooms, travaux, getTravauxForPiece, metadata, safeSettings);
-    const recapContent = prepareRecapContent(rooms, travaux, getTravauxForPiece, metadata, safeSettings);
+    const detailsContent = prepareDetailsContent(rooms, travaux, getTravauxForPiece, updatedMetadata, safeSettings);
+    const recapContent = prepareRecapContent(rooms, travaux, getTravauxForPiece, updatedMetadata, safeSettings);
 
     // Définir les marges
     const margins = {
@@ -94,15 +130,22 @@ export const generateCompletePDF = async (
     ];
 
     // Ajouter le récapitulatif si activé
-    if (enabledFields.find(field => field.id === 'summary')?.enabled) {
-      content.push({ pageBreak: 'before', margin: margins.recap, stack: recapContent });
+    const summaryEnabled = enabledFields.find(field => field.id === 'summary')?.enabled;
+    if (summaryEnabled) {
+      console.log('Récapitulatif activé, ajout de la section');
+      content.push({ 
+        pageBreak: 'before', 
+        margin: margins.recap, 
+        stack: recapContent 
+      });
     }
     
     console.log('Contenu du document prêt pour génération PDF');
-    console.log('Logo URL final avant génération:', metadata?.company?.logo_url);
+    console.log('Logo URL final avant génération:', updatedMetadata?.company?.logo_url);
+    console.log('Structure du premier élément de contenu:', JSON.stringify(content[0]).substring(0, 200) + '...');
 
     return generatePdfDocument({
-      metadata,
+      metadata: updatedMetadata,
       content,
       fontFamily: safeSettings?.fontFamily,
       showHeader: true,
