@@ -60,7 +60,9 @@ export const generateCompletePDF = async (
     return generatePdfDocument({
       metadata,
       content,
-      fontFamily: safeSettings?.fontFamily
+      fontFamily: safeSettings?.fontFamily,
+      showHeader: true,
+      showFooter: true
     });
     
   } catch (error) {

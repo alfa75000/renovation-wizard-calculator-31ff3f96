@@ -52,9 +52,11 @@ export const generateDetailsPDF = async (
       content: [
         { margin: margins.cover, stack: coverContent },
         { pageBreak: 'before', margin: margins.details, stack: detailsContent },
-        { margin: margins.recap, stack: recapContent }
+        { pageBreak: 'before', margin: margins.recap, stack: recapContent }
       ],
-      fontFamily: safeSettings?.fontFamily
+      fontFamily: safeSettings?.fontFamily,
+      showHeader: true,
+      showFooter: true
     });
     
   } catch (error) {
