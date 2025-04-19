@@ -1,4 +1,3 @@
-
 // Types principaux pour l'application de rénovation
 import { 
   Property, 
@@ -9,7 +8,7 @@ import {
   ProjectAction, 
   ProjetChantierAction,
   ProjectMetadata,
-  CompanyData // Add this import
+  CompanyData
 } from './project';
 
 import {
@@ -46,6 +45,15 @@ import {
   ClientsAction
 } from './client';
 
+// Définition for PrintableField
+export interface PrintableField {
+  id: string;
+  label: string;
+  enabled: boolean;
+  required?: boolean;
+  content?: string;
+}
+
 // Exports de types avec le mot-clé "type" requis pour 'isolatedModules'
 export type { 
   Property, 
@@ -56,7 +64,7 @@ export type {
   ProjectAction, 
   ProjetChantierAction,
   ProjectMetadata,
-  CompanyData, // Add this export
+  CompanyData,
   Room,
   Piece,
   Menuiserie,
@@ -68,7 +76,8 @@ export type {
   TypeTravauxItem,
   SousTypeTravauxItem,
   Client,
-  SurfaceImpactee
+  SurfaceImpactee,
+  PrintableField
 };
 
 // Exports d'états et d'actions pour les contextes
