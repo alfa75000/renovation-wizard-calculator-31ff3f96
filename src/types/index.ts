@@ -1,3 +1,4 @@
+
 // Types principaux pour l'application de rénovation
 import { 
   Property, 
@@ -48,7 +49,7 @@ import {
 // Définition for PrintableField
 export interface PrintableField {
   id: string;
-  label: string;
+  name: string;
   enabled: boolean;
   required?: boolean;
   content?: string;
@@ -76,8 +77,7 @@ export type {
   TypeTravauxItem,
   SousTypeTravauxItem,
   Client,
-  SurfaceImpactee,
-  PrintableField
+  SurfaceImpactee
 };
 
 // Exports d'états et d'actions pour les contextes

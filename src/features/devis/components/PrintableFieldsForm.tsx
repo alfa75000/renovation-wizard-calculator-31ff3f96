@@ -13,17 +13,10 @@ import { supabase } from "@/lib/supabase";
 import { DevisCoverPreview } from "./DevisCoverPreview";
 import { DevisDetailsPreview } from "./DevisDetailsPreview";
 import DevisRecapPreview from "./DevisRecapPreview";
-import { CompanyData } from "@/types";
+import { CompanyData, PrintableField } from "@/types";
 import { generateCompletePDF } from "@/services/pdfGenerationService";
 import { useTravaux } from "@/features/travaux/hooks/useTravaux";
 import { usePdfSettings } from "@/services/pdf/hooks/usePdfSettings";
-
-interface PrintableField {
-  id: string;
-  name: string;
-  enabled: boolean;
-  content?: string | null;
-}
 
 export const PrintableFieldsForm: React.FC = () => {
   const { state, dispatch } = useProject();
