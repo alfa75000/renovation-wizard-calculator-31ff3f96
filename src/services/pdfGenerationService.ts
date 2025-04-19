@@ -1,16 +1,16 @@
 
 import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
-import { Room, Travail, ProjectMetadata } from '@/types';
+import { Room, Travail, ProjectMetadata, PrintableField, CompanyData } from '@/types';
 import { prepareDetailsContent } from './pdf/generators/detailsGenerator';
 import { prepareCoverContent } from './pdf/generators/coverGenerator';
 import { prepareRecapContent } from './pdf/generators/recapGenerator';
 import { PDF_MARGINS } from './pdf/constants/pdfConstants';
 import { PdfSettings } from './pdf/config/pdfSettingsTypes';
-import { PrintableField, CompanyData } from '@/types';
 
 // Configurer pdfMake pour utiliser les polices
-pdfMake.vfs = pdfFonts.pdfMake.vfs;
+// The correct way to set up vfs
+pdfMake.vfs = pdfFonts.pdfMake ? pdfFonts.pdfMake.vfs : pdfFonts.vfs;
 
 /**
  * Génère un PDF détaillé pour le devis
