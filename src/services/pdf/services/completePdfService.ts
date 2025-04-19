@@ -26,6 +26,16 @@ export const generateCompletePDF = async (
       fontFamily: ensureSupportedFont(pdfSettings.fontFamily)
     } : undefined;
     
+    // Vérifier si nous avons un logo stocké localement
+    if (safeSettings && (!safeSettings.logoSettings || !safeSettings.logoSettings.logoUrl)) {
+      const storedLogo = localStorage.getItem('lrs_logo_data_url');
+      if (storedLogo) {
+        safeSettings.logoSettings = safeSettings.logoSettings || {};
+        safeSettings.logoSettings.logoUrl = storedLogo;
+        console.log('Logo trouvé dans le localStorage et ajouté aux paramètres PDF');
+      }
+    }
+    
     // Transformer les champs en structure attendue par le générateur
     const fields = enabledFields.map(field => ({
       id: field.id,
@@ -79,11 +89,15 @@ export const generateCompletePDF = async (
       });
     }
     
+    console.log('Création du document PDF complet avec logoSettings:', 
+      safeSettings?.logoSettings ? (safeSettings.logoSettings.logoUrl ? 'Logo présent' : 'Pas de logo URL') : 'Pas de logoSettings');
+    
     // Générer le document PDF
     return generatePdfDocument({
       metadata,
       content: documentParts,
       fontFamily: safeSettings?.fontFamily,
+      title: `Devis - ${metadata?.nomProjet || 'Projet'}`,
       logoSettings: safeSettings?.logoSettings,
       useHeader: true,
       useFooter: true

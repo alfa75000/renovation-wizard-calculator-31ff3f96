@@ -29,6 +29,13 @@ export const generatePdfDocument = (options: GeneratePdfDocumentOptions) => {
     useFooter = false
   } = options;
   
+  console.log('Génération du document PDF avec options:', {
+    title: title || `Devis - ${metadata?.nomProjet || 'Projet'}`,
+    hasLogo: !!logoSettings?.logoUrl,
+    useHeader,
+    useFooter
+  });
+  
   // Créer le document PDF
   const docDefinition: any = {
     info: {
@@ -67,7 +74,7 @@ export const generatePdfDocument = (options: GeneratePdfDocumentOptions) => {
       if (!company) return [];
       
       // Afficher le pied de page sur toutes les pages
-      // Nous ne filtrons plus les pages intermédiaires pour résoudre le problème de pied de page manquant
+      // Nous ne filtrons plus les pages pour assurer la présence du pied de page partout
       
       const footerContent = [
         {
@@ -89,10 +96,19 @@ export const generatePdfDocument = (options: GeneratePdfDocumentOptions) => {
   try {
     // Générer et ouvrir le PDF
     const pdfDoc = pdfMake.createPdf(docDefinition);
-    pdfDoc.open();
     
-    console.log('PDF généré avec succès');
-    return true;
+    // Utiliser une promesse pour gérer l'ouverture du PDF
+    return new Promise<boolean>((resolve, reject) => {
+      try {
+        pdfDoc.open();
+        console.log('PDF généré avec succès');
+        resolve(true);
+      } catch (error) {
+        console.error('Erreur lors de l\'ouverture du PDF:', error);
+        reject(error);
+      }
+    });
+    
   } catch (error) {
     console.error('Erreur lors de la génération du PDF:', error);
     throw error;

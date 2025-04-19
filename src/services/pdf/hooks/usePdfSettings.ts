@@ -1,99 +1,73 @@
-
-import { useState, useCallback, useEffect } from 'react';
-import { useAppState } from '@/hooks/useAppState';
-import { PdfSettings, PdfSettingsSchema } from '../config/pdfSettingsTypes';
-import { toast } from 'sonner';
+import { useState, useEffect } from 'react';
+import { PdfSettings } from '../config/pdfSettingsTypes';
+import { DEFAULT_FONT } from '../constants/pdfConstants';
 
 export const usePdfSettings = () => {
-  const { currentUser, appState, updatePdfSettings: updateAppStatePdfSettings } = useAppState();
   const [pdfSettings, setPdfSettings] = useState<PdfSettings>(() => {
-    try {
-      if (!appState?.pdf_settings) {
-        console.log("Aucun paramètre PDF trouvé, utilisation des valeurs par défaut");
-        return PdfSettingsSchema.parse({});
+    // Récupérer les paramètres PDF du localStorage s'ils existent
+    const storedSettings = localStorage.getItem('pdf_settings');
+    if (storedSettings) {
+      try {
+        const parsed = JSON.parse(storedSettings);
+        
+        // Vérifier si nous avons un logo stocké
+        const storedLogo = localStorage.getItem('lrs_logo_data_url');
+        if (storedLogo && (!parsed.logoSettings || !parsed.logoSettings.logoUrl)) {
+          parsed.logoSettings = parsed.logoSettings || {};
+          parsed.logoSettings.logoUrl = storedLogo;
+        }
+        
+        return parsed;
+      } catch (e) {
+        console.error('Erreur lors du chargement des paramètres PDF:', e);
       }
-      
-      // Valider les données avec le schéma Zod
-      console.log("Paramètres PDF trouvés dans appState:", appState.pdf_settings);
-      return PdfSettingsSchema.parse(appState.pdf_settings);
-    } catch (error) {
-      console.error("Erreur de validation des paramètres PDF:", error);
-      // Retourner les valeurs par défaut en cas d'erreur
-      return PdfSettingsSchema.parse({});
     }
+    
+    // Paramètres par défaut
+    return {
+      fontFamily: DEFAULT_FONT,
+      fontSize: 10,
+      margins: {
+        cover: { top: 20, right: 20, bottom: 20, left: 20 },
+        details: { top: 20, right: 20, bottom: 20, left: 20 },
+        recap: { top: 20, right: 20, bottom: 20, left: 20 }
+      },
+      logoSettings: {
+        useDefaultLogo: true,
+        logoUrl: localStorage.getItem('lrs_logo_data_url') || null,
+        width: 172,
+        height: 72,
+        alignment: 'left',
+      },
+    };
   });
 
-  // S'assurer que les paramètres sont mis à jour quand l'état de l'application change
   useEffect(() => {
-    if (appState?.pdf_settings) {
-      try {
-        console.log("Mise à jour des paramètres PDF depuis appState:", appState.pdf_settings);
-        const validatedSettings = PdfSettingsSchema.parse(appState.pdf_settings);
-        setPdfSettings(validatedSettings);
-        
-        // Vérifier si des éléments sont définis
-        if (validatedSettings.elements && Object.keys(validatedSettings.elements).length > 0) {
-          console.log("Éléments personnalisés trouvés:", Object.keys(validatedSettings.elements));
-          // Ajout d'un log détaillé pour débogage
-          Object.entries(validatedSettings.elements).forEach(([key, element]) => {
-            console.log(`Element ${key}:`, element);
-            // Vérifier spécifiquement les bordures
-            if (element.border) {
-              console.log(`Bordures de l'élément ${key}:`, element.border);
-            }
-          });
-        } else {
-          console.log("Aucun élément personnalisé trouvé");
-        }
-      } catch (error) {
-        console.error("Erreur lors de la validation des paramètres PDF depuis l'appState:", error);
-        // En cas d'erreur, rester avec les paramètres actuels
-      }
-    }
-  }, [appState?.pdf_settings]);
+    // Sauvegarder les paramètres dans le localStorage à chaque modification
+    localStorage.setItem('pdf_settings', JSON.stringify(pdfSettings));
+  }, [pdfSettings]);
 
-  const updatePdfSettings = useCallback(async (newSettings: Partial<PdfSettings>) => {
-    if (!currentUser) {
-      toast.error('Aucun utilisateur connecté');
-      return false;
-    }
-
-    try {
-      // Valider les paramètres mis à jour avec le schéma Zod
-      const updatedSettings = PdfSettingsSchema.parse({
-        ...pdfSettings,
-        ...newSettings
+  const updatePdfSettings = async (newSettings: Partial<PdfSettings>): Promise<boolean> => {
+    return new Promise<boolean>((resolve) => {
+      setPdfSettings((prevSettings) => {
+        const updatedSettings: PdfSettings = {
+          ...prevSettings,
+          ...newSettings,
+          logoSettings: {
+            ...prevSettings.logoSettings,
+            ...(newSettings.logoSettings || {}),
+          },
+          margins: {
+            ...prevSettings.margins,
+            ...(newSettings.margins || {}),
+          },
+        };
+        localStorage.setItem('pdf_settings', JSON.stringify(updatedSettings));
+        resolve(true);
+        return updatedSettings;
       });
-
-      console.log("Mise à jour des paramètres PDF:", updatedSettings);
-      
-      // Mettre à jour l'état local
-      setPdfSettings(updatedSettings);
-      
-      // Persister les changements via useAppState
-      const success = await updateAppStatePdfSettings(updatedSettings);
-      
-      if (success) {
-        toast.success('Paramètres PDF mis à jour');
-      }
-      
-      return success;
-    } catch (error) {
-      console.error('Erreur lors de la validation des paramètres PDF:', error);
-      toast.error('Paramètres PDF invalides');
-      return false;
-    }
-  }, [currentUser, pdfSettings, updateAppStatePdfSettings]);
-
-  const resetPdfSettings = useCallback(async () => {
-    // Utiliser les valeurs par défaut du schéma
-    const defaultSettings = PdfSettingsSchema.parse({});
-    return updatePdfSettings(defaultSettings);
-  }, [updatePdfSettings]);
-
-  return {
-    pdfSettings,
-    updatePdfSettings,
-    resetPdfSettings
+    });
   };
+
+  return { pdfSettings, updatePdfSettings };
 };

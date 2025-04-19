@@ -1,3 +1,4 @@
+
 import { CompanyData, ProjectMetadata } from '@/types';
 import { PdfContent } from '@/services/pdf/types/pdfTypes';
 import { formatDate } from '@/services/pdf/utils/dateUtils';
@@ -29,13 +30,14 @@ export const prepareCoverContent = (
   // Définition du slogan
   const slogan = company?.slogan || 'Entreprise Générale du Bâtiment';
   
-  // Définir les paramètres du logo
-  const logoUrl = pdfSettings?.logoSettings?.useDefaultLogo 
-    ? company?.logo_url || '/lrs_logo.jpg'
-    : pdfSettings?.logoSettings?.logoUrl || company?.logo_url || '/lrs_logo.jpg';
-  
+  // Vérifier si une image de logo est disponible en data URL
+  // Important: Utilisons directement le logoDataUrl s'il est fourni (évite les références de chemin)
+  let logoDataUrl = pdfSettings?.logoSettings?.logoUrl || null;
   const logoWidth = pdfSettings?.logoSettings?.width || 172;
   const logoHeight = pdfSettings?.logoSettings?.height || 72;
+
+  // Afficher le chemin du logo pour débogage
+  console.log('Logo URL utilisée:', logoDataUrl ? 'Logo data URL présent' : 'Aucun logo disponible');
   
   // Construction du contenu
   const content: PdfContent[] = [
@@ -45,8 +47,8 @@ export const prepareCoverContent = (
         {
           width: '60%',
           stack: [
-            logoUrl ? {
-              image: logoUrl,
+            logoDataUrl ? {
+              image: logoDataUrl,
               width: logoWidth,
               height: logoHeight,
               margin: [0, 0, 0, 0]
