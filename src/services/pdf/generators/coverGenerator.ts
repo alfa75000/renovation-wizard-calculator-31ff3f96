@@ -1,4 +1,3 @@
-
 import { CompanyData, ProjectMetadata } from '@/types';
 import { PdfContent } from '@/services/pdf/types/pdfTypes';
 import { formatDate } from '@/services/pdf/utils/dateUtils';

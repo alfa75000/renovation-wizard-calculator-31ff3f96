@@ -1,4 +1,3 @@
-
 import { PDF_TEXTS, DARK_BLUE } from '../constants/pdfConstants';
 import { PdfSettings } from '../config/pdfSettingsTypes';
 import { applyElementStyles, formatPrice, wrapWithBorders } from '../utils/pdfUtils';
