@@ -40,7 +40,7 @@ export const PdfSettingsSchema = z.object({
     recap: z.tuple([z.number(), z.number(), z.number(), z.number()]).default([40, 40, 40, 40])
   }).default({
     cover: [40, 40, 40, 40],
-    details: [30, 70, 30, 40],
+    details: [5, 70, 30, 40],
     recap: [40, 40, 40, 40]
   }),
   logoSettings: z.object({
