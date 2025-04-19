@@ -1,3 +1,4 @@
+
 import { Room, Travail, ProjectMetadata } from '@/types';
 import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
 import { PdfContent } from '@/services/pdf/types/pdfTypes';
@@ -9,7 +10,11 @@ import {
   generateTTCTable
 } from '@/services/pdf/components/pdfComponents';
 import { DARK_BLUE } from '@/services/pdf/constants/pdfConstants';
-import { formatPrice } from '@/services/pdf/utils/pdfUtils';
+import { 
+  formatPrice,
+  applyElementStyles,
+  wrapWithBorders
+} from '@/services/pdf/utils/pdfUtils';
 
 export const prepareRecapContent = (
   rooms: Room[], 
@@ -19,101 +24,85 @@ export const prepareRecapContent = (
   pdfSettings?: PdfSettings
 ): PdfContent[] => {
   console.log('Préparation du contenu du récapitulatif avec paramètres PDF:', pdfSettings);
-  console.log('Éléments de récapitulatif:', pdfSettings?.elements?.recap_title);
   
   // On filtre les pièces qui n'ont pas de travaux
   const roomsWithTravaux = rooms.filter(room => getTravauxForPiece(room.id).length > 0);
   
   // Créer le contenu du document
-  const docContent: any[] = [
-    // Titre du récapitulatif avec les paramètres personnalisés
+  const docContent: any[] = [];
+  
+  // Définir le titre avec styles personnalisables
+  let titleElement = applyElementStyles(
     {
       text: 'RÉCAPITULATIF',
-      fontFamily: pdfSettings?.elements?.recap_title?.fontFamily || 'Roboto',
-      fontSize: pdfSettings?.elements?.recap_title?.fontSize || 12,
-      bold: pdfSettings?.elements?.recap_title?.isBold !== undefined ? pdfSettings.elements.recap_title.isBold : true,
-      italic: pdfSettings?.elements?.recap_title?.isItalic || false,
-      color: pdfSettings?.elements?.recap_title?.color || DARK_BLUE,
-      alignment: pdfSettings?.elements?.recap_title?.alignment || 'center',
-      margin: [
-        pdfSettings?.elements?.recap_title?.spacing?.left || 0,
-        pdfSettings?.elements?.recap_title?.spacing?.top || 10,
-        pdfSettings?.elements?.recap_title?.spacing?.right || 0,
-        pdfSettings?.elements?.recap_title?.spacing?.bottom || 20
-      ],
-      pageBreak: 'before'
+    },
+    'recap_title',
+    pdfSettings,
+    {
+      fontFamily: 'Roboto',
+      fontSize: 12,
+      isBold: true,
+      isItalic: false,
+      color: DARK_BLUE,
+      alignment: 'center',
+      spacing: {
+        left: 0,
+        top: 10,
+        right: 0,
+        bottom: 20
+      }
     }
-  ];
+  );
   
-  // Ajout de la bordure si elle est définie
-  // Vérification de la présence des paramètres de bordure
-  if (pdfSettings?.elements?.recap_title?.border) {
-    const border = pdfSettings.elements.recap_title.border;
-    console.log('Bordures récapitulatif trouvées:', border);
-    
-    // Création de la structure de tableau pour appliquer des bordures
-    // Utiliser un tableau pour encapsuler le texte avec des bordures
-    const hasBorder = border.top || border.right || border.bottom || border.left;
-    
-    if (hasBorder) {
-      // Remplacer l'élément de texte simple par un tableau avec bordures
-      docContent[0] = {
-        table: {
-          widths: ['*'],
-          body: [
-            [
-              {
-                text: 'RÉCAPITULATIF',
-                fontFamily: pdfSettings?.elements?.recap_title?.fontFamily || 'Roboto',
-                fontSize: pdfSettings?.elements?.recap_title?.fontSize || 12,
-                bold: pdfSettings?.elements?.recap_title?.isBold !== undefined ? pdfSettings.elements.recap_title.isBold : true,
-                italic: pdfSettings?.elements?.recap_title?.isItalic || false,
-                color: pdfSettings?.elements?.recap_title?.color || DARK_BLUE,
-                alignment: pdfSettings?.elements?.recap_title?.alignment || 'center',
-                margin: [
-                  pdfSettings?.elements?.recap_title?.spacing?.left || 0,
-                  pdfSettings?.elements?.recap_title?.spacing?.top || 10,
-                  pdfSettings?.elements?.recap_title?.spacing?.right || 0,
-                  pdfSettings?.elements?.recap_title?.spacing?.bottom || 20
-                ]
-              }
-            ]
-          ]
+  // Vérifier si nous devons ajouter des bordures autour du titre
+  if (titleElement._hasBorder && titleElement._borderSettings) {
+    docContent.push(
+      wrapWithBorders(
+        {
+          text: 'RÉCAPITULATIF',
+          fontFamily: titleElement.fontFamily || 'Roboto',
+          fontSize: titleElement.fontSize || 12,
+          bold: titleElement.bold !== undefined ? titleElement.bold : true,
+          italic: titleElement.italic || false,
+          color: titleElement.color || DARK_BLUE,
+          alignment: titleElement.alignment || 'center',
+          margin: titleElement.margin || [0, 10, 0, 20]
         },
-        layout: {
-          hLineWidth: function(i: number, node: any) {
-            if (i === 0) return border.top ? border.width || 1 : 0;
-            if (i === 1) return border.bottom ? border.width || 1 : 0;
-            return 0;
-          },
-          vLineWidth: function(i: number, node: any) {
-            if (i === 0) return border.left ? border.width || 1 : 0;
-            if (i === 1) return border.right ? border.width || 1 : 0;
-            return 0;
-          },
-          hLineColor: function() {
-            return border.color || DARK_BLUE;
-          },
-          vLineColor: function() {
-            return border.color || DARK_BLUE;
-          }
-        },
-        pageBreak: 'before',
-        margin: [0, 0, 0, 20]
-      };
-    }
+        titleElement._borderSettings
+      )
+    );
   } else {
-    console.log('Aucune bordure définie pour le récapitulatif');
+    // Ajouter l'élément de titre sans bordures
+    docContent.push(titleElement);
   }
   
-  // Créer la table des totaux par pièce
+  // Créer la table des totaux par pièce avec styles personnalisables
   const roomTotalsTableBody = [];
   
-  // Ajouter l'en-tête de la table
-  roomTotalsTableBody.push([
-    { text: '', style: 'tableHeader', alignment: 'left', color: DARK_BLUE, fontSize: 8 },
-    { text: 'Montant HT', style: 'tableHeader', alignment: 'right', color: DARK_BLUE, fontSize: 8 }
-  ]);
+  // Ajouter l'en-tête de la table avec styles personnalisables
+  const headerFirstCell = applyElementStyles(
+    { text: '', alignment: 'left' },
+    'recap_table_header',
+    pdfSettings,
+    { 
+      fontSize: 8, 
+      color: DARK_BLUE,
+      isBold: true
+    }
+  );
+  
+  const headerSecondCell = applyElementStyles(
+    { text: 'Montant HT', alignment: 'right' },
+    'recap_table_header',
+    pdfSettings,
+    { 
+      fontSize: 8, 
+      color: DARK_BLUE,
+      isBold: true
+    }
+  );
+  
+  roomTotalsTableBody.push([headerFirstCell, headerSecondCell]);
     
   // Pour chaque pièce avec des travaux
   let totalHT = 0;
@@ -138,15 +127,33 @@ export const prepareRecapContent = (
     totalHT += roomTotalHT;
     totalTVA += roomTVA;
     
+    // Appliquer les styles personnalisables aux cellules de la table
+    const roomNameCell = applyElementStyles(
+      { text: `Total ${room.name}`, alignment: 'left' },
+      'room_title',
+      pdfSettings,
+      { 
+        fontSize: 8,
+        isBold: true
+      }
+    );
+    
+    const roomTotalCell = applyElementStyles(
+      { text: formatPrice(roomTotalHT), alignment: 'right' },
+      'total_column',
+      pdfSettings,
+      { 
+        fontSize: 8,
+        color: DARK_BLUE
+      }
+    );
+    
     // Ajouter la ligne à la table
-    roomTotalsTableBody.push([
-      { text: `Total ${room.name}`, alignment: 'left', fontSize: 8, bold: true },
-      { text: formatPrice(roomTotalHT), alignment: 'right', fontSize: 8, color: DARK_BLUE }
-    ]);
+    roomTotalsTableBody.push([roomNameCell, roomTotalCell]);
   });
   
-  // Ajouter la table au document
-  docContent.push({
+  // Ajouter la table au document avec des styles personnalisables
+  const roomTotalsTable = {
     table: {
       headerRows: 1,
       widths: ['*', 100],
@@ -176,12 +183,20 @@ export const prepareRecapContent = (
       }
     },
     margin: [0, 0, 0, 20]
-  });
+  };
+  
+  docContent.push(roomTotalsTable);
   
   // Table des totaux généraux
   const totalTTC = totalHT + totalTVA;
 
-  // Structure de la page récapitulative
+  // Structure de la page récapitulative avec styles personnalisables
+  const signatureContent = generateSignatureContent(pdfSettings);
+  const salutationContent = generateSalutationContent(pdfSettings);
+  const standardTotalsTable = generateStandardTotalsTable(totalHT, totalTVA, pdfSettings);
+  const ttcTable = generateTTCTable(totalTTC, pdfSettings);
+  
+  // Créer la mise en page à deux colonnes
   docContent.push({
     columns: [
       // Colonne gauche - Texte de signature (environ 70% de la largeur)
@@ -189,7 +204,7 @@ export const prepareRecapContent = (
         width: '70%',
         stack: [
           // Contenu de signature généré
-          ...generateSignatureContent(),
+          ...signatureContent,
           
           // 10 lignes vides pour la signature
           { text: "", margin: [0, 5, 0, 0] },
@@ -209,9 +224,9 @@ export const prepareRecapContent = (
         width: '30%',
         stack: [
           // D'abord le tableau standard sans bordures
-          generateStandardTotalsTable(totalHT, totalTVA),
+          standardTotalsTable,
           // Ensuite le tableau du Total TTC avec bordure complète
-          generateTTCTable(totalTTC)
+          ttcTable
         ]
       }
     ],
@@ -219,10 +234,10 @@ export const prepareRecapContent = (
   });
 
   // Ajouter le texte de salutation sur toute la largeur
-  docContent.push(generateSalutationContent());
+  docContent.push(salutationContent);
   
-  // Ajouter les conditions générales de vente
-  const cgvContent = generateCGVContent();
+  // Ajouter les conditions générales de vente avec styles personnalisables
+  const cgvContent = generateCGVContent(pdfSettings);
   
   // Ajouter chaque élément du contenu CGV
   docContent.push(...cgvContent);

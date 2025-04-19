@@ -1,11 +1,16 @@
+
 import { CompanyData, ProjectMetadata } from '@/types';
 import { PdfContent } from '@/services/pdf/types/pdfTypes';
 import { formatDate } from '@/services/pdf/utils/dateUtils';
+import { applyElementStyles, wrapWithBorders } from '@/services/pdf/utils/pdfUtils';
+import { DARK_BLUE } from '@/services/pdf/constants/pdfConstants';
+import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
 
 export const prepareCoverContent = (
   fields: any[], 
   company: CompanyData | null,
-  metadata?: ProjectMetadata
+  metadata?: ProjectMetadata,
+  pdfSettings?: PdfSettings
 ): PdfContent[] => {
   console.log('Préparation du contenu de la page de garde...');
   
@@ -27,7 +32,7 @@ export const prepareCoverContent = (
   
   // Construction du contenu
   const content: PdfContent[] = [
-    // Logo et assurance sur la même ligne
+    // Logo et assurance sur la même ligne avec styles personnalisables
     {
       columns: [
         {
@@ -44,211 +49,308 @@ export const prepareCoverContent = (
         {
           width: '40%',
           stack: [
-            { text: 'Assurance MAAF PRO', fontSize: 10, color: '#002855' },
-            { text: 'Responsabilité civile', fontSize: 10, color: '#002855' },
-            { text: 'Responsabilité civile décennale', fontSize: 10, color: '#002855' }
+            applyElementStyles(
+              { text: 'Assurance MAAF PRO' },
+              'insurance_info',
+              pdfSettings,
+              { fontSize: 10, color: DARK_BLUE }
+            ),
+            applyElementStyles(
+              { text: 'Responsabilité civile' },
+              'insurance_info',
+              pdfSettings,
+              { fontSize: 10, color: DARK_BLUE }
+            ),
+            applyElementStyles(
+              { text: 'Responsabilité civile décennale' },
+              'insurance_info',
+              pdfSettings,
+              { fontSize: 10, color: DARK_BLUE }
+            )
           ],
           alignment: 'right'
         }
       ]
     },
     
-    // Slogan
-    {
-      text: slogan,
-      fontSize: 12,
-      bold: true,
-      color: '#002855',
-      margin: [0, 10, 0, 20]
-    },
+    // Slogan avec styles personnalisables
+    applyElementStyles(
+      { text: slogan },
+      'company_slogan',
+      pdfSettings,
+      {
+        fontSize: 12,
+        isBold: true,
+        color: DARK_BLUE,
+        spacing: { top: 10, right: 0, bottom: 20, left: 0 }
+      }
+    ),
     
-    // Coordonnées société - Nom et adresse combinés
-    {
-      text: `Société  ${company?.name || ''} - ${company?.address || ''} - ${company?.postal_code || ''} ${company?.city || ''}`,
-      fontSize: 11,
-      bold: true,
-      color: '#002855',
-      margin: [0, 0, 0, 3]
-    },
+    // Coordonnées société - Nom et adresse combinés avec styles personnalisables
+    applyElementStyles(
+      { text: `Société  ${company?.name || ''} - ${company?.address || ''} - ${company?.postal_code || ''} ${company?.city || ''}` },
+      'company_address',
+      pdfSettings,
+      {
+        fontSize: 11,
+        isBold: true,
+        color: DARK_BLUE,
+        spacing: { top: 0, right: 0, bottom: 3, left: 0 }
+      }
+    ),
     
-    // Tél et Mail
+    // Tél et Mail avec styles personnalisables
     {
       columns: [
         {
           width: col1Width,
-          text: 'Tél:',
-          fontSize: 10,
-          color: '#002855'
+          text: applyElementStyles(
+            { text: 'Tél:' },
+            'contact_labels',
+            pdfSettings,
+            { fontSize: 10, color: DARK_BLUE }
+          )
         },
         {
           width: col2Width,
-          text: company?.tel1 || '',
-          fontSize: 10,
-          color: '#002855'
+          text: applyElementStyles(
+            { text: company?.tel1 || '' },
+            'contact_values',
+            pdfSettings,
+            { fontSize: 10, color: DARK_BLUE }
+          )
         }
       ],
       columnGap: 1,
       margin: [0, 3, 0, 0]
-    },
-    
-    company?.tel2 ? {
-      columns: [
-        {
-          width: col1Width,
-          text: '',
-          fontSize: 10
-        },
-        {
-          width: col2Width,
-          text: company.tel2,
-          fontSize: 10,
-          color: '#002855'
-        }
-      ],
-      columnGap: 1,
-      margin: [0, 0, 0, 0]
-    } : null,
-    
-    {
-      columns: [
-        {
-          width: col1Width,
-          text: 'Mail:',
-          fontSize: 10,
-          color: '#002855'
-        },
-        {
-          width: col2Width,
-          text: company?.email || '',
-          fontSize: 10,
-          color: '#002855'
-        }
-      ],
-      columnGap: 1,
-      margin: [0, 5, 0, 0]
-    },
-    
-    // Espace avant devis
-    { text: '', margin: [0, 30, 0, 0] },
-    
-    // Numéro et date du devis
-    {
-      columns: [
-        {
-          width: col1Width,
-          text: '',
-          fontSize: 10
-        },
-        {
-          width: col2Width,
-          text: [
-            { text: `Devis n°: ${devisNumber || ''} Du ${formatDate(devisDate)} `, fontSize: 10, color: '#002855' },
-            { text: ` (Validité de l'offre : 3 mois.)`, fontSize: 9, italics: true, color: '#002855' }
-          ]
-        }
-      ],
-      columnGap: 1,
-      margin: [0, 0, 0, 0]
-    },
-    
-    // Espace avant Client
-    { text: '', margin: [0, 35, 0, 0] },
-    
-    // Client - Titre
-    {
-      columns: [
-        { width: col1Width, text: '', fontSize: 10 },
-        { 
-          width: col2Width, 
-          text: 'Client / Maître d\'ouvrage',
-          fontSize: 10,
-          color: '#002855'
-        }
-      ],
-      columnGap: 1
-    },
-    
-    // Client - Contenu
-    {
-      columns: [
-        { width: col1Width, text: '', fontSize: 10 },
-        { 
-          width: col2Width, 
-          text: client || '',
-          fontSize: 10,
-          color: '#002855',
-          lineHeight: 1.3
-        }
-      ],
-      columnGap: 15,
-      margin: [0, 5, 0, 0]
-    },
-    
-    // Espaces après les données client
-    { text: '', margin: [0, 5, 0, 0] },
-    { text: '', margin: [0, 5, 0, 0] },
-    { text: '', margin: [0, 5, 0, 0] },
-    { text: '', margin: [0, 5, 0, 0] },
-    { text: '', margin: [0, 5, 0, 0] },
-    
-    // Chantier - Titre
-    {
-      text: 'Chantier / Travaux',
-      fontSize: 10,
-      color: '#002855',
-      margin: [0, 0, 0, 5]
     }
   ];
   
-  // Ajouter les informations conditionnelles
-  if (occupant) {
+  // Deuxième numéro de téléphone s'il existe
+  if (company?.tel2) {
     content.push({
-      text: occupant,
-      fontSize: 10,
-      color: '#002855',
-      margin: [0, 5, 0, 0]
+      columns: [
+        {
+          width: col1Width,
+          text: { text: '', fontSize: 10 }
+        },
+        {
+          width: col2Width,
+          text: applyElementStyles(
+            { text: company.tel2 },
+            'contact_values',
+            pdfSettings,
+            { fontSize: 10, color: DARK_BLUE }
+          )
+        }
+      ],
+      columnGap: 1,
+      margin: [0, 0, 0, 0]
     });
+  }
+  
+  // Email avec styles personnalisables
+  content.push({
+    columns: [
+      {
+        width: col1Width,
+        text: applyElementStyles(
+          { text: 'Mail:' },
+          'contact_labels',
+          pdfSettings,
+          { fontSize: 10, color: DARK_BLUE }
+        )
+      },
+      {
+        width: col2Width,
+        text: applyElementStyles(
+          { text: company?.email || '' },
+          'contact_values',
+          pdfSettings,
+          { fontSize: 10, color: DARK_BLUE }
+        )
+      }
+    ],
+    columnGap: 1,
+    margin: [0, 5, 0, 0]
+  });
+  
+  // Espace avant devis
+  content.push({ text: '', margin: [0, 30, 0, 0] });
+  
+  // Numéro et date du devis avec styles personnalisables
+  content.push({
+    columns: [
+      {
+        width: col1Width,
+        text: { text: '', fontSize: 10 }
+      },
+      {
+        width: col2Width,
+        text: [
+          applyElementStyles(
+            { text: `Devis n°: ${devisNumber || ''} Du ${formatDate(devisDate)} ` },
+            'quote_number',
+            pdfSettings,
+            { fontSize: 10, color: DARK_BLUE }
+          ),
+          applyElementStyles(
+            { text: ` (Validité de l'offre : 3 mois.)` },
+            'quote_validity',
+            pdfSettings,
+            { fontSize: 9, isItalic: true, color: DARK_BLUE }
+          )
+        ]
+      }
+    ],
+    columnGap: 1,
+    margin: [0, 0, 0, 0]
+  });
+  
+  // Espace avant Client
+  content.push({ text: '', margin: [0, 35, 0, 0] });
+  
+  // Client - Titre avec styles personnalisables
+  content.push({
+    columns: [
+      { width: col1Width, text: '', fontSize: 10 },
+      { 
+        width: col2Width, 
+        text: applyElementStyles(
+          { text: 'Client / Maître d\'ouvrage' },
+          'client_title',
+          pdfSettings,
+          { fontSize: 10, color: DARK_BLUE }
+        )
+      }
+    ],
+    columnGap: 1
+  });
+  
+  // Client - Contenu avec styles personnalisables
+  content.push({
+    columns: [
+      { width: col1Width, text: '', fontSize: 10 },
+      { 
+        width: col2Width, 
+        text: applyElementStyles(
+          { text: client || '', lineHeight: 1.3 },
+          'client_content',
+          pdfSettings,
+          { fontSize: 10, color: DARK_BLUE }
+        )
+      }
+    ],
+    columnGap: 15,
+    margin: [0, 5, 0, 0]
+  });
+  
+  // Espaces après les données client
+  content.push({ text: '', margin: [0, 5, 0, 0] });
+  content.push({ text: '', margin: [0, 5, 0, 0] });
+  content.push({ text: '', margin: [0, 5, 0, 0] });
+  content.push({ text: '', margin: [0, 5, 0, 0] });
+  content.push({ text: '', margin: [0, 5, 0, 0] });
+  
+  // Chantier - Titre avec styles personnalisables
+  content.push(
+    applyElementStyles(
+      { text: 'Chantier / Travaux' },
+      'project_title',
+      pdfSettings,
+      {
+        fontSize: 10,
+        color: DARK_BLUE,
+        spacing: { top: 0, right: 0, bottom: 5, left: 0 }
+      }
+    )
+  );
+  
+  // Ajouter les informations conditionnelles avec styles personnalisables
+  if (occupant) {
+    content.push(
+      applyElementStyles(
+        { text: occupant },
+        'project_values',
+        pdfSettings,
+        {
+          fontSize: 10,
+          color: DARK_BLUE,
+          spacing: { top: 5, right: 0, bottom: 0, left: 0 }
+        }
+      )
+    );
   }
   
   if (projectAddress) {
-    content.push({
-      text: 'Adresse du chantier / lieu d\'intervention:',
-      fontSize: 10,
-      color: '#002855',
-      margin: [0, 5, 0, 0]
-    });
+    content.push(
+      applyElementStyles(
+        { text: 'Adresse du chantier / lieu d\'intervention:' },
+        'project_labels',
+        pdfSettings,
+        {
+          fontSize: 10,
+          color: DARK_BLUE,
+          spacing: { top: 5, right: 0, bottom: 0, left: 0 }
+        }
+      )
+    );
     
-    content.push({
-      text: projectAddress,
-      fontSize: 10,
-      color: '#002855',
-      margin: [10, 3, 0, 0]
-    });
+    content.push(
+      applyElementStyles(
+        { text: projectAddress },
+        'project_values',
+        pdfSettings,
+        {
+          fontSize: 10,
+          color: DARK_BLUE,
+          spacing: { top: 3, right: 0, bottom: 0, left: 10 }
+        }
+      )
+    );
   }
   
   if (projectDescription) {
-    content.push({
-      text: 'Descriptif:',
-      fontSize: 10,
-      color: '#002855',
-      margin: [0, 8, 0, 0]
-    });
+    content.push(
+      applyElementStyles(
+        { text: 'Descriptif:' },
+        'project_labels',
+        pdfSettings,
+        {
+          fontSize: 10,
+          color: DARK_BLUE,
+          spacing: { top: 8, right: 0, bottom: 0, left: 0 }
+        }
+      )
+    );
     
-    content.push({
-      text: projectDescription,
-      fontSize: 10,
-      color: '#002855',
-      margin: [10, 3, 0, 0]
-    });
+    content.push(
+      applyElementStyles(
+        { text: projectDescription },
+        'project_values',
+        pdfSettings,
+        {
+          fontSize: 10,
+          color: DARK_BLUE,
+          spacing: { top: 3, right: 0, bottom: 0, left: 10 }
+        }
+      )
+    );
   }
   
   if (additionalInfo) {
-    content.push({
-      text: additionalInfo,
-      fontSize: 10,
-      color: '#002855',
-      margin: [10, 15, 0, 0]
-    });
+    content.push(
+      applyElementStyles(
+        { text: additionalInfo },
+        'project_values',
+        pdfSettings,
+        {
+          fontSize: 10,
+          color: DARK_BLUE,
+          spacing: { top: 15, right: 0, bottom: 0, left: 10 }
+        }
+      )
+    );
   }
   
   return content.filter(Boolean);
