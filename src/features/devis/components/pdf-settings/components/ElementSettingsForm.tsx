@@ -39,6 +39,11 @@ export const ElementSettingsForm: React.FC<ElementSettingsFormProps> = ({
     onSave(currentSettings);
   };
 
+  // Cette fonction est maintenant utilisée uniquement pour changer la couleur de l'élément sélectionné
+  const handleColorChange = (color: string) => {
+    setCurrentSettings(prev => ({ ...prev, color }));
+  };
+
   return (
     <div className="space-y-6">
       <h3 className="text-lg font-medium">
@@ -63,8 +68,8 @@ export const ElementSettingsForm: React.FC<ElementSettingsFormProps> = ({
       <ColorPalette
         selectedColor={currentSettings.color}
         defaultColors={defaultColors}
-        onColorChange={(color) => setCurrentSettings(prev => ({ ...prev, color }))}
-        onDefaultColorClick={onDefaultColorClick}
+        onColorChange={handleColorChange} // Appliquer la couleur à l'élément sélectionné
+        onDefaultColorClick={onDefaultColorClick} // Mettre à jour une couleur de la palette
       />
 
       {/* Espacement */}
