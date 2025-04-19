@@ -29,6 +29,14 @@ export const prepareCoverContent = (
   // Définition du slogan
   const slogan = company?.slogan || 'Entreprise Générale du Bâtiment';
   
+  // Définir les paramètres du logo
+  const logoUrl = pdfSettings?.logoSettings?.useDefaultLogo 
+    ? company?.logo_url || '/lrs_logo.jpg'
+    : pdfSettings?.logoSettings?.logoUrl || company?.logo_url || '/lrs_logo.jpg';
+  
+  const logoWidth = pdfSettings?.logoSettings?.width || 172;
+  const logoHeight = pdfSettings?.logoSettings?.height || 72;
+  
   // Construction du contenu
   const content: PdfContent[] = [
     // Logo et assurance sur la même ligne avec styles personnalisables
@@ -37,10 +45,10 @@ export const prepareCoverContent = (
         {
           width: '60%',
           stack: [
-            company?.logo_url ? {
-              image: company.logo_url,
-              width: 172,
-              height: 72,
+            logoUrl ? {
+              image: logoUrl,
+              width: logoWidth,
+              height: logoHeight,
               margin: [0, 0, 0, 0]
             } : { text: '', margin: [0, 40, 0, 0] }
           ]

@@ -32,7 +32,10 @@ export const generateRecapPDF = async (
       metadata,
       content: [{ margin: margins, stack: recapContent }],
       fontFamily: safeSettings?.fontFamily,
-      title: `Récapitulatif - ${metadata?.nomProjet || 'Projet'}`
+      title: `Récapitulatif - ${metadata?.nomProjet || 'Projet'}`,
+      logoSettings: safeSettings?.logoSettings,
+      useHeader: true,
+      useFooter: true
     });
     
   } catch (error) {

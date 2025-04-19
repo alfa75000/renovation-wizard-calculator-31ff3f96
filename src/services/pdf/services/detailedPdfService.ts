@@ -55,6 +55,7 @@ export const generateDetailsPDF = async (
         { pageBreak: 'before', margin: margins.recap, stack: recapContent }
       ],
       fontFamily: safeSettings?.fontFamily,
+      title: `Devis - ${metadata?.nomProjet || 'Projet'}`,
       logoSettings: safeSettings?.logoSettings,
       useHeader: true,
       useFooter: true

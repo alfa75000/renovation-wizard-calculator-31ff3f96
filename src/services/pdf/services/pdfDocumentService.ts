@@ -63,11 +63,12 @@ export const generatePdfDocument = (options: GeneratePdfDocumentOptions) => {
   // Ajouter le pied de page si demandé
   if (useFooter) {
     docDefinition.footer = function(currentPage: number, pageCount: number) {
-      // Pour les pages de détails (à partir de la page 2), on n'affiche pas le pied de page
-      if (currentPage > 1 && currentPage < pageCount) return [];
-      
       const company = metadata?.company;
       if (!company) return [];
+      
+      // Afficher le pied de page sur la première page et la dernière page
+      // Pour les pages intermédiaires (à partir de la page 2 et jusqu'à l'avant-dernière), on n'affiche pas le pied de page
+      if (currentPage > 1 && currentPage < pageCount) return [];
       
       const footerContent = [
         {
