@@ -36,11 +36,11 @@ export const PdfSettingsSchema = z.object({
   }),
   margins: z.object({
     cover: z.tuple([z.number(), z.number(), z.number(), z.number()]).default([40, 40, 40, 40]), // droite, haut, gauche, bas
-    details: z.tuple([z.number(), z.number(), z.number(), z.number()]).default([5, 5, 20, 30]),
+    details: z.tuple([z.number(), z.number(), z.number(), z.number()]).default([30, 70, 30, 40]),
     recap: z.tuple([z.number(), z.number(), z.number(), z.number()]).default([40, 40, 40, 40])
   }).default({
     cover: [40, 40, 40, 40],
-    details: [5, 5, 30, 40],
+    details: [30, 70, 30, 40],
     recap: [40, 40, 40, 40]
   }),
   logoSettings: z.object({
@@ -77,7 +77,7 @@ export const PdfSettingsSchema = z.object({
   },
   margins: {
     cover: [40, 40, 40, 40],
-    details: [30, 70, 30, 40],
+    details: [30, 10, 30, 40],
     recap: [40, 40, 40, 40]
   },
   logoSettings: {
