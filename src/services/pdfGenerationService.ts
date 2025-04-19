@@ -12,6 +12,19 @@ import { PdfSettings } from './pdf/config/pdfSettingsTypes';
 // The correct way to set up vfs
 pdfMake.vfs = pdfFonts.pdfMake ? pdfFonts.pdfMake.vfs : pdfFonts.vfs;
 
+// Liste des polices disponibles par défaut dans pdfMake
+const AVAILABLE_FONTS = ['Roboto', 'Courier', 'Helvetica', 'Times'];
+
+/**
+ * Assure que la police demandée est disponible, sinon retourne 'Roboto'
+ */
+const ensureSupportedFont = (fontFamily?: string): string => {
+  if (!fontFamily || !AVAILABLE_FONTS.includes(fontFamily)) {
+    return 'Roboto'; // Police par défaut si celle demandée n'est pas disponible
+  }
+  return fontFamily;
+};
+
 /**
  * Génère un PDF détaillé pour le devis
  * @param rooms Liste des pièces
@@ -30,6 +43,12 @@ export const generateDetailsPDF = async (
   try {
     console.log('Génération du PDF avec les paramètres:', pdfSettings);
     
+    // Assurons-nous d'utiliser une police supportée
+    const safeSettings = pdfSettings ? {
+      ...pdfSettings,
+      fontFamily: ensureSupportedFont(pdfSettings.fontFamily)
+    } : undefined;
+    
     // Préparer les champs pour la page de garde
     const fields = [
       { id: 'devisNumber', content: metadata?.devisNumber || 'D-' + new Date().toISOString().slice(0, 10) },
@@ -42,15 +61,15 @@ export const generateDetailsPDF = async (
     ];
     
     // Générer les contenus des différentes parties du PDF
-    const coverContent = prepareCoverContent(fields, metadata?.company || null, metadata, pdfSettings);
-    const detailsContent = prepareDetailsContent(rooms, travaux, getTravauxForPiece, metadata, pdfSettings);
-    const recapContent = prepareRecapContent(rooms, travaux, getTravauxForPiece, metadata, pdfSettings);
+    const coverContent = prepareCoverContent(fields, metadata?.company || null, metadata, safeSettings);
+    const detailsContent = prepareDetailsContent(rooms, travaux, getTravauxForPiece, metadata, safeSettings);
+    const recapContent = prepareRecapContent(rooms, travaux, getTravauxForPiece, metadata, safeSettings);
     
     // Définir les marges pour chaque partie en utilisant les paramètres personnalisés
     const margins = {
-      cover: pdfSettings?.margins?.cover || PDF_MARGINS.COVER,
-      details: pdfSettings?.margins?.details || PDF_MARGINS.DETAILS,
-      recap: pdfSettings?.margins?.recap || PDF_MARGINS.RECAP
+      cover: safeSettings?.margins?.cover || PDF_MARGINS.COVER,
+      details: safeSettings?.margins?.details || PDF_MARGINS.DETAILS,
+      recap: safeSettings?.margins?.recap || PDF_MARGINS.RECAP
     };
     
     // Créer le document PDF
@@ -63,9 +82,9 @@ export const generateDetailsPDF = async (
         keywords: 'devis, travaux, rénovation'
       },
       
-      // Police par défaut
+      // Police par défaut (assurée d'être supportée)
       defaultStyle: {
-        font: pdfSettings?.fontFamily || 'Roboto'
+        font: ensureSupportedFont(safeSettings?.fontFamily)
       },
       
       // Contenu organisé en pages avec différentes marges
@@ -115,11 +134,17 @@ export const generateRecapPDF = async (
   try {
     console.log('Génération du PDF récapitulatif avec les paramètres:', pdfSettings);
     
+    // Assurons-nous d'utiliser une police supportée
+    const safeSettings = pdfSettings ? {
+      ...pdfSettings,
+      fontFamily: ensureSupportedFont(pdfSettings.fontFamily)
+    } : undefined;
+    
     // Générer le contenu du récapitulatif
-    const recapContent = prepareRecapContent(rooms, travaux, getTravauxForPiece, metadata, pdfSettings);
+    const recapContent = prepareRecapContent(rooms, travaux, getTravauxForPiece, metadata, safeSettings);
     
     // Définir les marges
-    const margins = pdfSettings?.margins?.recap || PDF_MARGINS.RECAP;
+    const margins = safeSettings?.margins?.recap || PDF_MARGINS.RECAP;
     
     // Créer le document PDF
     const docDefinition = {
@@ -131,7 +156,7 @@ export const generateRecapPDF = async (
       },
       
       defaultStyle: {
-        font: pdfSettings?.fontFamily || 'Roboto'
+        font: ensureSupportedFont(safeSettings?.fontFamily)
       },
       
       content: [
@@ -168,6 +193,12 @@ export const generateCompletePDF = async (
   try {
     console.log('Génération du PDF complet avec les paramètres:', pdfSettings);
     
+    // Assurons-nous d'utiliser une police supportée
+    const safeSettings = pdfSettings ? {
+      ...pdfSettings,
+      fontFamily: ensureSupportedFont(pdfSettings.fontFamily)
+    } : undefined;
+    
     // Préparer les champs pour la page de garde en utilisant les champs activés
     const fields = enabledFields
       .filter(field => field.id !== 'companyLogo' && field.id !== 'summary')
@@ -177,15 +208,15 @@ export const generateCompletePDF = async (
       }));
     
     // Générer les contenus des différentes parties du PDF
-    const coverContent = prepareCoverContent(fields, companyData, metadata, pdfSettings);
-    const detailsContent = prepareDetailsContent(rooms, travaux, getTravauxForPiece, metadata, pdfSettings);
-    const recapContent = prepareRecapContent(rooms, travaux, getTravauxForPiece, metadata, pdfSettings);
+    const coverContent = prepareCoverContent(fields, companyData, metadata, safeSettings);
+    const detailsContent = prepareDetailsContent(rooms, travaux, getTravauxForPiece, metadata, safeSettings);
+    const recapContent = prepareRecapContent(rooms, travaux, getTravauxForPiece, metadata, safeSettings);
     
     // Définir les marges pour chaque partie en utilisant les paramètres personnalisés
     const margins = {
-      cover: pdfSettings?.margins?.cover || PDF_MARGINS.COVER,
-      details: pdfSettings?.margins?.details || PDF_MARGINS.DETAILS,
-      recap: pdfSettings?.margins?.recap || PDF_MARGINS.RECAP
+      cover: safeSettings?.margins?.cover || PDF_MARGINS.COVER,
+      details: safeSettings?.margins?.details || PDF_MARGINS.DETAILS,
+      recap: safeSettings?.margins?.recap || PDF_MARGINS.RECAP
     };
     
     // Déterminer quelles parties inclure en fonction des champs activés
@@ -223,7 +254,7 @@ export const generateCompletePDF = async (
       },
       
       defaultStyle: {
-        font: pdfSettings?.fontFamily || 'Roboto'
+        font: ensureSupportedFont(safeSettings?.fontFamily)
       },
       
       content: content

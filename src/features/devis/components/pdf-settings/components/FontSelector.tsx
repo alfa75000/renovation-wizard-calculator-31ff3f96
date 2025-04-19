@@ -9,16 +9,12 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 
-// Liste des polices disponibles
+// Liste des polices disponibles dans pdfMake par défaut
 const AVAILABLE_FONTS = [
   { value: 'Roboto', label: 'Roboto' },
-  { value: 'Questrial', label: 'Questrial' },
-  { value: 'Work Sans', label: 'Work Sans' },
-  { value: 'DM Sans', label: 'DM Sans' },
-  { value: 'Inter', label: 'Inter' },
-  { value: 'Poppins', label: 'Poppins' },
-  { value: 'Montserrat', label: 'Montserrat' },
-  { value: 'Plus Jakarta Sans', label: 'Plus Jakarta Sans' }
+  { value: 'Courier', label: 'Courier' },
+  { value: 'Helvetica', label: 'Helvetica' },
+  { value: 'Times', label: 'Times' }
 ];
 
 interface FontSelectorProps {
@@ -30,6 +26,7 @@ interface FontSelectorProps {
 
 /**
  * Composant qui permet de sélectionner une police parmi une liste prédéfinie
+ * compatible avec pdfMake
  */
 export const FontSelector: React.FC<FontSelectorProps> = ({ 
   value, 
@@ -37,11 +34,19 @@ export const FontSelector: React.FC<FontSelectorProps> = ({
   label = 'Police',
   className = '' 
 }) => {
+  // Si la valeur actuelle n'est pas dans la liste des polices disponibles,
+  // utiliser Roboto par défaut
+  React.useEffect(() => {
+    if (value && !AVAILABLE_FONTS.some(font => font.value === value)) {
+      onChange('Roboto');
+    }
+  }, [value, onChange]);
+
   return (
     <div className={className}>
       <Label>{label}</Label>
       <Select 
-        value={value}
+        value={AVAILABLE_FONTS.some(font => font.value === value) ? value : 'Roboto'}
         onValueChange={onChange}
       >
         <SelectTrigger>
