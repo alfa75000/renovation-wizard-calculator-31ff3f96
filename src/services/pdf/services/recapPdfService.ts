@@ -28,6 +28,8 @@ export const generateRecapPDF = async (
     // Définir les marges
     const margins = safeSettings?.margins?.recap || PDF_MARGINS.RECAP;
     
+    console.log('Création du PDF récapitulatif avec logoSettings:', safeSettings?.logoSettings);
+    
     return generatePdfDocument({
       metadata,
       content: [{ margin: margins, stack: recapContent }],

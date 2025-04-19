@@ -66,9 +66,8 @@ export const generatePdfDocument = (options: GeneratePdfDocumentOptions) => {
       const company = metadata?.company;
       if (!company) return [];
       
-      // Afficher le pied de page sur la première page et la dernière page
-      // Pour les pages intermédiaires (à partir de la page 2 et jusqu'à l'avant-dernière), on n'affiche pas le pied de page
-      if (currentPage > 1 && currentPage < pageCount) return [];
+      // Afficher le pied de page sur toutes les pages
+      // Nous ne filtrons plus les pages intermédiaires pour résoudre le problème de pied de page manquant
       
       const footerContent = [
         {
@@ -87,9 +86,15 @@ export const generatePdfDocument = (options: GeneratePdfDocumentOptions) => {
     };
   }
   
-  // Générer et ouvrir le PDF
-  pdfMake.createPdf(docDefinition).open();
-  
-  console.log('PDF généré avec succès');
-  return true;
+  try {
+    // Générer et ouvrir le PDF
+    const pdfDoc = pdfMake.createPdf(docDefinition);
+    pdfDoc.open();
+    
+    console.log('PDF généré avec succès');
+    return true;
+  } catch (error) {
+    console.error('Erreur lors de la génération du PDF:', error);
+    throw error;
+  }
 };

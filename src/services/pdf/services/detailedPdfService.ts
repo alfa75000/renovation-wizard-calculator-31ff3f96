@@ -16,7 +16,7 @@ export const generateDetailsPDF = async (
   pdfSettings?: PdfSettings
 ) => {
   try {
-    console.log('Génération du PDF avec les paramètres:', pdfSettings);
+    console.log('Génération du PDF complet avec les paramètres:', pdfSettings);
     
     // Assurons-nous d'utiliser une police supportée
     const safeSettings = pdfSettings ? {
@@ -47,6 +47,8 @@ export const generateDetailsPDF = async (
       recap: safeSettings?.margins?.recap || PDF_MARGINS.RECAP
     };
 
+    console.log('Création du document PDF avec logoSettings:', safeSettings?.logoSettings);
+
     return generatePdfDocument({
       metadata,
       content: [
@@ -62,7 +64,7 @@ export const generateDetailsPDF = async (
     });
     
   } catch (error) {
-    console.error('Erreur lors de la génération du PDF:', error);
+    console.error('Erreur lors de la génération du PDF détaillé:', error);
     throw error;
   }
 };
