@@ -1,4 +1,3 @@
-
 import { PDF_TEXTS, DARK_BLUE } from '../constants/pdfConstants';
 import { PdfSettings } from '../config/pdfSettingsTypes';
 import { applyElementStyles, formatPrice, wrapWithBorders } from '../utils/pdfUtils';
@@ -191,12 +190,9 @@ export const generateTTCTable = (totalTTC: number, pdfSettings?: PdfSettings) =>
 export const generateCGVContent = (pdfSettings?: PdfSettings) => {
   const cgvContent = [];
   
-  // Titre des CGV avec styles personnalisables et saut de page
+  // Titre des CGV avec styles personnalisables
   const titleElement = applyElementStyles(
-    { 
-      text: PDF_TEXTS.CGV.TITLE,
-      pageBreak: 'before' // Ajout d'un saut de page avant les CGV
-    },
+    { text: PDF_TEXTS.CGV.TITLE },
     'cgv_title',
     pdfSettings,
     {

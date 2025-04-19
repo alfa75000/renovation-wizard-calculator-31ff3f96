@@ -1,5 +1,5 @@
 
-import { Room, Travail, CompanyData, ProjectMetadata, PrintableField } from '@/types';
+import { Room, Travail, ProjectMetadata, PrintableField, CompanyData } from '@/types';
 import { PdfSettings } from '../config/pdfSettingsTypes';
 import { ensureSupportedFont } from '../utils/fontUtils';
 import { generatePdfDocument } from './pdfDocumentService';
@@ -10,7 +10,7 @@ import { PDF_MARGINS } from '../constants/pdfConstants';
 
 export const generateCompletePDF = async (
   enabledFields: PrintableField[],
-  company: CompanyData | null,
+  companyData: CompanyData | null,
   rooms: Room[],
   travaux: Travail[],
   getTravauxForPiece: (pieceId: string) => Travail[],
@@ -26,81 +26,41 @@ export const generateCompletePDF = async (
       fontFamily: ensureSupportedFont(pdfSettings.fontFamily)
     } : undefined;
     
-    // Vérifier si nous avons un logo stocké localement
-    if (safeSettings && (!safeSettings.logoSettings || !safeSettings.logoSettings.logoUrl)) {
-      const storedLogo = localStorage.getItem('lrs_logo_data_url');
-      if (storedLogo) {
-        safeSettings.logoSettings = safeSettings.logoSettings || {};
-        safeSettings.logoSettings.logoUrl = storedLogo;
-        console.log('Logo trouvé dans le localStorage et ajouté aux paramètres PDF');
-      }
-    }
-    
-    // Transformer les champs en structure attendue par le générateur
-    const fields = enabledFields.map(field => ({
-      id: field.id,
-      content: field.content
-    }));
-    
-    // Collecter toutes les parties du document
-    const documentParts = [];
-    
-    // Vérifier si la page de garde est activée
-    const includeCover = enabledFields.some(field => 
-      ['companyLogo', 'companyName', 'client', 'devisNumber', 'devisDate', 
-      'validityOffer', 'projectDescription', 'projectAddress', 'occupant', 
-      'additionalInfo'].includes(field.id) && field.enabled
-    );
-    
-    // Vérifier si le récapitulatif est activé
-    const includeRecap = enabledFields.some(field => field.id === 'summary' && field.enabled);
-    
-    // Définir les marges pour chaque partie
+    // Préparer les champs pour la page de garde
+    const fields = enabledFields
+      .filter(field => field.id !== 'companyLogo' && field.id !== 'summary')
+      .map(field => ({
+        id: field.id,
+        content: field.content || ''
+      }));
+
+    // Générer les contenus
+    const coverContent = prepareCoverContent(fields, companyData, metadata, safeSettings);
+    const detailsContent = prepareDetailsContent(rooms, travaux, getTravauxForPiece, metadata, safeSettings);
+    const recapContent = prepareRecapContent(rooms, travaux, getTravauxForPiece, metadata, safeSettings);
+
+    // Définir les marges
     const margins = {
       cover: safeSettings?.margins?.cover || PDF_MARGINS.COVER,
       details: safeSettings?.margins?.details || PDF_MARGINS.DETAILS,
       recap: safeSettings?.margins?.recap || PDF_MARGINS.RECAP
     };
-    
-    // Ajouter la page de garde si activée
-    if (includeCover) {
-      const coverContent = prepareCoverContent(fields, company, metadata, safeSettings);
-      documentParts.push({
-        margin: margins.cover,
-        stack: coverContent
-      });
+
+    // Construire le contenu du document
+    const content: any[] = [
+      { margin: margins.cover, stack: coverContent },
+      { pageBreak: 'before', margin: margins.details, stack: detailsContent }
+    ];
+
+    // Ajouter le récapitulatif si activé
+    if (enabledFields.find(field => field.id === 'summary')?.enabled) {
+      content.push({ pageBreak: 'before', margin: margins.recap, stack: recapContent });
     }
-    
-    // Ajouter la page de détails des travaux
-    const detailsContent = prepareDetailsContent(rooms, travaux, getTravauxForPiece, metadata, safeSettings);
-    documentParts.push({
-      pageBreak: documentParts.length > 0 ? 'before' : undefined,
-      margin: margins.details,
-      stack: detailsContent
-    });
-    
-    // Ajouter la page de récapitulatif si activée
-    if (includeRecap) {
-      const recapContent = prepareRecapContent(rooms, travaux, getTravauxForPiece, metadata, safeSettings);
-      documentParts.push({
-        pageBreak: 'before',
-        margin: margins.recap,
-        stack: recapContent
-      });
-    }
-    
-    console.log('Création du document PDF complet avec logoSettings:', 
-      safeSettings?.logoSettings ? (safeSettings.logoSettings.logoUrl ? 'Logo présent' : 'Pas de logo URL') : 'Pas de logoSettings');
-    
-    // Générer le document PDF
+
     return generatePdfDocument({
       metadata,
-      content: documentParts,
-      fontFamily: safeSettings?.fontFamily,
-      title: `Devis - ${metadata?.nomProjet || 'Projet'}`,
-      logoSettings: safeSettings?.logoSettings,
-      useHeader: true,
-      useFooter: true
+      content,
+      fontFamily: safeSettings?.fontFamily
     });
     
   } catch (error) {

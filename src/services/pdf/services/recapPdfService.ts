@@ -28,16 +28,11 @@ export const generateRecapPDF = async (
     // Définir les marges
     const margins = safeSettings?.margins?.recap || PDF_MARGINS.RECAP;
     
-    console.log('Création du PDF récapitulatif avec logoSettings:', safeSettings?.logoSettings);
-    
     return generatePdfDocument({
       metadata,
       content: [{ margin: margins, stack: recapContent }],
       fontFamily: safeSettings?.fontFamily,
-      title: `Récapitulatif - ${metadata?.nomProjet || 'Projet'}`,
-      logoSettings: safeSettings?.logoSettings,
-      useHeader: true,
-      useFooter: true
+      title: `Récapitulatif - ${metadata?.nomProjet || 'Projet'}`
     });
     
   } catch (error) {

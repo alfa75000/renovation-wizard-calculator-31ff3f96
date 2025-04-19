@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { ElementSelector } from './components/ElementSelector';
 import { ElementSettingsForm } from './components/ElementSettingsForm';
 import { usePdfSettings } from '@/services/pdf/hooks/usePdfSettings';
@@ -19,7 +19,7 @@ export const FontSettings: React.FC<FontSettingsProps> = ({
 }) => {
   const [selectedElement, setSelectedElement] = React.useState('');
   const [elementSettings, setElementSettings] = React.useState<ElementSettings>(defaultElementSettings);
-  const [paletteColors, setPaletteColors] = useState([
+  const [defaultColors] = React.useState([
     '#1a1f2c',
     '#9b87f5',
     '#7E69AB',
@@ -91,18 +91,7 @@ export const FontSettings: React.FC<FontSettingsProps> = ({
     return defaultElementSettings;
   };
 
-  // Cette fonction est maintenant utilisée pour stocker une couleur dans la palette
-  // sans l'appliquer à l'élément sélectionné
-  const handleUpdatePaletteColor = (color: string) => {
-    // Note: Nous conservons simplement la couleur dans la palette mais ne l'appliquons pas à l'élément
-    setPaletteColors(prevColors => {
-      // Nous ne faisons rien ici car cette logique est maintenant gérée dans ColorPalette
-      return prevColors;
-    });
-  };
-
-  // Cette fonction est appelée quand l'utilisateur clique sur "Appliquer"
-  const handleColorChange = (color: string) => {
+  const handleDefaultColorClick = (color: string) => {
     if (selectedElement) {
       setElementSettings(prev => ({
         ...prev,
@@ -129,8 +118,8 @@ export const FontSettings: React.FC<FontSettingsProps> = ({
               selectedElement={PDF_ELEMENTS.find(e => e.id === selectedElement)?.name || selectedElement}
               settings={elementSettings}
               onSave={handleElementSettingsChange}
-              defaultColors={paletteColors}
-              onDefaultColorClick={handleUpdatePaletteColor}
+              defaultColors={defaultColors}
+              onDefaultColorClick={handleDefaultColorClick}
             />
           </CardContent>
         </Card>

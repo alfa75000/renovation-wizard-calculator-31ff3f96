@@ -1,3 +1,4 @@
+
 import React, { useRef, useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -18,7 +19,7 @@ const DEFAULT_FONT_SIZE = 10;
 const COLUMN1_WIDTH = 25;
 
 // Chemin vers le logo
-const LOGO_PATH = "/images/lrs-logo.jpg";
+const LOGO_PATH = "/lrs_logo.jpg";
 
 interface PrintableField {
   id: string;
@@ -90,11 +91,6 @@ export const DevisCoverPreview: React.FC<DevisCoverPreviewProps> = ({
             const dataUrl = canvas.toDataURL('image/jpeg');
             setLogoDataUrl(dataUrl);
             setLogoExists(true);
-            
-            // Rendre le logo URL disponible pour les paramètres PDF
-            if (window.localStorage) {
-              window.localStorage.setItem('lrs_logo_data_url', dataUrl);
-            }
           }
         };
         

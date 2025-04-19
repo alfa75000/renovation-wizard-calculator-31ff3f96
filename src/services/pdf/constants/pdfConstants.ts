@@ -1,9 +1,6 @@
 
 export const DARK_BLUE = "#002855";
 
-// Default font for PDF documents
-export const DEFAULT_FONT = "Roboto";
-
 export const PDF_TEXTS = {
   // Texte de signature sur le devis - Version mise à jour
   SIGNATURE: {

@@ -16,7 +16,7 @@ export const generateDetailsPDF = async (
   pdfSettings?: PdfSettings
 ) => {
   try {
-    console.log('Génération du PDF complet avec les paramètres:', pdfSettings);
+    console.log('Génération du PDF avec les paramètres:', pdfSettings);
     
     // Assurons-nous d'utiliser une police supportée
     const safeSettings = pdfSettings ? {
@@ -47,24 +47,18 @@ export const generateDetailsPDF = async (
       recap: safeSettings?.margins?.recap || PDF_MARGINS.RECAP
     };
 
-    console.log('Création du document PDF avec logoSettings:', safeSettings?.logoSettings);
-
     return generatePdfDocument({
       metadata,
       content: [
         { margin: margins.cover, stack: coverContent },
         { pageBreak: 'before', margin: margins.details, stack: detailsContent },
-        { pageBreak: 'before', margin: margins.recap, stack: recapContent }
+        { margin: margins.recap, stack: recapContent }
       ],
-      fontFamily: safeSettings?.fontFamily,
-      title: `Devis - ${metadata?.nomProjet || 'Projet'}`,
-      logoSettings: safeSettings?.logoSettings,
-      useHeader: true,
-      useFooter: true
+      fontFamily: safeSettings?.fontFamily
     });
     
   } catch (error) {
-    console.error('Erreur lors de la génération du PDF détaillé:', error);
+    console.error('Erreur lors de la génération du PDF:', error);
     throw error;
   }
 };
