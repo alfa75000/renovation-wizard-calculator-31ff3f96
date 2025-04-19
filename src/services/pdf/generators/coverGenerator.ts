@@ -1,3 +1,4 @@
+
 import { CompanyData, ProjectMetadata } from '@/types';
 import { PdfContent } from '@/services/pdf/types/pdfTypes';
 import { formatDate } from '@/services/pdf/utils/dateUtils';
@@ -12,6 +13,16 @@ export const prepareCoverContent = (
   pdfSettings?: PdfSettings
 ): PdfContent[] => {
   console.log('Préparation du contenu de la page de garde...');
+  console.log('Company reçu par coverGenerator:', company);
+  console.log('Logo URL dans company:', company?.logo_url);
+  console.log('Logo URL dans metadata.company:', metadata?.company?.logo_url);
+  console.log('PDF Settings logo:', pdfSettings?.logoSettings);
+  
+  // Si company est null mais metadata.company ne l'est pas, utilisez metadata.company
+  if (!company && metadata?.company) {
+    console.log('Utilisation de metadata.company car company est null');
+    company = metadata.company;
+  }
   
   // Extraction des données depuis fields
   const devisNumber = fields.find(f => f.id === "devisNumber")?.content;
@@ -30,49 +41,72 @@ export const prepareCoverContent = (
   const slogan = company?.slogan || 'Entreprise Générale du Bâtiment';
   
   // Construction du contenu
-  const content: PdfContent[] = [
-    // Logo et assurance sur la même ligne avec styles personnalisables
-    {
-      columns: [
-        {
-          width: '60%',
-          stack: [
-            company?.logo_url ? {
-              image: company.logo_url,
-              width: 172,
-              height: 72,
-              margin: [0, 0, 0, 0]
-            } : { text: '', margin: [0, 40, 0, 0] }
-          ]
-        },
-        {
-          width: '40%',
-          stack: [
-            applyElementStyles(
-              { text: 'Assurance MAAF PRO' },
-              'insurance_info',
-              pdfSettings,
-              { fontSize: 10, color: DARK_BLUE }
-            ),
-            applyElementStyles(
-              { text: 'Responsabilité civile' },
-              'insurance_info',
-              pdfSettings,
-              { fontSize: 10, color: DARK_BLUE }
-            ),
-            applyElementStyles(
-              { text: 'Responsabilité civile décennale' },
-              'insurance_info',
-              pdfSettings,
-              { fontSize: 10, color: DARK_BLUE }
-            )
-          ],
-          alignment: 'right'
-        }
-      ]
-    },
-    
-    // Slogan avec styles personnalisables
+  const content: PdfContent[] = [];
+  
+  // Logo et assurance sur la même ligne avec styles personnalisables
+  const logoElement = {
+    columns: [
+      {
+        width: '60%',
+        stack: []
+      },
+      {
+        width: '40%',
+        stack: [
+          applyElementStyles(
+            { text: 'Assurance MAAF PRO' },
+            'insurance_info',
+            pdfSettings,
+            { fontSize: 10, color: DARK_BLUE }
+          ),
+          applyElementStyles(
+            { text: 'Responsabilité civile' },
+            'insurance_info',
+            pdfSettings,
+            { fontSize: 10, color: DARK_BLUE }
+          ),
+          applyElementStyles(
+            { text: 'Responsabilité civile décennale' },
+            'insurance_info',
+            pdfSettings,
+            { fontSize: 10, color: DARK_BLUE }
+          )
+        ],
+        alignment: 'right'
+      }
+    ]
+  };
+  
+  // Vérifiez si nous avons un logo_url
+  if (company?.logo_url) {
+    console.log('Logo URL trouvé, tentative ajout du logo:', company.logo_url);
+    try {
+      // Tenter d'ajouter l'image du logo
+      (logoElement.columns[0].stack as any[]).push({
+        image: company.logo_url,
+        width: pdfSettings?.logoSettings?.width || 172,
+        height: pdfSettings?.logoSettings?.height || 72,
+        margin: [0, 0, 0, 0]
+      });
+      console.log('Logo ajouté avec succès avec dimensions:', {
+        width: pdfSettings?.logoSettings?.width || 172,
+        height: pdfSettings?.logoSettings?.height || 72
+      });
+    } catch (error) {
+      console.error('Erreur lors de l\'ajout du logo:', error);
+      // En cas d'erreur, ajouter un espace à la place
+      (logoElement.columns[0].stack as any[]).push({ text: '', margin: [0, 40, 0, 0] });
+    }
+  } else {
+    console.log('Aucun logo_url trouvé, ajout d\'un espace');
+    // Si pas de logo, ajouter un espace
+    (logoElement.columns[0].stack as any[]).push({ text: '', margin: [0, 40, 0, 0] });
+  }
+  
+  content.push(logoElement);
+  
+  // Slogan avec styles personnalisables
+  content.push(
     applyElementStyles(
       { text: slogan },
       'company_slogan',
@@ -83,9 +117,11 @@ export const prepareCoverContent = (
         color: DARK_BLUE,
         spacing: { top: 10, right: 0, bottom: 20, left: 0 }
       }
-    ),
-    
-    // Coordonnées société - Nom et adresse combinés avec styles personnalisables
+    )
+  );
+  
+  // Coordonnées société - Nom et adresse combinés avec styles personnalisables
+  content.push(
     applyElementStyles(
       { text: `Société  ${company?.name || ''} - ${company?.address || ''} - ${company?.postal_code || ''} ${company?.city || ''}` },
       'company_address',
@@ -96,34 +132,34 @@ export const prepareCoverContent = (
         color: DARK_BLUE,
         spacing: { top: 0, right: 0, bottom: 3, left: 0 }
       }
-    ),
-    
-    // Tél et Mail avec styles personnalisables
-    {
-      columns: [
-        {
-          width: col1Width,
-          text: applyElementStyles(
-            { text: 'Tél:' },
-            'contact_labels',
-            pdfSettings,
-            { fontSize: 10, color: DARK_BLUE }
-          )
-        },
-        {
-          width: col2Width,
-          text: applyElementStyles(
-            { text: company?.tel1 || '' },
-            'contact_values',
-            pdfSettings,
-            { fontSize: 10, color: DARK_BLUE }
-          )
-        }
-      ],
-      columnGap: 1,
-      margin: [0, 3, 0, 0]
-    }
-  ];
+    )
+  );
+  
+  // Tél et Mail avec styles personnalisables
+  content.push({
+    columns: [
+      {
+        width: col1Width,
+        text: applyElementStyles(
+          { text: 'Tél:' },
+          'contact_labels',
+          pdfSettings,
+          { fontSize: 10, color: DARK_BLUE }
+        )
+      },
+      {
+        width: col2Width,
+        text: applyElementStyles(
+          { text: company?.tel1 || '' },
+          'contact_values',
+          pdfSettings,
+          { fontSize: 10, color: DARK_BLUE }
+        )
+      }
+    ],
+    columnGap: 1,
+    margin: [0, 3, 0, 0]
+  });
   
   // Deuxième numéro de téléphone s'il existe
   if (company?.tel2) {
