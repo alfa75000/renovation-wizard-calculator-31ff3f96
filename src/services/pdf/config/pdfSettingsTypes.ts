@@ -77,7 +77,7 @@ export const PdfSettingsSchema = z.object({
   },
   margins: {
     cover: [40, 40, 40, 40],
-    details: [30, 10, 30, 40],
+    details: [30, 70, 30, 40],
     recap: [40, 40, 40, 40]
   },
   logoSettings: {
