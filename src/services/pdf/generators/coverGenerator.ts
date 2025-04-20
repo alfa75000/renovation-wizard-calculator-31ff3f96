@@ -1,4 +1,3 @@
-
 import { CompanyData, ProjectMetadata } from '@/types';
 import { PdfContent } from '@/services/pdf/types/pdfTypes';
 import { formatDate } from '@/services/pdf/utils/dateUtils';
@@ -12,16 +11,19 @@ export const prepareCoverContent = (
   metadata?: ProjectMetadata,
   pdfSettings?: PdfSettings
 ): PdfContent[] => {
-  console.log('Préparation du contenu de la page de garde...');
-  console.log('Company reçu par coverGenerator:', company);
-  console.log('Logo URL dans company:', company?.logo_url);
-  console.log('Logo URL dans metadata.company:', metadata?.company?.logo_url);
-  console.log('PDF Settings logo:', pdfSettings?.logoSettings);
+  console.log('[coverGenerator] Préparation du contenu de la page de garde...');
+  console.log('[coverGenerator] Champs reçus:', fields);
+  console.log('[coverGenerator] Company reçu par coverGenerator:', company);
+  console.log('[coverGenerator] Logo URL dans company:', company?.logo_url);
+  console.log('[coverGenerator] Logo URL dans metadata.company:', metadata?.company?.logo_url);
+  console.log('[coverGenerator] PDF Settings logo:', pdfSettings?.logoSettings);
   
   // Si company est null mais metadata.company ne l'est pas, utilisez metadata.company
   if (!company && metadata?.company) {
-    console.log('Utilisation de metadata.company car company est null');
+    console.log('[coverGenerator] Utilisation de metadata.company car company est null');
     company = metadata.company;
+    console.log('[coverGenerator] Company après récupération de metadata:', company);
+    console.log('[coverGenerator] Logo URL dans company après récupération:', company?.logo_url);
   }
   
   // Extraction des données depuis fields
@@ -33,12 +35,18 @@ export const prepareCoverContent = (
   const occupant = fields.find(f => f.id === "occupant")?.content;
   const additionalInfo = fields.find(f => f.id === "additionalInfo")?.content;
   
+  console.log('[coverGenerator] Informations extraites des champs:');
+  console.log('[coverGenerator] - Numéro devis:', devisNumber);
+  console.log('[coverGenerator] - Date devis:', devisDate);
+  console.log('[coverGenerator] - Client:', client);
+  
   // Définition des colonnes
   const col1Width = 25;
   const col2Width = '*';
   
   // Définition du slogan
   const slogan = company?.slogan || 'Entreprise Générale du Bâtiment';
+  console.log('[coverGenerator] Slogan utilisé:', slogan);
   
   // Construction du contenu
   const content: PdfContent[] = [];
@@ -77,33 +85,80 @@ export const prepareCoverContent = (
     ]
   };
   
+  // Vérifier si on a un logo_url dans company
+  const logoUrl = company?.logo_url;
+  console.log('[coverGenerator] Logo URL avant la décision:', logoUrl);
+  
+  // Vérifier les paramètres du logo
+  console.log('[coverGenerator] Vérification des paramètres du logo:');
+  console.log('[coverGenerator] - pdfSettings existe:', !!pdfSettings);
+  console.log('[coverGenerator] - logoSettings existe:', !!pdfSettings?.logoSettings);
+  
+  if (pdfSettings?.logoSettings) {
+    console.log('[coverGenerator] - useDefaultLogo:', pdfSettings.logoSettings.useDefaultLogo);
+    console.log('[coverGenerator] - logoUrl dans settings:', pdfSettings.logoSettings.logoUrl);
+    console.log('[coverGenerator] - width:', pdfSettings.logoSettings.width);
+    console.log('[coverGenerator] - height:', pdfSettings.logoSettings.height);
+  }
+  
+  // Déterminer l'URL du logo à utiliser
+  let logoUrlToUse = null;
+  
+  // Si le logo par défaut doit être utilisé
+  if (pdfSettings?.logoSettings?.useDefaultLogo) {
+    console.log('[coverGenerator] Le logo par défaut doit être utilisé');
+    logoUrlToUse = '/images/lrs-logo.jpg';
+    console.log('[coverGenerator] Logo par défaut à utiliser:', logoUrlToUse);
+  } 
+  // Sinon, si un logo personnalisé est défini dans les paramètres
+  else if (pdfSettings?.logoSettings?.logoUrl) {
+    console.log('[coverGenerator] Un logo personnalisé est défini dans les paramètres');
+    logoUrlToUse = pdfSettings.logoSettings.logoUrl;
+    console.log('[coverGenerator] Logo personnalisé à utiliser:', 'Logo personnalisé (Data URL)');
+  }
+  // Sinon, utiliser le logo de l'entreprise si disponible
+  else if (logoUrl) {
+    console.log('[coverGenerator] Utilisation du logo de l\'entreprise');
+    logoUrlToUse = logoUrl;
+    console.log('[coverGenerator] Logo de l\'entreprise à utiliser:', logoUrlToUse);
+  }
+  
+  console.log('[coverGenerator] URL du logo final à utiliser:', logoUrlToUse ? 'Logo trouvé' : 'Aucun logo');
+  
   // Vérifiez si nous avons un logo_url
-  if (company?.logo_url) {
-    console.log('Logo URL trouvé, tentative ajout du logo:', company.logo_url);
+  if (logoUrlToUse) {
+    console.log('[coverGenerator] Logo URL trouvé, tentative ajout du logo');
     try {
+      // Déterminer les dimensions
+      const logoWidth = pdfSettings?.logoSettings?.width || 172;
+      const logoHeight = pdfSettings?.logoSettings?.height || 72;
+      console.log('[coverGenerator] Dimensions du logo:', { width: logoWidth, height: logoHeight });
+      
       // Tenter d'ajouter l'image du logo
       (logoElement.columns[0].stack as any[]).push({
-        image: company.logo_url,
-        width: pdfSettings?.logoSettings?.width || 172,
-        height: pdfSettings?.logoSettings?.height || 72,
+        image: logoUrlToUse,
+        width: logoWidth,
+        height: logoHeight,
         margin: [0, 0, 0, 0]
       });
-      console.log('Logo ajouté avec succès avec dimensions:', {
-        width: pdfSettings?.logoSettings?.width || 172,
-        height: pdfSettings?.logoSettings?.height || 72
+      console.log('[coverGenerator] Logo ajouté avec succès avec dimensions:', {
+        width: logoWidth,
+        height: logoHeight
       });
     } catch (error) {
-      console.error('Erreur lors de l\'ajout du logo:', error);
+      console.error('[coverGenerator] Erreur lors de l\'ajout du logo:', error);
       // En cas d'erreur, ajouter un espace à la place
       (logoElement.columns[0].stack as any[]).push({ text: '', margin: [0, 40, 0, 0] });
+      console.log('[coverGenerator] Espace ajouté à la place du logo suite à une erreur');
     }
   } else {
-    console.log('Aucun logo_url trouvé, ajout d\'un espace');
+    console.log('[coverGenerator] Aucun logo_url trouvé, ajout d\'un espace');
     // Si pas de logo, ajouter un espace
     (logoElement.columns[0].stack as any[]).push({ text: '', margin: [0, 40, 0, 0] });
   }
   
   content.push(logoElement);
+  console.log('[coverGenerator] Élément logo ajouté au contenu');
   
   // Slogan avec styles personnalisables
   content.push(
@@ -388,5 +443,6 @@ export const prepareCoverContent = (
     );
   }
   
+  console.log('[coverGenerator] Génération du contenu de la page de garde terminée');
   return content.filter(Boolean);
 };
