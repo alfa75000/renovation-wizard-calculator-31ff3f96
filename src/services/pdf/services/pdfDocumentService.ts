@@ -1,3 +1,4 @@
+
 import pdfMake from 'pdfmake/build/pdfmake';
 import { ProjectMetadata } from '@/types';
 import { configurePdfFonts } from '../utils/fontUtils';
@@ -13,7 +14,6 @@ interface GeneratePdfDocumentOptions {
 }
 
 export const generatePdfDocument = (options: GeneratePdfDocumentOptions) => {
-  console.log('[LOGO DEBUG] === DÉBUT GÉNÉRATION DOCUMENT PDF ===');
   // Configure fonts
   configurePdfFonts();
   
@@ -26,70 +26,30 @@ export const generatePdfDocument = (options: GeneratePdfDocumentOptions) => {
     showFooter = true 
   } = options;
   
-  console.log('[LOGO DEBUG] Génération du document PDF avec les options suivantes:');
-  console.log('[LOGO DEBUG] - Metadata présent:', !!metadata);
-  console.log('[LOGO DEBUG] - Company dans metadata:', !!metadata?.company);
-  console.log('[LOGO DEBUG] - Logo URL dans metadata:', metadata?.company?.logo_url);
-  console.log('[LOGO DEBUG] - Nombre d\'éléments de contenu:', content.length);
-  console.log('[LOGO DEBUG] - Police:', fontFamily);
-  console.log('[LOGO DEBUG] - Afficher entête:', showHeader);
-  console.log('[LOGO DEBUG] - Afficher pied de page:', showFooter);
+  console.log('Génération du document PDF avec les options suivantes:');
+  console.log('- Metadata présent:', !!metadata);
+  console.log('- Company dans metadata:', !!metadata?.company);
+  console.log('- Logo URL dans metadata:', metadata?.company?.logo_url);
+  console.log('- Nombre d\'éléments de contenu:', content.length);
+  console.log('- Police:', fontFamily);
+  console.log('- Afficher entête:', showHeader);
+  console.log('- Afficher pied de page:', showFooter);
   
   // Vérification des images dans le contenu
   try {
-    const contentString = JSON.stringify(content);
-    const hasImages = contentString.includes('"image":');
-    console.log('[LOGO DEBUG] Le contenu contient des images:', hasImages);
-    
-    if (hasImages) {
-      console.log('[LOGO DEBUG] Analyse du contenu pour trouver des images:');
-      // Explorer le contenu pour trouver les images
-      const findImagesInContent = (obj: any, path = '') => {
-        if (!obj) return;
-        
-        if (typeof obj === 'object') {
-          if (obj.image) {
-            console.log(`[LOGO DEBUG] Image trouvée à ${path}:`, obj.image);
-            console.log(`[LOGO DEBUG] Dimensions:`, { width: obj.width, height: obj.height });
-          }
-          
-          // Si c'est un tableau, vérifier chaque élément
-          if (Array.isArray(obj)) {
-            obj.forEach((item, index) => {
-              findImagesInContent(item, `${path}[${index}]`);
-            });
-          } else {
-            // Si c'est un objet, vérifier chaque propriété
-            for (const key in obj) {
-              if (obj.hasOwnProperty(key)) {
-                findImagesInContent(obj[key], path ? `${path}.${key}` : key);
-              }
-            }
-          }
-        }
-      };
-      
-      content.forEach((item, index) => {
-        findImagesInContent(item, `content[${index}]`);
-      });
-    }
+    const hasImages = JSON.stringify(content).includes('"image":');
+    console.log('Le contenu contient des images:', hasImages);
     
     // Recherche de logos dans le contenu
     let logoFound = false;
+    const contentString = JSON.stringify(content);
     if (metadata?.company?.logo_url && contentString.includes(metadata.company.logo_url)) {
-      console.log('[LOGO DEBUG] Logo URL de company trouvé dans le contenu JSON');
+      console.log('Logo URL trouvé dans le contenu JSON');
       logoFound = true;
     }
-    
-    // Recherche du logo par défaut
-    if (contentString.includes('/images/lrs-logo.jpg')) {
-      console.log('[LOGO DEBUG] Logo par défaut trouvé dans le contenu JSON');
-      logoFound = true;
-    }
-    
-    console.log('[LOGO DEBUG] Logo trouvé dans le contenu:', logoFound);
+    console.log('Logo trouvé dans le contenu:', logoFound);
   } catch (e) {
-    console.log('[LOGO DEBUG] Erreur lors de la vérification des images dans le contenu:', e);
+    console.log('Erreur lors de la vérification des images dans le contenu:', e);
   }
   
   // Créer le document PDF
@@ -108,12 +68,11 @@ export const generatePdfDocument = (options: GeneratePdfDocumentOptions) => {
 
   // Ajouter l'entête si nécessaire
   if (showHeader) {
-    console.log('[LOGO DEBUG] Configuration de l\'entête du document');
     docDefinition.header = function(currentPage: number, pageCount: number) {
       // Ne pas afficher l'entête sur la page de garde (page 1)
       if (currentPage === 1) return null;
 
-      console.log(`[LOGO DEBUG] Génération de l'entête pour la page ${currentPage}/${pageCount}`);
+      console.log(`Génération de l'entête pour la page ${currentPage}/${pageCount}`);
       return {
         text: `DEVIS N° ${metadata?.devisNumber || 'XXXX-XX'} - page ${currentPage}/${pageCount}`,
         alignment: 'right',
@@ -126,14 +85,13 @@ export const generatePdfDocument = (options: GeneratePdfDocumentOptions) => {
 
   // Ajouter le pied de page si nécessaire
   if (showFooter && metadata?.company) {
-    console.log('[LOGO DEBUG] Configuration du pied de page du document');
     docDefinition.footer = function(currentPage: number) {
-      console.log(`[LOGO DEBUG] Génération du pied de page pour la page ${currentPage}`);
+      console.log(`Génération du pied de page pour la page ${currentPage}`);
       
       const company = metadata.company;
       
       if (!company) {
-        console.log('[LOGO DEBUG] Aucune donnée d\'entreprise disponible pour le pied de page');
+        console.log('Aucune donnée d\'entreprise disponible pour le pied de page');
         return null;
       }
       
@@ -157,22 +115,20 @@ export const generatePdfDocument = (options: GeneratePdfDocumentOptions) => {
   }
   
   // Générer et ouvrir le PDF
-  console.log('[LOGO DEBUG] Création du PDF via pdfMake...');
+  console.log('Création du PDF via pdfMake...');
   
   try {
     pdfMake.createPdf(docDefinition).open();
-    console.log('[LOGO DEBUG] PDF généré avec succès');
-    console.log('[LOGO DEBUG] === FIN GÉNÉRATION DOCUMENT PDF ===');
+    console.log('PDF généré avec succès');
     return true;
   } catch (error) {
-    console.error('[LOGO DEBUG] Erreur lors de la génération du PDF:', error);
+    console.error('Erreur lors de la génération du PDF:', error);
     // Si l'erreur concerne les images, donnons plus de détails
     if (error.toString().includes('image') || error.toString().includes('logo')) {
-      console.error('[LOGO DEBUG] Détails des images/logo pour diagnostic:');
-      console.error('[LOGO DEBUG] - Logo URL:', metadata?.company?.logo_url);
-      console.error('[LOGO DEBUG] - Format attendu pour les images:', 'Data URL (base64) ou URL accessible');
+      console.error('Détails des images/logo pour diagnostic:');
+      console.error('- Logo URL:', metadata?.company?.logo_url);
+      console.error('- Format attendu pour les images:', 'Data URL (base64) ou URL accessible');
     }
-    console.log('[LOGO DEBUG] === FIN GÉNÉRATION DOCUMENT PDF (AVEC ERREUR) ===');
     throw error;
   }
 };

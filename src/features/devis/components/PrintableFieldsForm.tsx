@@ -34,7 +34,7 @@ export const PrintableFieldsForm: React.FC = () => {
   const [showRecapPreview, setShowRecapPreview] = useState(false);
   
   const [printableFields, setPrintableFields] = useState<PrintableField[]>([
-    { id: "companyLogo", name: "Logo société", enabled: true, content: '/images/lrs-logo.jpg' },
+    { id: "companyLogo", name: "Logo société", enabled: true, content: null },
     { id: "companyName", name: "Nom société", enabled: true, content: companyName },
     { id: "client", name: "Client", enabled: true, content: clientName },
     { id: "devisNumber", name: "Numéro du devis", enabled: true, content: metadata?.devisNumber || "Non défini" },

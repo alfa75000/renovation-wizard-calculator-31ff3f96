@@ -1,3 +1,4 @@
+
 import { CompanyData, ProjectMetadata } from '@/types';
 import { PdfContent } from '@/services/pdf/types/pdfTypes';
 import { formatDate } from '@/services/pdf/utils/dateUtils';
@@ -11,6 +12,18 @@ export const prepareCoverContent = (
   metadata?: ProjectMetadata,
   pdfSettings?: PdfSettings
 ): PdfContent[] => {
+  console.log('Préparation du contenu de la page de garde...');
+  console.log('Company reçu par coverGenerator:', company);
+  console.log('Logo URL dans company:', company?.logo_url);
+  console.log('Logo URL dans metadata.company:', metadata?.company?.logo_url);
+  console.log('PDF Settings logo:', pdfSettings?.logoSettings);
+  
+  // Si company est null mais metadata.company ne l'est pas, utilisez metadata.company
+  if (!company && metadata?.company) {
+    console.log('Utilisation de metadata.company car company est null');
+    company = metadata.company;
+  }
+  
   // Extraction des données depuis fields
   const devisNumber = fields.find(f => f.id === "devisNumber")?.content;
   const devisDate = fields.find(f => f.id === "devisDate")?.content;
@@ -20,9 +33,17 @@ export const prepareCoverContent = (
   const occupant = fields.find(f => f.id === "occupant")?.content;
   const additionalInfo = fields.find(f => f.id === "additionalInfo")?.content;
   
+  // Définition des colonnes
+  const col1Width = 25;
+  const col2Width = '*';
+  
+  // Définition du slogan
+  const slogan = company?.slogan || 'Entreprise Générale du Bâtiment';
+  
+  // Construction du contenu
   const content: PdfContent[] = [];
   
-  // Logo et assurance sur la même ligne
+  // Logo et assurance sur la même ligne avec styles personnalisables
   const logoElement = {
     columns: [
       {
@@ -55,24 +76,34 @@ export const prepareCoverContent = (
       }
     ]
   };
-
-  // Ajout du logo s'il est activé
-  if (pdfSettings?.logoSettings?.useDefaultLogo) {
-    (logoElement.columns[0].stack as any[]).push({
-      image: '/images/lrs-logo.jpg',
-      width: pdfSettings.logoSettings.width || 172,
-      height: pdfSettings.logoSettings.height || 72,
-      margin: [0, 0, 0, 0]
-    });
+  
+  // Vérifiez si nous avons un logo_url
+  if (company?.logo_url) {
+    console.log('Logo URL trouvé, tentative ajout du logo:', company.logo_url);
+    try {
+      // Tenter d'ajouter l'image du logo
+      (logoElement.columns[0].stack as any[]).push({
+        image: company.logo_url,
+        width: pdfSettings?.logoSettings?.width || 172,
+        height: pdfSettings?.logoSettings?.height || 72,
+        margin: [0, 0, 0, 0]
+      });
+      console.log('Logo ajouté avec succès avec dimensions:', {
+        width: pdfSettings?.logoSettings?.width || 172,
+        height: pdfSettings?.logoSettings?.height || 72
+      });
+    } catch (error) {
+      console.error('Erreur lors de l\'ajout du logo:', error);
+      // En cas d'erreur, ajouter un espace à la place
+      (logoElement.columns[0].stack as any[]).push({ text: '', margin: [0, 40, 0, 0] });
+    }
   } else {
+    console.log('Aucun logo_url trouvé, ajout d\'un espace');
     // Si pas de logo, ajouter un espace
     (logoElement.columns[0].stack as any[]).push({ text: '', margin: [0, 40, 0, 0] });
   }
   
   content.push(logoElement);
-  
-  // Définition du slogan
-  const slogan = company?.slogan || 'Entreprise Générale du Bâtiment';
   
   // Slogan avec styles personnalisables
   content.push(
@@ -88,10 +119,6 @@ export const prepareCoverContent = (
       }
     )
   );
-  
-  // Définition des colonnes
-  const col1Width = 25;
-  const col2Width = '*';
   
   // Coordonnées société - Nom et adresse combinés avec styles personnalisables
   content.push(
