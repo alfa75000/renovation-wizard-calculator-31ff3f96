@@ -1,9 +1,9 @@
+
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
 import { PrintableField, CompanyData } from "@/types";
 import { Button } from "@/components/ui/button";
 import { X, FileText } from "lucide-react";
-import { DocumentRenderer } from "react-pdf";
 import { prepareCoverContent } from "@/services/pdf/generators/coverGenerator";
 import { generatePdfDocument } from "@/services/pdf/services/pdfDocumentService";
 import { usePdfSettings } from "@/services/pdf/hooks/usePdfSettings";

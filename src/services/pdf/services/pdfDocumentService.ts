@@ -1,4 +1,3 @@
-
 import pdfMake from 'pdfmake/build/pdfmake';
 import { ProjectMetadata } from '@/types';
 import { configurePdfFonts } from '../utils/fontUtils';
