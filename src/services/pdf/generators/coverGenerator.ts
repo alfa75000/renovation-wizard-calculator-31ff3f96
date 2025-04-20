@@ -1,4 +1,3 @@
-
 import { CompanyData, ProjectMetadata } from '@/types';
 import { PdfContent } from '@/services/pdf/types/pdfTypes';
 import { formatDate } from '@/services/pdf/utils/dateUtils';
@@ -12,16 +11,25 @@ export const prepareCoverContent = (
   metadata?: ProjectMetadata,
   pdfSettings?: PdfSettings
 ): PdfContent[] => {
-  console.log('Préparation du contenu de la page de garde...');
-  console.log('Company reçu par coverGenerator:', company);
-  console.log('Logo URL dans company:', company?.logo_url);
-  console.log('Logo URL dans metadata.company:', metadata?.company?.logo_url);
-  console.log('PDF Settings logo:', pdfSettings?.logoSettings);
+  console.log('[LOGO DEBUG] === DÉBUT PRÉPARATION CONTENU COUVERTURE ===');
+  console.log('[LOGO DEBUG] Company reçu par coverGenerator:', company);
+  console.log('[LOGO DEBUG] Logo URL dans company:', company?.logo_url);
+  console.log('[LOGO DEBUG] Logo URL dans metadata.company:', metadata?.company?.logo_url);
+  console.log('[LOGO DEBUG] PDF Settings logo:', pdfSettings?.logoSettings);
+  console.log('[LOGO DEBUG] Fields reçus:', fields);
+  
+  // Recherche du champ logo dans les fields
+  const logoField = fields.find(f => f.id === 'companyLogo');
+  console.log('[LOGO DEBUG] Champ logo trouvé dans fields:', logoField);
+  console.log('[LOGO DEBUG] Logo content dans fields:', logoField?.content);
+  console.log('[LOGO DEBUG] Logo enabled dans fields:', logoField?.enabled);
   
   // Si company est null mais metadata.company ne l'est pas, utilisez metadata.company
   if (!company && metadata?.company) {
-    console.log('Utilisation de metadata.company car company est null');
+    console.log('[LOGO DEBUG] Utilisation de metadata.company car company est null');
     company = metadata.company;
+    console.log('[LOGO DEBUG] Nouveau company après remplacement:', company);
+    console.log('[LOGO DEBUG] Logo URL dans nouveau company:', company.logo_url);
   }
   
   // Extraction des données depuis fields
@@ -77,28 +85,45 @@ export const prepareCoverContent = (
     ]
   };
   
+  // Récupération de l'URL du logo
+  let logoUrl = company?.logo_url;
+  if (logoField?.content) {
+    console.log('[LOGO DEBUG] Utilisation du logo depuis fields.content');
+    logoUrl = logoField.content;
+  } else if (pdfSettings?.logoSettings?.useDefaultLogo) {
+    console.log('[LOGO DEBUG] Vérification utilisation logo par défaut');
+    if (!logoUrl) {
+      console.log('[LOGO DEBUG] Tentative de définir le logo par défaut car useDefaultLogo=true');
+      // Essayer d'utiliser le logo par défaut si activé
+      logoUrl = '/images/lrs-logo.jpg';
+      console.log('[LOGO DEBUG] Logo par défaut défini:', logoUrl);
+    }
+  }
+  
+  console.log('[LOGO DEBUG] URL finale du logo avant ajout:', logoUrl);
+  
   // Vérifiez si nous avons un logo_url
-  if (company?.logo_url) {
-    console.log('Logo URL trouvé, tentative ajout du logo:', company.logo_url);
+  if (logoUrl) {
+    console.log('[LOGO DEBUG] Logo URL trouvé, tentative ajout du logo:', logoUrl);
     try {
       // Tenter d'ajouter l'image du logo
       (logoElement.columns[0].stack as any[]).push({
-        image: company.logo_url,
+        image: logoUrl,
         width: pdfSettings?.logoSettings?.width || 172,
         height: pdfSettings?.logoSettings?.height || 72,
         margin: [0, 0, 0, 0]
       });
-      console.log('Logo ajouté avec succès avec dimensions:', {
+      console.log('[LOGO DEBUG] Logo ajouté avec succès avec dimensions:', {
         width: pdfSettings?.logoSettings?.width || 172,
         height: pdfSettings?.logoSettings?.height || 72
       });
     } catch (error) {
-      console.error('Erreur lors de l\'ajout du logo:', error);
+      console.error('[LOGO DEBUG] Erreur lors de l\'ajout du logo:', error);
       // En cas d'erreur, ajouter un espace à la place
       (logoElement.columns[0].stack as any[]).push({ text: '', margin: [0, 40, 0, 0] });
     }
   } else {
-    console.log('Aucun logo_url trouvé, ajout d\'un espace');
+    console.log('[LOGO DEBUG] Aucun logo_url trouvé, ajout d\'un espace');
     // Si pas de logo, ajouter un espace
     (logoElement.columns[0].stack as any[]).push({ text: '', margin: [0, 40, 0, 0] });
   }
@@ -387,6 +412,9 @@ export const prepareCoverContent = (
       )
     );
   }
+  
+  console.log('[LOGO DEBUG] Contenu final généré avec logo?', !!logoUrl);
+  console.log('[LOGO DEBUG] === FIN PRÉPARATION CONTENU COUVERTURE ===');
   
   return content.filter(Boolean);
 };
