@@ -84,8 +84,6 @@ export const PrintableFieldsForm: React.FC = () => {
         
         if (data) {
           console.log("Données de l'entreprise récupérées:", data);
-          console.log("Logo URL récupéré de la base de données:", data.logo_url);
-          
           setCompanyName(data.name);
           setCompanyLogoUrl(data.logo_url);
           setCompanyData(data as CompanyData);
@@ -96,7 +94,6 @@ export const PrintableFieldsForm: React.FC = () => {
                 return { ...field, content: data.name };
               } 
               if (field.id === "companyLogo") {
-                console.log("Mise à jour du champ logo avec:", data.logo_url);
                 return { ...field, content: data.logo_url };
               }
               return field;
@@ -109,7 +106,6 @@ export const PrintableFieldsForm: React.FC = () => {
           });
           
           console.log("Métadonnées mises à jour avec les données de l'entreprise");
-          console.log("Logo URL dans les métadonnées après mise à jour:", data.logo_url);
         }
       } catch (error) {
         console.error("Erreur lors de la récupération des informations de la société:", error);
@@ -160,14 +156,6 @@ export const PrintableFieldsForm: React.FC = () => {
       const enabledFields = printableFields.filter(field => field.enabled);
       
       console.log("Génération du PDF avec les paramètres:", pdfSettings);
-      console.log("Logo URL dans companyData:", companyData?.logo_url);
-      console.log("Champs activés pour l'impression:", enabledFields);
-      
-      if (enabledFields.find(field => field.id === "companyLogo")?.enabled) {
-        console.log("Logo activé pour l'impression, contenu:", enabledFields.find(field => field.id === "companyLogo")?.content);
-      } else {
-        console.log("Logo désactivé pour l'impression");
-      }
       
       // Générer le PDF complet avec toutes les sections
       await generateCompletePDF(
@@ -203,7 +191,7 @@ export const PrintableFieldsForm: React.FC = () => {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Éléments �� imprimer</CardTitle>
+          <CardTitle>Éléments à imprimer</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
