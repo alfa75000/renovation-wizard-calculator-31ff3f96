@@ -11,27 +11,6 @@ export const prepareCoverContent = (
   metadata?: ProjectMetadata,
   pdfSettings?: PdfSettings
 ): PdfContent[] => {
-  console.log('[LOGO DEBUG] === DÉBUT PRÉPARATION CONTENU COUVERTURE ===');
-  console.log('[LOGO DEBUG] Company reçu par coverGenerator:', company);
-  console.log('[LOGO DEBUG] Logo URL dans company:', company?.logo_url);
-  console.log('[LOGO DEBUG] Logo URL dans metadata.company:', metadata?.company?.logo_url);
-  console.log('[LOGO DEBUG] PDF Settings logo:', pdfSettings?.logoSettings);
-  console.log('[LOGO DEBUG] Fields reçus:', fields);
-  
-  // Recherche du champ logo dans les fields
-  const logoField = fields.find(f => f.id === 'companyLogo');
-  console.log('[LOGO DEBUG] Champ logo trouvé dans fields:', logoField);
-  console.log('[LOGO DEBUG] Logo content dans fields:', logoField?.content);
-  console.log('[LOGO DEBUG] Logo enabled dans fields:', logoField?.enabled);
-  
-  // Si company est null mais metadata.company ne l'est pas, utilisez metadata.company
-  if (!company && metadata?.company) {
-    console.log('[LOGO DEBUG] Utilisation de metadata.company car company est null');
-    company = metadata.company;
-    console.log('[LOGO DEBUG] Nouveau company après remplacement:', company);
-    console.log('[LOGO DEBUG] Logo URL dans nouveau company:', company.logo_url);
-  }
-  
   // Extraction des données depuis fields
   const devisNumber = fields.find(f => f.id === "devisNumber")?.content;
   const devisDate = fields.find(f => f.id === "devisDate")?.content;
@@ -41,17 +20,9 @@ export const prepareCoverContent = (
   const occupant = fields.find(f => f.id === "occupant")?.content;
   const additionalInfo = fields.find(f => f.id === "additionalInfo")?.content;
   
-  // Définition des colonnes
-  const col1Width = 25;
-  const col2Width = '*';
-  
-  // Définition du slogan
-  const slogan = company?.slogan || 'Entreprise Générale du Bâtiment';
-  
-  // Construction du contenu
   const content: PdfContent[] = [];
   
-  // Logo et assurance sur la même ligne avec styles personnalisables
+  // Logo et assurance sur la même ligne
   const logoElement = {
     columns: [
       {
@@ -84,51 +55,24 @@ export const prepareCoverContent = (
       }
     ]
   };
-  
-  // Récupération de l'URL du logo
-  let logoUrl = company?.logo_url;
-  if (logoField?.content) {
-    console.log('[LOGO DEBUG] Utilisation du logo depuis fields.content');
-    logoUrl = logoField.content;
-  } else if (pdfSettings?.logoSettings?.useDefaultLogo) {
-    console.log('[LOGO DEBUG] Vérification utilisation logo par défaut');
-    if (!logoUrl) {
-      console.log('[LOGO DEBUG] Tentative de définir le logo par défaut car useDefaultLogo=true');
-      // Essayer d'utiliser le logo par défaut si activé
-      logoUrl = '/images/lrs-logo.jpg';
-      console.log('[LOGO DEBUG] Logo par défaut défini:', logoUrl);
-    }
-  }
-  
-  console.log('[LOGO DEBUG] URL finale du logo avant ajout:', logoUrl);
-  
-  // Vérifiez si nous avons un logo_url
-  if (logoUrl) {
-    console.log('[LOGO DEBUG] Logo URL trouvé, tentative ajout du logo:', logoUrl);
-    try {
-      // Tenter d'ajouter l'image du logo
-      (logoElement.columns[0].stack as any[]).push({
-        image: logoUrl,
-        width: pdfSettings?.logoSettings?.width || 172,
-        height: pdfSettings?.logoSettings?.height || 72,
-        margin: [0, 0, 0, 0]
-      });
-      console.log('[LOGO DEBUG] Logo ajouté avec succès avec dimensions:', {
-        width: pdfSettings?.logoSettings?.width || 172,
-        height: pdfSettings?.logoSettings?.height || 72
-      });
-    } catch (error) {
-      console.error('[LOGO DEBUG] Erreur lors de l\'ajout du logo:', error);
-      // En cas d'erreur, ajouter un espace à la place
-      (logoElement.columns[0].stack as any[]).push({ text: '', margin: [0, 40, 0, 0] });
-    }
+
+  // Ajout du logo s'il est activé
+  if (pdfSettings?.logoSettings?.useDefaultLogo) {
+    (logoElement.columns[0].stack as any[]).push({
+      image: '/images/lrs-logo.jpg',
+      width: pdfSettings.logoSettings.width || 172,
+      height: pdfSettings.logoSettings.height || 72,
+      margin: [0, 0, 0, 0]
+    });
   } else {
-    console.log('[LOGO DEBUG] Aucun logo_url trouvé, ajout d\'un espace');
     // Si pas de logo, ajouter un espace
     (logoElement.columns[0].stack as any[]).push({ text: '', margin: [0, 40, 0, 0] });
   }
   
   content.push(logoElement);
+  
+  // Définition du slogan
+  const slogan = company?.slogan || 'Entreprise Générale du Bâtiment';
   
   // Slogan avec styles personnalisables
   content.push(
@@ -144,6 +88,10 @@ export const prepareCoverContent = (
       }
     )
   );
+  
+  // Définition des colonnes
+  const col1Width = 25;
+  const col2Width = '*';
   
   // Coordonnées société - Nom et adresse combinés avec styles personnalisables
   content.push(
@@ -412,9 +360,6 @@ export const prepareCoverContent = (
       )
     );
   }
-  
-  console.log('[LOGO DEBUG] Contenu final généré avec logo?', !!logoUrl);
-  console.log('[LOGO DEBUG] === FIN PRÉPARATION CONTENU COUVERTURE ===');
   
   return content.filter(Boolean);
 };
