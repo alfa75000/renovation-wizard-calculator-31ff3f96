@@ -1,197 +1,155 @@
+
+import { Travail } from '@/types';
 import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
-import { LIGHT_GREY } from '../constants/pdfConstants';
+import { ElementSettings } from '@/features/devis/components/pdf-settings/types/elementSettings';
 
-/**
- * Détermine les bordures à appliquer à un élément en fonction des paramètres
- * @param borderSettings - Paramètres des bordures (haut, droite, bas, gauche)
- * @returns Un tableau de nombres représentant les bordures [gauche, haut, droite, bas]
- */
-export const getElementBorders = (borderSettings: { top: boolean; right: boolean; bottom: boolean; left: boolean }): [number, number, number, number] => {
-  const borderWidth = 0.5; // épaisseur de la bordure
-  return [
-    borderSettings.left ? borderWidth : 0,
-    borderSettings.top ? borderWidth : 0,
-    borderSettings.right ? borderWidth : 0,
-    borderSettings.bottom ? borderWidth : 0
-  ];
+export const TABLE_COLUMN_WIDTHS = {
+  DETAILS: ['*', 50, 50, 30, 60],
+  TOTALS: [50, 80]
 };
 
-/**
- * Enveloppe un élément avec des bordures en utilisant les paramètres spécifiés.
- * @param element L'élément à envelopper avec des bordures.
- * @param borderSettings Paramètres pour chaque bordure (gauche, haut, droite, bas).
- * @returns L'élément enveloppé avec les bordures spécifiées.
- */
-export const wrapWithBorders = (
-  element: any,
-  borderSettings: { top: boolean; right: boolean; bottom: boolean; left: boolean }
-) => {
-  const borderThickness = 0.5; // Ajustez selon l'épaisseur désirée
-  const borderColor = LIGHT_GREY; // Ajustez selon la couleur désirée
-
-  element.border = [
-    borderSettings.left ? borderThickness : 0,
-    borderSettings.top ? borderThickness : 0,
-    borderSettings.right ? borderThickness : 0,
-    borderSettings.bottom ? borderThickness : 0,
-  ];
-  element.borderColor = borderColor;
-  return element;
+export const formatPrice = (value: number): string => {
+  return new Intl.NumberFormat('fr-FR', { 
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+    useGrouping: true
+  }).format(value).replace(/\s/g, '\u00A0') + '€';
 };
 
-/**
- * Applique les styles par défaut à un élément texte.
- * @param element - L'élément texte à styliser.
- * @param defaultStyles - Les styles par défaut à appliquer.
- * @returns L'élément texte avec les styles appliqués.
- */
-const applyDefaultStyles = (
-  element: any,
-  defaultStyles?: {
-    fontSize?: number;
-    isBold?: boolean;
-    isItalic?: boolean;
-    isUnderline?: boolean;
-    color?: string;
-    alignment?: string;
-    spacing?: {
-      top?: number;
-      right?: number;
-      bottom?: number;
-      left?: number;
-    };
-  }
-) => {
-  const styledElement = { ...element };
+export const formatQuantity = (quantity: number): string => {
+  return new Intl.NumberFormat('fr-FR', { 
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+    useGrouping: true
+  }).format(quantity).replace(/\s/g, '\u00A0');
+};
+
+export const formatMOFournitures = (travail: Travail): string => {
+  const prixUnitaireHT = travail.prixFournitures + travail.prixMainOeuvre;
+  const totalHT = prixUnitaireHT * travail.quantite;
+  const montantTVA = (totalHT * travail.tauxTVA) / 100;
   
-  if (defaultStyles?.fontSize) {
-    styledElement.fontSize = defaultStyles.fontSize;
+  return `[ MO: ${formatPrice(travail.prixMainOeuvre)}/u ] [ Fourn: ${formatPrice(travail.prixFournitures)}/u ] [ Total TVA (${travail.tauxTVA}%): ${formatPrice(montantTVA)} ]`;
+};
+
+/**
+ * Applique les paramètres de style à un élément PDF
+ * @param baseDefinition - La définition de base de l'élément
+ * @param elementId - L'identifiant de l'élément dans settings.elements
+ * @param pdfSettings - Les paramètres PDF globaux
+ * @param defaultStyles - Styles par défaut à appliquer si l'élément n'a pas de styles personnalisés
+ * @returns La définition de l'élément avec les styles appliqués
+ */
+export const applyElementStyles = (
+  baseDefinition: any, 
+  elementId: string, 
+  pdfSettings?: PdfSettings,
+  defaultStyles?: Partial<ElementSettings>
+): any => {
+  // Si pas de paramètres, retourner la définition de base
+  if (!pdfSettings) return baseDefinition;
+  
+  // Récupérer les styles spécifiques pour cet élément
+  const styles = pdfSettings.elements?.[elementId];
+  
+  // Si l'élément n'a pas de styles personnalisés, utiliser les styles par défaut ou retourner la définition de base
+  if (!styles) {
+    if (!defaultStyles) return baseDefinition;
+    
+    // Appliquer les styles par défaut
+    const styledDefinition = { ...baseDefinition };
+    
+    // Appliquer typographie par défaut
+    if (defaultStyles.fontFamily) styledDefinition.fontFamily = defaultStyles.fontFamily;
+    if (defaultStyles.fontSize) styledDefinition.fontSize = defaultStyles.fontSize;
+    if (defaultStyles.isBold !== undefined) styledDefinition.bold = defaultStyles.isBold;
+    if (defaultStyles.isItalic !== undefined) styledDefinition.italic = defaultStyles.isItalic;
+    
+    // Appliquer apparence par défaut
+    if (defaultStyles.color) styledDefinition.color = defaultStyles.color;
+    if (defaultStyles.alignment) styledDefinition.alignment = defaultStyles.alignment;
+    
+    // Appliquer espacement par défaut
+    if (defaultStyles.spacing) {
+      styledDefinition.margin = [
+        defaultStyles.spacing.left || 0,
+        defaultStyles.spacing.top || 0,
+        defaultStyles.spacing.right || 0,
+        defaultStyles.spacing.bottom || 0
+      ];
+    }
+    
+    return styledDefinition;
   }
-  if (defaultStyles?.color) {
-    styledElement.color = defaultStyles.color;
-  }
-  if (defaultStyles?.alignment) {
-    styledElement.alignment = defaultStyles.alignment;
-  }
-  if (defaultStyles?.spacing) {
-    styledElement.margin = [
-      defaultStyles.spacing.left || 0,
-      defaultStyles.spacing.top || 0,
-      defaultStyles.spacing.right || 0,
-      defaultStyles.spacing.bottom || 0
+  
+  // Créer un nouvel objet pour ne pas modifier l'original
+  const styledDefinition = { ...baseDefinition };
+  
+  // Appliquer typographie
+  if (styles.fontFamily) styledDefinition.fontFamily = styles.fontFamily;
+  if (styles.fontSize) styledDefinition.fontSize = styles.fontSize;
+  if (styles.isBold !== undefined) styledDefinition.bold = styles.isBold;
+  if (styles.isItalic !== undefined) styledDefinition.italic = styles.isItalic;
+  
+  // Appliquer apparence
+  if (styles.color) styledDefinition.color = styles.color;
+  if (styles.alignment) styledDefinition.alignment = styles.alignment;
+  
+  // Appliquer espacement
+  if (styles.spacing) {
+    styledDefinition.margin = [
+      styles.spacing.left || 0,
+      styles.spacing.top || 0,
+      styles.spacing.right || 0,
+      styles.spacing.bottom || 0
     ];
   }
   
-  const textStyle = [];
-  if (defaultStyles?.isBold) {
-    textStyle.push('bold');
-  }
-  if (defaultStyles?.isItalic) {
-    textStyle.push('italic');
-  }
-  if (defaultStyles?.isUnderline) {
-    textStyle.push('underline');
-  }
-  if (textStyle.length > 0) {
-    styledElement.style = textStyle;
+  // Pour les bordures, nous devons vérifier si l'élément doit être encapsulé dans un tableau
+  if (styles.border) {
+    const hasBorder = styles.border.top || styles.border.right || styles.border.bottom || styles.border.left;
+    
+    if (hasBorder) {
+      // Ne pas appliquer automatiquement de bordures à un élément simple
+      // Ces bordures seront appliquées explicitement dans les générateurs
+      styledDefinition._hasBorder = true;
+      styledDefinition._borderSettings = { ...styles.border };
+    }
   }
   
-  return styledElement;
+  return styledDefinition;
 };
 
 /**
- * Applique des styles à un élément texte selon les paramètres PDF personnalisés
+ * Encapsule un élément dans un tableau pour appliquer des bordures
+ * @param content - L'élément à encapsuler
+ * @param borderSettings - Les paramètres de bordure
+ * @returns Un tableau avec l'élément encapsulé et les bordures appliquées
  */
-export const applyElementStyles = (
-  element: any, 
-  elementId: string, 
-  pdfSettings?: PdfSettings,
-  defaultStyles?: {
-    fontSize?: number;
-    isBold?: boolean;
-    isItalic?: boolean;
-    isUnderline?: boolean;
-    color?: string;
-    alignment?: string;
-    spacing?: {
-      top?: number;
-      right?: number;
-      bottom?: number;
-      left?: number;
-    };
-  }
-) => {
-  console.log(`[pdfUtils] Applying styles to element ID: ${elementId}`);
-  
-  // Si aucun paramètre ou élément spécifique n'est trouvé, utiliser les styles par défaut
-  if (!pdfSettings || !elementId) {
-    console.log(`[pdfUtils] No specific settings found for element ID: ${elementId}, using defaults`);
-    return applyDefaultStyles(element, defaultStyles);
-  }
-  
-  // Vérifier si des styles spécifiques sont définis pour cet élément
-  const elementSettings = pdfSettings.elements[elementId];
-  console.log(`[pdfUtils] Element settings for ${elementId}:`, elementSettings);
-  
-  if (elementSettings) {
-    console.log(`[pdfUtils] Custom settings found for element ID: ${elementId}`);
-    
-    // Appliquer les styles personnalisés
-    const styledElement = { ...element };
-    
-    // Police et taille
-    if (elementSettings.fontSize) {
-      styledElement.fontSize = elementSettings.fontSize;
-      console.log(`[pdfUtils] Applied fontSize: ${elementSettings.fontSize}`);
-    }
-    
-    // Style du texte (gras, italique, souligné)
-    const textStyle = [];
-    if (elementSettings.isBold) {
-      textStyle.push('bold');
-      console.log(`[pdfUtils] Applied bold style`);
-    }
-    if (elementSettings.isItalic) {
-      textStyle.push('italic');
-      console.log(`[pdfUtils] Applied italic style`);
-    }
-    if (textStyle.length > 0) {
-      styledElement.style = textStyle;
-    }
-    
-    // Couleur du texte
-    if (elementSettings.color) {
-      styledElement.color = elementSettings.color;
-      console.log(`[pdfUtils] Applied color: ${elementSettings.color}`);
-    }
-    
-    // Alignement
-    if (elementSettings.alignment) {
-      styledElement.alignment = elementSettings.alignment;
-      console.log(`[pdfUtils] Applied alignment: ${elementSettings.alignment}`);
-    }
-    
-    // Marges/espacement
-    if (elementSettings.spacing) {
-      const margin = [
-        elementSettings.spacing.left || 0,
-        elementSettings.spacing.top || 0,
-        elementSettings.spacing.right || 0,
-        elementSettings.spacing.bottom || 0
-      ];
-      styledElement.margin = margin;
-      console.log(`[pdfUtils] Applied margins: [${margin.join(', ')}]`);
-    }
-    
-    // Bordures
-    if (elementSettings.border) {
-      styledElement.border = getElementBorders(elementSettings.border);
-      console.log(`[pdfUtils] Applied borders:`, styledElement.border);
-    }
-    
-    return styledElement;
-  } else {
-    console.log(`[pdfUtils] No custom settings for element ID: ${elementId}, using defaults`);
-    return applyDefaultStyles(element, defaultStyles);
-  }
+export const wrapWithBorders = (content: any, borderSettings: any): any => {
+  return {
+    table: {
+      widths: ['*'],
+      body: [[content]]
+    },
+    layout: {
+      hLineWidth: function(i: number) {
+        if (i === 0) return borderSettings.top ? borderSettings.width || 1 : 0;
+        if (i === 1) return borderSettings.bottom ? borderSettings.width || 1 : 0;
+        return 0;
+      },
+      vLineWidth: function(i: number) {
+        if (i === 0) return borderSettings.left ? borderSettings.width || 1 : 0;
+        if (i === 1) return borderSettings.right ? borderSettings.width || 1 : 0;
+        return 0;
+      },
+      hLineColor: function() {
+        return borderSettings.color || '#002855';
+      },
+      vLineColor: function() {
+        return borderSettings.color || '#002855';
+      }
+    },
+    margin: [0, 0, 0, 0]
+  };
 };

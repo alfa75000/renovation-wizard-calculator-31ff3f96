@@ -35,7 +35,7 @@ export const PdfSettingsSchema = z.object({
     betweenSections: 2
   }),
   margins: z.object({
-    cover: z.tuple([z.number(), z.number(), z.number(), z.number()]).default([40, 40, 40, 40]), // droite, haut, gauche, bas
+    cover: z.tuple([z.number(), z.number(), z.number(), z.number()]).default([40, 40, 40, 40]),
     details: z.tuple([z.number(), z.number(), z.number(), z.number()]).default([30, 70, 30, 40]),
     recap: z.tuple([z.number(), z.number(), z.number(), z.number()]).default([40, 40, 40, 40])
   }).default({
