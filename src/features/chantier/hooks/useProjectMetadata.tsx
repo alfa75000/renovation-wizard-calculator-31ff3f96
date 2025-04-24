@@ -10,7 +10,18 @@ export const useProjectMetadata = () => {
   const { state, dispatch } = useProject();
   const { state: clientsState } = useClients();
   
-  const { metadata } = state;
+  // S'assurer que metadata existe toujours
+  const metadata = state?.metadata || {
+    clientId: '',
+    nomProjet: '',
+    descriptionProjet: '',
+    adresseChantier: '',
+    occupant: '',
+    infoComplementaire: '',
+    dateDevis: new Date().toISOString().split('T')[0],
+    devisNumber: '',
+    clientsData: ''
+  };
   
   // Find the default client ID
   const getDefaultClientId = useCallback((): string => {
@@ -156,21 +167,21 @@ export const useProjectMetadata = () => {
   }, [shouldGenerateProjectName, generateProjectName]);
 
   return {
-    clientId: metadata.clientId,
+    clientId: metadata.clientId || '',
     setClientId,
-    nomProjet: metadata.nomProjet,
+    nomProjet: metadata.nomProjet || '',
     setNomProjet,
-    descriptionProjet: metadata.descriptionProjet,
+    descriptionProjet: metadata.descriptionProjet || '',
     setDescriptionProjet,
-    adresseChantier: metadata.adresseChantier,
+    adresseChantier: metadata.adresseChantier || '',
     setAdresseChantier,
-    occupant: metadata.occupant,
+    occupant: metadata.occupant || '',
     setOccupant,
-    infoComplementaire: metadata.infoComplementaire,
+    infoComplementaire: metadata.infoComplementaire || '',
     setInfoComplementaire,
-    dateDevis: metadata.dateDevis,
+    dateDevis: metadata.dateDevis || '',
     setDateDevis,
-    devisNumber: metadata.devisNumber,
+    devisNumber: metadata.devisNumber || '',
     setDevisNumber,
     clientsData: metadata.clientsData || '',
     setClientsData,

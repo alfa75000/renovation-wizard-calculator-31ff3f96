@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '../ui/button';
 import { FilePlus2, FolderOpen, Save, SaveAll, Check, AlertCircle, Play } from 'lucide-react';
@@ -39,7 +40,8 @@ export const ProjectBar: React.FC<ProjectBarProps> = ({
 }) => {
   const { 
     currentProjectId, 
-    projects
+    projects,
+    loadProject
   } = useProject();
   const { 
     isLoading, 
@@ -104,7 +106,11 @@ export const ProjectBar: React.FC<ProjectBarProps> = ({
         .single();
         
       if (appStateData?.current_project_id) {
-        // await handleChargerProjet(appStateData.current_project_id);
+        // Décommenter cette ligne et utiliser loadProject du contexte
+        await loadProject(appStateData.current_project_id);
+        toast.success("Projet précédent chargé avec succès");
+      } else {
+        toast.info("Aucun projet précédent à charger");
       }
     } catch (error) {
       console.error('Erreur lors du chargement du dernier projet:', error);

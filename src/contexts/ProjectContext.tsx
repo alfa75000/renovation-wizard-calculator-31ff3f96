@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { ProjectState, ProjectAction, Project } from '@/types';
 import { toast } from 'sonner';
@@ -60,31 +61,9 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   React.useEffect(() => {
     refreshProjects();
   }, []);
-
-  React.useEffect(() => {
-    const loadCurrentProjectFromAppState = async () => {
-      try {
-        const { data: appStateData, error } = await supabase
-          .from('app_state')
-          .select('current_project_id')
-          .eq('user_id', (await supabase.from('app_users').select('id').eq('username', 'Admin').single()).data?.id || '')
-          .single();
-          
-        if (error || !appStateData || !appStateData.current_project_id) {
-          console.log('Aucun projet en cours dans l\'état de l\'application');
-          return;
-        }
-        
-        console.log('Projet en cours trouvé dans l\'état de l\'application:', appStateData.current_project_id);
-        
-        await loadProject(appStateData.current_project_id);
-      } catch (error) {
-        console.error('Erreur lors du chargement du projet en cours depuis l\'état de l\'application:', error);
-      }
-    };
-    
-    loadCurrentProjectFromAppState();
-  }, []);
+  
+  // Suppression du chargement automatique au démarrage
+  // L'utilisateur devra cliquer sur "Continuer le Projet" pour charger le projet
 
   React.useEffect(() => {
     const updateAppStateProjectId = async () => {

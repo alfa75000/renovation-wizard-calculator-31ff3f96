@@ -24,7 +24,18 @@ const RoomsCard: React.FC<RoomsCardProps> = ({
   onEditRoom,
   onDeleteRoom
 }) => {
-  const { generateProjectNameIfNeeded, shouldGenerateProjectName } = useProjectInfo();
+  // Protection contre une erreur en début de chargement
+  let projectInfo;
+  try {
+    projectInfo = useProjectInfo();
+  } catch (error) {
+    console.error("Erreur lors du chargement des infos projet", error);
+    // Fournir une implémentation par défaut pour éviter des erreurs en cascade
+    projectInfo = {
+      generateProjectNameIfNeeded: async () => false,
+      shouldGenerateProjectName: () => false
+    };
+  }
 
   const calculateTotalArea = () => {
     return rooms.reduce((total, room) => total + room.surface, 0);
@@ -35,10 +46,10 @@ const RoomsCard: React.FC<RoomsCardProps> = ({
   // Enhanced handler for adding a room that also generates project name if needed
   const handleAddRoom = async (room: Omit<Room, "id">) => {
     // Check if this is the first room and project name is empty
-    if (rooms.length === 0 && shouldGenerateProjectName()) {
+    if (rooms.length === 0 && projectInfo.shouldGenerateProjectName()) {
       // Generate project name before adding the room
       console.log("First room being added with empty project name, generating name automatically");
-      await generateProjectNameIfNeeded();
+      await projectInfo.generateProjectNameIfNeeded();
     }
     
     // Call the original onAddRoom function

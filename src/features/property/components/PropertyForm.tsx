@@ -10,6 +10,15 @@ interface PropertyFormProps {
 }
 
 const PropertyForm: React.FC<PropertyFormProps> = ({ property, onPropertyChange }) => {
+  // Vérifier que property est défini et utiliser un objet par défaut si nécessaire
+  const propertyWithDefaults = property || {
+    type: "Appartement",
+    floors: 1,
+    totalArea: 0,
+    rooms: 0,
+    ceilingHeight: 2.5,
+  };
+  
   const propertyTypes = ["Appartement", "Maison", "Studio", "Loft", "Autre"];
 
   return (
@@ -19,7 +28,7 @@ const PropertyForm: React.FC<PropertyFormProps> = ({ property, onPropertyChange 
         <select
           id="type"
           name="type"
-          value={property.type}
+          value={propertyWithDefaults.type}
           onChange={onPropertyChange}
           className="w-full p-2 border rounded mt-1"
         >
@@ -38,7 +47,7 @@ const PropertyForm: React.FC<PropertyFormProps> = ({ property, onPropertyChange 
           name="floors"
           type="number"
           min="1"
-          value={property.floors}
+          value={propertyWithDefaults.floors}
           onChange={onPropertyChange}
           className="mt-1"
         />
@@ -51,7 +60,7 @@ const PropertyForm: React.FC<PropertyFormProps> = ({ property, onPropertyChange 
           name="totalArea"
           type="number"
           min="0"
-          value={property.totalArea}
+          value={propertyWithDefaults.totalArea}
           onChange={onPropertyChange}
           className="mt-1"
         />
@@ -64,7 +73,7 @@ const PropertyForm: React.FC<PropertyFormProps> = ({ property, onPropertyChange 
           name="rooms"
           type="number"
           min="0"
-          value={property.rooms}
+          value={propertyWithDefaults.rooms}
           onChange={onPropertyChange}
           className="mt-1"
         />
@@ -78,7 +87,7 @@ const PropertyForm: React.FC<PropertyFormProps> = ({ property, onPropertyChange 
           type="number"
           min="0"
           step="0.01"
-          value={property.ceilingHeight}
+          value={propertyWithDefaults.ceilingHeight}
           onChange={onPropertyChange}
           className="mt-1"
         />
