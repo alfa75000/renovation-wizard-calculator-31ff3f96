@@ -1,4 +1,3 @@
-
 import React, { ReactNode, useState } from 'react';
 import { useProject } from '@/contexts/ProjectContext';
 import { ProjectBar } from './layout/ProjectBar';
@@ -78,6 +77,7 @@ export const Layout: React.FC<LayoutProps> = ({
         onSaveAsProject={() => setSaveAsDialogOpen(true)}
         projectDisplayName={projectName}
         hasUnsavedChanges={hasUnsavedChanges}
+        showLoadLastProject={!currentProjectId}
       />
       
       <TitleHeader title={title} subtitle={subtitle} />
