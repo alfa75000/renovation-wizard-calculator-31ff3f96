@@ -85,19 +85,19 @@ export const convertStyleToPdfStyle = (style: StyleOptions) => {
   };
 };
 
-export const convertPageMargins = (margins: [number, number, number, number] | number[]): [number, number, number, number] => {
-  if (!Array.isArray(margins) || margins.length < 4) {
-    console.warn('Invalid margins format, using defaults', margins);
-    return [40, 40, 40, 40]; // Default margins [left, top, right, bottom]
+export const convertPageMargins = (margins: number[] | undefined): [number, number, number, number] => {
+  const defaultMargins: [number, number, number, number] = [40, 40, 40, 40]; 
+  
+  if (!margins || !Array.isArray(margins)) {
+    console.warn('Invalid margins format, using defaults');
+    return defaultMargins;
   }
   
-  const [left, top, right, bottom] = margins.slice(0, 4);
-  
   const safeMargins: [number, number, number, number] = [
-    typeof left === 'number' ? left : 40,
-    typeof top === 'number' ? top : 40,
-    typeof right === 'number' ? right : 40,
-    typeof bottom === 'number' ? bottom : 40
+    typeof margins[0] === 'number' ? margins[0] : defaultMargins[0],
+    typeof margins[1] === 'number' ? margins[1] : defaultMargins[1],
+    typeof margins[2] === 'number' ? margins[2] : defaultMargins[2],
+    typeof margins[3] === 'number' ? margins[3] : defaultMargins[3]
   ];
   
   return safeMargins;

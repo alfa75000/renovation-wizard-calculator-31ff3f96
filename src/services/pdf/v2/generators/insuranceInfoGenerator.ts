@@ -1,6 +1,5 @@
 
 import pdfMake from 'pdfmake/build/pdfmake';
-import pdfFonts from 'pdfmake/build/vfs_fonts';
 import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
 import { getElementStyle, convertStyleToPdfStyle, convertPageMargins } from '../utils/styleUtils';
 import { ProjectState } from '@/types';
