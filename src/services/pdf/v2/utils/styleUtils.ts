@@ -86,7 +86,15 @@ export const convertStyleToPdfStyle = (style: StyleOptions) => {
   };
 };
 
-export const convertPageMargins = (margins: [number, number, number, number]) => {
-  // Convert to pdfmake format: [left, top, right, bottom]
-  return [margins[3], margins[0], margins[1], margins[2]];
+// Ensure we only get 4 values for page margins
+export const convertPageMargins = (margins: [number, number, number, number]): [number, number, number, number] => {
+  // Validate and ensure we have exactly 4 values
+  if (!Array.isArray(margins) || margins.length < 4) {
+    console.warn('Invalid margins format, using defaults', margins);
+    return [40, 40, 40, 40]; // Default margins [left, top, right, bottom]
+  }
+  
+  // Extract exactly 4 values to ensure type safety
+  const [left, top, right, bottom] = margins;
+  return [left, top, right, bottom];
 };

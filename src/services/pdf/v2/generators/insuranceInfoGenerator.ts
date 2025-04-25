@@ -3,17 +3,18 @@ import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
 import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
 import { getElementStyle, convertStyleToPdfStyle, convertPageMargins } from '../utils/styleUtils';
-import { ProjectState } from '@/features/project/reducers/projectReducer';
+import { ProjectState } from '@/types';
+import { configurePdfFonts } from '@/services/pdf/utils/fontUtils';
 
-// Register fonts with pdfmake
-pdfMake.vfs = pdfFonts.pdfMake.vfs;
+// Initialize pdfMake with fonts
+configurePdfFonts();
 
 export const generateInsuranceInfoPdf = async (pdfSettings: PdfSettings, projectState: ProjectState) => {
   // Get style for insurance info
   const insuranceInfoStyle = getElementStyle(pdfSettings, 'insurance_info');
   const pdfStyle = convertStyleToPdfStyle(insuranceInfoStyle);
   
-  // Get page margins
+  // Get page margins - ensure we have exactly 4 values
   const pageMargins = convertPageMargins(pdfSettings.margins.cover);
   
   // Create document definition
