@@ -5,6 +5,8 @@ import { PrintableFieldsForm } from "@/features/devis/components/PrintableFields
 import { PdfSettingsForm } from "@/features/devis/components/PdfSettingsForm";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useProject } from "@/contexts/ProjectContext";
+import { Button } from "@/components/ui/button";
+import { FileText } from "lucide-react";
 
 import { 
   Tabs, 
@@ -31,6 +33,12 @@ const EditionDevis: React.FC = () => {
         subtitle="Configurez les éléments à imprimer et les paramètres du devis"
       >
         <div className="max-w-4xl mx-auto">
+          <div className="flex justify-end mb-4">
+            <Button variant="default">
+              <FileText className="mr-2 h-4 w-4" />
+              Générer Devis
+            </Button>
+          </div>
           <Tabs 
             value={activeTab} 
             onValueChange={setActiveTab} 
