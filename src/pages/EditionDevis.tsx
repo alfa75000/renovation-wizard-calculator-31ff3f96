@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useProject } from "@/contexts/ProjectContext";
 import { Button } from "@/components/ui/button";
 import { FileText } from "lucide-react";
+import { useDevisGeneration } from "@/hooks/useDevisGeneration";
 
 import { 
   Tabs, 
@@ -21,10 +22,15 @@ const EditionDevis: React.FC = () => {
   const { state } = useProject();
   const { metadata } = state;
   const [activeTab, setActiveTab] = useState("printable");
+  const { isGenerating, generateInsuranceInfo } = useDevisGeneration();
   
   const pageTitle = metadata?.nomProjet 
     ? `Édition du devis - ${metadata.nomProjet}` 
     : "Édition du devis";
+    
+  const handleGenerateDevis = async () => {
+    await generateInsuranceInfo();
+  };
   
   return (
     <QueryClientProvider client={queryClient}>
@@ -34,9 +40,13 @@ const EditionDevis: React.FC = () => {
       >
         <div className="max-w-4xl mx-auto">
           <div className="flex justify-end mb-4">
-            <Button variant="default">
+            <Button 
+              variant="default" 
+              onClick={handleGenerateDevis}
+              disabled={isGenerating}
+            >
               <FileText className="mr-2 h-4 w-4" />
-              Générer Devis
+              {isGenerating ? 'Génération en cours...' : 'Générer Devis'}
             </Button>
           </div>
           <Tabs 
