@@ -1,4 +1,3 @@
-
 import { ElementSettings } from '@/features/devis/components/pdf-settings/types/elementSettings';
 import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
 
@@ -86,15 +85,20 @@ export const convertStyleToPdfStyle = (style: StyleOptions) => {
   };
 };
 
-// Ensure we only get 4 values for page margins
-export const convertPageMargins = (margins: [number, number, number, number]): [number, number, number, number] => {
-  // Validate and ensure we have exactly 4 values
+export const convertPageMargins = (margins: [number, number, number, number] | number[]): [number, number, number, number] => {
   if (!Array.isArray(margins) || margins.length < 4) {
     console.warn('Invalid margins format, using defaults', margins);
     return [40, 40, 40, 40]; // Default margins [left, top, right, bottom]
   }
   
-  // Extract exactly 4 values to ensure type safety
-  const [left, top, right, bottom] = margins;
-  return [left, top, right, bottom];
+  const [left, top, right, bottom] = margins.slice(0, 4);
+  
+  const safeMargins: [number, number, number, number] = [
+    typeof left === 'number' ? left : 40,
+    typeof top === 'number' ? top : 40,
+    typeof right === 'number' ? right : 40,
+    typeof bottom === 'number' ? bottom : 40
+  ];
+  
+  return safeMargins;
 };
