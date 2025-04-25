@@ -85,20 +85,22 @@ export const convertStyleToPdfStyle = (style: StyleOptions) => {
   };
 };
 
-export const convertPageMargins = (margins: number[] | undefined): [number, number, number, number] => {
-  const defaultMargins: [number, number, number, number] = [40, 40, 40, 40]; 
+export type MarginTuple = [number, number, number, number];
+
+export const convertPageMargins = (margins: number[] | undefined): MarginTuple => {
+  const defaultMargins: MarginTuple = [40, 40, 40, 40];
   
-  if (!margins || !Array.isArray(margins)) {
+  if (!margins || !Array.isArray(margins) || margins.length < 4) {
     console.warn('Invalid margins format, using defaults');
     return defaultMargins;
   }
   
-  const safeMargins: [number, number, number, number] = [
-    typeof margins[0] === 'number' ? margins[0] : defaultMargins[0],
-    typeof margins[1] === 'number' ? margins[1] : defaultMargins[1],
-    typeof margins[2] === 'number' ? margins[2] : defaultMargins[2],
-    typeof margins[3] === 'number' ? margins[3] : defaultMargins[3]
+  const validMargins: MarginTuple = [
+    Number(margins[0]) || defaultMargins[0],
+    Number(margins[1]) || defaultMargins[1],
+    Number(margins[2]) || defaultMargins[2],
+    Number(margins[3]) || defaultMargins[3]
   ];
   
-  return safeMargins;
+  return validMargins;
 };
