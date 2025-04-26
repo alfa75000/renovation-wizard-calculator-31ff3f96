@@ -3,7 +3,7 @@ import pdfMake from 'pdfmake/build/pdfmake';
 import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
 import { getElementStyle, convertStyleToPdfStyle, convertPageMargins } from '../utils/styleUtils';
 import { ProjectState } from '@/types';
-import { configurePdfFonts } from '@/services/pdf/utils/fontUtils';
+import { configurePdfFonts, ensureSupportedFont, AVAILABLE_FONTS } from '@/services/pdf/utils/fontUtils';
 
 // Initialize pdfMake with fonts
 configurePdfFonts();
@@ -16,6 +16,9 @@ export const generateInsuranceInfoPdf = async (pdfSettings: PdfSettings, project
   // Get page margins with proper type handling
   const rawMargins = pdfSettings.margins?.cover as number[] | undefined;
   const pageMargins = convertPageMargins(rawMargins);
+  
+  // Ensure we are using a supported font
+  const fontFamily = ensureSupportedFont(pdfStyle.font);
   
   // Create document definition
   const docDefinition = {
@@ -51,24 +54,34 @@ export const generateInsuranceInfoPdf = async (pdfSettings: PdfSettings, project
     styles: {
       insuranceInfoTitle: {
         ...pdfStyle,
+        font: fontFamily, // Ensure font compatibility
         fontSize: (pdfStyle.fontSize || 12) + 2,
         bold: true,
         margin: [0, 0, 0, 5]
       },
       insuranceInfoText: {
         ...pdfStyle,
+        font: fontFamily, // Ensure font compatibility
         margin: [0, 0, 0, 3]
       }
+    },
+    defaultStyle: {
+      font: 'Roboto' // Set default font to ensure compatibility
     }
   };
   
-  // Generate PDF
-  const pdfDocGenerator = pdfMake.createPdf(docDefinition);
-  
-  // Open PDF in new tab
-  pdfDocGenerator.open();
-  
-  return true;
+  try {
+    // Generate PDF
+    const pdfDocGenerator = pdfMake.createPdf(docDefinition);
+    
+    // Open PDF in new tab
+    pdfDocGenerator.open();
+    
+    return true;
+  } catch (error) {
+    console.error('PDF Generation Error:', error);
+    throw error;
+  }
 };
 
 // Helper function to get base64 image from URL
