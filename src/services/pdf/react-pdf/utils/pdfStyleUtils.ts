@@ -97,7 +97,8 @@ const applyElementSettingsToStyle = (
   }
 
   // Espacement (margin) - conversion de l'objet spacing personnalisé en marges React-PDF
-  if (settings.spacing) {
+  // N'appliquer l'espacement qu'aux conteneurs
+  if (isContainer && settings.spacing) {
     if (typeof settings.spacing.top === 'number') style.marginTop = settings.spacing.top;
     if (typeof settings.spacing.right === 'number') style.marginRight = settings.spacing.right;
     if (typeof settings.spacing.bottom === 'number') style.marginBottom = settings.spacing.bottom;
