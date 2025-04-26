@@ -1,27 +1,11 @@
-
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TravauxType } from "@/contexts/TravauxTypesContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useState, useEffect } from "react";
-import { 
-  Paintbrush, 
-  Hammer, 
-  Wrench, 
-  SquarePen, 
-  Home, 
-  Droplet, 
-  Power, 
-  Pipette, 
-  Cpu, 
-  CircuitBoard,
-  Flame,
-  Cable,
-  Building,
-  LucideIcon
-} from "lucide-react";
+import { Paintbrush, Hammer, Wrench, SquarePen, Home, Droplet, Power, Pipette, Cpu, CircuitBoard, Flame, Cable, Building, LucideIcon } from "lucide-react";
 
 interface TypeTravauxFormProps {
   isOpen: boolean;
@@ -30,7 +14,6 @@ interface TypeTravauxFormProps {
   onSubmit: (data: TravauxType) => void;
 }
 
-// Génère un ID unique basé sur le label (pour les nouveaux types)
 const generateId = (label: string) => {
   return label
     .toLowerCase()
@@ -82,7 +65,6 @@ const TypeTravauxForm: React.FC<TypeTravauxFormProps> = ({
     description: typeToEdit?.description || ""
   });
 
-  // Mise à jour du formulaire lorsque typeToEdit change
   useEffect(() => {
     if (typeToEdit) {
       setFormData({
@@ -106,7 +88,6 @@ const TypeTravauxForm: React.FC<TypeTravauxFormProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Générer un ID si c'est un nouvel élément
     const id = typeToEdit ? typeToEdit.id : generateId(formData.label);
     
     onSubmit({
