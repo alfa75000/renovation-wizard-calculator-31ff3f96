@@ -29,13 +29,19 @@ export const HeaderSection = ({ pdfSettings, projectState }: HeaderSectionProps)
                pdfSettings.logoSettings?.alignment === 'right' ? 'flex-end' : 'flex-start'
   } as const;
 
-  // Styles pour le slogan et son conteneur
-  const sloganContainerStyles = getPdfStyles(pdfSettings, 'company_slogan', { isContainer: true });
+  // Styles pour le slogan avec alignement dynamique
   const sloganTextStyles = getPdfStyles(pdfSettings, 'company_slogan', { isContainer: false });
+  const sloganContainerStyles = getPdfStyles(pdfSettings, 'company_slogan', { isContainer: true });
+  const sloganContainerAlignSelf = sloganTextStyles.textAlign === 'center' ? 'center' :
+                                  sloganTextStyles.textAlign === 'right' ? 'flex-end' :
+                                  'flex-start';
 
-  // Styles pour les infos société et leur conteneur
-  const companyInfoContainerStyles = getPdfStyles(pdfSettings, 'company_address', { isContainer: true });
+  // Styles pour les infos société avec alignement dynamique
   const companyInfoTextStyles = getPdfStyles(pdfSettings, 'company_address', { isContainer: false });
+  const companyInfoContainerStyles = getPdfStyles(pdfSettings, 'company_address', { isContainer: true });
+  const companyInfoContainerAlignSelf = companyInfoTextStyles.textAlign === 'center' ? 'center' :
+                                      companyInfoTextStyles.textAlign === 'right' ? 'flex-end' :
+                                      'flex-start';
 
   return (
     <View style={styles.container}>
@@ -51,12 +57,12 @@ export const HeaderSection = ({ pdfSettings, projectState }: HeaderSectionProps)
         </View>
       </View>
 
-      <View style={sloganContainerStyles}>
+      <View style={[sloganContainerStyles, { alignSelf: sloganContainerAlignSelf }]}>
         <Text style={sloganTextStyles}>{slogan}</Text>
       </View>
       
       {company && (
-        <View style={companyInfoContainerStyles}>
+        <View style={[companyInfoContainerStyles, { alignSelf: companyInfoContainerAlignSelf }]}>
           <Text style={companyInfoTextStyles}>
             {company.name} - {company.address} - {company.postal_code} {company.city}
           </Text>
