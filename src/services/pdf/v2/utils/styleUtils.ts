@@ -87,20 +87,29 @@ export const convertStyleToPdfStyle = (style: StyleOptions) => {
 
 export type MarginTuple = [number, number, number, number];
 
-export const convertPageMargins = (margins: number[] | undefined): MarginTuple => {
-  const defaultMargins: MarginTuple = [40, 40, 40, 40];
-  
-  if (!margins || !Array.isArray(margins) || margins.length < 4) {
-    console.warn('Invalid margins format, using defaults');
-    return defaultMargins;
+// Change the return type to number[] as suggested
+export const convertPageMargins = (margins: number[] | undefined): number[] => { 
+  const defaultMargins: MarginTuple = [40, 40, 40, 40]; 
+
+  // Check for invalid input
+  if (!margins || !Array.isArray(margins) || margins.length === 0) {
+    console.warn('Invalid or empty margins format, using defaults [40, 40, 40, 40]');
+    return [...defaultMargins]; // Return a copy to avoid accidental mutations
   }
-  
-  const validMargins: MarginTuple = [
+
+  // Handle cases where fewer than 4 margins are provided
+  const resultMargins: number[] = [
     Number(margins[0]) || defaultMargins[0],
     Number(margins[1]) || defaultMargins[1],
     Number(margins[2]) || defaultMargins[2],
     Number(margins[3]) || defaultMargins[3]
   ];
+
+  // Ensure all values are valid numbers (handle potential NaN if Number() fails)
+  const finalMargins = resultMargins.map((m, index) => 
+    isNaN(m) ? defaultMargins[index] : m
+  );
   
-  return validMargins;
+  // The function now returns a number[] containing exactly 4 valid numbers
+  return finalMargins.slice(0, 4); // Ensure we only return 4 values in case the input had more
 };

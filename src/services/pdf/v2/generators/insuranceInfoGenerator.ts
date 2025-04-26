@@ -1,3 +1,4 @@
+
 import pdfMake from 'pdfmake/build/pdfmake';
 import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
 import { getElementStyle, convertStyleToPdfStyle, convertPageMargins } from '../utils/styleUtils';
@@ -12,9 +13,8 @@ export const generateInsuranceInfoPdf = async (pdfSettings: PdfSettings, project
   const insuranceInfoStyle = getElementStyle(pdfSettings, 'insurance_info');
   const pdfStyle = convertStyleToPdfStyle(insuranceInfoStyle);
   
-  // Get page margins with proper type handling
-  const margins = Array.isArray(pdfSettings.margins.cover) ? pdfSettings.margins.cover : undefined;
-  const pageMargins = convertPageMargins(margins);
+  // Get page margins as a properly formatted number array
+  const pageMargins = convertPageMargins(pdfSettings.margins.cover);
   
   // Create document definition
   const docDefinition = {
