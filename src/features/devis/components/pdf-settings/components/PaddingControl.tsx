@@ -1,18 +1,18 @@
 
 import React from 'react';
 import { NumberControl } from './NumberControl';
-import { Spacing } from '../types/elementSettings';
+import { PaddingSettings } from '../types/elementSettings';
 
 interface PaddingControlProps {
-  padding?: Spacing;
-  onChange: (padding: Spacing) => void;
+  padding?: PaddingSettings;
+  onChange: (padding: PaddingSettings) => void;
 }
 
 export const PaddingControl: React.FC<PaddingControlProps> = ({ 
   padding = { top: 0, right: 0, bottom: 0, left: 0 }, 
   onChange 
 }) => {
-  const handlePaddingChange = (key: keyof Spacing, value: number) => {
+  const handlePaddingChange = (key: keyof PaddingSettings, value: number) => {
     onChange({ ...padding, [key]: value });
   };
 

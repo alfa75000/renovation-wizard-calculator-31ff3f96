@@ -11,6 +11,7 @@ type PdfStyleOptions = {
   inheritParentStyles?: boolean;
 };
 
+// Fonction principale pour obtenir les styles PDF
 export const getPdfStyles = (
   pdfSettings: PdfSettings | null | undefined,
   elementId: PdfElementId,
@@ -38,6 +39,7 @@ export const getPdfStyles = (
     ? applyElementSettingsToStyle({}, elementSettings)
     : {};
 
+  // Fusion des styles: base + défaut + spécifique
   let mergedStyles: Style = {
     ...baseStyles,
     ...defaultStyles,
@@ -47,10 +49,15 @@ export const getPdfStyles = (
   // Si ce n'est pas un conteneur, on supprime les propriétés spécifiques aux conteneurs
   if (!isContainer) {
     const containerProperties: (keyof Style)[] = [
+      // Marges externes (spacing)
       'marginTop', 'marginRight', 'marginBottom', 'marginLeft',
+      // Bordures
       'borderTopWidth', 'borderRightWidth', 'borderBottomWidth', 'borderLeftWidth',
-      'borderColor', 'borderStyle', 'backgroundColor'
+      'borderColor', 'borderStyle', 'backgroundColor',
+      // Padding (espacement interne) - ajouté à la liste des propriétés à supprimer pour les textes
+      'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft'
     ];
+    
     containerProperties.forEach(prop => {
       if (prop in mergedStyles) {
         delete mergedStyles[prop];
@@ -61,12 +68,23 @@ export const getPdfStyles = (
   return mergedStyles;
 };
 
+// Fonctions helper pour simplifier l'utilisation dans les composants
+// Ces fonctions sont des wrappers autour de getPdfStyles avec des options préconfigurées
+export const getContainerStyles = (pdfSettings: PdfSettings, elementId: PdfElementId, additionalStyles: Style = {}): Style => {
+  return { ...getPdfStyles(pdfSettings, elementId, { isContainer: true }), ...additionalStyles };
+};
+
+export const getTextStyles = (pdfSettings: PdfSettings, elementId: PdfElementId, additionalStyles: Style = {}): Style => {
+  return { ...getPdfStyles(pdfSettings, elementId, { isContainer: false }), ...additionalStyles };
+};
+
 const applyElementSettingsToStyle = (
   baseStyle: Style,
   settings: ElementSettings
 ): Style => {
   const style: Style = { ...baseStyle };
 
+  // Application des propriétés de police et texte
   if (settings.fontFamily) {
     style.fontFamily = ensureSupportedFont(settings.fontFamily);
   }
@@ -99,7 +117,7 @@ const applyElementSettingsToStyle = (
     style.backgroundColor = settings.fillColor;
   }
 
-  // Appliquer les marges externes (spacing)
+  // Application des marges externes (spacing)
   if (settings.spacing) {
     const { top, right, bottom, left } = settings.spacing;
     if (typeof top === 'number') style.marginTop = top;
@@ -108,7 +126,7 @@ const applyElementSettingsToStyle = (
     if (typeof left === 'number') style.marginLeft = left;
   }
 
-  // Appliquer les marges internes (padding)
+  // Application des marges internes (padding)
   if (settings.padding) {
     const { top, right, bottom, left } = settings.padding;
     if (typeof top === 'number') style.paddingTop = top;
@@ -117,6 +135,7 @@ const applyElementSettingsToStyle = (
     if (typeof left === 'number') style.paddingLeft = left;
   }
 
+  // Application des bordures
   if (settings.border) {
     const { top, right, bottom, left, color, width = 1 } = settings.border;
     

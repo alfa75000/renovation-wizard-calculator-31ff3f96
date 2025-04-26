@@ -35,8 +35,13 @@ export const ElementSettingsSchema = z.object({
 
 // Utiliser l'inférence de type de Zod pour définir ElementSettings
 export type ElementSettings = z.infer<typeof ElementSettingsSchema>;
+
+// Exporter les types dérivés pour permettre leur utilisation dans d'autres composants
+export type TextAlignment = NonNullable<ElementSettings['alignment']>;
 export type SpacingSettings = NonNullable<ElementSettings['spacing']>;
+export type PaddingSettings = NonNullable<ElementSettings['padding']>;
 export type BorderSettings = NonNullable<ElementSettings['border']>;
+export type Spacing = SpacingSettings; // Alias pour rétrocompatibilité
 
 // Default settings for an element
 export const defaultElementSettings: ElementSettings = {
