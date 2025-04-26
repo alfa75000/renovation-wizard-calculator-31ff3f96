@@ -11,14 +11,22 @@ configurePdfFonts();
 
 export const generateInsuranceInfoPdf = async (pdfSettings: PdfSettings, projectState: ProjectState) => {
   try {
-    // Get styles for different sections
+    // Get styles for different sections with fallbacks if not defined in settings
     const insuranceInfoStyle = getElementStyle(pdfSettings, 'insurance_info');
     const companyNameStyle = getElementStyle(pdfSettings, 'company_name');
     const companySloganStyle = getElementStyle(pdfSettings, 'company_slogan');
     const companyContactStyle = getElementStyle(pdfSettings, 'company_contact');
     const quoteInfoStyle = getElementStyle(pdfSettings, 'quote_info');
     const clientInfoStyle = getElementStyle(pdfSettings, 'client_info');
+    const clientTitleStyle = getElementStyle(pdfSettings, 'client_title');
+    const clientContentStyle = getElementStyle(pdfSettings, 'client_content');
     const projectInfoStyle = getElementStyle(pdfSettings, 'project_info');
+    const projectTitleStyle = getElementStyle(pdfSettings, 'project_title');
+    const projectLabelsStyle = getElementStyle(pdfSettings, 'project_labels');
+    const projectValuesStyle = getElementStyle(pdfSettings, 'project_values');
+    const contactLabelsStyle = getElementStyle(pdfSettings, 'contact_labels');
+    const contactValuesStyle = getElementStyle(pdfSettings, 'contact_values');
+    const footerInfoStyle = getElementStyle(pdfSettings, 'footer_info');
 
     // Convert styles to pdfMake format
     const insurancePdfStyle = convertStyleToPdfStyle(insuranceInfoStyle);
@@ -27,7 +35,15 @@ export const generateInsuranceInfoPdf = async (pdfSettings: PdfSettings, project
     const companyContactPdfStyle = convertStyleToPdfStyle(companyContactStyle);
     const quoteInfoPdfStyle = convertStyleToPdfStyle(quoteInfoStyle);
     const clientInfoPdfStyle = convertStyleToPdfStyle(clientInfoStyle);
+    const clientTitlePdfStyle = convertStyleToPdfStyle(clientTitleStyle);
+    const clientContentPdfStyle = convertStyleToPdfStyle(clientContentStyle);
     const projectInfoPdfStyle = convertStyleToPdfStyle(projectInfoStyle);
+    const projectTitlePdfStyle = convertStyleToPdfStyle(projectTitleStyle);
+    const projectLabelsPdfStyle = convertStyleToPdfStyle(projectLabelsStyle);
+    const projectValuesPdfStyle = convertStyleToPdfStyle(projectValuesStyle);
+    const contactLabelsPdfStyle = convertStyleToPdfStyle(contactLabelsStyle);
+    const contactValuesPdfStyle = convertStyleToPdfStyle(contactValuesStyle);
+    const footerInfoPdfStyle = convertStyleToPdfStyle(footerInfoStyle);
     
     // Get page margins
     const rawMargins = pdfSettings.margins?.cover as number[] | undefined;
@@ -99,50 +115,52 @@ export const generateInsuranceInfoPdf = async (pdfSettings: PdfSettings, project
           marginBottom: 10
         },
 
-        // Contact Details
+        // Contact Details - Telephone
         {
           columns: [
             {
               width: 'auto',
               text: 'Tél:',
-              ...companyContactPdfStyle
+              ...contactLabelsPdfStyle
             },
             {
               width: '*',
               text: company?.tel1 || '',
-              ...companyContactPdfStyle
+              ...contactValuesPdfStyle
             }
           ],
           columnGap: 5,
           marginBottom: 5
         },
+        // Second telephone number if available
         company?.tel2 ? {
           columns: [
             {
               width: 'auto',
               text: '',
-              ...companyContactPdfStyle
+              ...contactLabelsPdfStyle
             },
             {
               width: '*',
               text: company.tel2,
-              ...companyContactPdfStyle
+              ...contactValuesPdfStyle
             }
           ],
           columnGap: 5,
           marginBottom: 5
         } : null,
+        // Email
         {
           columns: [
             {
               width: 'auto',
               text: 'Mail:',
-              ...companyContactPdfStyle
+              ...contactLabelsPdfStyle
             },
             {
               width: '*',
               text: company?.email || '',
-              ...companyContactPdfStyle
+              ...contactValuesPdfStyle
             }
           ],
           columnGap: 5,
@@ -171,13 +189,13 @@ export const generateInsuranceInfoPdf = async (pdfSettings: PdfSettings, project
           stack: [
             {
               text: 'Client / Maître d\'ouvrage',
-              ...clientInfoPdfStyle,
+              ...clientTitlePdfStyle,
               bold: true,
               marginBottom: 5
             },
             {
               text: projectState.metadata?.clientsData || 'Non spécifié',
-              ...clientInfoPdfStyle,
+              ...clientContentPdfStyle,
               marginLeft: 20
             }
           ],
@@ -189,46 +207,68 @@ export const generateInsuranceInfoPdf = async (pdfSettings: PdfSettings, project
           stack: [
             {
               text: 'Chantier / Travaux',
-              ...projectInfoPdfStyle,
+              ...projectTitlePdfStyle,
               bold: true,
               marginBottom: 5
             },
             projectState.metadata?.occupant ? {
               text: projectState.metadata.occupant,
-              ...projectInfoPdfStyle,
+              ...projectValuesPdfStyle,
               marginLeft: 20,
               marginBottom: 5
             } : null,
             {
               text: 'Adresse du chantier / lieu d\'intervention:',
-              ...projectInfoPdfStyle,
+              ...projectLabelsPdfStyle,
               marginBottom: 5
             },
             {
               text: projectState.metadata?.adresseChantier || 'Non spécifiée',
-              ...projectInfoPdfStyle,
+              ...projectValuesPdfStyle,
               marginLeft: 20,
               marginBottom: 8
             },
             {
               text: 'Descriptif:',
-              ...projectInfoPdfStyle,
+              ...projectLabelsPdfStyle,
               marginBottom: 5
             },
             {
               text: projectState.metadata?.descriptionProjet || 'Non spécifié',
-              ...projectInfoPdfStyle,
+              ...projectValuesPdfStyle,
               marginLeft: 20,
               marginBottom: projectState.metadata?.infoComplementaire ? 15 : 0
             },
             projectState.metadata?.infoComplementaire ? {
               text: projectState.metadata.infoComplementaire,
-              ...projectInfoPdfStyle,
+              ...projectValuesPdfStyle,
               marginLeft: 20
             } : null
           ]
         }
-      ].filter(Boolean) // Remove null elements
+      ].filter(Boolean), // Remove null elements
+      
+      // Add footer information
+      footer: function(currentPage: number, pageCount: number) {
+        if (!company) return null;
+        
+        const companyName = company.name || '';
+        const capitalSocial = company.capital_social || '10000';
+        const address = company.address || '';
+        const postalCode = company.postal_code || '';
+        const city = company.city || '';
+        const siret = company.siret || '';
+        const codeApe = company.code_ape || '';
+        const tvaIntracom = company.tva_intracom || '';
+        
+        return {
+          text: `${companyName} - SASU au Capital de ${capitalSocial} € - ${address} ${postalCode} ${city} - Siret : ${siret} - Code APE : ${codeApe} - N° TVA Intracommunautaire : ${tvaIntracom}`,
+          ...footerInfoPdfStyle,
+          fontSize: footerInfoPdfStyle.fontSize || 7,
+          alignment: 'center',
+          margin: [40, 0, 40, 20]
+        };
+      }
     };
 
     // Generate and open PDF
