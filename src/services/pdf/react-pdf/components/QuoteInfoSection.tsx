@@ -1,9 +1,11 @@
+// src/services/pdf/react-pdf/components/QuoteInfoSection.tsx
 
+import React from 'react';
 import { View, Text, StyleSheet } from '@react-pdf/renderer';
 import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
 import { ProjectState } from '@/types';
-import { getPdfStyles } from '../utils/pdfStyleUtils';
-import { formatDate } from '@/services/pdf/utils/dateUtils';
+import { getPdfStyles } from '../utils/pdfStyleUtils'; // Utilise getPdfStyles directement
+import { formatDate } from '@/services/pdf/utils/dateUtils'; // Assure-toi que cet utilitaire existe et fonctionne
 
 interface QuoteInfoSectionProps {
   pdfSettings: PdfSettings;
@@ -11,60 +13,81 @@ interface QuoteInfoSectionProps {
 }
 
 export const QuoteInfoSection = ({ pdfSettings, projectState }: QuoteInfoSectionProps) => {
+  // Accès aux métadonnées
   const metadata = projectState.metadata;
-  const quoteNumber = projectState.metadata?.devisNumber || 'XXXX-XX';
-  const quoteDate = projectState.metadata?.dateDevis || new Date().toISOString();
-  
-  const quoteNumberStyles = getPdfStyles(pdfSettings, 'quote_number', { isContainer: false });
-  const quoteDateStyles = getPdfStyles(pdfSettings, 'quote_date', { isContainer: false });
-  const quoteValidityStyles = getPdfStyles(pdfSettings, 'quote_validity', { isContainer: false });
-  const containerStyles = getPdfStyles(pdfSettings, 'default', { isContainer: true });
-  
+
+  // Récupération des données
+  const quoteNumber = metadata?.devisNumber || 'Non Défini';
+  const quoteDateISO = metadata?.dateDevis || new Date().toISOString();
+  const quoteValidityText = "Validité : 3 mois";
+
+  // Formatage de la date
+  const formattedQuoteDate = formatDate(quoteDateISO);
+
+  // --- Styles ---
+  // Conteneur global de la LIGNE (pas besoin de style spécifique, sauf si marge globale)
+  const sectionContainerStyles = getPdfStyles(pdfSettings, 'default', { isContainer: true });
+
+  // Numéro de Devis (Conteneur + Texte)
+  const quoteNumberContainerStyles = getPdfStyles(pdfSettings, 'quote_number', { isContainer: true });
+  const quoteNumberTextStyles = getPdfStyles(pdfSettings, 'quote_number', { isContainer: false });
+
+  // Date de Devis (Conteneur + Texte)
+  const quoteDateContainerStyles = getPdfStyles(pdfSettings, 'quote_date', { isContainer: true });
+  const quoteDateTextStyles = getPdfStyles(pdfSettings, 'quote_date', { isContainer: false });
+
+  // Validité (Conteneur + Texte)
+  const quoteValidityContainerStyles = getPdfStyles(pdfSettings, 'quote_validity', { isContainer: true });
+  const quoteValidityTextStyles = getPdfStyles(pdfSettings, 'quote_validity', { isContainer: false });
+
   return (
-    <View style={[styles.container, containerStyles]}>
+    // Conteneur principal de la section (qui contiendra la ligne)
+    <View style={sectionContainerStyles}>
+      {/* La ligne qui contient les 3 éléments */}
       <View style={styles.row}>
-        <View style={styles.column}>
-          <Text style={quoteNumberStyles}>
+
+        {/* 1. Bloc Numéro de Devis */}
+        {/* Ce View est l'enfant direct de la row */}
+        <View style={[quoteNumberContainerStyles, styles.quoteItem]}> 
+          <Text style={quoteNumberTextStyles}>
             DEVIS N° {quoteNumber}
           </Text>
         </View>
-        <View style={styles.column}>
-          <Text style={[styles.center, quoteDateStyles]}>
-            Du {formatDate(quoteDate)}
+
+        {/* 2. Bloc Date de Devis */}
+        <View style={[quoteDateContainerStyles, styles.quoteItem]}>
+          <Text style={quoteDateTextStyles}>
+            Date : {formattedQuoteDate}
           </Text>
         </View>
-        <View style={styles.column}>
-          <Text style={[styles.right, quoteValidityStyles]}>
-            Validité : 3 mois
+
+        {/* 3. Bloc Validité */}
+        {/* Pas de style local 'quoteItem' pour le dernier élément */}
+        <View style={quoteValidityContainerStyles}> 
+          <Text style={quoteValidityTextStyles}>
+            {quoteValidityText}
           </Text>
         </View>
+
       </View>
     </View>
   );
 };
 
+// Styles locaux pour le layout de cette section
 const styles = StyleSheet.create({
-  container: {
-    display: 'flex',
-    flexDirection: 'column'
-  },
   row: {
-    flexDirection: 'row',
-//    justifyContent: 'space-between',
-    width: '60%'
+    flexDirection: 'row', // <-- Met les éléments sur la même ligne
+    width: '100%',        // <-- Prend toute la largeur disponible
+    // alignItems: 'flex-start', // Comportement par défaut, les aligne en haut
+    // PAS de justifyContent: 'space-between' ou flex: 1 ici
   },
-  quoteNumberContainer: { // Nouveau style spécifique
-    width: '40%', // Ajuste ce pourcentage
-    // Applique les styles dynamiques ici ou dans le JSX
-  },
-  quoteDateContainer: {
-    width: '30%', // Ajuste ce pourcentage
-    // Applique les styles dynamiques ici ou dans le JSX
-    // Ajoute textAlign: 'center' si tu veux centrer DANS ce conteneur
-  },
-  quoteValidityContainer: {
-    width: '30%', // Ajuste ce pourcentage
-    // Applique les styles dynamiques ici ou dans le JSX
-    // Ajoute textAlign: 'right' si tu veux aligner à droite DANS ce conteneur
+  quoteItem: {
+    // Ajoute une marge à droite pour espacer les éléments
+    // Cette marge s'ajoute aux marges/paddings DYNAMIQUES définis
+    // dans quoteNumberContainerStyles et quoteDateContainerStyles
+    marginRight: 10, // Ajuste cette valeur pour l'espacement souhaité
   }
+  // Les styles pour les conteneurs individuels (bordures, padding, fond)
+  // et pour les textes (police, couleur, taille) viennent de getPdfStyles
 });
