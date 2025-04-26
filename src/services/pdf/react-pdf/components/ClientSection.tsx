@@ -10,20 +10,17 @@ interface ClientSectionProps {
 }
 
 export const ClientSection = ({ pdfSettings, projectState }: ClientSectionProps) => {
-  const metadata = projectState.metadata;
-  
-  // On récupère les données clients pré-formatées
-  const clientData = metadata?.clientsData || 'Données client non renseignées';
+  const clientData = projectState.client?.display_data || 'Données client non renseignées';
   
   const titleStyles = getPdfStyles(pdfSettings, 'client_title', { isContainer: false });
   const contentStyles = getPdfStyles(pdfSettings, 'client_content', { isContainer: false });
   const containerStyles = getPdfStyles(pdfSettings, 'client_content', { isContainer: true });
   
   return (
-    <View style={styles.outerContainer}>
-      <Text style={[styles.title, titleStyles]}>Client / Maître d'ouvrage</Text>
+    <View style={styles.container}>
+      <Text style={titleStyles}>Client / Maître d'ouvrage</Text>
       <View style={[styles.contentContainer, containerStyles]}>
-        <Text style={[styles.content, contentStyles]}>
+        <Text style={contentStyles}>
           {clientData}
         </Text>
       </View>
@@ -32,19 +29,13 @@ export const ClientSection = ({ pdfSettings, projectState }: ClientSectionProps)
 };
 
 const styles = StyleSheet.create({
-  outerContainer: {
-    marginBottom: 0
-  },
-  title: {
-    fontWeight: 'bold',
-    fontSize: 14,
-    marginBottom: 6
+  container: {
+    display: 'flex',
+    flexDirection: 'column'
   },
   contentContainer: {
+    marginTop: 6,
     padding: 6,
     borderRadius: 2
-  },
-  content: {
-    fontSize: 12
   }
 });

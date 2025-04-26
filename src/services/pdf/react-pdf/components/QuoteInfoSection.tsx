@@ -12,8 +12,8 @@ interface QuoteInfoSectionProps {
 
 export const QuoteInfoSection = ({ pdfSettings, projectState }: QuoteInfoSectionProps) => {
   const metadata = projectState.metadata;
-  const quoteNumber = metadata?.devisNumber || 'XXXX-XX';
-  const quoteDate = metadata?.dateDevis || new Date().toISOString();
+  const quoteNumber = metadata?.quote_ref || 'XXXX-XX';
+  const quoteDate = metadata?.created_at || new Date().toISOString();
   
   const quoteNumberStyles = getPdfStyles(pdfSettings, 'quote_number', { isContainer: false });
   const quoteDateStyles = getPdfStyles(pdfSettings, 'quote_date', { isContainer: false });
@@ -24,17 +24,17 @@ export const QuoteInfoSection = ({ pdfSettings, projectState }: QuoteInfoSection
     <View style={[styles.container, containerStyles]}>
       <View style={styles.row}>
         <View style={styles.column}>
-          <Text style={[styles.quoteNumberText, quoteNumberStyles]}>
+          <Text style={quoteNumberStyles}>
             DEVIS N° {quoteNumber}
           </Text>
         </View>
         <View style={styles.column}>
-          <Text style={[styles.quoteDateText, quoteDateStyles]}>
+          <Text style={[styles.center, quoteDateStyles]}>
             Date : {formatDate(quoteDate)}
           </Text>
         </View>
         <View style={styles.column}>
-          <Text style={[styles.quoteValidityText, quoteValidityStyles]}>
+          <Text style={[styles.right, quoteValidityStyles]}>
             Validité : 3 mois
           </Text>
         </View>
@@ -45,7 +45,8 @@ export const QuoteInfoSection = ({ pdfSettings, projectState }: QuoteInfoSection
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 0
+    display: 'flex',
+    flexDirection: 'column'
   },
   row: {
     flexDirection: 'row',
@@ -55,13 +56,10 @@ const styles = StyleSheet.create({
   column: {
     flex: 1
   },
-  quoteNumberText: {
-    fontWeight: 'bold'
-  },
-  quoteDateText: {
+  center: {
     textAlign: 'center'
   },
-  quoteValidityText: {
+  right: {
     textAlign: 'right'
   }
 });

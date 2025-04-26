@@ -17,8 +17,8 @@ export const CoverFooterSection = ({ pdfSettings, projectState }: CoverFooterSec
   const footerStyles = getPdfStyles(pdfSettings, 'cover_footer', { isContainer: false });
   const containerStyles = getPdfStyles(pdfSettings, 'cover_footer', { isContainer: true });
   
-  // Assemblage des informations légales de l'entreprise
-  const legalInfo = `${company.name} ${company.type || 'SASU'} au capital de ${company.capital_social || '10 000'} € - ${company.address || ''} ${company.postal_code || ''} ${company.city || ''} - SIRET : ${company.siret || ''} - Code APE : ${company.code_ape || ''} - N° TVA Intracommunautaire : ${company.tva_intracom || ''}`;
+  // Assemblage des informations légales de l'entreprise sans le type de société
+  const legalInfo = `${company.name} SASU au capital de ${company.capital_social || '10 000'} € - ${company.address || ''} ${company.postal_code || ''} ${company.city || ''} - SIRET : ${company.siret || ''} - Code APE : ${company.code_ape || ''} - N° TVA Intracommunautaire : ${company.tva_intracom || ''}`;
   
   return (
     <View style={[styles.container, containerStyles]}>
@@ -30,7 +30,7 @@ export const CoverFooterSection = ({ pdfSettings, projectState }: CoverFooterSec
 const styles = StyleSheet.create({
   container: {
     width: '100%',
-    marginTop: 'auto', // Pour positionner en bas de page
+    marginTop: 'auto',
     paddingTop: 10
   },
   text: {
