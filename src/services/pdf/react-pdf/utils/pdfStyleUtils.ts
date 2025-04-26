@@ -46,13 +46,31 @@ export const getPdfStyles = (
     ? applyElementSettingsToStyle({}, elementSettings, isContainer)
     : {};
 
-  // Appliquer les styles dans l'ordre de priorité correct:
-  // Styles de base (priorité la plus basse) < Styles par défaut < Styles spécifiques à l'élément (priorité la plus haute)
-  return {
+  // Fusionner les styles dans l'ordre de priorité correct
+  let mergedStyles: Style = {
     ...baseStyles,
     ...defaultStyles,
     ...elementSpecificStyles
   };
+
+  // Filtrer les propriétés selon le type d'élément (conteneur ou texte)
+  if (!isContainer) {
+    // Liste des propriétés à supprimer pour les éléments non-conteneurs
+    const containerProperties: (keyof Style)[] = [
+      'marginTop', 'marginRight', 'marginBottom', 'marginLeft',
+      'borderTopWidth', 'borderRightWidth', 'borderBottomWidth', 'borderLeftWidth',
+      'borderColor', 'borderStyle', 'backgroundColor'
+    ];
+
+    // Supprimer les propriétés spécifiques aux conteneurs
+    containerProperties.forEach(prop => {
+      if (prop in mergedStyles) {
+        delete mergedStyles[prop];
+      }
+    });
+  }
+  
+  return mergedStyles;
 };
 
 /**
@@ -101,19 +119,26 @@ const applyElementSettingsToStyle = (
     style.backgroundColor = settings.fillColor;
   }
 
-  // Espacement (margin) - conversion de l'objet spacing personnalisé en marges React-PDF
-  // N'appliquer l'espacement qu'aux conteneurs
-  if (isContainer && settings.spacing) {
+  // Appliquer l'espacement externe (margin)
+  if (settings.spacing) {
     const { top, right, bottom, left } = settings.spacing;
-    // Éviter d'écraser les marges existantes si elles ne sont pas définies dans settings.spacing
     if (typeof top === 'number') style.marginTop = top;
     if (typeof right === 'number') style.marginRight = right;
     if (typeof bottom === 'number') style.marginBottom = bottom;
     if (typeof left === 'number') style.marginLeft = left;
   }
 
-  // Style de bordure avec configuration complète - UNIQUEMENT pour les conteneurs
-  if (isContainer && settings.border) {
+  // Appliquer l'espacement interne (padding)
+  if (settings.padding) {
+    const { top, right, bottom, left } = settings.padding;
+    if (typeof top === 'number') style.paddingTop = top;
+    if (typeof right === 'number') style.paddingRight = right;
+    if (typeof bottom === 'number') style.paddingBottom = bottom;
+    if (typeof left === 'number') style.paddingLeft = left;
+  }
+
+  // Style de bordure avec configuration complète
+  if (settings.border) {
     const { top, right, bottom, left, color, width = 1 } = settings.border;
     
     if (color) {

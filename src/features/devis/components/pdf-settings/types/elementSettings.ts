@@ -1,4 +1,4 @@
-// Définition des paramètres de style pour chaque élément du PDF
+
 import { z } from 'zod';
 
 export interface Spacing {
@@ -23,50 +23,7 @@ export type BorderSettings = Border;
 
 export type TextAlignment = 'left' | 'center' | 'right' | 'justify';
 
-export interface ElementSettings {
-  // Typographie
-  fontFamily?: string;
-  fontSize?: number;
-  isBold?: boolean;
-  isItalic?: boolean;
-  
-  // Apparence
-  color?: string;
-  alignment?: TextAlignment;
-  fillColor?: string; // Ajout de la propriété fillColor
-  
-  // Espacement
-  spacing?: Spacing;
-  
-  // Bordure
-  border?: Border;
-}
-
-// Default settings for an element
-export const defaultElementSettings: ElementSettings = {
-  fontFamily: 'Roboto',
-  fontSize: 12,
-  isBold: false,
-  isItalic: false,
-  color: '#1a1f2c',
-  alignment: 'left',
-  spacing: {
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0
-  },
-  border: {
-    top: false,
-    right: false,
-    bottom: false,
-    left: false,
-    color: '#1a1f2c',
-    width: 1
-  }
-};
-
-// Create a Zod schema for ElementSettings
+// Définir d'abord le schéma Zod
 export const ElementSettingsSchema = z.object({
   fontFamily: z.string().optional(),
   fontSize: z.number().optional(),
@@ -82,6 +39,12 @@ export const ElementSettingsSchema = z.object({
     bottom: z.number().optional(),
     left: z.number().optional()
   }).optional(),
+  padding: z.object({
+    top: z.number().optional(),
+    right: z.number().optional(),
+    bottom: z.number().optional(),
+    left: z.number().optional()
+  }).optional(),
   border: z.object({
     top: z.boolean().optional(),
     right: z.boolean().optional(),
@@ -90,4 +53,38 @@ export const ElementSettingsSchema = z.object({
     color: z.string().optional(),
     width: z.number().optional()
   }).optional()
-}).optional();
+});
+
+// Utiliser l'inférence de type de Zod pour définir ElementSettings
+export type ElementSettings = z.infer<typeof ElementSettingsSchema>;
+
+// Default settings for an element
+export const defaultElementSettings: ElementSettings = {
+  fontFamily: 'Roboto',
+  fontSize: 12,
+  isBold: false,
+  isItalic: false,
+  color: '#1a1f2c',
+  alignment: 'left',
+  lineHeight: 1.5,
+  spacing: {
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0
+  },
+  padding: {
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0
+  },
+  border: {
+    top: false,
+    right: false,
+    bottom: false,
+    left: false,
+    color: '#1a1f2c',
+    width: 1
+  }
+};

@@ -1,9 +1,11 @@
+
 import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ElementSettings, defaultElementSettings } from '../types/elementSettings';
 import { FontSelector } from './FontSelector';
 import { ColorPalette } from './ColorPalette';
 import { SpacingControl } from './SpacingControl';
+import { PaddingControl } from './PaddingControl';
 import { BorderControl } from './BorderControl';
 import { AlignmentControl } from './AlignmentControl';
 import { StyleControls } from './StyleControls';
@@ -83,6 +85,11 @@ export const ElementSettingsForm: React.FC<ElementSettingsFormProps> = ({
       <SpacingControl
         spacing={currentSettings.spacing}
         onChange={(spacing) => setCurrentSettings(prev => ({ ...prev, spacing }))}
+      />
+
+      <PaddingControl
+        padding={currentSettings.padding}
+        onChange={(padding) => setCurrentSettings(prev => ({ ...prev, padding }))}
       />
 
       <AlignmentControl
