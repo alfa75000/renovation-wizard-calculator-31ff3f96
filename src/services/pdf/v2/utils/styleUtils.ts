@@ -67,23 +67,46 @@ export const getElementStyle = (pdfSettings: PdfSettings, elementId: string): St
 };
 
 export const convertStyleToPdfStyle = (style: StyleOptions) => {
-  return {
+  const pdfStyle: any = {
     font: ensureSupportedFont(style.fontFamily),
     fontSize: style.fontSize,
     bold: style.bold,
     italics: style.italic,
     color: style.color,
     alignment: style.alignment,
-    margin: style.margins,
-    padding: style.padding,
-    fillColor: style.fillColor,
-    border: style.border === false ? undefined : [
-      style.border === true || (style.border as any)?.top ? (style.border as any)?.width || 1 : 0,
-      style.border === true || (style.border as any)?.right ? (style.border as any)?.width || 1 : 0,
-      style.border === true || (style.border as any)?.bottom ? (style.border as any)?.width || 1 : 0,
-      style.border === true || (style.border as any)?.left ? (style.border as any)?.width || 1 : 0
-    ]
+    margin: style.margins || [0, 0, 0, 0],
+    fillColor: style.fillColor
   };
+
+  // Handle padding separately as it needs to be applied to table cells
+  if (style.padding) {
+    pdfStyle.padding = style.padding;
+  }
+
+  // Handle border configuration
+  if (style.border) {
+    if (typeof style.border === 'boolean') {
+      pdfStyle.border = style.border ? [1, 1, 1, 1] : undefined;
+    } else {
+      pdfStyle.border = [
+        style.border.top ? (style.border.width || 1) : 0,
+        style.border.right ? (style.border.width || 1) : 0,
+        style.border.bottom ? (style.border.width || 1) : 0,
+        style.border.left ? (style.border.width || 1) : 0
+      ];
+      
+      if (style.border.color) {
+        pdfStyle.borderColor = [
+          style.border.color,
+          style.border.color,
+          style.border.color,
+          style.border.color
+        ];
+      }
+    }
+  }
+
+  return pdfStyle;
 };
 
 export type MarginTuple = [number, number, number, number];

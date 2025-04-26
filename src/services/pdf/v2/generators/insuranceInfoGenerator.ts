@@ -1,3 +1,4 @@
+
 import pdfMake from 'pdfmake/build/pdfmake';
 import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
 import { getElementStyle, convertStyleToPdfStyle, convertPageMargins } from '../utils/styleUtils';
@@ -20,53 +21,88 @@ export const generateInsuranceInfoPdf = async (pdfSettings: PdfSettings, project
     // Ensure we are using a supported font, defaulting to Roboto
     const fontFamily = ensureSupportedFont(pdfStyle.font);
     
-    // Create document definition with strict font settings
+    // Create document definition
     const docDefinition = {
       pageSize: 'A4',
       pageMargins: pageMargins,
       defaultStyle: {
-        font: 'Roboto'
+        font: fontFamily,
+        fontSize: pdfStyle.fontSize || 12
       },
       content: [
-        // Logo
+        // Logo section with styles
         {
-          image: await getBase64ImageFromUrl('/lrs_logo.jpg'),
-          width: pdfSettings.logoSettings.width || 150,
-          height: pdfSettings.logoSettings.height || 70,
-          alignment: pdfSettings.logoSettings.alignment || 'left',
-          margin: [0, 0, 0, 10]
+          table: {
+            widths: ['*'],
+            body: [[
+              {
+                image: await getBase64ImageFromUrl('/lrs_logo.jpg'),
+                width: pdfSettings.logoSettings.width || 150,
+                height: pdfSettings.logoSettings.height || 70,
+                alignment: pdfSettings.logoSettings.alignment || 'left',
+                margin: [0, 0, 0, 10]
+              }
+            ]]
+          },
+          layout: 'noBorders'
         },
-        // Insurance Info Block
+        // Insurance Info Block with full styling support
         {
-          text: 'Informations d\'assurance',
-          style: 'insuranceInfoTitle'
-        },
-        {
-          text: 'N° RCS: 123 456 789',
-          style: 'insuranceInfoText'
-        },
-        {
-          text: 'N° Assurance: ALLIANZ 12345678',
-          style: 'insuranceInfoText'
-        },
-        {
-          text: 'N° TVA: FR 12 345 678 901',
-          style: 'insuranceInfoText'
+          table: {
+            widths: ['*'],
+            body: [
+              [{
+                text: 'Informations d\'assurance',
+                ...pdfStyle,
+                fontSize: (pdfStyle.fontSize || 12) + 2,
+                bold: true,
+                margin: [0, 0, 0, 5]
+              }],
+              [{
+                text: 'N° RCS: 123 456 789',
+                ...pdfStyle
+              }],
+              [{
+                text: 'N° Assurance: ALLIANZ 12345678',
+                ...pdfStyle
+              }],
+              [{
+                text: 'N° TVA: FR 12 345 678 901',
+                ...pdfStyle
+              }]
+            ]
+          },
+          layout: {
+            hLineWidth: function(i: number, node: any) {
+              return pdfStyle.border ? pdfStyle.border[i === 0 ? 2 : 0] : 0;
+            },
+            vLineWidth: function(i: number) {
+              return pdfStyle.border ? pdfStyle.border[i === 0 ? 3 : 1] : 0;
+            },
+            hLineColor: function() {
+              return pdfStyle.borderColor ? pdfStyle.borderColor[0] : '#000000';
+            },
+            vLineColor: function() {
+              return pdfStyle.borderColor ? pdfStyle.borderColor[1] : '#000000';
+            },
+            fillColor: function() {
+              return pdfStyle.fillColor;
+            },
+            paddingLeft: function() {
+              return pdfStyle.padding ? pdfStyle.padding[3] : 0;
+            },
+            paddingRight: function() {
+              return pdfStyle.padding ? pdfStyle.padding[1] : 0;
+            },
+            paddingTop: function() {
+              return pdfStyle.padding ? pdfStyle.padding[0] : 0;
+            },
+            paddingBottom: function() {
+              return pdfStyle.padding ? pdfStyle.padding[2] : 0;
+            }
+          }
         }
-      ],
-      styles: {
-        insuranceInfoTitle: {
-          font: fontFamily,
-          fontSize: (pdfStyle.fontSize || 12) + 2,
-          bold: true,
-          margin: [0, 0, 0, 5]
-        },
-        insuranceInfoText: {
-          font: fontFamily,
-          fontSize: pdfStyle.fontSize || 12,
-          margin: [0, 0, 0, 3]
-        }
-      }
+      ]
     };
 
     // Generate and open PDF
