@@ -30,7 +30,7 @@ export const QuoteInfoSection = ({ pdfSettings, projectState }: QuoteInfoSection
         </View>
         <View style={styles.column}>
           <Text style={[styles.center, quoteDateStyles]}>
-            du {formatDate(quoteDate)}
+            Du {formatDate(quoteDate)}
           </Text>
         </View>
         <View style={styles.column}>
