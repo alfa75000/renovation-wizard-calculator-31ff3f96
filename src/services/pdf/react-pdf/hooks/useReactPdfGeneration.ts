@@ -5,6 +5,7 @@ import { useProject } from '@/contexts/ProjectContext';
 import { usePdfSettings } from '@/services/pdf/hooks/usePdfSettings';
 import { toast } from 'sonner';
 import { CoverDocument } from '../components/CoverDocument';
+import React from 'react';
 
 export const useReactPdfGeneration = () => {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -22,10 +23,10 @@ export const useReactPdfGeneration = () => {
       
       // Génération du document PDF
       const blob = await pdf(
-        <CoverDocument 
-          pdfSettings={pdfSettings} 
-          projectState={state}
-        />
+        React.createElement(CoverDocument, {
+          pdfSettings: pdfSettings,
+          projectState: state
+        })
       ).toBlob();
       
       // Ouverture du PDF dans un nouvel onglet
