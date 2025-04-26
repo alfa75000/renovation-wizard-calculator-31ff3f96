@@ -16,17 +16,13 @@ const EditionDevis: React.FC = () => {
   const { state } = useProject();
   const { metadata } = state;
   const [activeTab, setActiveTab] = useState("printable");
-  const { isGenerating: isGeneratingPdfMake, generateInsuranceInfo } = useDevisGeneration();
+  const { isGenerating } = useDevisGeneration();
   const { isGenerating: isGeneratingReactPdf, generateReactPdf } = useReactPdfGeneration();
   
   const pageTitle = metadata?.nomProjet 
     ? `Édition du devis - ${metadata.nomProjet}` 
     : "Édition du devis";
     
-  const handleGenerateDevis = async () => {
-    await generateInsuranceInfo();
-  };
-  
   return (
     <QueryClientProvider client={queryClient}>
       <Layout
@@ -35,15 +31,6 @@ const EditionDevis: React.FC = () => {
       >
         <div className="max-w-4xl mx-auto">
           <div className="flex justify-end mb-4 space-x-2">
-            <Button 
-              variant="default" 
-              onClick={generateInsuranceInfo}
-              disabled={isGeneratingPdfMake}
-            >
-              <FileText className="mr-2 h-4 w-4" />
-              {isGeneratingPdfMake ? 'Génération en cours...' : 'Générer Devis'}
-            </Button>
-            
             <Button 
               variant="default" 
               onClick={generateReactPdf}

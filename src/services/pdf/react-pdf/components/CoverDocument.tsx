@@ -3,7 +3,7 @@ import { Document, Page, StyleSheet } from '@react-pdf/renderer';
 import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
 import { ProjectState } from '@/types';
 import { HeaderSection } from './HeaderSection';
-import { convertPageMargins } from '../../v2/utils/styleUtils';
+import { convertPageMargins, MarginTuple } from '../../v2/utils/styleUtils';
 
 interface CoverDocumentProps {
   pdfSettings: PdfSettings;
@@ -11,7 +11,9 @@ interface CoverDocumentProps {
 }
 
 export const CoverDocument = ({ pdfSettings, projectState }: CoverDocumentProps) => {
-  const margins = convertPageMargins(pdfSettings.margins.cover);
+  const margins: MarginTuple = convertPageMargins(
+    pdfSettings.margins?.cover as number[] | undefined
+  );
 
   return (
     <Document>
@@ -42,4 +44,3 @@ const styles = StyleSheet.create({
     fontFamily: 'Helvetica'
   }
 });
-
