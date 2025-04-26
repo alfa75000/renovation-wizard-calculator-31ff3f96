@@ -2,7 +2,7 @@
 import { View, Image, Text, StyleSheet } from '@react-pdf/renderer';
 import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
 import { ProjectState } from '@/types';
-import { getContainerStyles, getTextStyles } from '../utils/pdfStyleUtils';
+import { getPdfStyles } from '../utils/pdfStyleUtils';
 
 interface HeaderSectionProps {
   pdfSettings: PdfSettings;
@@ -15,10 +15,11 @@ export const HeaderSection = ({ pdfSettings, projectState }: HeaderSectionProps)
   const logoUrl = '/lrs_logo.jpg';
 
   // Styles pour le conteneur principal du header
-  const headerContainerStyles = getContainerStyles(pdfSettings, 'default', styles.header);
+  const headerContainerStyles = getPdfStyles(pdfSettings, 'default', { isContainer: true, ...styles.header });
   
   // Styles pour le conteneur du logo
-  const logoContainerStyles = getContainerStyles(pdfSettings, 'default', {
+  const logoContainerStyles = getPdfStyles(pdfSettings, 'default', { 
+    isContainer: true,
     ...styles.logoContainer,
     width: '60%'
   });
@@ -32,29 +33,27 @@ export const HeaderSection = ({ pdfSettings, projectState }: HeaderSectionProps)
                pdfSettings.logoSettings?.alignment === 'right' ? 'flex-end' : 'flex-start'
   } as const;
 
-  // Styles pour les informations d'assurance - conteneur sans alignItems forcé
-  const insuranceContainerStyles = getContainerStyles(pdfSettings, 'insurance_info', {
+  // Styles pour les informations d'assurance
+  const insuranceContainerStyles = getPdfStyles(pdfSettings, 'insurance_info', { 
+    isContainer: true,
     ...styles.insuranceInfo,
-    width: '40%',
+    width: '40%'
   });
-  
-  // Styles pour le texte d'assurance - permet le paramétrage complet
-  const insuranceTextStyles = getTextStyles(pdfSettings, 'insurance_info');
-  
-  // Styles pour le slogan de l'entreprise
-  const sloganStyles = getTextStyles(pdfSettings, 'company_slogan');
+  const insuranceTextStyles = getPdfStyles(pdfSettings, 'insurance_info', { isContainer: false });
 
-  // Styles pour les informations de l'entreprise
-  const companyInfoStyles = getTextStyles(pdfSettings, 'company_address');
+  // Styles pour le slogan et son conteneur
+  const sloganContainerStyles = getPdfStyles(pdfSettings, 'company_slogan', { isContainer: true });
+  const sloganTextStyles = getPdfStyles(pdfSettings, 'company_slogan', { isContainer: false });
+
+  // Styles pour les infos société et leur conteneur
+  const companyInfoContainerStyles = getPdfStyles(pdfSettings, 'company_address', { isContainer: true });
+  const companyInfoTextStyles = getPdfStyles(pdfSettings, 'company_address', { isContainer: false });
 
   return (
     <View style={styles.container}>
       <View style={headerContainerStyles}>
         <View style={logoContainerStyles}>
-          <Image
-            src={logoUrl}
-            style={logoStyles}
-          />
+          <Image src={logoUrl} style={logoStyles} />
         </View>
         
         <View style={insuranceContainerStyles}>
@@ -64,14 +63,16 @@ export const HeaderSection = ({ pdfSettings, projectState }: HeaderSectionProps)
         </View>
       </View>
 
-      {slogan && (
-        <Text style={sloganStyles}>{slogan}</Text>
-      )}
+      <View style={sloganContainerStyles}>
+        <Text style={sloganTextStyles}>{slogan}</Text>
+      </View>
       
       {company && (
-        <Text style={companyInfoStyles}>
-          {company.name} - {company.address} - {company.postal_code} {company.city}
-        </Text>
+        <View style={companyInfoContainerStyles}>
+          <Text style={companyInfoTextStyles}>
+            {company.name} - {company.address} - {company.postal_code} {company.city}
+          </Text>
+        </View>
       )}
     </View>
   );
@@ -94,6 +95,7 @@ const styles = StyleSheet.create({
     objectFit: 'contain'
   },
   insuranceInfo: {
-    // Suppression de alignItems: 'flex-end' pour permettre l'alignement personnalisable
+    // Les styles spécifiques sont maintenant appliqués via getPdfStyles
   }
 });
+
