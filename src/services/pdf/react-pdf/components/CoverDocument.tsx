@@ -1,8 +1,9 @@
+
 import { Document, Page, View, StyleSheet } from '@react-pdf/renderer';
 import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
 import { ProjectState } from '@/types';
 import { HeaderSection } from './HeaderSection';
-import { convertPageMargins } from '../../v2/utils/styleUtils';
+import { convertPageMargins, MarginTuple } from '../../v2/utils/styleUtils';
 
 interface CoverDocumentProps {
   pdfSettings: PdfSettings;
@@ -10,27 +11,26 @@ interface CoverDocumentProps {
 }
 
 export const CoverDocument = ({ pdfSettings, projectState }: CoverDocumentProps) => {
-  // Ensure margins array is limited to exactly 4 numbers
-  const rawMargins = convertPageMargins(pdfSettings.margins.cover);
-  const margins = [rawMargins[0], rawMargins[1], rawMargins[2], rawMargins[3]];
+  const pageMargins: MarginTuple = convertPageMargins(pdfSettings.margins.cover);
 
   return (
     <Document>
       <Page 
         size="A4" 
-        style={styles.page}
-      >
-        <View style={[
-          styles.content,
-          { 
-            padding: `${margins[0]}pt ${margins[1]}pt ${margins[2]}pt ${margins[3]}pt`
+        style={[
+          styles.page,
+          {
+            paddingTop: pageMargins[0],
+            paddingRight: pageMargins[1],
+            paddingBottom: pageMargins[2],
+            paddingLeft: pageMargins[3]
           }
-        ]}>
-          <HeaderSection 
-            pdfSettings={pdfSettings}
-            projectState={projectState}
-          />
-        </View>
+        ]}
+      >
+        <HeaderSection 
+          pdfSettings={pdfSettings}
+          projectState={projectState}
+        />
       </Page>
     </Document>
   );
@@ -40,8 +40,5 @@ const styles = StyleSheet.create({
   page: {
     backgroundColor: '#ffffff',
     fontFamily: 'Helvetica'
-  },
-  content: {
-    flex: 1
   }
 });

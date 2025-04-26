@@ -1,147 +1,23 @@
+
 import { ElementSettings } from '@/features/devis/components/pdf-settings/types/elementSettings';
 import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
 import { ensureSupportedFont } from '@/services/pdf/utils/fontUtils';
 
-export interface StyleOptions {
-  fontFamily?: string;
-  fontSize?: number;
-  bold?: boolean;
-  italic?: boolean;
-  color?: string;
-  alignment?: 'left' | 'center' | 'right' | 'justify';
-  margins?: [number, number, number, number]; // [top, right, bottom, left]
-  padding?: [number, number, number, number]; // [top, right, bottom, left]
-  border?: boolean | {
-    top?: boolean;
-    right?: boolean;
-    bottom?: boolean;
-    left?: boolean;
-    color?: string;
-    width?: number;
-  };
-  spacing?: {
-    top?: number;
-    right?: number;
-    bottom?: number;
-    left?: number;
-  };
-}
-
-export const getElementStyle = (pdfSettings: PdfSettings, elementId: string): StyleOptions => {
-  const defaultStyle: StyleOptions = {
-    fontFamily: ensureSupportedFont(pdfSettings.fontFamily),
-    fontSize: 12,
-    bold: false,
-    italic: false,
-    color: pdfSettings.colors.mainText || '#333333',
-    alignment: 'left',
-    margins: [0, 0, 0, 0],
-    padding: [0, 0, 0, 0],
-    spacing: {
-      top: 0,
-      right: 0,
-      bottom: 0,
-      left: 0
-    }
-  };
-
-  if (!pdfSettings.elements || !pdfSettings.elements[elementId]) {
-    return defaultStyle;
-  }
-
-  const elementSettings = pdfSettings.elements[elementId] as ElementSettings;
-  
-  return {
-    fontFamily: ensureSupportedFont(elementSettings.fontFamily) || defaultStyle.fontFamily,
-    fontSize: elementSettings.fontSize || defaultStyle.fontSize,
-    bold: elementSettings.isBold || defaultStyle.bold,
-    italic: elementSettings.isItalic || defaultStyle.italic,
-    color: elementSettings.color || defaultStyle.color,
-    alignment: elementSettings.alignment || defaultStyle.alignment,
-    margins: [
-      elementSettings.spacing?.top || 0,
-      elementSettings.spacing?.right || 0,
-      elementSettings.spacing?.bottom || 0,
-      elementSettings.spacing?.left || 0
-    ],
-    padding: [0, 0, 0, 0], // Default padding
-    spacing: {
-      top: elementSettings.spacing?.top || 0,
-      right: elementSettings.spacing?.right || 0,
-      bottom: elementSettings.spacing?.bottom || 0,
-      left: elementSettings.spacing?.left || 0
-    },
-    border: elementSettings.border === true ? {
-      top: true,
-      right: true,
-      bottom: true,
-      left: true,
-      color: '#000000',
-      width: 1
-    } : elementSettings.border || false
-  };
-};
-
-export const convertStyleToPdfStyle = (style: StyleOptions) => {
-  const pdfStyle: any = {
-    font: ensureSupportedFont(style.fontFamily),
-    fontSize: style.fontSize,
-    bold: style.bold,
-    italics: style.italic,
-    color: style.color,
-    alignment: style.alignment,
-    margin: style.margins || [0, 0, 0, 0]
-  };
-
-  // Handle padding separately as it needs to be applied to table cells
-  if (style.padding) {
-    pdfStyle.padding = style.padding;
-  }
-
-  // Handle border configuration
-  if (style.border) {
-    if (typeof style.border === 'boolean') {
-      pdfStyle.border = [1, 1, 1, 1];
-      pdfStyle.borderColor = ['#000000', '#000000', '#000000', '#000000'];
-    } else {
-      pdfStyle.border = [
-        style.border.top ? (style.border.width || 1) : 0,
-        style.border.right ? (style.border.width || 1) : 0,
-        style.border.bottom ? (style.border.width || 1) : 0,
-        style.border.left ? (style.border.width || 1) : 0
-      ];
-      
-      if (style.border.color) {
-        pdfStyle.borderColor = [
-          style.border.color,
-          style.border.color,
-          style.border.color,
-          style.border.color
-        ];
-      }
-    }
-  }
-
-  return pdfStyle;
-};
-
 export type MarginTuple = [number, number, number, number];
 
-export const convertPageMargins = (margins: number[] | undefined): number[] => { 
-  const defaultMargins = [40, 40, 40, 40]; 
+export const convertPageMargins = (margins: number[] | undefined): MarginTuple => { 
+  const defaultMargins: MarginTuple = [40, 40, 40, 40]; 
 
   if (!margins || !Array.isArray(margins) || margins.length === 0) {
     console.warn('Invalid or empty margins format, using defaults [40, 40, 40, 40]');
     return defaultMargins;
   }
 
-  // Ensure we only take the first 4 values and they are numbers
-  const resultMargins = [
+  // Create the tuple with valid values or defaults
+  return [
     typeof margins[0] === 'number' ? margins[0] : defaultMargins[0],
     typeof margins[1] === 'number' ? margins[1] : defaultMargins[1],
     typeof margins[2] === 'number' ? margins[2] : defaultMargins[2],
     typeof margins[3] === 'number' ? margins[3] : defaultMargins[3]
   ];
-  
-  return resultMargins;
 };
