@@ -99,7 +99,9 @@ export const CoverDocument = ({ pdfSettings, projectState }: CoverDocumentProps)
         />
         
         {/* ESPACE VERTICAL 7 (space_before_footer) */}
-        
+
+        <View style={styles.contentGrower} /> 
+
         {/* 8. CoverFooterSection */}
         <CoverFooterSection 
           pdfSettings={pdfSettings}
