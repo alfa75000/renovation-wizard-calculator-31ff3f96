@@ -1,3 +1,4 @@
+
 import { Document, Page, StyleSheet, View } from '@react-pdf/renderer';
 import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
 import { ProjectState } from '@/types';
