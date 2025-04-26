@@ -1,3 +1,4 @@
+
 import { View, Image, Text, StyleSheet } from '@react-pdf/renderer';
 import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
 import { ProjectState } from '@/types';
@@ -26,7 +27,7 @@ export const HeaderSection = ({ pdfSettings, projectState }: HeaderSectionProps)
     height: pdfSettings.logoSettings?.height || 70,
     alignSelf: pdfSettings.logoSettings?.alignment === 'center' ? 'center' : 
                pdfSettings.logoSettings?.alignment === 'right' ? 'flex-end' : 'flex-start'
-  } as const; // Using const assertion to ensure TypeScript recognizes the literal types
+  } as const;
 
   // Styles for insurance information
   const insuranceContainerStyles = getContainerStyles(pdfSettings, 'insurance_info', styles.insuranceInfo);
@@ -89,3 +90,4 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end'
   }
 });
+
