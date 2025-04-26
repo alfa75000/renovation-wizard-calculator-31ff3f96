@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { FileText } from "lucide-react";
 import { useDevisGeneration } from "@/hooks/useDevisGeneration";
 import { useReactPdfGeneration } from "@/services/pdf/react-pdf/hooks/useReactPdfGeneration";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 const queryClient = new QueryClient();
 

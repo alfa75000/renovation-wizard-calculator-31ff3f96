@@ -1,5 +1,4 @@
-
-import { Document, Page, View, Image, Text, StyleSheet } from '@react-pdf/renderer';
+import { Document, Page, View, StyleSheet } from '@react-pdf/renderer';
 import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
 import { ProjectState } from '@/types';
 import { HeaderSection } from './HeaderSection';
@@ -11,7 +10,9 @@ interface CoverDocumentProps {
 }
 
 export const CoverDocument = ({ pdfSettings, projectState }: CoverDocumentProps) => {
-  const margins = convertPageMargins(pdfSettings.margins.cover);
+  // Ensure margins array is limited to exactly 4 numbers
+  const rawMargins = convertPageMargins(pdfSettings.margins.cover);
+  const margins = [rawMargins[0], rawMargins[1], rawMargins[2], rawMargins[3]];
 
   return (
     <Document>

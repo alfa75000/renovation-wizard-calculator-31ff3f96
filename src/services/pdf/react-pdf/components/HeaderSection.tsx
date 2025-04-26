@@ -1,4 +1,3 @@
-
 import { View, Image, Text, StyleSheet } from '@react-pdf/renderer';
 import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
 import { ProjectState } from '@/types';
@@ -14,6 +13,15 @@ export const HeaderSection = ({ pdfSettings, projectState }: HeaderSectionProps)
   const logoUrl = company?.logo_url || '/lrs_logo.jpg';
   const { logoSettings } = pdfSettings;
 
+  const getAlignSelf = (alignment: 'left' | 'center' | 'right'): 'flex-start' | 'center' | 'flex-end' => {
+    switch (alignment) {
+      case 'left': return 'flex-start';
+      case 'right': return 'flex-end';
+      case 'center': return 'center';
+      default: return 'flex-start';
+    }
+  };
+
   return (
     <View style={styles.header}>
       <View style={[
@@ -27,7 +35,7 @@ export const HeaderSection = ({ pdfSettings, projectState }: HeaderSectionProps)
             { 
               width: logoSettings.width,
               height: logoSettings.height,
-              alignSelf: logoSettings.alignment
+              alignSelf: getAlignSelf(logoSettings.alignment)
             }
           ]}
         />
