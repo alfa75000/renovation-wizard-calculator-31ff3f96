@@ -1,4 +1,3 @@
-
 import { Document, Page, StyleSheet, View } from '@react-pdf/renderer';
 import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
 import { ProjectState } from '@/types';
@@ -45,7 +44,7 @@ export const CoverDocument = ({ pdfSettings, projectState }: CoverDocumentProps)
         />
         
         {/* ESPACE VERTICAL 1 (space_after_header) */}
-        <View style={{ height: 8 /* TODO: Rendre configurable (space_after_header) */ }} />
+        <View style={{ height: 12 /* TODO: Rendre configurable (space_after_header) */ }} />
         
         {/* 2. Section Slogan */}
         <SloganSection 
@@ -54,7 +53,7 @@ export const CoverDocument = ({ pdfSettings, projectState }: CoverDocumentProps)
         />
         
         {/* ESPACE VERTICAL 2 (space_after_slogan) */}
-        <View style={{ height: 10 /* TODO: Rendre configurable (space_after_slogan) */ }} />
+        <View style={{ height: 12 /* TODO: Rendre configurable (space_after_slogan) */ }} />
         
         {/* 3. Section Coordonnées Société */}
         <CompanyAddressSection 
@@ -72,7 +71,7 @@ export const CoverDocument = ({ pdfSettings, projectState }: CoverDocumentProps)
         />
         
         {/* ESPACE VERTICAL 4 (space_after_contact) */}
-        <View style={{ height: 30 /* TODO: Rendre configurable (space_after_contact) */ }} />
+        <View style={{ height: 12 /* TODO: Rendre configurable (space_after_contact) */ }} />
         
         {/* 5. QuoteInfoSection */}
         <QuoteInfoSection 
@@ -81,7 +80,7 @@ export const CoverDocument = ({ pdfSettings, projectState }: CoverDocumentProps)
         />
         
         {/* ESPACE VERTICAL 5 (space_after_quote_info) */}
-        <View style={{ height: 30 /* TODO: Rendre configurable (space_after_quote_info) */ }} />
+        <View style={{ height: 12 /* TODO: Rendre configurable (space_after_quote_info) */ }} />
         
         {/* 6. ClientSection */}
         <ClientSection 
@@ -90,7 +89,7 @@ export const CoverDocument = ({ pdfSettings, projectState }: CoverDocumentProps)
         />
         
         {/* ESPACE VERTICAL 6 (space_after_client_content) */}
-        <View style={{ height: 20 /* TODO: Rendre configurable (space_after_client_content) */ }} />
+        <View style={{ height: 12 /* TODO: Rendre configurable (space_after_client_content) */ }} />
         
         {/* 7. ProjectSection */}
         <ProjectSection 
