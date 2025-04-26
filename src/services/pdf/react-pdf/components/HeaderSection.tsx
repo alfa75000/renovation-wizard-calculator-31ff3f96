@@ -10,11 +10,9 @@ interface HeaderSectionProps {
 }
 
 export const HeaderSection = ({ pdfSettings, projectState }: HeaderSectionProps) => {
-  const company = projectState.metadata?.company;
-  const slogan = company?.slogan || 'Entreprise Générale du Bâtiment';
   const logoUrl = '/lrs_logo.jpg';
 
-  // Récupération des styles dynamiques (sans mélanger avec les styles locaux)
+  // Récupération des styles dynamiques
   const dynamicHeaderStyles = getPdfStyles(pdfSettings, 'default', { isContainer: true });
   const dynamicLogoContainerStyles = getPdfStyles(pdfSettings, 'default', { isContainer: true });
   const dynamicInsuranceStyles = getPdfStyles(pdfSettings, 'insurance_info', { isContainer: true });
@@ -29,20 +27,6 @@ export const HeaderSection = ({ pdfSettings, projectState }: HeaderSectionProps)
                pdfSettings.logoSettings?.alignment === 'right' ? 'flex-end' : 'flex-start'
   } as const;
 
-  // Styles pour le slogan avec alignement dynamique
-  const sloganTextStyles = getPdfStyles(pdfSettings, 'company_slogan', { isContainer: false });
-  const sloganContainerStyles = getPdfStyles(pdfSettings, 'company_slogan', { isContainer: true });
-  const sloganContainerAlignSelf = sloganTextStyles.textAlign === 'center' ? 'center' :
-                                  sloganTextStyles.textAlign === 'right' ? 'flex-end' :
-                                  'flex-start';
-
-  // Styles pour les infos société avec alignement dynamique
-  const companyInfoTextStyles = getPdfStyles(pdfSettings, 'company_address', { isContainer: false });
-  const companyInfoContainerStyles = getPdfStyles(pdfSettings, 'company_address', { isContainer: true });
-  const companyInfoContainerAlignSelf = companyInfoTextStyles.textAlign === 'center' ? 'center' :
-                                      companyInfoTextStyles.textAlign === 'right' ? 'flex-end' :
-                                      'flex-start';
-
   return (
     <View style={styles.container}>
       <View style={[styles.header, dynamicHeaderStyles]}>
@@ -56,37 +40,18 @@ export const HeaderSection = ({ pdfSettings, projectState }: HeaderSectionProps)
           <Text style={insuranceTextStyles}>Responsabilité civile décennale</Text>
         </View>
       </View>
-
-      {/* Nouveau wrapper externe pour le slogan */}
-      <View style={styles.wrapperView}>
-        <View style={[sloganContainerStyles, { alignSelf: sloganContainerAlignSelf }]}>
-          <Text style={sloganTextStyles}>{slogan}</Text>
-        </View>
-      </View>
-      
-      {/* Nouveau wrapper externe pour les infos société */}
-      {company && (
-        <View style={styles.wrapperView}>
-          <View style={[companyInfoContainerStyles, { alignSelf: companyInfoContainerAlignSelf }]}>
-            <Text style={companyInfoTextStyles}>
-              {company.name} - {company.address} - {company.postal_code} {company.city}
-            </Text>
-          </View>
-        </View>
-      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 20
+    marginBottom: 0 // Nous gérons maintenant les espacements via les composants parents
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 10
+    alignItems: 'flex-start'
   },
   logoContainer: {
     flex: 1
@@ -95,11 +60,6 @@ const styles = StyleSheet.create({
     objectFit: 'contain'
   },
   insuranceInfo: {
-    // Les styles spécifiques sont maintenant appliqués via getPdfStyles
-  },
-  wrapperView: {
-    display: 'flex',
-    flexDirection: 'row',
-    justifyContent: 'flex-start', // Ceci aidera à aligner les conteneurs internes
+    // Les styles spécifiques sont appliqués via getPdfStyles
   }
 });
