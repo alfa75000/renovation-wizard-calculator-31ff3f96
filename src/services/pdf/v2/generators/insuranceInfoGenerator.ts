@@ -13,8 +13,9 @@ export const generateInsuranceInfoPdf = async (pdfSettings: PdfSettings, project
   const insuranceInfoStyle = getElementStyle(pdfSettings, 'insurance_info');
   const pdfStyle = convertStyleToPdfStyle(insuranceInfoStyle);
   
-  // Get page margins as a properly formatted number array
-  const pageMargins = convertPageMargins(pdfSettings.margins.cover);
+  // Get page margins with proper type handling
+  const rawMargins = pdfSettings.margins?.cover as number[] | undefined;
+  const pageMargins = convertPageMargins(rawMargins);
   
   // Create document definition
   const docDefinition = {
