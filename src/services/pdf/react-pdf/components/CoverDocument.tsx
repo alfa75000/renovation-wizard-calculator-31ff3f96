@@ -1,5 +1,5 @@
 
-import { Document, Page, View, StyleSheet } from '@react-pdf/renderer';
+import { Document, Page, StyleSheet } from '@react-pdf/renderer';
 import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
 import { ProjectState } from '@/types';
 import { HeaderSection } from './HeaderSection';
@@ -42,3 +42,4 @@ const styles = StyleSheet.create({
     fontFamily: 'Helvetica'
   }
 });
+
