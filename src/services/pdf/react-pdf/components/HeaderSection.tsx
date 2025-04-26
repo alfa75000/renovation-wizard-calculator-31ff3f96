@@ -57,15 +57,21 @@ export const HeaderSection = ({ pdfSettings, projectState }: HeaderSectionProps)
         </View>
       </View>
 
-      <View style={[sloganContainerStyles, { alignSelf: sloganContainerAlignSelf }]}>
-        <Text style={sloganTextStyles}>{slogan}</Text>
+      {/* Nouveau wrapper externe pour le slogan */}
+      <View style={styles.wrapperView}>
+        <View style={[sloganContainerStyles, { alignSelf: sloganContainerAlignSelf }]}>
+          <Text style={sloganTextStyles}>{slogan}</Text>
+        </View>
       </View>
       
+      {/* Nouveau wrapper externe pour les infos société */}
       {company && (
-        <View style={[companyInfoContainerStyles, { alignSelf: companyInfoContainerAlignSelf }]}>
-          <Text style={companyInfoTextStyles}>
-            {company.name} - {company.address} - {company.postal_code} {company.city}
-          </Text>
+        <View style={styles.wrapperView}>
+          <View style={[companyInfoContainerStyles, { alignSelf: companyInfoContainerAlignSelf }]}>
+            <Text style={companyInfoTextStyles}>
+              {company.name} - {company.address} - {company.postal_code} {company.city}
+            </Text>
+          </View>
         </View>
       )}
     </View>
@@ -90,5 +96,10 @@ const styles = StyleSheet.create({
   },
   insuranceInfo: {
     // Les styles spécifiques sont maintenant appliqués via getPdfStyles
+  },
+  wrapperView: {
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'flex-start', // Ceci aidera à aligner les conteneurs internes
   }
 });
