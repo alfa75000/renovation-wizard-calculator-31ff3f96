@@ -5,16 +5,16 @@ import { ElementSettings } from '@/features/devis/components/pdf-settings/types/
 import { PdfElementId } from '@/features/devis/components/pdf-settings/types/typography';
 import { ensureSupportedFont } from '@/services/pdf/utils/fontUtils';
 
-// Types for style options
+// Types pour les options de style
 type PdfStyleOptions = {
   isContainer?: boolean;
   inheritParentStyles?: boolean;
 };
 
 /**
- * Core function that generates PDF styles from settings
- * Properly handles style inheritance:
- * Base Styles < Default Element Settings < Specific Element Settings
+ * Fonction principale qui génère les styles PDF à partir des paramètres
+ * Gère correctement l'héritage des styles:
+ * Styles de base < Paramètres d'éléments par défaut < Paramètres d'éléments spécifiques
  */
 export const getPdfStyles = (
   pdfSettings: PdfSettings | null | undefined,
@@ -23,7 +23,7 @@ export const getPdfStyles = (
 ): Style => {
   const { isContainer = false, inheritParentStyles = true } = options;
 
-  // Most minimal base styles - should almost never override anything
+  // Styles de base minimaux - ne devraient presque jamais écraser quoi que ce soit
   const baseStyles: Style = {
     ...(inheritParentStyles && {
       textAlign: 'left'
@@ -34,20 +34,20 @@ export const getPdfStyles = (
     return baseStyles;
   }
 
-  // First apply default settings if available
+  // D'abord appliquer les paramètres par défaut si disponibles
   const defaultSettings = pdfSettings.elements['default'];
   const defaultStyles = defaultSettings
     ? applyElementSettingsToStyle({}, defaultSettings, isContainer)
     : {};
 
-  // Then merge with element-specific settings (priority)
+  // Puis fusionner avec les paramètres spécifiques à l'élément (prioritaires)
   const elementSettings = pdfSettings.elements[elementId];
   const elementSpecificStyles = elementSettings
     ? applyElementSettingsToStyle({}, elementSettings, isContainer)
     : {};
 
-  // Apply the styles in the correct priority order:
-  // Base styles (lowest priority) < Default styles < Element-specific styles (highest priority)
+  // Appliquer les styles dans l'ordre de priorité correct:
+  // Styles de base (priorité la plus basse) < Styles par défaut < Styles spécifiques à l'élément (priorité la plus haute)
   return {
     ...baseStyles,
     ...defaultStyles,
@@ -56,8 +56,8 @@ export const getPdfStyles = (
 };
 
 /**
- * Converts ElementSettings object to React-PDF Style object
- * Ensuring proper mapping of all properties
+ * Convertit un objet ElementSettings en objet Style de React-PDF
+ * Assure une correspondance correcte de toutes les propriétés
  */
 const applyElementSettingsToStyle = (
   baseStyle: Style,
@@ -66,7 +66,7 @@ const applyElementSettingsToStyle = (
 ): Style => {
   const style: Style = { ...baseStyle };
 
-  // Text styling - directly mapping to React-PDF properties
+  // Style de texte - correspondance directe avec les propriétés React-PDF
   if (settings.fontFamily) {
     style.fontFamily = ensureSupportedFont(settings.fontFamily);
   }
@@ -91,12 +91,12 @@ const applyElementSettingsToStyle = (
     style.textAlign = settings.alignment;
   }
 
-  // Background styling
+  // Style d'arrière-plan
   if (settings.fillColor) {
     style.backgroundColor = settings.fillColor;
   }
 
-  // Spacing (margin) - converting from custom spacing object to React-PDF margins
+  // Espacement (margin) - conversion de l'objet spacing personnalisé en marges React-PDF
   if (settings.spacing) {
     if (typeof settings.spacing.top === 'number') style.marginTop = settings.spacing.top;
     if (typeof settings.spacing.right === 'number') style.marginRight = settings.spacing.right;
@@ -104,15 +104,15 @@ const applyElementSettingsToStyle = (
     if (typeof settings.spacing.left === 'number') style.marginLeft = settings.spacing.left;
   }
 
-  // Border styling with full configuration
-  if (settings.border) {
+  // Style de bordure avec configuration complète - UNIQUEMENT pour les conteneurs
+  if (isContainer && settings.border) {
     const { top, right, bottom, left, color, width = 1 } = settings.border;
     
     if (color) {
       style.borderColor = color;
     }
 
-    // Only apply border style if at least one side has a border
+    // N'appliquer le style de bordure que si au moins un côté a une bordure
     if (top || right || bottom || left) {
       style.borderStyle = 'solid';
       
@@ -127,33 +127,33 @@ const applyElementSettingsToStyle = (
 };
 
 /**
- * Helper function for container styles
- * Keeps backward compatibility while using the new unified style system
+ * Fonction d'aide pour les styles de conteneur
+ * Maintient la compatibilité descendante tout en utilisant le nouveau système de style unifié
  */
 export const getContainerStyles = (
   pdfSettings: PdfSettings | null | undefined,
   elementId: PdfElementId,
   additionalStyles: Style = {}
 ): Style => {
-  // Get base styles from the unified system
+  // Obtenir les styles de base du système unifié
   const baseStyles = getPdfStyles(pdfSettings, elementId, { isContainer: true });
   
-  // Merge with any additional styles (lowest priority to preserve PDF settings)
+  // Fusionner avec les styles supplémentaires (priorité la plus basse pour préserver les paramètres PDF)
   return { ...additionalStyles, ...baseStyles };
 };
 
 /**
- * Helper function for text styles
- * Keeps backward compatibility while using the new unified style system
+ * Fonction d'aide pour les styles de texte
+ * Maintient la compatibilité descendante tout en utilisant le nouveau système de style unifié
  */
 export const getTextStyles = (
   pdfSettings: PdfSettings | null | undefined,
   elementId: PdfElementId,
   additionalStyles: Style = {}
 ): Style => {
-  // Get base styles from the unified system
+  // Obtenir les styles de base du système unifié
   const baseStyles = getPdfStyles(pdfSettings, elementId, { isContainer: false });
   
-  // Merge with any additional styles (lowest priority to preserve PDF settings)
+  // Fusionner avec les styles supplémentaires (priorité la plus basse pour préserver les paramètres PDF)
   return { ...additionalStyles, ...baseStyles };
 };
