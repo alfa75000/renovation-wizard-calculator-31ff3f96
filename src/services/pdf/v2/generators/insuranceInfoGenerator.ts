@@ -4,105 +4,231 @@ import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
 import { getElementStyle, convertStyleToPdfStyle, convertPageMargins } from '../utils/styleUtils';
 import { ProjectState } from '@/types';
 import { configurePdfFonts, ensureSupportedFont } from '@/services/pdf/utils/fontUtils';
+import { DARK_BLUE } from '@/services/pdf/constants/pdfConstants';
 
 // Initialize pdfMake with fonts
 configurePdfFonts();
 
 export const generateInsuranceInfoPdf = async (pdfSettings: PdfSettings, projectState: ProjectState) => {
   try {
-    // Get style for insurance info
+    // Get styles for different sections
     const insuranceInfoStyle = getElementStyle(pdfSettings, 'insurance_info');
-    const pdfStyle = convertStyleToPdfStyle(insuranceInfoStyle);
+    const companyNameStyle = getElementStyle(pdfSettings, 'company_name');
+    const companySloganStyle = getElementStyle(pdfSettings, 'company_slogan');
+    const companyContactStyle = getElementStyle(pdfSettings, 'company_contact');
+    const quoteInfoStyle = getElementStyle(pdfSettings, 'quote_info');
+    const clientInfoStyle = getElementStyle(pdfSettings, 'client_info');
+    const projectInfoStyle = getElementStyle(pdfSettings, 'project_info');
+
+    // Convert styles to pdfMake format
+    const insurancePdfStyle = convertStyleToPdfStyle(insuranceInfoStyle);
+    const companyNamePdfStyle = convertStyleToPdfStyle(companyNameStyle);
+    const companySloganPdfStyle = convertStyleToPdfStyle(companySloganStyle);
+    const companyContactPdfStyle = convertStyleToPdfStyle(companyContactStyle);
+    const quoteInfoPdfStyle = convertStyleToPdfStyle(quoteInfoStyle);
+    const clientInfoPdfStyle = convertStyleToPdfStyle(clientInfoStyle);
+    const projectInfoPdfStyle = convertStyleToPdfStyle(projectInfoStyle);
     
-    // Get page margins with proper type handling
+    // Get page margins
     const rawMargins = pdfSettings.margins?.cover as number[] | undefined;
     const pageMargins = convertPageMargins(rawMargins);
     
-    // Ensure we are using a supported font, defaulting to Roboto
-    const fontFamily = ensureSupportedFont(pdfStyle.font);
+    // Get company data from project state
+    const company = projectState.metadata?.company;
+    const slogan = company?.slogan || 'Entreprise Générale du Bâtiment';
     
     // Create document definition
     const docDefinition = {
       pageSize: 'A4',
       pageMargins: pageMargins,
       defaultStyle: {
-        font: fontFamily,
-        fontSize: pdfStyle.fontSize || 12
+        font: ensureSupportedFont(pdfSettings.fontFamily),
+        fontSize: 12
       },
       content: [
-        // Logo section with styles
+        // Logo and Insurance Info
         {
-          table: {
-            widths: ['*'],
-            body: [[
-              {
-                image: await getBase64ImageFromUrl('/lrs_logo.jpg'),
-                width: pdfSettings.logoSettings.width || 150,
-                height: pdfSettings.logoSettings.height || 70,
-                alignment: pdfSettings.logoSettings.alignment || 'left',
-                margin: [0, 0, 0, 10]
-              }
-            ]]
-          },
-          layout: 'noBorders'
-        },
-        // Insurance Info Block with full styling support
-        {
-          table: {
-            widths: ['*'],
-            body: [
-              [{
-                text: 'Informations d\'assurance',
-                ...pdfStyle,
-                fontSize: (pdfStyle.fontSize || 12) + 2,
-                bold: true,
-                margin: [0, 0, 0, 5]
-              }],
-              [{
-                text: 'N° RCS: 123 456 789',
-                ...pdfStyle
-              }],
-              [{
-                text: 'N° Assurance: ALLIANZ 12345678',
-                ...pdfStyle
-              }],
-              [{
-                text: 'N° TVA: FR 12 345 678 901',
-                ...pdfStyle
-              }]
-            ]
-          },
-          layout: {
-            hLineWidth: function(i: number, node: any) {
-              return pdfStyle.border ? pdfStyle.border[i === 0 ? 2 : 0] : 0;
+          columns: [
+            {
+              width: '60%',
+              stack: [
+                {
+                  image: await getBase64ImageFromUrl(company?.logo_url || '/lrs_logo.jpg'),
+                  width: pdfSettings.logoSettings.width || 150,
+                  height: pdfSettings.logoSettings.height || 70,
+                  alignment: pdfSettings.logoSettings.alignment || 'left'
+                }
+              ]
             },
-            vLineWidth: function(i: number) {
-              return pdfStyle.border ? pdfStyle.border[i === 0 ? 3 : 1] : 0;
-            },
-            hLineColor: function() {
-              return pdfStyle.borderColor ? pdfStyle.borderColor[0] : '#000000';
-            },
-            vLineColor: function() {
-              return pdfStyle.borderColor ? pdfStyle.borderColor[1] : '#000000';
-            },
-            fillColor: function() {
-              return pdfStyle.fillColor;
-            },
-            paddingLeft: function() {
-              return pdfStyle.padding ? pdfStyle.padding[3] : 0;
-            },
-            paddingRight: function() {
-              return pdfStyle.padding ? pdfStyle.padding[1] : 0;
-            },
-            paddingTop: function() {
-              return pdfStyle.padding ? pdfStyle.padding[0] : 0;
-            },
-            paddingBottom: function() {
-              return pdfStyle.padding ? pdfStyle.padding[2] : 0;
+            {
+              width: '40%',
+              stack: [
+                {
+                  text: 'Assurance MAAF PRO',
+                  ...insurancePdfStyle
+                },
+                {
+                  text: 'Responsabilité civile',
+                  ...insurancePdfStyle
+                },
+                {
+                  text: 'Responsabilité civile décennale',
+                  ...insurancePdfStyle
+                }
+              ],
+              alignment: 'right'
             }
-          }
+          ],
+          columnGap: 10,
+          marginBottom: 20
+        },
+
+        // Company Slogan
+        {
+          text: slogan,
+          ...companySloganPdfStyle,
+          marginBottom: 15
+        },
+
+        // Company Contact Info
+        {
+          text: [
+            { text: `${company?.name || ''} - `, ...companyNamePdfStyle },
+            { text: `${company?.address || ''} - ${company?.postal_code || ''} ${company?.city || ''}`, ...companyContactPdfStyle }
+          ],
+          marginBottom: 10
+        },
+
+        // Contact Details
+        {
+          columns: [
+            {
+              width: 'auto',
+              text: 'Tél:',
+              ...companyContactPdfStyle
+            },
+            {
+              width: '*',
+              text: company?.tel1 || '',
+              ...companyContactPdfStyle
+            }
+          ],
+          columnGap: 5,
+          marginBottom: 5
+        },
+        company?.tel2 ? {
+          columns: [
+            {
+              width: 'auto',
+              text: '',
+              ...companyContactPdfStyle
+            },
+            {
+              width: '*',
+              text: company.tel2,
+              ...companyContactPdfStyle
+            }
+          ],
+          columnGap: 5,
+          marginBottom: 5
+        } : null,
+        {
+          columns: [
+            {
+              width: 'auto',
+              text: 'Mail:',
+              ...companyContactPdfStyle
+            },
+            {
+              width: '*',
+              text: company?.email || '',
+              ...companyContactPdfStyle
+            }
+          ],
+          columnGap: 5,
+          marginBottom: 30
+        },
+
+        // Quote Information
+        {
+          text: [
+            { 
+              text: `Devis n°: ${projectState.metadata?.devisNumber || 'Non défini'} Du ${projectState.metadata?.dateDevis || new Date().toLocaleDateString()} `,
+              ...quoteInfoPdfStyle
+            },
+            {
+              text: '(Validité de l\'offre : 3 mois.)',
+              ...quoteInfoPdfStyle,
+              italics: true,
+              fontSize: (quoteInfoPdfStyle.fontSize || 12) - 1
+            }
+          ],
+          marginBottom: 35
+        },
+
+        // Client Section
+        {
+          stack: [
+            {
+              text: 'Client / Maître d\'ouvrage',
+              ...clientInfoPdfStyle,
+              bold: true,
+              marginBottom: 5
+            },
+            {
+              text: projectState.metadata?.clientsData || 'Non spécifié',
+              ...clientInfoPdfStyle,
+              marginLeft: 20
+            }
+          ],
+          marginBottom: 30
+        },
+
+        // Project Section
+        {
+          stack: [
+            {
+              text: 'Chantier / Travaux',
+              ...projectInfoPdfStyle,
+              bold: true,
+              marginBottom: 5
+            },
+            projectState.metadata?.occupant ? {
+              text: projectState.metadata.occupant,
+              ...projectInfoPdfStyle,
+              marginLeft: 20,
+              marginBottom: 5
+            } : null,
+            {
+              text: 'Adresse du chantier / lieu d\'intervention:',
+              ...projectInfoPdfStyle,
+              marginBottom: 5
+            },
+            {
+              text: projectState.metadata?.adresseChantier || 'Non spécifiée',
+              ...projectInfoPdfStyle,
+              marginLeft: 20,
+              marginBottom: 8
+            },
+            {
+              text: 'Descriptif:',
+              ...projectInfoPdfStyle,
+              marginBottom: 5
+            },
+            {
+              text: projectState.metadata?.descriptionProjet || 'Non spécifié',
+              ...projectInfoPdfStyle,
+              marginLeft: 20,
+              marginBottom: projectState.metadata?.infoComplementaire ? 15 : 0
+            },
+            projectState.metadata?.infoComplementaire ? {
+              text: projectState.metadata.infoComplementaire,
+              ...projectInfoPdfStyle,
+              marginLeft: 20
+            } : null
+          ]
         }
-      ]
+      ].filter(Boolean) // Remove null elements
     };
 
     // Generate and open PDF
@@ -130,7 +256,6 @@ const getBase64ImageFromUrl = async (url: string): Promise<string> => {
     });
   } catch (error) {
     console.error('Error loading image:', error);
-    // Return a placeholder or empty string if image can't be loaded
     return '';
   }
 };
