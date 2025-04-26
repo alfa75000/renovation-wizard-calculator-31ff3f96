@@ -4,47 +4,13 @@ import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
 import { getElementStyle, convertStyleToPdfStyle, convertPageMargins } from '../utils/styleUtils';
 import { ProjectState } from '@/types';
 import { configurePdfFonts, ensureSupportedFont } from '@/services/pdf/utils/fontUtils';
-import { DARK_BLUE } from '@/services/pdf/constants/pdfConstants';
+import { wrapWithBorders } from '@/services/pdf/utils/pdfUtils';
 
 // Initialize pdfMake with fonts
 configurePdfFonts();
 
 export const generateInsuranceInfoPdf = async (pdfSettings: PdfSettings, projectState: ProjectState) => {
   try {
-    // Get styles for different sections with fallbacks if not defined in settings
-    const insuranceInfoStyle = getElementStyle(pdfSettings, 'insurance_info');
-    const companyNameStyle = getElementStyle(pdfSettings, 'company_name');
-    const companySloganStyle = getElementStyle(pdfSettings, 'company_slogan');
-    const companyContactStyle = getElementStyle(pdfSettings, 'company_contact');
-    const quoteInfoStyle = getElementStyle(pdfSettings, 'quote_info');
-    const clientInfoStyle = getElementStyle(pdfSettings, 'client_info');
-    const clientTitleStyle = getElementStyle(pdfSettings, 'client_title');
-    const clientContentStyle = getElementStyle(pdfSettings, 'client_content');
-    const projectInfoStyle = getElementStyle(pdfSettings, 'project_info');
-    const projectTitleStyle = getElementStyle(pdfSettings, 'project_title');
-    const projectLabelsStyle = getElementStyle(pdfSettings, 'project_labels');
-    const projectValuesStyle = getElementStyle(pdfSettings, 'project_values');
-    const contactLabelsStyle = getElementStyle(pdfSettings, 'contact_labels');
-    const contactValuesStyle = getElementStyle(pdfSettings, 'contact_values');
-    const footerInfoStyle = getElementStyle(pdfSettings, 'footer_info');
-
-    // Convert styles to pdfMake format
-    const insurancePdfStyle = convertStyleToPdfStyle(insuranceInfoStyle);
-    const companyNamePdfStyle = convertStyleToPdfStyle(companyNameStyle);
-    const companySloganPdfStyle = convertStyleToPdfStyle(companySloganStyle);
-    const companyContactPdfStyle = convertStyleToPdfStyle(companyContactStyle);
-    const quoteInfoPdfStyle = convertStyleToPdfStyle(quoteInfoStyle);
-    const clientInfoPdfStyle = convertStyleToPdfStyle(clientInfoStyle);
-    const clientTitlePdfStyle = convertStyleToPdfStyle(clientTitleStyle);
-    const clientContentPdfStyle = convertStyleToPdfStyle(clientContentStyle);
-    const projectInfoPdfStyle = convertStyleToPdfStyle(projectInfoStyle);
-    const projectTitlePdfStyle = convertStyleToPdfStyle(projectTitleStyle);
-    const projectLabelsPdfStyle = convertStyleToPdfStyle(projectLabelsStyle);
-    const projectValuesPdfStyle = convertStyleToPdfStyle(projectValuesStyle);
-    const contactLabelsPdfStyle = convertStyleToPdfStyle(contactLabelsStyle);
-    const contactValuesPdfStyle = convertStyleToPdfStyle(contactValuesStyle);
-    const footerInfoPdfStyle = convertStyleToPdfStyle(footerInfoStyle);
-    
     // Get page margins
     const rawMargins = pdfSettings.margins?.cover as number[] | undefined;
     const pageMargins = convertPageMargins(rawMargins);
@@ -79,18 +45,9 @@ export const generateInsuranceInfoPdf = async (pdfSettings: PdfSettings, project
             {
               width: '40%',
               stack: [
-                {
-                  text: 'Assurance MAAF PRO',
-                  ...insurancePdfStyle
-                },
-                {
-                  text: 'Responsabilité civile',
-                  ...insurancePdfStyle
-                },
-                {
-                  text: 'Responsabilité civile décennale',
-                  ...insurancePdfStyle
-                }
+                applyElementStyle('Assurance MAAF PRO', 'insurance_info', pdfSettings),
+                applyElementStyle('Responsabilité civile', 'insurance_info', pdfSettings),
+                applyElementStyle('Responsabilité civile décennale', 'insurance_info', pdfSettings)
               ],
               alignment: 'right'
             }
@@ -100,19 +57,14 @@ export const generateInsuranceInfoPdf = async (pdfSettings: PdfSettings, project
         },
 
         // Company Slogan
-        {
-          text: slogan,
-          ...companySloganPdfStyle,
-          marginBottom: 15
-        },
+        applyElementStyle(slogan, 'company_slogan', pdfSettings),
 
         // Company Contact Info
         {
           text: [
-            { text: `${company?.name || ''} - `, ...companyNamePdfStyle },
-            { text: `${company?.address || ''} - ${company?.postal_code || ''} ${company?.city || ''}`, ...companyContactPdfStyle }
-          ],
-          marginBottom: 10
+            applyElementStyle(`${company?.name || ''} - `, 'company_name', pdfSettings, true),
+            applyElementStyle(`${company?.address || ''} - ${company?.postal_code || ''} ${company?.city || ''}`, 'company_address', pdfSettings, true)
+          ]
         },
 
         // Contact Details - Telephone
@@ -120,47 +72,43 @@ export const generateInsuranceInfoPdf = async (pdfSettings: PdfSettings, project
           columns: [
             {
               width: 'auto',
-              text: 'Tél:',
-              ...contactLabelsPdfStyle
+              text: applyElementStyle('Tél:', 'contact_labels', pdfSettings, true)
             },
             {
               width: '*',
-              text: company?.tel1 || '',
-              ...contactValuesPdfStyle
+              text: applyElementStyle(company?.tel1 || '', 'contact_values', pdfSettings, true)
             }
           ],
           columnGap: 5,
           marginBottom: 5
         },
+        
         // Second telephone number if available
         company?.tel2 ? {
           columns: [
             {
               width: 'auto',
-              text: '',
-              ...contactLabelsPdfStyle
+              text: applyElementStyle('', 'contact_labels', pdfSettings, true)
             },
             {
               width: '*',
-              text: company.tel2,
-              ...contactValuesPdfStyle
+              text: applyElementStyle(company.tel2, 'contact_values', pdfSettings, true)
             }
           ],
           columnGap: 5,
           marginBottom: 5
         } : null,
+        
         // Email
         {
           columns: [
             {
               width: 'auto',
-              text: 'Mail:',
-              ...contactLabelsPdfStyle
+              text: applyElementStyle('Mail:', 'contact_labels', pdfSettings, true)
             },
             {
               width: '*',
-              text: company?.email || '',
-              ...contactValuesPdfStyle
+              text: applyElementStyle(company?.email || '', 'contact_values', pdfSettings, true)
             }
           ],
           columnGap: 5,
@@ -170,16 +118,22 @@ export const generateInsuranceInfoPdf = async (pdfSettings: PdfSettings, project
         // Quote Information
         {
           text: [
-            { 
-              text: `Devis n°: ${projectState.metadata?.devisNumber || 'Non défini'} Du ${projectState.metadata?.dateDevis || new Date().toLocaleDateString()} `,
-              ...quoteInfoPdfStyle
-            },
-            {
-              text: '(Validité de l\'offre : 3 mois.)',
-              ...quoteInfoPdfStyle,
-              italics: true,
-              fontSize: (quoteInfoPdfStyle.fontSize || 12) - 1
-            }
+            applyElementStyle(
+              `Devis n°: ${projectState.metadata?.devisNumber || 'Non défini'} Du ${projectState.metadata?.dateDevis || new Date().toLocaleDateString()} `,
+              'quote_info',
+              pdfSettings,
+              true
+            ),
+            applyElementStyle(
+              '(Validité de l\'offre : 3 mois.)',
+              'quote_validity',
+              pdfSettings,
+              true,
+              {
+                isItalic: true,
+                fontSize: (getElementStyle(pdfSettings, 'quote_validity').fontSize || 10) - 1
+              }
+            )
           ],
           marginBottom: 35
         },
@@ -187,69 +141,22 @@ export const generateInsuranceInfoPdf = async (pdfSettings: PdfSettings, project
         // Client Section
         {
           stack: [
-            {
-              text: 'Client / Maître d\'ouvrage',
-              ...clientTitlePdfStyle,
-              bold: true,
-              marginBottom: 5
-            },
-            {
-              text: projectState.metadata?.clientsData || 'Non spécifié',
-              ...clientContentPdfStyle,
-              marginLeft: 20
-            }
+            applyElementStyle('Client / Maître d\'ouvrage', 'client_title', pdfSettings),
+            applyElementStyle(projectState.metadata?.clientsData || 'Non spécifié', 'client_content', pdfSettings, false, {
+              spacing: { left: 20 }
+            })
           ],
           marginBottom: 30
         },
 
         // Project Section
         {
-          stack: [
-            {
-              text: 'Chantier / Travaux',
-              ...projectTitlePdfStyle,
-              bold: true,
-              marginBottom: 5
-            },
-            projectState.metadata?.occupant ? {
-              text: projectState.metadata.occupant,
-              ...projectValuesPdfStyle,
-              marginLeft: 20,
-              marginBottom: 5
-            } : null,
-            {
-              text: 'Adresse du chantier / lieu d\'intervention:',
-              ...projectLabelsPdfStyle,
-              marginBottom: 5
-            },
-            {
-              text: projectState.metadata?.adresseChantier || 'Non spécifiée',
-              ...projectValuesPdfStyle,
-              marginLeft: 20,
-              marginBottom: 8
-            },
-            {
-              text: 'Descriptif:',
-              ...projectLabelsPdfStyle,
-              marginBottom: 5
-            },
-            {
-              text: projectState.metadata?.descriptionProjet || 'Non spécifié',
-              ...projectValuesPdfStyle,
-              marginLeft: 20,
-              marginBottom: projectState.metadata?.infoComplementaire ? 15 : 0
-            },
-            projectState.metadata?.infoComplementaire ? {
-              text: projectState.metadata.infoComplementaire,
-              ...projectValuesPdfStyle,
-              marginLeft: 20
-            } : null
-          ]
+          stack: createProjectSectionStack(projectState, pdfSettings)
         }
       ].filter(Boolean), // Remove null elements
       
       // Add footer information
-      footer: function(currentPage: number, pageCount: number) {
+      footer: function(currentPage, pageCount) {
         if (!company) return null;
         
         const companyName = company.name || '';
@@ -261,13 +168,17 @@ export const generateInsuranceInfoPdf = async (pdfSettings: PdfSettings, project
         const codeApe = company.code_ape || '';
         const tvaIntracom = company.tva_intracom || '';
         
-        return {
-          text: `${companyName} - SASU au Capital de ${capitalSocial} € - ${address} ${postalCode} ${city} - Siret : ${siret} - Code APE : ${codeApe} - N° TVA Intracommunautaire : ${tvaIntracom}`,
-          ...footerInfoPdfStyle,
-          fontSize: footerInfoPdfStyle.fontSize || 7,
-          alignment: 'center',
-          margin: [40, 0, 40, 20]
-        };
+        return applyElementStyle(
+          `${companyName} - SASU au Capital de ${capitalSocial} € - ${address} ${postalCode} ${city} - Siret : ${siret} - Code APE : ${codeApe} - N° TVA Intracommunautaire : ${tvaIntracom}`,
+          'footer_info',
+          pdfSettings,
+          false,
+          {
+            fontSize: 7,
+            alignment: 'center',
+            spacing: { top: 0, right: 40, bottom: 20, left: 40 }
+          }
+        );
       }
     };
 
@@ -280,6 +191,88 @@ export const generateInsuranceInfoPdf = async (pdfSettings: PdfSettings, project
     console.error('PDF Generation Error:', error);
     throw error;
   }
+};
+
+// Helper function to create project section stack
+const createProjectSectionStack = (projectState: ProjectState, pdfSettings: PdfSettings) => {
+  const stack = [];
+  
+  // Title
+  stack.push(applyElementStyle('Chantier / Travaux', 'project_title', pdfSettings));
+  
+  // Occupant if available
+  if (projectState.metadata?.occupant) {
+    stack.push(
+      applyElementStyle(projectState.metadata.occupant, 'project_values', pdfSettings, false, {
+        spacing: { left: 20, bottom: 5 }
+      })
+    );
+  }
+  
+  // Project Address
+  stack.push(applyElementStyle('Adresse du chantier / lieu d\'intervention:', 'project_labels', pdfSettings));
+  stack.push(
+    applyElementStyle(projectState.metadata?.adresseChantier || 'Non spécifiée', 'project_values', pdfSettings, false, {
+      spacing: { left: 20, bottom: 8 }
+    })
+  );
+  
+  // Project Description
+  stack.push(applyElementStyle('Descriptif:', 'project_labels', pdfSettings));
+  stack.push(
+    applyElementStyle(projectState.metadata?.descriptionProjet || 'Non spécifié', 'project_values', pdfSettings, false, {
+      spacing: { left: 20, bottom: projectState.metadata?.infoComplementaire ? 15 : 0 }
+    })
+  );
+  
+  // Additional Information if available
+  if (projectState.metadata?.infoComplementaire) {
+    stack.push(
+      applyElementStyle(projectState.metadata.infoComplementaire, 'project_values', pdfSettings, false, {
+        spacing: { left: 20 }
+      })
+    );
+  }
+  
+  return stack;
+};
+
+// Helper function to apply element styles and handle borders
+const applyElementStyle = (content: string, elementId: string, pdfSettings: PdfSettings, inlineMode = false, overrideStyles = {}) => {
+  const style = getElementStyle(pdfSettings, elementId);
+  const mergedStyle = { ...style, ...overrideStyles };
+  
+  // Create base content object
+  let contentObj: any = { 
+    text: content,
+    bold: mergedStyle.bold,
+    italics: mergedStyle.italic,
+    fontSize: mergedStyle.fontSize,
+    color: mergedStyle.color,
+    alignment: mergedStyle.alignment
+  };
+  
+  // If not inline mode, we can add margins
+  if (!inlineMode && mergedStyle.spacing) {
+    contentObj.margin = [
+      mergedStyle.spacing.left || 0,
+      mergedStyle.spacing.top || 0,
+      mergedStyle.spacing.right || 0,
+      mergedStyle.spacing.bottom || 0
+    ];
+  }
+  
+  // Handle borders - only if not inline and borders are defined
+  if (!inlineMode && mergedStyle.border) {
+    const hasBorder = mergedStyle.border.top || mergedStyle.border.right || 
+                       mergedStyle.border.bottom || mergedStyle.border.left;
+    
+    if (hasBorder) {
+      return wrapWithBorders(contentObj, mergedStyle.border);
+    }
+  }
+  
+  return contentObj;
 };
 
 // Helper function to get base64 image from URL

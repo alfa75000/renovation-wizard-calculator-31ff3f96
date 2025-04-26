@@ -1,3 +1,4 @@
+
 import { ElementSettings } from '@/features/devis/components/pdf-settings/types/elementSettings';
 import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
 import { ensureSupportedFont } from '@/services/pdf/utils/fontUtils';
@@ -11,7 +12,6 @@ export interface StyleOptions {
   alignment?: 'left' | 'center' | 'right' | 'justify';
   margins?: [number, number, number, number]; // [top, right, bottom, left]
   padding?: [number, number, number, number]; // [top, right, bottom, left]
-  fillColor?: string;
   border?: boolean | {
     top?: boolean;
     right?: boolean;
@@ -19,6 +19,12 @@ export interface StyleOptions {
     left?: boolean;
     color?: string;
     width?: number;
+  };
+  spacing?: {
+    top?: number;
+    right?: number;
+    bottom?: number;
+    left?: number;
   };
 }
 
@@ -31,7 +37,13 @@ export const getElementStyle = (pdfSettings: PdfSettings, elementId: string): St
     color: pdfSettings.colors.mainText || '#333333',
     alignment: 'left',
     margins: [0, 0, 0, 0],
-    padding: [0, 0, 0, 0]
+    padding: [0, 0, 0, 0],
+    spacing: {
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0
+    }
   };
 
   if (!pdfSettings.elements || !pdfSettings.elements[elementId]) {
@@ -54,7 +66,12 @@ export const getElementStyle = (pdfSettings: PdfSettings, elementId: string): St
       elementSettings.spacing?.left || 0
     ],
     padding: [0, 0, 0, 0], // Default padding
-    fillColor: elementSettings.fillColor,
+    spacing: {
+      top: elementSettings.spacing?.top || 0,
+      right: elementSettings.spacing?.right || 0,
+      bottom: elementSettings.spacing?.bottom || 0,
+      left: elementSettings.spacing?.left || 0
+    },
     border: elementSettings.border ? {
       top: elementSettings.border.top || false,
       right: elementSettings.border.right || false,
@@ -74,8 +91,7 @@ export const convertStyleToPdfStyle = (style: StyleOptions) => {
     italics: style.italic,
     color: style.color,
     alignment: style.alignment,
-    margin: style.margins || [0, 0, 0, 0],
-    fillColor: style.fillColor
+    margin: style.margins || [0, 0, 0, 0]
   };
 
   // Handle padding separately as it needs to be applied to table cells
