@@ -1,7 +1,6 @@
-
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from '@/components/ui/sonner';
-import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -26,7 +25,6 @@ import SupabaseStatus from './components/SupabaseStatus';
 
 import { useProjectOperations } from '@/hooks/useProjectOperations';
 
-// Create a React Query client
 const queryClient = new QueryClient();
 
 export default function App() {
