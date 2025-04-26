@@ -1,4 +1,3 @@
-
 import { ElementSettings } from '@/features/devis/components/pdf-settings/types/elementSettings';
 import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
 import { ensureSupportedFont } from '@/services/pdf/utils/fontUtils';
@@ -72,14 +71,14 @@ export const getElementStyle = (pdfSettings: PdfSettings, elementId: string): St
       bottom: elementSettings.spacing?.bottom || 0,
       left: elementSettings.spacing?.left || 0
     },
-    border: elementSettings.border ? {
-      top: elementSettings.border.top || false,
-      right: elementSettings.border.right || false,
-      bottom: elementSettings.border.bottom || false,
-      left: elementSettings.border.left || false,
-      color: elementSettings.border.color || '#000000',
-      width: elementSettings.border.width || 1,
-    } : false
+    border: elementSettings.border === true ? {
+      top: true,
+      right: true,
+      bottom: true,
+      left: true,
+      color: '#000000',
+      width: 1
+    } : elementSettings.border || false
   };
 };
 
@@ -102,7 +101,8 @@ export const convertStyleToPdfStyle = (style: StyleOptions) => {
   // Handle border configuration
   if (style.border) {
     if (typeof style.border === 'boolean') {
-      pdfStyle.border = style.border ? [1, 1, 1, 1] : undefined;
+      pdfStyle.border = [1, 1, 1, 1];
+      pdfStyle.borderColor = ['#000000', '#000000', '#000000', '#000000'];
     } else {
       pdfStyle.border = [
         style.border.top ? (style.border.width || 1) : 0,

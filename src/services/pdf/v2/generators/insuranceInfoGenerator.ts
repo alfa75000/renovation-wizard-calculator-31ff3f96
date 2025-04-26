@@ -242,7 +242,6 @@ const applyElementStyle = (content: string, elementId: string, pdfSettings: PdfS
   const style = getElementStyle(pdfSettings, elementId);
   const mergedStyle = { ...style, ...overrideStyles };
   
-  // Create base content object
   let contentObj: any = { 
     text: content,
     bold: mergedStyle.bold,
@@ -252,7 +251,6 @@ const applyElementStyle = (content: string, elementId: string, pdfSettings: PdfS
     alignment: mergedStyle.alignment
   };
   
-  // If not inline mode, we can add margins
   if (!inlineMode && mergedStyle.spacing) {
     contentObj.margin = [
       mergedStyle.spacing.left || 0,
@@ -262,13 +260,25 @@ const applyElementStyle = (content: string, elementId: string, pdfSettings: PdfS
     ];
   }
   
-  // Handle borders - only if not inline and borders are defined
   if (!inlineMode && mergedStyle.border) {
-    const hasBorder = mergedStyle.border.top || mergedStyle.border.right || 
+    if (typeof mergedStyle.border === 'boolean') {
+      if (mergedStyle.border) {
+        return wrapWithBorders(contentObj, {
+          top: true,
+          right: true,
+          bottom: true,
+          left: true,
+          color: '#000000',
+          width: 1
+        });
+      }
+    } else {
+      const hasBorder = mergedStyle.border.top || mergedStyle.border.right || 
                        mergedStyle.border.bottom || mergedStyle.border.left;
-    
-    if (hasBorder) {
-      return wrapWithBorders(contentObj, mergedStyle.border);
+      
+      if (hasBorder) {
+        return wrapWithBorders(contentObj, mergedStyle.border);
+      }
     }
   }
   
