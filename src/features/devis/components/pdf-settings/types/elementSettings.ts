@@ -1,4 +1,3 @@
-
 // Définition des paramètres de style pour chaque élément du PDF
 import { z } from 'zod';
 
@@ -76,6 +75,7 @@ export const ElementSettingsSchema = z.object({
   color: z.string().optional(),
   alignment: z.enum(['left', 'center', 'right', 'justify']).optional(),
   fillColor: z.string().optional(),
+  lineHeight: z.number().optional(),
   spacing: z.object({
     top: z.number().optional(),
     right: z.number().optional(),

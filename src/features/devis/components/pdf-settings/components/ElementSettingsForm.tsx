@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ElementSettings, defaultElementSettings } from '../types/elementSettings';
@@ -8,6 +7,7 @@ import { SpacingControl } from './SpacingControl';
 import { BorderControl } from './BorderControl';
 import { AlignmentControl } from './AlignmentControl';
 import { StyleControls } from './StyleControls';
+import { NumberControl } from './NumberControl';
 
 interface ElementSettingsFormProps {
   selectedElement: string;
@@ -28,7 +28,6 @@ export const ElementSettingsForm: React.FC<ElementSettingsFormProps> = ({
     settings || defaultElementSettings
   );
 
-  // Mettre à jour les paramètres affichés quand l'élément sélectionné change
   useEffect(() => {
     console.log('Settings updated in ElementSettingsForm:', settings);
     setCurrentSettings(settings || defaultElementSettings);
@@ -39,7 +38,6 @@ export const ElementSettingsForm: React.FC<ElementSettingsFormProps> = ({
     onSave(currentSettings);
   };
 
-  // Cette fonction est maintenant utilisée uniquement pour changer la couleur de l'élément sélectionné
   const handleColorChange = (color: string) => {
     setCurrentSettings(prev => ({ ...prev, color }));
   };
@@ -50,7 +48,6 @@ export const ElementSettingsForm: React.FC<ElementSettingsFormProps> = ({
         Paramètres pour : {selectedElement}
       </h3>
 
-      {/* Police et style */}
       <div className="grid grid-cols-2 gap-4">
         <FontSelector
           value={currentSettings.fontFamily}
@@ -64,34 +61,41 @@ export const ElementSettingsForm: React.FC<ElementSettingsFormProps> = ({
         />
       </div>
 
-      {/* Couleurs */}
       <ColorPalette
         selectedColor={currentSettings.color}
         defaultColors={defaultColors}
-        onColorChange={handleColorChange} // Appliquer la couleur à l'élément sélectionné
-        onDefaultColorClick={onDefaultColorClick} // Mettre à jour une couleur de la palette
+        onColorChange={handleColorChange}
+        onDefaultColorClick={onDefaultColorClick}
       />
 
-      {/* Espacement */}
+      <div className="space-y-2">
+        <NumberControl
+          label="Interligne"
+          value={currentSettings.lineHeight || 1.5}
+          onChange={(value) => setCurrentSettings(prev => ({ ...prev, lineHeight: value }))}
+          step={0.1}
+          min={1}
+          max={3}
+          className="w-full"
+        />
+      </div>
+
       <SpacingControl
         spacing={currentSettings.spacing}
         onChange={(spacing) => setCurrentSettings(prev => ({ ...prev, spacing }))}
       />
 
-      {/* Alignement */}
       <AlignmentControl
         alignment={currentSettings.alignment}
         onChange={(alignment) => setCurrentSettings(prev => ({ ...prev, alignment }))}
       />
 
-      {/* Bordures */}
       <BorderControl
         border={currentSettings.border}
         defaultColors={defaultColors}
         onChange={(border) => setCurrentSettings(prev => ({ ...prev, border }))}
       />
 
-      {/* Bouton d'application */}
       <div className="flex justify-end pt-4">
         <Button onClick={handleSave}>
           Appliquer les modifications

@@ -91,6 +91,11 @@ const applyElementSettingsToStyle = (
     style.textAlign = settings.alignment;
   }
 
+  // Ajout du support de l'interligne
+  if (typeof settings.lineHeight === 'number') {
+    style.lineHeight = settings.lineHeight;
+  }
+
   // Style d'arrière-plan
   if (settings.fillColor) {
     style.backgroundColor = settings.fillColor;
@@ -99,10 +104,12 @@ const applyElementSettingsToStyle = (
   // Espacement (margin) - conversion de l'objet spacing personnalisé en marges React-PDF
   // N'appliquer l'espacement qu'aux conteneurs
   if (isContainer && settings.spacing) {
-    if (typeof settings.spacing.top === 'number') style.marginTop = settings.spacing.top;
-    if (typeof settings.spacing.right === 'number') style.marginRight = settings.spacing.right;
-    if (typeof settings.spacing.bottom === 'number') style.marginBottom = settings.spacing.bottom;
-    if (typeof settings.spacing.left === 'number') style.marginLeft = settings.spacing.left;
+    const { top, right, bottom, left } = settings.spacing;
+    // Éviter d'écraser les marges existantes si elles ne sont pas définies dans settings.spacing
+    if (typeof top === 'number') style.marginTop = top;
+    if (typeof right === 'number') style.marginRight = right;
+    if (typeof bottom === 'number') style.marginBottom = bottom;
+    if (typeof left === 'number') style.marginLeft = left;
   }
 
   // Style de bordure avec configuration complète - UNIQUEMENT pour les conteneurs
