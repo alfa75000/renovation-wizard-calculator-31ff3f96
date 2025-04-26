@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Layout } from "@/components/Layout";
 import { PrintableFieldsForm } from "@/features/devis/components/PrintableFieldsForm";
@@ -8,13 +7,7 @@ import { useProject } from "@/contexts/ProjectContext";
 import { Button } from "@/components/ui/button";
 import { FileText } from "lucide-react";
 import { useDevisGeneration } from "@/hooks/useDevisGeneration";
-
-import { 
-  Tabs, 
-  TabsContent, 
-  TabsList, 
-  TabsTrigger 
-} from "@/components/ui/tabs";
+import { useReactPdfGeneration } from "@/services/pdf/react-pdf/hooks/useReactPdfGeneration";
 
 const queryClient = new QueryClient();
 
@@ -22,7 +15,8 @@ const EditionDevis: React.FC = () => {
   const { state } = useProject();
   const { metadata } = state;
   const [activeTab, setActiveTab] = useState("printable");
-  const { isGenerating, generateInsuranceInfo } = useDevisGeneration();
+  const { isGenerating: isGeneratingPdfMake, generateInsuranceInfo } = useDevisGeneration();
+  const { isGenerating: isGeneratingReactPdf, generateReactPdf } = useReactPdfGeneration();
   
   const pageTitle = metadata?.nomProjet 
     ? `Édition du devis - ${metadata.nomProjet}` 
@@ -39,14 +33,23 @@ const EditionDevis: React.FC = () => {
         subtitle="Configurez les éléments à imprimer et les paramètres du devis"
       >
         <div className="max-w-4xl mx-auto">
-          <div className="flex justify-end mb-4">
+          <div className="flex justify-end mb-4 space-x-2">
             <Button 
               variant="default" 
-              onClick={handleGenerateDevis}
-              disabled={isGenerating}
+              onClick={generateInsuranceInfo}
+              disabled={isGeneratingPdfMake}
             >
               <FileText className="mr-2 h-4 w-4" />
-              {isGenerating ? 'Génération en cours...' : 'Générer Devis'}
+              {isGeneratingPdfMake ? 'Génération en cours...' : 'Générer Devis'}
+            </Button>
+            
+            <Button 
+              variant="default" 
+              onClick={generateReactPdf}
+              disabled={isGeneratingReactPdf}
+            >
+              <FileText className="mr-2 h-4 w-4" />
+              {isGeneratingReactPdf ? 'Génération en cours...' : 'Générer Devis React-PDF'}
             </Button>
           </div>
           <Tabs 
