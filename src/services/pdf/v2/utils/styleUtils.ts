@@ -1,4 +1,3 @@
-
 import { ElementSettings } from '@/features/devis/components/pdf-settings/types/elementSettings';
 import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
 import { ensureSupportedFont } from '@/services/pdf/utils/fontUtils';
@@ -25,7 +24,7 @@ export interface StyleOptions {
 
 export const getElementStyle = (pdfSettings: PdfSettings, elementId: string): StyleOptions => {
   const defaultStyle: StyleOptions = {
-    fontFamily: ensureSupportedFont(pdfSettings.fontFamily) || 'Roboto',
+    fontFamily: ensureSupportedFont(pdfSettings.fontFamily),
     fontSize: 12,
     bold: false,
     italic: false,
