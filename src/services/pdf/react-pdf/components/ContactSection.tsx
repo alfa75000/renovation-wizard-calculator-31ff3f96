@@ -17,6 +17,9 @@ export const ContactSection = ({ pdfSettings, projectState }: ContactSectionProp
   const valueStyles = getPdfStyles(pdfSettings, 'contact_values', { isContainer: false });
   // Utilise 'default' pour le conteneur global de la section contact, c'est ok.
   const containerStyles = getPdfStyles(pdfSettings, 'default', { isContainer: true });
+  const tel1 = projectState.metadata?.company?.tel1;
+  const tel2 = projectState.metadata?.company?.tel2;
+  const email = projectState.metadata?.company?.email;
 
   return (
     <View style={[styles.container, containerStyles]}>
