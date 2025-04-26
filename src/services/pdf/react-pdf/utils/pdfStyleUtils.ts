@@ -5,110 +5,127 @@ import { ElementSettings } from '@/features/devis/components/pdf-settings/types/
 import { PdfElementId } from '@/features/devis/components/pdf-settings/types/typography';
 import { ensureSupportedFont } from '@/services/pdf/utils/fontUtils';
 
-export const getElementPdfStyles = (
-  pdfSettings: PdfSettings | null | undefined,
-  elementId: PdfElementId
-): Style => {
-  // Valeurs par défaut pour les styles React-PDF
-  const defaultStyles: Style = {
-    fontFamily: 'Helvetica',
-    fontSize: 10,
-    fontWeight: 'normal',
-    fontStyle: 'normal',
-    color: '#000000',
-    textAlign: 'left'
-  };
-
-  // Si aucun paramètre PDF n'est fourni, retourner les styles par défaut
-  if (!pdfSettings?.elements) {
-    return defaultStyles;
-  }
-
-  // Appliquer les styles par défaut de l'utilisateur s'ils existent
-  let styles: Style = { ...defaultStyles };
-  const defaultUserSettings = pdfSettings.elements['default'];
-  
-  if (defaultUserSettings) {
-    styles = applyElementSettingsToStyle(styles, defaultUserSettings);
-  }
-
-  // Appliquer les styles spécifiques à l'élément s'ils existent
-  const elementSettings = pdfSettings.elements[elementId];
-  if (elementSettings) {
-    styles = applyElementSettingsToStyle(styles, elementSettings);
-  }
-
-  return styles;
+// Types spécifiques pour les styles PDF
+type PdfStyleOptions = {
+  isContainer?: boolean;
+  inheritParentStyles?: boolean;
 };
 
-const applyElementSettingsToStyle = (baseStyle: Style, settings: ElementSettings): Style => {
+// Fonction principale pour obtenir les styles PDF
+export const getPdfStyles = (
+  pdfSettings: PdfSettings | null | undefined,
+  elementId: PdfElementId,
+  options: PdfStyleOptions = {}
+): Style => {
+  const { isContainer = false, inheritParentStyles = true } = options;
+
+  // Styles de base pour tous les éléments
+  const baseStyles: Style = {
+    fontFamily: 'Helvetica',
+    fontSize: 10,
+    color: '#000000',
+    ...(inheritParentStyles && {
+      textAlign: 'left',
+      fontWeight: 'normal',
+      fontStyle: 'normal'
+    })
+  };
+
+  if (!pdfSettings?.elements) {
+    return baseStyles;
+  }
+
+  // Appliquer les styles par défaut si disponibles
+  const defaultSettings = pdfSettings.elements['default'];
+  let mergedStyles = defaultSettings 
+    ? applyElementSettingsToStyle(baseStyles, defaultSettings, isContainer)
+    : baseStyles;
+
+  // Appliquer les styles spécifiques à l'élément
+  const elementSettings = pdfSettings.elements[elementId];
+  if (elementSettings) {
+    mergedStyles = applyElementSettingsToStyle(mergedStyles, elementSettings, isContainer);
+  }
+
+  return mergedStyles;
+};
+
+// Fonction pour appliquer les paramètres d'un élément aux styles PDF
+const applyElementSettingsToStyle = (
+  baseStyle: Style,
+  settings: ElementSettings,
+  isContainer: boolean
+): Style => {
   const style: Style = { ...baseStyle };
 
+  // Application des styles de texte
   if (settings.fontFamily) {
     style.fontFamily = ensureSupportedFont(settings.fontFamily);
   }
-  
-  if (settings.fontSize) {
+
+  if (typeof settings.fontSize === 'number') {
     style.fontSize = settings.fontSize;
   }
-  
-  if (settings.isBold !== undefined) {
-    style.fontWeight = settings.isBold ? 'bold' : 'normal';
-  }
-  
-  if (settings.isItalic !== undefined) {
-    style.fontStyle = settings.isItalic ? 'italic' : 'normal';
-  }
-  
+
   if (settings.color) {
     style.color = settings.color;
   }
-  
+
+  if (settings.isBold !== undefined) {
+    style.fontWeight = settings.isBold ? 'bold' : 'normal';
+  }
+
+  if (settings.isItalic !== undefined) {
+    style.fontStyle = settings.isItalic ? 'italic' : 'normal';
+  }
+
   if (settings.alignment) {
     style.textAlign = settings.alignment;
   }
-  
+
+  // Application du fond si spécifié
   if (settings.fillColor) {
     style.backgroundColor = settings.fillColor;
   }
-  
+
+  // Application de l'espacement
   if (settings.spacing) {
-    if (settings.spacing.top !== undefined) style.marginTop = settings.spacing.top;
-    if (settings.spacing.right !== undefined) style.marginRight = settings.spacing.right;
-    if (settings.spacing.bottom !== undefined) style.marginBottom = settings.spacing.bottom;
-    if (settings.spacing.left !== undefined) style.marginLeft = settings.spacing.left;
+    const { top, right, bottom, left } = settings.spacing;
+    
+    if (typeof top === 'number') style.marginTop = top;
+    if (typeof right === 'number') style.marginRight = right;
+    if (typeof bottom === 'number') style.marginBottom = bottom;
+    if (typeof left === 'number') style.marginLeft = left;
   }
-  
+
+  // Application des bordures
   if (settings.border) {
-    if (settings.border.top || settings.border.right || 
-        settings.border.bottom || settings.border.left) {
-      style.borderColor = settings.border.color || '#000000';
+    const { top, right, bottom, left, color, width = 1 } = settings.border;
+    
+    if (color) {
+      style.borderColor = color;
+    }
+
+    if (top || right || bottom || left) {
       style.borderStyle = 'solid';
       
-      if (settings.border.top) {
-        style.borderTopWidth = settings.border.width || 1;
-      }
-      if (settings.border.right) {
-        style.borderRightWidth = settings.border.width || 1;
-      }
-      if (settings.border.bottom) {
-        style.borderBottomWidth = settings.border.width || 1;
-      }
-      if (settings.border.left) {
-        style.borderLeftWidth = settings.border.width || 1;
-      }
+      if (top) style.borderTopWidth = width;
+      if (right) style.borderRightWidth = width;
+      if (bottom) style.borderBottomWidth = width;
+      if (left) style.borderLeftWidth = width;
     }
   }
 
   return style;
 };
 
+// Fonctions d'aide pour la compatibilité avec l'ancien code
 export const getContainerStyles = (
   pdfSettings: PdfSettings | null | undefined,
   elementId: PdfElementId,
   additionalStyles: Style = {}
 ): Style => {
-  const baseStyles = getElementPdfStyles(pdfSettings, elementId);
+  const baseStyles = getPdfStyles(pdfSettings, elementId, { isContainer: true });
   return { ...baseStyles, ...additionalStyles };
 };
 
@@ -117,15 +134,7 @@ export const getTextStyles = (
   elementId: PdfElementId,
   additionalStyles: Style = {}
 ): Style => {
-  const baseStyles = getElementPdfStyles(pdfSettings, elementId);
-  const textStyles: Style = {
-    fontFamily: baseStyles.fontFamily,
-    fontSize: baseStyles.fontSize,
-    fontWeight: baseStyles.fontWeight,
-    fontStyle: baseStyles.fontStyle,
-    color: baseStyles.color,
-    textAlign: baseStyles.textAlign,
-    ...additionalStyles
-  };
-  return textStyles;
+  const baseStyles = getPdfStyles(pdfSettings, elementId, { isContainer: false });
+  return { ...baseStyles, ...additionalStyles };
 };
+
