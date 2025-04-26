@@ -12,8 +12,8 @@ interface QuoteInfoSectionProps {
 
 export const QuoteInfoSection = ({ pdfSettings, projectState }: QuoteInfoSectionProps) => {
   const metadata = projectState.metadata;
-  const quoteNumber = metadata?.quote_ref || 'XXXX-XX';
-  const quoteDate = metadata?.created_at || new Date().toISOString();
+  const quoteNumber = projectState.metadata?.devisNumber || 'XXXX-XX';
+  const quoteDate = projectState.metadata?.dateDevis || new Date().toISOString();
   
   const quoteNumberStyles = getPdfStyles(pdfSettings, 'quote_number', { isContainer: false });
   const quoteDateStyles = getPdfStyles(pdfSettings, 'quote_date', { isContainer: false });
