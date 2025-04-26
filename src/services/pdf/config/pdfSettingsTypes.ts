@@ -1,6 +1,12 @@
 
 import { z } from 'zod';
 import { ElementSettingsSchema } from '@/features/devis/components/pdf-settings/types/elementSettings';
+import { PdfElementId } from '@/features/devis/components/pdf-settings/types/typography';
+
+// Schéma de validation pour les éléments PDF
+const PdfElementIdSchema = z.custom<PdfElementId>((val) => {
+  return typeof val === 'string';
+});
 
 export const PdfSettingsSchema = z.object({
   fontFamily: z.string().default('Roboto'),
@@ -56,7 +62,7 @@ export const PdfSettingsSchema = z.object({
     height: 70,
     alignment: 'left'
   }),
-  elements: z.record(ElementSettingsSchema).default({})
+  elements: z.record(PdfElementIdSchema, ElementSettingsSchema).default({})
 }).default({
   fontFamily: 'Roboto',
   colors: {

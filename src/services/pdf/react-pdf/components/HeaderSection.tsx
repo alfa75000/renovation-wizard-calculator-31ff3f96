@@ -1,6 +1,8 @@
+
 import { View, Image, Text, StyleSheet } from '@react-pdf/renderer';
 import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
 import { ProjectState } from '@/types';
+import { getContainerStyles, getTextStyles } from '../utils/pdfStyleUtils';
 
 interface HeaderSectionProps {
   pdfSettings: PdfSettings;
@@ -22,29 +24,44 @@ export const HeaderSection = ({ pdfSettings, projectState }: HeaderSectionProps)
     }
   };
 
+  // Appliquer les styles dynamiques
+  const headerContainerStyles = getContainerStyles(pdfSettings, 'default', styles.header);
+  const logoContainerStyles = getContainerStyles(pdfSettings, 'default', {
+    ...styles.logoContainer,
+    width: logoSettings.width, 
+    height: logoSettings.height
+  });
+
+  const logoStyles = {
+    ...styles.logo,
+    width: logoSettings.width,
+    height: logoSettings.height,
+    alignSelf: getAlignSelf(logoSettings.alignment)
+  };
+
+  // Styles pour les informations d'assurance
+  const insuranceContainerStyles = getContainerStyles(pdfSettings, 'insurance_info', styles.insuranceInfo);
+  const insuranceTextStyles = getTextStyles(pdfSettings, 'insurance_info', styles.insuranceText);
+  
+  // Styles pour le slogan de l'entreprise (si ajouté)
+  const sloganStyles = getTextStyles(pdfSettings, 'company_slogan', {});
+
   return (
-    <View style={styles.header}>
-      <View style={[
-        styles.logoContainer,
-        { width: logoSettings.width, height: logoSettings.height }
-      ]}>
+    <View style={headerContainerStyles}>
+      <View style={logoContainerStyles}>
         <Image
           src={logoUrl}
-          style={[
-            styles.logo,
-            { 
-              width: logoSettings.width,
-              height: logoSettings.height,
-              alignSelf: getAlignSelf(logoSettings.alignment)
-            }
-          ]}
+          style={logoStyles}
         />
+        {slogan && (
+          <Text style={sloganStyles}>{slogan}</Text>
+        )}
       </View>
       
-      <View style={styles.insuranceInfo}>
-        <Text style={styles.insuranceText}>Assurance MAAF PRO</Text>
-        <Text style={styles.insuranceText}>Responsabilité civile</Text>
-        <Text style={styles.insuranceText}>Responsabilité civile décennale</Text>
+      <View style={insuranceContainerStyles}>
+        <Text style={insuranceTextStyles}>Assurance MAAF PRO</Text>
+        <Text style={insuranceTextStyles}>Responsabilité civile</Text>
+        <Text style={insuranceTextStyles}>Responsabilité civile décennale</Text>
       </View>
     </View>
   );

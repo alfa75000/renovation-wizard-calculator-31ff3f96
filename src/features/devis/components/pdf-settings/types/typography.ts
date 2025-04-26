@@ -1,6 +1,9 @@
 
 // Liste des éléments du PDF qu'on peut personnaliser
 export const PDF_ELEMENTS = [
+  // Élément par défaut pour les styles globaux
+  { id: 'default', name: "Styles par défaut", section: 'Général' },
+
   // Page de garde
   { id: 'insurance_info', name: "Informations d'assurance (partie droite)", section: 'Page de garde' },
   { id: 'company_slogan', name: 'Slogan entreprise', section: 'Page de garde' },
@@ -46,5 +49,7 @@ export const PDF_ELEMENTS = [
   { id: 'cgv_section_titles', name: 'Titres de sections CGV', section: 'CGV' },
   { id: 'cgv_content', name: 'Contenu textuel CGV', section: 'CGV' },
   { id: 'cgv_footer', name: 'Pied de page', section: 'CGV' }
-];
+] as const;
 
+// Dériver le type PdfElementId à partir de la constante PDF_ELEMENTS
+export type PdfElementId = typeof PDF_ELEMENTS[number]['id'];
