@@ -5,13 +5,17 @@ import { ElementSettings } from '@/features/devis/components/pdf-settings/types/
 import { PdfElementId } from '@/features/devis/components/pdf-settings/types/typography';
 import { ensureSupportedFont } from '@/services/pdf/utils/fontUtils';
 
-// Types spécifiques pour les styles PDF
+// Types for style options
 type PdfStyleOptions = {
   isContainer?: boolean;
   inheritParentStyles?: boolean;
 };
 
-// Fonction principale pour obtenir les styles PDF
+/**
+ * Core function that generates PDF styles from settings
+ * Properly handles style inheritance:
+ * Base Styles < Default Element Settings < Specific Element Settings
+ */
 export const getPdfStyles = (
   pdfSettings: PdfSettings | null | undefined,
   elementId: PdfElementId,
@@ -19,7 +23,7 @@ export const getPdfStyles = (
 ): Style => {
   const { isContainer = false, inheritParentStyles = true } = options;
 
-  // Styles de base minimaux
+  // Most minimal base styles - should almost never override anything
   const baseStyles: Style = {
     ...(inheritParentStyles && {
       textAlign: 'left'
@@ -30,22 +34,31 @@ export const getPdfStyles = (
     return baseStyles;
   }
 
-  // Appliquer les styles par défaut si disponibles
+  // First apply default settings if available
   const defaultSettings = pdfSettings.elements['default'];
-  let mergedStyles = defaultSettings 
-    ? applyElementSettingsToStyle(baseStyles, defaultSettings, isContainer)
-    : baseStyles;
+  const defaultStyles = defaultSettings
+    ? applyElementSettingsToStyle({}, defaultSettings, isContainer)
+    : {};
 
-  // Appliquer les styles spécifiques à l'élément
+  // Then merge with element-specific settings (priority)
   const elementSettings = pdfSettings.elements[elementId];
-  if (elementSettings) {
-    mergedStyles = applyElementSettingsToStyle(mergedStyles, elementSettings, isContainer);
-  }
+  const elementSpecificStyles = elementSettings
+    ? applyElementSettingsToStyle({}, elementSettings, isContainer)
+    : {};
 
-  return mergedStyles;
+  // Apply the styles in the correct priority order:
+  // Base styles (lowest priority) < Default styles < Element-specific styles (highest priority)
+  return {
+    ...baseStyles,
+    ...defaultStyles,
+    ...elementSpecificStyles
+  };
 };
 
-// Fonction pour appliquer les paramètres d'un élément aux styles PDF
+/**
+ * Converts ElementSettings object to React-PDF Style object
+ * Ensuring proper mapping of all properties
+ */
 const applyElementSettingsToStyle = (
   baseStyle: Style,
   settings: ElementSettings,
@@ -53,12 +66,12 @@ const applyElementSettingsToStyle = (
 ): Style => {
   const style: Style = { ...baseStyle };
 
-  // Application des styles de texte
+  // Text styling - directly mapping to React-PDF properties
   if (settings.fontFamily) {
     style.fontFamily = ensureSupportedFont(settings.fontFamily);
   }
 
-  if (settings.fontSize) {
+  if (typeof settings.fontSize === 'number') {
     style.fontSize = settings.fontSize;
   }
 
@@ -78,12 +91,12 @@ const applyElementSettingsToStyle = (
     style.textAlign = settings.alignment;
   }
 
-  // Application du fond si spécifié
+  // Background styling
   if (settings.fillColor) {
     style.backgroundColor = settings.fillColor;
   }
 
-  // Application de l'espacement
+  // Spacing (margin) - converting from custom spacing object to React-PDF margins
   if (settings.spacing) {
     if (typeof settings.spacing.top === 'number') style.marginTop = settings.spacing.top;
     if (typeof settings.spacing.right === 'number') style.marginRight = settings.spacing.right;
@@ -91,7 +104,7 @@ const applyElementSettingsToStyle = (
     if (typeof settings.spacing.left === 'number') style.marginLeft = settings.spacing.left;
   }
 
-  // Application des bordures
+  // Border styling with full configuration
   if (settings.border) {
     const { top, right, bottom, left, color, width = 1 } = settings.border;
     
@@ -99,6 +112,7 @@ const applyElementSettingsToStyle = (
       style.borderColor = color;
     }
 
+    // Only apply border style if at least one side has a border
     if (top || right || bottom || left) {
       style.borderStyle = 'solid';
       
@@ -112,22 +126,34 @@ const applyElementSettingsToStyle = (
   return style;
 };
 
-// Fonctions d'aide pour la compatibilité
+/**
+ * Helper function for container styles
+ * Keeps backward compatibility while using the new unified style system
+ */
 export const getContainerStyles = (
   pdfSettings: PdfSettings | null | undefined,
   elementId: PdfElementId,
   additionalStyles: Style = {}
 ): Style => {
+  // Get base styles from the unified system
   const baseStyles = getPdfStyles(pdfSettings, elementId, { isContainer: true });
-  return { ...baseStyles, ...additionalStyles };
+  
+  // Merge with any additional styles (lowest priority to preserve PDF settings)
+  return { ...additionalStyles, ...baseStyles };
 };
 
+/**
+ * Helper function for text styles
+ * Keeps backward compatibility while using the new unified style system
+ */
 export const getTextStyles = (
   pdfSettings: PdfSettings | null | undefined,
   elementId: PdfElementId,
   additionalStyles: Style = {}
 ): Style => {
+  // Get base styles from the unified system
   const baseStyles = getPdfStyles(pdfSettings, elementId, { isContainer: false });
-  return { ...baseStyles, ...additionalStyles };
+  
+  // Merge with any additional styles (lowest priority to preserve PDF settings)
+  return { ...additionalStyles, ...baseStyles };
 };
-
