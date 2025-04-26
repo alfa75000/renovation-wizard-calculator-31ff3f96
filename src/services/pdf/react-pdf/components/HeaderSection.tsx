@@ -14,16 +14,12 @@ export const HeaderSection = ({ pdfSettings, projectState }: HeaderSectionProps)
   const slogan = company?.slogan || 'Entreprise Générale du Bâtiment';
   const logoUrl = '/lrs_logo.jpg';
 
-  // Styles pour le conteneur principal du header
-  const headerContainerStyles = getPdfStyles(pdfSettings, 'default', { isContainer: true, ...styles.header });
+  // Récupération des styles dynamiques (sans mélanger avec les styles locaux)
+  const dynamicHeaderStyles = getPdfStyles(pdfSettings, 'default', { isContainer: true });
+  const dynamicLogoContainerStyles = getPdfStyles(pdfSettings, 'default', { isContainer: true });
+  const dynamicInsuranceStyles = getPdfStyles(pdfSettings, 'insurance_info', { isContainer: true });
+  const insuranceTextStyles = getPdfStyles(pdfSettings, 'insurance_info', { isContainer: false });
   
-  // Styles pour le conteneur du logo
-  const logoContainerStyles = getPdfStyles(pdfSettings, 'default', { 
-    isContainer: true,
-    ...styles.logoContainer,
-    width: '60%'
-  });
-
   // Styles du logo avec type approprié pour alignSelf
   const logoStyles = {
     ...styles.logo,
@@ -32,14 +28,6 @@ export const HeaderSection = ({ pdfSettings, projectState }: HeaderSectionProps)
     alignSelf: pdfSettings.logoSettings?.alignment === 'center' ? 'center' : 
                pdfSettings.logoSettings?.alignment === 'right' ? 'flex-end' : 'flex-start'
   } as const;
-
-  // Styles pour les informations d'assurance
-  const insuranceContainerStyles = getPdfStyles(pdfSettings, 'insurance_info', { 
-    isContainer: true,
-    ...styles.insuranceInfo,
-    width: '40%'
-  });
-  const insuranceTextStyles = getPdfStyles(pdfSettings, 'insurance_info', { isContainer: false });
 
   // Styles pour le slogan et son conteneur
   const sloganContainerStyles = getPdfStyles(pdfSettings, 'company_slogan', { isContainer: true });
@@ -51,12 +39,12 @@ export const HeaderSection = ({ pdfSettings, projectState }: HeaderSectionProps)
 
   return (
     <View style={styles.container}>
-      <View style={headerContainerStyles}>
-        <View style={logoContainerStyles}>
+      <View style={[styles.header, dynamicHeaderStyles]}>
+        <View style={[styles.logoContainer, dynamicLogoContainerStyles, { width: '60%' }]}>
           <Image src={logoUrl} style={logoStyles} />
         </View>
         
-        <View style={insuranceContainerStyles}>
+        <View style={[styles.insuranceInfo, dynamicInsuranceStyles, { width: '40%' }]}>
           <Text style={insuranceTextStyles}>Assurance MAAF PRO</Text>
           <Text style={insuranceTextStyles}>Responsabilité civile</Text>
           <Text style={insuranceTextStyles}>Responsabilité civile décennale</Text>
@@ -98,4 +86,3 @@ const styles = StyleSheet.create({
     // Les styles spécifiques sont maintenant appliqués via getPdfStyles
   }
 });
-
