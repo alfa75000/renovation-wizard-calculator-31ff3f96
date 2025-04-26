@@ -10,7 +10,8 @@ interface ClientSectionProps {
 }
 
 export const ClientSection = ({ pdfSettings, projectState }: ClientSectionProps) => {
-  const clientData = projectState.client?.display_data || 'Données client non renseignées';
+  const clientData = projectState.metadata?.clientsData || 'Données client non renseignées';
+  //const clientData = projectState.client?.display_data || 'Données client non renseignées';
   
   const titleStyles = getPdfStyles(pdfSettings, 'client_title', { isContainer: false });
   const contentStyles = getPdfStyles(pdfSettings, 'client_content', { isContainer: false });
