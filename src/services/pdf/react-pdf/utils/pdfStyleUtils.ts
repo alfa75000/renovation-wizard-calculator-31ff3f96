@@ -19,15 +19,10 @@ export const getPdfStyles = (
 ): Style => {
   const { isContainer = false, inheritParentStyles = true } = options;
 
-  // Styles de base pour tous les éléments
+  // Styles de base minimaux
   const baseStyles: Style = {
-    fontFamily: 'Helvetica',
-    fontSize: 10,
-    color: '#000000',
     ...(inheritParentStyles && {
-      textAlign: 'left',
-      fontWeight: 'normal',
-      fontStyle: 'normal'
+      textAlign: 'left'
     })
   };
 
@@ -63,7 +58,7 @@ const applyElementSettingsToStyle = (
     style.fontFamily = ensureSupportedFont(settings.fontFamily);
   }
 
-  if (typeof settings.fontSize === 'number') {
+  if (settings.fontSize) {
     style.fontSize = settings.fontSize;
   }
 
@@ -90,12 +85,10 @@ const applyElementSettingsToStyle = (
 
   // Application de l'espacement
   if (settings.spacing) {
-    const { top, right, bottom, left } = settings.spacing;
-    
-    if (typeof top === 'number') style.marginTop = top;
-    if (typeof right === 'number') style.marginRight = right;
-    if (typeof bottom === 'number') style.marginBottom = bottom;
-    if (typeof left === 'number') style.marginLeft = left;
+    if (typeof settings.spacing.top === 'number') style.marginTop = settings.spacing.top;
+    if (typeof settings.spacing.right === 'number') style.marginRight = settings.spacing.right;
+    if (typeof settings.spacing.bottom === 'number') style.marginBottom = settings.spacing.bottom;
+    if (typeof settings.spacing.left === 'number') style.marginLeft = settings.spacing.left;
   }
 
   // Application des bordures
@@ -119,7 +112,7 @@ const applyElementSettingsToStyle = (
   return style;
 };
 
-// Fonctions d'aide pour la compatibilité avec l'ancien code
+// Fonctions d'aide pour la compatibilité
 export const getContainerStyles = (
   pdfSettings: PdfSettings | null | undefined,
   elementId: PdfElementId,

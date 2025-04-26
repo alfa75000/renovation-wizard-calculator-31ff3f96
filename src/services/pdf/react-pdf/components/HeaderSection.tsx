@@ -12,22 +12,9 @@ interface HeaderSectionProps {
 export const HeaderSection = ({ pdfSettings, projectState }: HeaderSectionProps) => {
   const company = projectState.metadata?.company;
   const slogan = company?.slogan || 'Entreprise Générale du Bâtiment';
-  const logoUrl = company?.logo_url || '/images/lrs-logo.jpg';
-  const { logoSettings } = pdfSettings;
+  const logoUrl = '/lrs_logo.jpg';
 
-  const getAlignSelf = (alignment: 'left' | 'center' | 'right'): 'flex-start' | 'center' | 'flex-end' => {
-    switch (alignment) {
-      case 'left': return 'flex-start';
-      case 'right': return 'flex-end';
-      case 'center': return 'center';
-      default: return 'flex-start';
-    }
-  };
-
-  // Apply dynamic styles
   const headerContainerStyles = getContainerStyles(pdfSettings, 'default', styles.header);
-  
-  // Logo container styles
   const logoContainerStyles = getContainerStyles(pdfSettings, 'default', {
     ...styles.logoContainer,
     width: '60%'
@@ -36,35 +23,30 @@ export const HeaderSection = ({ pdfSettings, projectState }: HeaderSectionProps)
   // Logo styles
   const logoStyles = {
     ...styles.logo,
-    width: logoSettings?.width || 150,
-    height: logoSettings?.height || 70,
-    alignSelf: getAlignSelf(logoSettings?.alignment || 'left')
+    width: pdfSettings.logoSettings?.width || 150,
+    height: pdfSettings.logoSettings?.height || 70,
+    alignSelf: pdfSettings.logoSettings?.alignment === 'center' ? 'center' : 
+               pdfSettings.logoSettings?.alignment === 'right' ? 'flex-end' : 'flex-start'
   };
 
   // Styles for insurance information
   const insuranceContainerStyles = getContainerStyles(pdfSettings, 'insurance_info', styles.insuranceInfo);
-  const insuranceTextStyles = getTextStyles(pdfSettings, 'insurance_info', styles.insuranceText);
+  const insuranceTextStyles = getTextStyles(pdfSettings, 'insurance_info');
   
   // Styles for company slogan
-  const sloganStyles = getTextStyles(pdfSettings, 'company_slogan', {
-    ...styles.sloganText,
-    textAlign: pdfSettings.elements?.company_slogan?.alignment || 'left'
-  });
+  const sloganStyles = getTextStyles(pdfSettings, 'company_slogan');
 
   // Styles for company information
-  const companyInfoStyles = getTextStyles(pdfSettings, 'company_address', styles.companyInfo);
+  const companyInfoStyles = getTextStyles(pdfSettings, 'company_address');
 
   return (
     <View style={styles.container}>
-      {/* Header with logo and insurance */}
       <View style={headerContainerStyles}>
         <View style={logoContainerStyles}>
-          {logoUrl && (
-            <Image
-              src={logoUrl}
-              style={logoStyles}
-            />
-          )}
+          <Image
+            src={logoUrl}
+            style={logoStyles}
+          />
         </View>
         
         <View style={insuranceContainerStyles}>
@@ -74,7 +56,6 @@ export const HeaderSection = ({ pdfSettings, projectState }: HeaderSectionProps)
         </View>
       </View>
 
-      {/* Company information */}
       {slogan && (
         <Text style={sloganStyles}>{slogan}</Text>
       )}
@@ -84,8 +65,6 @@ export const HeaderSection = ({ pdfSettings, projectState }: HeaderSectionProps)
           {company.name} - {company.address} - {company.postal_code} {company.city}
         </Text>
       )}
-      
-      {/* Contact information will be added in next section */}
     </View>
   );
 };
@@ -109,23 +88,6 @@ const styles = StyleSheet.create({
   insuranceInfo: {
     width: '40%',
     alignItems: 'flex-end'
-  },
-  insuranceText: {
-    fontSize: 10,
-    marginBottom: 2,
-    color: '#333333'
-  },
-  sloganText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#002855',
-    marginTop: 10,
-    marginBottom: 5
-  },
-  companyInfo: {
-    fontSize: 11,
-    fontWeight: 'bold',
-    color: '#002855',
-    marginBottom: 3
   }
 });
+
