@@ -30,7 +30,7 @@ export const QuoteInfoSection = ({ pdfSettings, projectState }: QuoteInfoSection
         </View>
         <View style={styles.column}>
           <Text style={[styles.center, quoteDateStyles]}>
-            Date : {formatDate(quoteDate)}
+            du {formatDate(quoteDate)}
           </Text>
         </View>
         <View style={styles.column}>
@@ -50,21 +50,16 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection: 'row',
-//    justifyContent: 'space-between',
-    width: '60%'
+    justifyContent: 'space-between',
+    width: '100%'
   },
-  quoteNumberContainer: { // Nouveau style spécifique
-    width: '40%', // Ajuste ce pourcentage
-    // Applique les styles dynamiques ici ou dans le JSX
+  column: {
+    flex: 1
   },
-  quoteDateContainer: {
-    width: '30%', // Ajuste ce pourcentage
-    // Applique les styles dynamiques ici ou dans le JSX
-    // Ajoute textAlign: 'center' si tu veux centrer DANS ce conteneur
+  center: {
+    textAlign: 'center'
   },
-  quoteValidityContainer: {
-    width: '30%', // Ajuste ce pourcentage
-    // Applique les styles dynamiques ici ou dans le JSX
-    // Ajoute textAlign: 'right' si tu veux aligner à droite DANS ce conteneur
+  right: {
+    textAlign: 'right'
   }
 });
