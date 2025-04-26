@@ -5,9 +5,6 @@ import { ElementSettings } from '@/features/devis/components/pdf-settings/types/
 import { PdfElementId } from '@/features/devis/components/pdf-settings/types/typography';
 import { ensureSupportedFont } from '@/services/pdf/utils/fontUtils';
 
-/**
- * Convertit les paramètres ElementSettings en styles compatibles avec React-PDF
- */
 export const getElementPdfStyles = (
   pdfSettings: PdfSettings | null | undefined,
   elementId: PdfElementId
@@ -19,13 +16,11 @@ export const getElementPdfStyles = (
     fontWeight: 'normal',
     fontStyle: 'normal',
     color: '#000000',
-    textAlign: 'left',
-    margin: [0, 0, 0, 0], // [left, top, right, bottom]
-    padding: [0, 0, 0, 0], // [left, top, right, bottom]
+    textAlign: 'left'
   };
 
   // Si aucun paramètre PDF n'est fourni, retourner les styles par défaut
-  if (!pdfSettings || !pdfSettings.elements) {
+  if (!pdfSettings?.elements) {
     return defaultStyles;
   }
 
@@ -46,13 +41,9 @@ export const getElementPdfStyles = (
   return styles;
 };
 
-/**
- * Applique les paramètres ElementSettings à un objet Style React-PDF
- */
 const applyElementSettingsToStyle = (baseStyle: Style, settings: ElementSettings): Style => {
   const style: Style = { ...baseStyle };
 
-  // Appliquer les paramètres de typographie
   if (settings.fontFamily) {
     style.fontFamily = ensureSupportedFont(settings.fontFamily);
   }
@@ -69,7 +60,6 @@ const applyElementSettingsToStyle = (baseStyle: Style, settings: ElementSettings
     style.fontStyle = settings.isItalic ? 'italic' : 'normal';
   }
   
-  // Appliquer les paramètres d'apparence
   if (settings.color) {
     style.color = settings.color;
   }
@@ -82,50 +72,30 @@ const applyElementSettingsToStyle = (baseStyle: Style, settings: ElementSettings
     style.backgroundColor = settings.fillColor;
   }
   
-  // Appliquer les paramètres d'espacement (margins)
   if (settings.spacing) {
-    // React-PDF utilise [left, top, right, bottom] pour les marges
-    style.margin = [
-      settings.spacing.left ?? 0,
-      settings.spacing.top ?? 0,
-      settings.spacing.right ?? 0,
-      settings.spacing.bottom ?? 0
-    ];
+    if (settings.spacing.top !== undefined) style.marginTop = settings.spacing.top;
+    if (settings.spacing.right !== undefined) style.marginRight = settings.spacing.right;
+    if (settings.spacing.bottom !== undefined) style.marginBottom = settings.spacing.bottom;
+    if (settings.spacing.left !== undefined) style.marginLeft = settings.spacing.left;
   }
   
-  // Appliquer les paramètres de bordure
   if (settings.border) {
-    const hasBorder = settings.border.top || settings.border.right || 
-                      settings.border.bottom || settings.border.left;
-    
-    if (hasBorder) {
-      // Définir la couleur de bordure globale si au moins une bordure est active
+    if (settings.border.top || settings.border.right || 
+        settings.border.bottom || settings.border.left) {
       style.borderColor = settings.border.color || '#000000';
       style.borderStyle = 'solid';
       
-      // Appliquer les bordures individuelles selon les paramètres
       if (settings.border.top) {
         style.borderTopWidth = settings.border.width || 1;
-      } else if (settings.border.top === false) {
-        style.borderTopWidth = 0;
       }
-      
       if (settings.border.right) {
         style.borderRightWidth = settings.border.width || 1;
-      } else if (settings.border.right === false) {
-        style.borderRightWidth = 0;
       }
-      
       if (settings.border.bottom) {
         style.borderBottomWidth = settings.border.width || 1;
-      } else if (settings.border.bottom === false) {
-        style.borderBottomWidth = 0;
       }
-      
       if (settings.border.left) {
         style.borderLeftWidth = settings.border.width || 1;
-      } else if (settings.border.left === false) {
-        style.borderLeftWidth = 0;
       }
     }
   }
@@ -133,37 +103,21 @@ const applyElementSettingsToStyle = (baseStyle: Style, settings: ElementSettings
   return style;
 };
 
-/**
- * Utilitaire pour créer un style de conteneur avec des paramètres spécifiques
- * tout en conservant les styles de texte et d'apparence
- */
 export const getContainerStyles = (
   pdfSettings: PdfSettings | null | undefined,
   elementId: PdfElementId,
   additionalStyles: Style = {}
 ): Style => {
   const baseStyles = getElementPdfStyles(pdfSettings, elementId);
-  
-  // Exclure les propriétés spécifiques au texte pour un conteneur
-  const containerStyles: Style = {
-    ...baseStyles,
-    ...additionalStyles
-  };
-  
-  return containerStyles;
+  return { ...baseStyles, ...additionalStyles };
 };
 
-/**
- * Utilitaire pour créer un style de texte avec des paramètres spécifiques
- */
 export const getTextStyles = (
   pdfSettings: PdfSettings | null | undefined,
   elementId: PdfElementId,
   additionalStyles: Style = {}
 ): Style => {
   const baseStyles = getElementPdfStyles(pdfSettings, elementId);
-  
-  // Extraire uniquement les propriétés pertinentes pour le texte
   const textStyles: Style = {
     fontFamily: baseStyles.fontFamily,
     fontSize: baseStyles.fontSize,
@@ -173,6 +127,5 @@ export const getTextStyles = (
     textAlign: baseStyles.textAlign,
     ...additionalStyles
   };
-  
   return textStyles;
 };

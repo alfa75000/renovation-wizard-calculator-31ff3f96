@@ -16,15 +16,15 @@ interface ElementSelectorProps {
 }
 
 export const ElementSelector: React.FC<ElementSelectorProps> = ({ value, onChange }) => {
-  // Grouper les éléments par section
-  const groupedElements = PDF_ELEMENTS.reduce((acc, element) => {
+  // Grouper les éléments par section en utilisant reduce avec un type explicite
+  const groupedElements = PDF_ELEMENTS.reduce((acc: Record<string, typeof PDF_ELEMENTS[number][]>, element) => {
     const section = element.section;
     if (!acc[section]) {
       acc[section] = [];
     }
     acc[section].push(element);
     return acc;
-  }, {} as Record<string, typeof PDF_ELEMENTS>);
+  }, {});
 
   return (
     <div className="space-y-2">
