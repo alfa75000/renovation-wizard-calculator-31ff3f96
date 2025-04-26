@@ -119,4 +119,9 @@ const styles = StyleSheet.create({
     display: 'flex',
     flexDirection: 'column'
   }
+
+    contentGrower: {
+    flexGrow: 1 // Dit à cette View de prendre tout l'espace vertical restant
+  }
+
 });
