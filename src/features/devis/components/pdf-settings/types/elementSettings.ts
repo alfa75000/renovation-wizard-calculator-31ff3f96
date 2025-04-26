@@ -1,28 +1,6 @@
 
 import { z } from 'zod';
 
-export interface Spacing {
-  top?: number;
-  right?: number;
-  bottom?: number;
-  left?: number;
-}
-
-export type SpacingSettings = Spacing;
-
-export interface Border {
-  top?: boolean;
-  right?: boolean;
-  bottom?: boolean;
-  left?: boolean;
-  color?: string;
-  width?: number;
-}
-
-export type BorderSettings = Border;
-
-export type TextAlignment = 'left' | 'center' | 'right' | 'justify';
-
 // Définir d'abord le schéma Zod
 export const ElementSettingsSchema = z.object({
   fontFamily: z.string().optional(),
@@ -57,6 +35,8 @@ export const ElementSettingsSchema = z.object({
 
 // Utiliser l'inférence de type de Zod pour définir ElementSettings
 export type ElementSettings = z.infer<typeof ElementSettingsSchema>;
+export type SpacingSettings = NonNullable<ElementSettings['spacing']>;
+export type BorderSettings = NonNullable<ElementSettings['border']>;
 
 // Default settings for an element
 export const defaultElementSettings: ElementSettings = {
