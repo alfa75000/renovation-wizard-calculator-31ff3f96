@@ -1,4 +1,4 @@
-
+//src/features/devis/components/pdf-settings/types/elementSettings.ts
 import { z } from 'zod';
 
 // Définir d'abord le schéma Zod
