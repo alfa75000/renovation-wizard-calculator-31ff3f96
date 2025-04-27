@@ -1,13 +1,12 @@
-// src/services/pdf/react-pdf/components/DetailsPageContent.tsx 
+// src/services/pdf/react-pdf/components/DetailsPageContent.tsx
 
 import React from 'react';
-// MODIF: Importe Style explicitement pour getAlignSelf
 import { View, Text, StyleSheet, Style } from '@react-pdf/renderer'; 
 import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
 import { ProjectState, Room, Travail } from '@/types'; 
 import { getPdfStyles } from '../utils/pdfStyleUtils';
 
-// === FONCTIONS DE FORMATAGE (Assure-toi qu'elles sont correctes) ===
+// === FONCTIONS DE FORMATAGE ===
 const formatPrice = (value: number): string => { return `${(value || 0).toFixed(2)} €`; }; 
 const formatQuantity = (quantity: number): string => { return `${(quantity || 0)}`; }; 
 const formatMOFournitures = (travail: Travail): string => { 
@@ -17,15 +16,12 @@ const formatMOFournitures = (travail: Travail): string => {
     const tva = travail.tauxTVA || 0;
      return `[ MO: ${mo}/u | Fourn: ${fourn}/u | TVA: ${tva}% ]`; 
 };
-// ===============================================================
+// ============================
 
-// Helper pour obtenir les travaux d'une pièce
 const getTravauxForPiece = (pieceId: string, allTravaux: Travail[] = []): Travail[] => { 
   return allTravaux.filter(t => t.pieceId === pieceId);
 };
 
-// Fonction utilitaire pour convertir textAlign en alignSelf
-// MODIF: Ajout de type plus précis
 const getAlignSelf = (textAlign?: Style['textAlign']): 'flex-start' | 'center' | 'flex-end' => { 
   switch (textAlign) {
     case 'center': return 'center';
@@ -44,14 +40,12 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
   const travaux = projectState.travaux || [];
 
   // --- Styles ---
-  // MODIF: Récupération de tous les styles nécessaires, y compris les nouveaux
   const titleTextStyles = getPdfStyles(pdfSettings, 'detail_title', { isContainer: false });
   const titleContainerStyles = getPdfStyles(pdfSettings, 'detail_title', { isContainer: true });
   const tableHeaderTextStyles = getPdfStyles(pdfSettings, 'detail_table_header', { isContainer: false });
   const tableHeaderContainerStyles = getPdfStyles(pdfSettings, 'detail_table_header', { isContainer: true });
   const roomTitleTextStyles = getPdfStyles(pdfSettings, 'room_title', { isContainer: false });
   const roomTitleContainerStyles = getPdfStyles(pdfSettings, 'room_title', { isContainer: true });
-  // Styles pour les différentes parties de la description (utilise les NOUVEAUX IDs)
   const workTypeStyles = getPdfStyles(pdfSettings, 'work_details', { isContainer: false }); 
   const workTypeContainerStyles = getPdfStyles(pdfSettings, 'work_details', { isContainer: true }); 
   const workDescTextStyles = getPdfStyles(pdfSettings, 'work_description_text', { isContainer: false }); 
@@ -60,17 +54,14 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
   const workPersoContainerStyles = getPdfStyles(pdfSettings, 'work_personalization_text', { isContainer: true }); 
   const moSuppliesTextStyles = getPdfStyles(pdfSettings, 'mo_supplies', { isContainer: false }); 
   const moSuppliesContainerStyles = getPdfStyles(pdfSettings, 'mo_supplies', { isContainer: true }); 
-  // Styles colonnes
   const qtyStyles = getPdfStyles(pdfSettings, 'qty_column', { isContainer: false });
   const priceStyles = getPdfStyles(pdfSettings, 'price_column', { isContainer: false });
   const vatStyles = getPdfStyles(pdfSettings, 'vat_column', { isContainer: false });
   const totalStyles = getPdfStyles(pdfSettings, 'total_column', { isContainer: false });
-  // Styles Total Pièce
   const roomTotalTextStyles = getPdfStyles(pdfSettings, 'room_total', { isContainer: false });
   const roomTotalContainerStyles = getPdfStyles(pdfSettings, 'room_total', { isContainer: true });
   // --- Fin Styles ---
 
-  // Récupération de la couleur de fond claire (si pdfSettings et colors existent)
   const lightBackgroundColor = pdfSettings?.colors?.background || '#f3f4f6'; 
 
   const roomsWithTravaux = rooms.filter(room => getTravauxForPiece(room.id, travaux).length > 0);
@@ -81,29 +72,21 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
 
   return (
     <View>
-      {/* 1. Titre Principal avec alignSelf adaptatif */}
+      {/* 1. Titre Principal */}
       <View style={[
-        // Applique les styles dynamiques DU CONTENEUR du titre
         titleContainerStyles, 
-        // Ajoute l'alignement du conteneur basé sur le texte
-        { alignSelf: getAlignSelf(titleTextStyles.textAlign) } 
+        { alignSelf: getAlignSelf(titleTextStyles.textAlign) }
       ]}>
-        {/* Applique les styles dynamiques DU TEXTE du titre */}
         <Text style={titleTextStyles}>DÉTAILS DES TRAVAUX</Text>
       </View>
       <View style={{ height: 15 }} />
 
-      {/* 2. En-tête du Tableau avec styles dynamiques */}
+      {/* 2. En-tête du Tableau */}
       <View 
-        style={[
-          styles.tableHeaderRow, // Styles locaux pour le layout row/width
-          tableHeaderContainerStyles, // Styles dynamiques pour padding, border, etc.
-          // Fond : utilise celui de l'élément OU le fond clair global
-          { backgroundColor: tableHeaderContainerStyles.backgroundColor || lightBackgroundColor } 
-        ]} 
-        fixed // Répète l'en-tête sur chaque page
+        style={[styles.tableHeaderRow, tableHeaderContainerStyles, { backgroundColor: tableHeaderContainerStyles.backgroundColor || lightBackgroundColor }]} 
+        fixed
       >
-        {/* Cellules de l'en-tête */}
+        {/* ... Cellules en-tête */}
         <View style={styles.tableHeaderCellDesc}><Text style={tableHeaderTextStyles}>Description</Text></View>
         <View style={styles.tableHeaderCellQty}><Text style={[tableHeaderTextStyles, qtyStyles.textAlign ? { textAlign: qtyStyles.textAlign } : {}]}>Quantité</Text></View>
         <View style={styles.tableHeaderCellPrice}><Text style={[tableHeaderTextStyles, priceStyles.textAlign ? { textAlign: priceStyles.textAlign } : {}]}>Prix HT Unit.</Text></View>
@@ -118,22 +101,18 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
 
         return (
           <React.Fragment key={room.id}>
-            {/* Titre de la Pièce avec alignSelf adaptatif */}
+            {/* Titre de la Pièce - MODIF: Supprimé 'break' */}
             <View style={[
-              // Applique les styles dynamiques DU CONTENEUR du titre de pièce
               roomTitleContainerStyles,
-              // Ajoute l'alignement du conteneur basé sur le texte
               { alignSelf: getAlignSelf(roomTitleTextStyles.textAlign) }
-            ]} break> 
-            {/* 'break' essaie d'éviter le titre seul en bas de page */}
-              {/* Applique les styles dynamiques DU TEXTE du titre de pièce */}
+            ]}> 
               <Text style={roomTitleTextStyles}>{room.name}</Text>
             </View>
             <View style={{ height: 5 }} /> 
 
             {/* Boucle sur les Travaux de la Pièce */}
             {travauxPiece.map((travail, index) => {
-              // ... (calculs qte, fourn, mo, etc.) ...
+              // ... (calculs) ...
                const qte = typeof travail.quantite === 'number' ? travail.quantite : 0;
                const fourn = typeof travail.prixFournitures === 'number' ? travail.prixFournitures : 0;
                const mo = typeof travail.prixMainOeuvre === 'number' ? travail.prixMainOeuvre : 0;
@@ -143,59 +122,50 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
                pieceTotalHT += totalHT; 
 
               return (
-                // === Ligne du tableau pour un travail ===
-                 {/* MODIF: wrap={true} par défaut, on supprime wrap={false} */}
-                 {/* MODIF: Ajout style local pour centrage V */}
+                // Ligne du tableau pour un travail - MODIF: Supprimé 'wrap={false}'
                 <View key={travail.id || `travail-${index}`} style={styles.tableRow}> 
-                   {/* Les commentaires peuvent aller ici si besoin */}
-                   {/* MODIF: wrap={true} par défaut, on supprime wrap={false} */}
-                   {/* MODIF: Ajout style local pour centrage V via alignItems sur tableRow */}
                   
-                  {/* === Cellule Description Refactorisée === */}
+                  {/* Cellule Description Refactorisée */}
                   <View style={styles.tableCellDesc}>
-                     {/* ... contenu cellule description ... */}
-                     {/* Bloc Type/Sous-type */}
-                     <View style={workTypeContainerStyles}> 
-                       <Text style={workTypeStyles}>
-                         {`${travail.typeTravauxLabel || '?'}: ${travail.sousTypeLabel || '?'}`}
-                       </Text>
-                     </View>
-                     
-                     {/* Bloc Description (si existe) */}
-                     {travail.description && (
-                       <>
-                         <View style={{height: 2}} /> 
-                         <View style={workDescContainerStyles}>
-                           <Text style={workDescTextStyles}>
-                             {travail.description}
-                           </Text>
-                         </View>
-                       </>
-                     )}
- 
-                      {/* Bloc Personnalisation (si existe) */}
-                      {travail.personnalisation && (
+                     {/* ... (Structure interne de la description) ... */}
+                      {/* Bloc Type/Sous-type */}
+                      <View style={workTypeContainerStyles}> 
+                        <Text style={workTypeStyles}>
+                          {`${travail.typeTravauxLabel || '?'}: ${travail.sousTypeLabel || '?'}`}
+                        </Text>
+                      </View>
+                      {/* Bloc Description */}
+                      {travail.description && (
                         <>
                           <View style={{height: 2}} /> 
-                          <View style={workPersoContainerStyles}>
-                            <Text style={[workPersoTextStyles, {fontStyle: 'italic'}]}> 
-                               {travail.personnalisation}
+                          <View style={workDescContainerStyles}>
+                            <Text style={workDescTextStyles}>
+                              {travail.description}
                             </Text>
-                         </View>
+                          </View>
                         </>
                       )}
- 
-                      {/* Bloc MO/Fournitures */}
-                      <View style={{height: 4}} /> 
-                      <View style={moSuppliesContainerStyles}>
-                        <Text style={moSuppliesTextStyles}>
-                           {formatMOFournitures(travail)}
-                         </Text>
-                      </View>
-                   </View>
-                  {/* === Fin Cellule Description === */}
+                       {/* Bloc Personnalisation */}
+                       {travail.personnalisation && (
+                         <>
+                           <View style={{height: 2}} /> 
+                           <View style={workPersoContainerStyles}>
+                             <Text style={[workPersoTextStyles, {fontStyle: 'italic'}]}> 
+                                {travail.personnalisation}
+                             </Text>
+                          </View>
+                         </>
+                       )}
+                       {/* Bloc MO/Fournitures */}
+                       <View style={{height: 4}} /> 
+                       <View style={moSuppliesContainerStyles}>
+                         <Text style={moSuppliesTextStyles}>
+                            {formatMOFournitures(travail)}
+                          </Text>
+                       </View>
+                  </View>
 
-                  {/* === Autres Cellules (Qté, Prix, TVA, Total) === */}
+                  {/* Autres Cellules */}
                   <View style={styles.tableCellQty}>
                     <Text style={qtyStyles}>{formatQuantity(qte)}</Text>
                     <Text style={qtyStyles}>{travail.unite || ''}</Text>
@@ -209,47 +179,69 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
                   <View style={styles.tableCellTotal}>
                     <Text style={totalStyles}>{formatPrice(totalHT)}</Text>
                   </View>
-                  {/* === Fin Autres Cellules === */}
-                </View> // Fin de la ligne de travail
-              ); // Fin du return de la boucle map travaux
-            })} 
+                </View>
+              );
+            })}
 
-            {/* ... (Ligne Total Pièce, Espace après pièce) ... */}
+            {/* Ligne Total Pièce */}
+            <View 
+              style={[
+                styles.tableFooterRow, 
+                roomTotalContainerStyles, 
+                { backgroundColor: roomTotalContainerStyles.backgroundColor || lightBackgroundColor }
+              ]}
+            >
+               {/* Cellule Label Total */}
+               <View style={styles.tableFooterCellLabel}>
+                  {/* MODIF : Applique le style texte directement */}
+                 <Text style={roomTotalTextStyles}> 
+                    Total HT {room.name}
+                 </Text>
+               </View>
+               {/* Cellule Valeur Total */}
+               <View style={styles.tableFooterCellTotal}>
+                 {/* MODIF : Fusionne style colonne total + surcharge alignement par style total pièce */}
+                 <Text style={[
+                     totalStyles, 
+                     roomTotalTextStyles.textAlign ? { textAlign: roomTotalTextStyles.textAlign } : {} 
+                   ]}>
+                   {formatPrice(pieceTotalHT)}
+                 </Text>
+               </View>
+            </View>
+             <View style={{ height: 15 }} /> 
 
           </React.Fragment>
-        ); // Fin du return de la boucle map rooms
-      })} 
-    </View> // Fin Conteneur Global
-  ); // Fin du return du composant
-}; // Fin du composant
+        );
+      })}
+    </View> 
+  );
+};
 
-// ... (styles StyleSheet.create reste identique) ...
+// Styles locaux pour la structure du tableau
 const styles = StyleSheet.create({
-    // ... tous les styles ...
-    tableRow: {
-        flexDirection: 'row',
-        paddingVertical: 4,
-        width: '100%',
-        alignItems: 'center', // *** Centrage Vertical ***
-        // borderBottom supprimé
-      },
-  tableHeaderCellDesc: { width: '50%', paddingHorizontal: 4 }, 
-  tableHeaderCellQty: { width: '10%', paddingHorizontal: 4, textAlign: 'center' },
-  tableHeaderCellPrice: { width: '15%', paddingHorizontal: 4, textAlign: 'center' },
-  tableHeaderCellVAT: { width: '10%', paddingHorizontal: 4, textAlign: 'center' },
-  tableHeaderCellTotal: { width: '15%', paddingHorizontal: 4, textAlign: 'center' }, 
-  tableRow: {
+  // ... (Header Row/Cells, Footer Row/Cells comme avant) ...
+   tableHeaderRow: {
+    flexDirection: 'row',
+    width: '100%',
+    paddingVertical: 4, 
+  },
+   tableHeaderCellDesc: { width: '50%', paddingHorizontal: 4 }, 
+   tableHeaderCellQty: { width: '10%', paddingHorizontal: 4, textAlign: 'center' },
+   tableHeaderCellPrice: { width: '15%', paddingHorizontal: 4, textAlign: 'center' },
+   tableHeaderCellVAT: { width: '10%', paddingHorizontal: 4, textAlign: 'center' },
+   tableHeaderCellTotal: { width: '15%', paddingHorizontal: 4, textAlign: 'center' }, 
+   tableRow: {
     flexDirection: 'row',
     paddingVertical: 4,
     width: '100%',
-    alignItems: 'center', // MODIF : Centrage vertical des cellules
-    // borderBottom supprimé -> vient des styles dynamiques (ex: sur work_details)
+    alignItems: 'center', // Centrage Vertical
+    // BorderBottom supprimée
   },
   tableCellDesc: { 
       width: '50%', 
       paddingHorizontal: 4 
   }, 
-  // MODIF: Suppression display:flex, justifyContent:center
   tableCellQty: { 
       width: '10%', 
       paddingHorizontal: 4, 
@@ -275,7 +267,6 @@ const styles = StyleSheet.create({
     width: '100%',
     marginTop: 5,
     paddingVertical: 4, 
-     // backgroundColor & border viennent des styles dynamiques
   },
   tableFooterCellLabel: { 
      flexGrow: 1, 
@@ -285,5 +276,4 @@ const styles = StyleSheet.create({
      width: '15%', 
      paddingHorizontal: 4, 
   },
-  // MODIF : Suppression titleContainer et roomTitleContainer
 });
