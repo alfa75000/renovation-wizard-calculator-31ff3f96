@@ -6,17 +6,29 @@ import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
 import { ProjectState, Room, Travail } from '@/types'; 
 import { getPdfStyles } from '../utils/pdfStyleUtils';
 
-// === FONCTIONS DE FORMATAGE ===
-const formatPrice = (value: number): string => { return `${(value || 0).toFixed(2)} €`; }; 
+// === FONCTIONS DE FORMATAGE (MISES À JOUR) ===
+const formatPrice = (value: number): string => { 
+  return (value || 0).toLocaleString('fr-FR', { 
+    minimumFractionDigits: 2, 
+    maximumFractionDigits: 2 
+  }) + ' €'; 
+}; 
 const formatQuantity = (quantity: number): string => { return `${(quantity || 0)}`; }; 
 const formatMOFournitures = (travail: Travail): string => { 
     if (!travail) return '';
-    const mo = formatPrice(travail.prixMainOeuvre || 0);
-    const fourn = formatPrice(travail.prixFournitures || 0);
-    const tva = travail.tauxTVA || 0;
-     return `[ MO: ${mo}/u | Fourn: ${fourn}/u | TVA: ${tva}% ]`; 
+    const qte = typeof travail.quantite === 'number' ? travail.quantite : 0;
+    const fourn = typeof travail.prixFournitures === 'number' ? travail.prixFournitures : 0;
+    const mo = typeof travail.prixMainOeuvre === 'number' ? travail.prixMainOeuvre : 0;
+    const tvaRate = typeof travail.tauxTVA === 'number' ? travail.tauxTVA : 0;
+    const prixUnitaireHT = fourn + mo;
+    const totalHTLigne = prixUnitaireHT * qte;
+    const montantTVALigne = (totalHTLigne * tvaRate) / 100;
+    const moFormatted = formatPrice(mo);
+    const fournFormatted = formatPrice(fourn);
+    const tvaAmountFormatted = formatPrice(montantTVALigne); 
+    return `[ MO: ${moFormatted}/u ]  [ Fourn: ${fournFormatted}/u ]  [ Total TVA (${tvaRate}%) : ${tvaAmountFormatted} ]`; 
 };
-// ============================
+// ===================================================================
 
 const getTravauxForPiece = (pieceId: string, allTravaux: Travail[] = []): Travail[] => { 
   return allTravaux.filter(t => t.pieceId === pieceId);
@@ -57,8 +69,8 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
   const qtyStyles = getPdfStyles(pdfSettings, 'qty_column', { isContainer: false });
   const priceStyles = getPdfStyles(pdfSettings, 'price_column', { isContainer: false });
   const vatStyles = getPdfStyles(pdfSettings, 'vat_column', { isContainer: false });
-  const totalStyles = getPdfStyles(pdfSettings, 'total_column', { isContainer: false }); // Styles pour la colonne "Total HT"
-  const roomTotalTextStyles = getPdfStyles(pdfSettings, 'room_total', { isContainer: false }); // Styles pour la ligne "Total Pièce"
+  const totalStyles = getPdfStyles(pdfSettings, 'total_column', { isContainer: false }); 
+  const roomTotalTextStyles = getPdfStyles(pdfSettings, 'room_total', { isContainer: false }); 
   const roomTotalContainerStyles = getPdfStyles(pdfSettings, 'room_total', { isContainer: true });
   // --- Fin Styles ---
 
@@ -90,7 +102,7 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
         ]} 
         fixed
       >
-        {/* Utilise les NOUVELLES largeurs de colonnes définies dans le StyleSheet */}
+        {/* Utilise les NOUVELLES largeurs */}
         <View style={styles.tableHeaderCellDesc}><Text style={tableHeaderTextStyles}>Description</Text></View>
         <View style={styles.tableHeaderCellQty}><Text style={[tableHeaderTextStyles, qtyStyles.textAlign ? { textAlign: qtyStyles.textAlign } : {}]}>Quantité</Text></View>
         <View style={styles.tableHeaderCellPrice}><Text style={[tableHeaderTextStyles, priceStyles.textAlign ? { textAlign: priceStyles.textAlign } : {}]}>Prix HT Unit.</Text></View>
@@ -128,7 +140,7 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
                 <View key={travail.id || `travail-${index}`} style={styles.tableRow}> 
                   {/* Cellule Description */}
                   <View style={styles.tableCellDesc}>
-                      {/* Structure interne de la description */}
+                      {/* Structure interne description */}
                       <View style={workTypeContainerStyles}> 
                         <Text style={workTypeStyles}>{`${travail.typeTravauxLabel || '?'}: ${travail.sousTypeLabel || '?'}`}</Text>
                       </View>
@@ -145,7 +157,7 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
                        <View style={{height: 4}} /> 
                        <View style={moSuppliesContainerStyles}><Text style={moSuppliesTextStyles}>{formatMOFournitures(travail)}</Text></View>
                   </View>
-                  {/* Autres Cellules (avec les nouvelles largeurs via styles) */}
+                  {/* Autres Cellules (avec les nouvelles largeurs) */}
                   <View style={styles.tableCellQty}><Text style={qtyStyles}>{formatQuantity(qte)}</Text><Text style={qtyStyles}>{travail.unite || ''}</Text></View>
                   <View style={styles.tableCellPrice}><Text style={priceStyles}>{formatPrice(prixUnitaireHT)}</Text></View>
                   <View style={styles.tableCellVAT}><Text style={vatStyles}>{`${tvaRate}%`}</Text></View>
@@ -154,7 +166,7 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
               );
             })}
 
-            {/* Ligne Total Pièce (avec alignements corrigés et nouvelles largeurs via styles) */}
+            {/* Ligne Total Pièce (avec alignements et largeurs corrigés) */}
             <View 
               style={[
                 styles.tableFooterRow, 
@@ -162,20 +174,16 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
                 { backgroundColor: roomTotalContainerStyles.backgroundColor || lightBackgroundColor }
               ]}
             >
-               {/* Cellule Label Total (utilise style local pour largeur) */}
+               {/* Cellule Label Total (utilise style local largeur) */}
                <View style={styles.tableFooterCellLabel}> 
                  <Text style={roomTotalTextStyles}> 
                     Total HT {room.name}
                  </Text>
                </View>
-               {/* Cellule Valeur Total (utilise style local pour largeur) */}
+               {/* Cellule Valeur Total (utilise style local largeur) */}
                <View style={styles.tableFooterCellTotal}>
-                  {/* CORRECTION: Logique d'alignement corrigée */}
-                 <Text style={[
-                     {...totalStyles, textAlign: undefined }, // Base: Styles colonne Total (sauf alignement)
-                     // Priorité alignement: Ligne Total > Colonne Total
-                     { textAlign: roomTotalTextStyles.textAlign || totalStyles.textAlign } 
-                   ]}>
+                 {/* Applique UNIQUEMENT les styles de la LIGNE total pièce */}
+                 <Text style={roomTotalTextStyles}> 
                    {formatPrice(pieceTotalHT)}
                  </Text>
                </View>
@@ -196,20 +204,20 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingVertical: 4, 
   },
-  // === NOUVELLES Largeurs Colonnes Header ===
+  // === NOUVELLES Largeurs Colonnes ===
   tableHeaderCellDesc: { width: '60%', paddingHorizontal: 4 }, 
   tableHeaderCellQty: { width: '8%', paddingHorizontal: 4, textAlign: 'center' },
   tableHeaderCellPrice: { width: '12%', paddingHorizontal: 4, textAlign: 'center' },
   tableHeaderCellVAT: { width: '6%', paddingHorizontal: 4, textAlign: 'center' },
   tableHeaderCellTotal: { width: '14%', paddingHorizontal: 4, textAlign: 'center' }, 
-  // =======================================
+  // ==================================
   tableRow: {
     flexDirection: 'row',
     paddingVertical: 4,
     width: '100%',
     alignItems: 'center', 
   },
-  // === NOUVELLES Largeurs Colonnes Cellules ===
+  // === NOUVELLES Largeurs Colonnes ===
   tableCellDesc: { 
       width: '60%', 
       paddingHorizontal: 4 
@@ -234,7 +242,7 @@ const styles = StyleSheet.create({
       paddingHorizontal: 4, 
       textAlign: 'center'
   },
-  // ==========================================
+  // ==================================
   tableFooterRow: {
     flexDirection: 'row',
     width: '100%',
@@ -244,12 +252,13 @@ const styles = StyleSheet.create({
   },
   // === NOUVELLES Largeurs Total Pièce ===
   tableFooterCellLabel: { 
-     width: '86%', // Correspond à 60+8+12+6
+     width: '86%', // 60+8+12+6
      paddingHorizontal: 4 
   }, 
   tableFooterCellTotal: { 
-     width: '14%', // Correspond à la dernière colonne
+     width: '14%', // Largeur dernière colonne
      paddingHorizontal: 4, 
+     // Le textAlign vient du <Text> maintenant
   },
-   // =====================================
+  // =====================================
 });
