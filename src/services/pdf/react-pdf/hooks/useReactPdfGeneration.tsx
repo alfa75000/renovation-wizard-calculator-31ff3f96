@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useState } from 'react';
-import { pdf, Document, Page, StyleSheet, View } from '@react-pdf/renderer'; // Ajout de View
+import { pdf, Document, Page, StyleSheet, View } from '@react-pdf/renderer'; 
 import { useProject } from '@/contexts/ProjectContext';
 import { usePdfSettings } from '@/services/pdf/hooks/usePdfSettings';
 import { toast } from 'sonner';
@@ -10,8 +10,7 @@ import { toast } from 'sonner';
 import { CoverDocumentContent } from '../components/CoverDocumentContent'; 
 import { DetailsPage } from '../components/DetailsPage';
 import { RecapPage } from '../components/RecapPage';
-// Importe aussi CoverFooterSection spécifiquement pour la page de garde
-import { CoverFooterSection } from '../components/CoverFooterSection'; 
+import { CoverFooterSection } from '../components/CoverFooterSection'; // Importe le footer spécifique
 // import { CGVPage } from '../components/CGVPage';
 
 import { convertPageMargins, MarginTuple } from '../../v2/utils/styleUtils'; 
@@ -23,7 +22,14 @@ export const useReactPdfGeneration = () => {
 
   const generateReactPdf = async () => {
     try {
-      // ... (début try, vérifications) ...
+      setIsGenerating(true);
+      toast.loading('Génération du PDF en cours...', { id: 'pdf-gen' }); 
+
+      if (!pdfSettings || !state || !state.metadata) {
+        toast.error('Données ou paramètres PDF manquants.', { id: 'pdf-gen' });
+        setIsGenerating(false); 
+        return false;
+      }
 
       console.log("Génération PDF avec settings:", pdfSettings);
       console.log("Et state:", state);
@@ -31,42 +37,43 @@ export const useReactPdfGeneration = () => {
       const coverMargins: MarginTuple = convertPageMargins(
          pdfSettings.margins?.cover as number[] | undefined
       );
-       // Calcule les paddings nécessaires pour le footer fixe de la page de garde
-       const coverPaddingBottom = coverMargins[2] + 30; // Marge user + espace footer (ajuste 50)
+       // Ajuste cette valeur si ton footer a une hauteur différente
+       const coverPaddingBottom = coverMargins[2] + 50; 
 
       const MyPdfDocument = (
-        <Document /* ...props Document... */ >
-          
+        <Document 
+          title={`Devis ${state.metadata.devisNumber || 'Nouveau'}`} 
+          author={state.metadata.company?.name || 'Mon Entreprise'}
+          subject={`Devis N°${state.metadata.devisNumber}`}
+          creator="Mon Application Devis" 
+          producer="Mon Application Devis (@react-pdf/renderer)" 
+        >
           {/* === PAGE 1 : Page de Garde === */}
           <Page 
             size="A4" 
             style={[
-              styles.page, // Style de base
-              { // Marges / Paddings
+              styles.page, 
+              { 
                 paddingTop: coverMargins[0],
                 paddingRight: coverMargins[1],
-                paddingBottom: coverPaddingBottom, // Espace pour le footer fixe
+                paddingBottom: coverPaddingBottom, 
                 paddingLeft: coverMargins[3]
               }
             ]}
            >
-             {/* Contenu de la page de garde */}
+             {/* Contenu */}
              <CoverDocumentContent 
                 pdfSettings={pdfSettings} 
                 projectState={state} 
              />
-
-             {/* Ajoute le "pousseur" pour caler le footer en bas */}
+             {/* Pousseur */}
              <View style={styles.contentGrower} /> 
-
-             {/* Ajoute le Footer spécifique à la page de garde ici */}
-             {/* Il faut lui appliquer les styles pour le fixer */}
+             {/* Footer Fixe */}
              <CoverFooterSection 
                pdfSettings={pdfSettings} 
                projectState={state} 
-               // Applique les styles + la prop fixed
-               style={styles.fixedFooter} 
-               fixed={true} 
+               // PAS DE PROP 'style' ICI 
+               fixed={true} // <-- La prop fixed suffit
              />
           </Page>
 
@@ -88,7 +95,6 @@ export const useReactPdfGeneration = () => {
         </Document>
       );
 
-      // ... (génération blob, ouverture, toasts) ...
        const blob = await pdf(MyPdfDocument).toBlob();
        const url = URL.createObjectURL(blob);
        window.open(url, '_blank'); 
@@ -96,7 +102,6 @@ export const useReactPdfGeneration = () => {
        return true;
 
     } catch (error) {
-       // ... (gestion erreur) ...
        console.error('Erreur lors de la génération du PDF:', error);
        const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
        toast.error(`Erreur PDF: ${errorMessage}`, { id: 'pdf-gen' });
@@ -112,24 +117,17 @@ export const useReactPdfGeneration = () => {
   };
 };
 
-// Styles locaux pour la page et le footer fixe
+// Styles locaux pour la page et le footer fixe de la page de garde
 const styles = StyleSheet.create({
   page: {
     backgroundColor: '#ffffff',
     fontFamily: 'Helvetica', 
     display: 'flex',       
     flexDirection: 'column'
-    // Le padding est ajouté dynamiquement ci-dessus
   },
   contentGrower: { 
-     flexGrow: 1 // Nécessaire pour pousser le footer fixe
+     flexGrow: 1 
   },
-  // Style pour le footer fixe (similaire à celui dans PageFooter.tsx)
-  fixedFooter: { 
-    position: 'absolute',
-    bottom: 5, // Position verticale depuis le bas
-    left: 20,  // Doit correspondre à la marge gauche (coverMargins[3])
-    right: 20, // Doit correspondre à la marge droite (coverMargins[1])
-    textAlign: 'center', // Ou utilise le style dynamique 'cover_footer'
-  }
+  // Supprime fixedFooter car le style est interne au composant CoverFooterSection
+  // fixedFooter: { ... } 
 });
