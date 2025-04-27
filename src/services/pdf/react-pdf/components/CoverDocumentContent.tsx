@@ -15,7 +15,7 @@ import { ContactSection } from './ContactSection';
 import { QuoteInfoSection } from './QuoteInfoSection';
 import { ClientSection } from './ClientSection';
 import { ProjectSection } from './ProjectSection';
-import { CoverFooterSection } from './CoverFooterSection';
+//import { CoverFooterSection } from './CoverFooterSection';
 
 // Renomme l'interface
 interface CoverDocumentContentProps { 
@@ -95,13 +95,6 @@ export const CoverDocumentContent = ({ pdfSettings, projectState }: CoverDocumen
       {/* ESPACE VERTICAL 7 (space_before_footer) */}
       <View style={styles.spacerBeforeFooter} /> 
 
-      {/* 8. CoverFooterSection */}
-      {/* NOTE: Le footer ici ne sera PAS automatiquement en bas de page */}
-      {/* S'il doit être fixe en bas, il faut l'intégrer dans la logique de <Page> */}
-      <CoverFooterSection 
-        pdfSettings={pdfSettings}
-        projectState={projectState}
-      />
     </>
   );
 };
