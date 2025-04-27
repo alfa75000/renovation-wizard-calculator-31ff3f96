@@ -5,8 +5,8 @@ import { View, Text, StyleSheet } from '@react-pdf/renderer';
 import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
 import { ProjectState, Travail } from '@/types'; // Assure-toi d'importer Travail
 import { getPdfStyles } from '../utils/pdfStyleUtils';
-// Importe tes fonctions de formatage (assure-toi que le chemin est bon)
-import { formatPrice } from '@/services/pdf/utils/formatUtils'; // Exemple de chemin
+// Modifié pour utiliser le chemin relatif correct
+import { formatPrice } from '../../utils/formatUtils';
 
 // --- Logique de Calcul des Totaux ---
 const calculateTotals = (travaux: Travail[] = []) => { // Ajoute une valeur par défaut pour travaux
@@ -66,7 +66,7 @@ export const RecapPageContent = ({ pdfSettings, projectState }: RecapPageContent
   // Textes fixes (peuvent venir de constantes)
   const signatureContentText = "Cachet et signature du client"; 
   const approvalText = "« Bon pour accord, devis reçu avant exécution des travaux »";
-  const salutationText = `Dans l'attente de votre accord, nous vous prions d’agréer, Madame, Monsieur, l’expression de nos salutations distinguées.\n${company?.name || ''}`; 
+  const salutationText = `Dans l'attente de votre accord, nous vous prions d'agréer, Madame, Monsieur, l'expression de nos salutations distinguées.\n${company?.name || ''}`; 
 
   return (
     <View> {/* Conteneur global du contenu */}
