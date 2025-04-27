@@ -29,7 +29,10 @@ export const PDF_ELEMENTS = [
   { id: 'vat_column', name: 'Colonnes TVA', section: 'Détails des travaux' },
   { id: 'total_column', name: 'Colonnes Total', section: 'Détails des travaux' },
   { id: 'room_title', name: 'Titre de chaque pièce', section: 'Détails des travaux' },
+  // --- IDs pour la cellule description ---
   { id: 'work_details', name: 'Lignes détail travaux', section: 'Détails des travaux' },
+  { id: 'work_description_text', name: 'Texte Description travail', section: 'Détails des travaux' },
+  { id: 'work_personalization_text', name: 'Texte Personnalisation travail', section: 'Détails des travaux' },
   { id: 'mo_supplies', name: 'Détails MO/Fournitures', section: 'Détails des travaux' },
   { id: 'room_total', name: 'Ligne total par pièce', section: 'Détails des travaux' },
 
