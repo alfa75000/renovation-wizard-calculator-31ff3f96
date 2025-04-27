@@ -1,4 +1,4 @@
-// src/services/pdf/react-pdf/components/DetailsPageContent.tsx
+// src/services/pdf/react-pdf/components/DetailsPageContent.tsx 
 
 import React from 'react';
 // MODIF: Importe Style explicitement pour getAlignSelf
