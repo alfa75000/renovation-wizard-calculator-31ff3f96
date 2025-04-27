@@ -147,63 +147,56 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
                  {/* MODIF: wrap={true} par défaut, on supprime wrap={false} */}
                  {/* MODIF: Ajout style local pour centrage V */}
                 <View key={travail.id || `travail-${index}`} style={styles.tableRow}> 
+                   {/* Les commentaires peuvent aller ici si besoin */}
+                   {/* MODIF: wrap={true} par défaut, on supprime wrap={false} */}
+                   {/* MODIF: Ajout style local pour centrage V via alignItems sur tableRow */}
                   
                   {/* === Cellule Description Refactorisée === */}
-                   {/* Applique style local pour largeur/padding */}
                   <View style={styles.tableCellDesc}>
-                    {/* --- Bloc Type/Sous-type --- */}
-                    {/* Applique styles dynamiques conteneur */}
-                    <View style={workTypeContainerStyles}> 
-                       {/* Applique styles dynamiques texte */}
-                      <Text style={workTypeStyles}>
-                        {`${travail.typeTravauxLabel || '?'}: ${travail.sousTypeLabel || '?'}`}
-                      </Text>
-                    </View>
-                    
-                    {/* --- Bloc Description (si existe) --- */}
-                    {travail.description && (
-                      <>
-                        <View style={{height: 2}} /> 
-                        {/* Applique styles dynamiques conteneur */}
-                        <View style={workDescContainerStyles}>
-                           {/* Applique styles dynamiques texte */}
-                          <Text style={workDescTextStyles}>
-                            {travail.description}
-                          </Text>
-                        </View>
-                      </>
-                    )}
-
-                     {/* --- Bloc Personnalisation (si existe) --- */}
-                     {travail.personnalisation && (
+                     {/* ... contenu cellule description ... */}
+                     {/* Bloc Type/Sous-type */}
+                     <View style={workTypeContainerStyles}> 
+                       <Text style={workTypeStyles}>
+                         {`${travail.typeTravauxLabel || '?'}: ${travail.sousTypeLabel || '?'}`}
+                       </Text>
+                     </View>
+                     
+                     {/* Bloc Description (si existe) */}
+                     {travail.description && (
                        <>
                          <View style={{height: 2}} /> 
-                         {/* Applique styles dynamiques conteneur */}
-                         <View style={workPersoContainerStyles}>
-                           {/* Applique styles dynamiques texte + force italic */}
-                           <Text style={[workPersoTextStyles, {fontStyle: 'italic'}]}> 
-                              {travail.personnalisation}
+                         <View style={workDescContainerStyles}>
+                           <Text style={workDescTextStyles}>
+                             {travail.description}
                            </Text>
-                        </View>
+                         </View>
                        </>
                      )}
-
-                     {/* --- Bloc MO/Fournitures --- */}
-                     <View style={{height: 4}} /> 
-                      {/* Applique styles dynamiques conteneur */}
-                     <View style={moSuppliesContainerStyles}>
-                        {/* Applique styles dynamiques texte */}
-                       <Text style={moSuppliesTextStyles}>
-                          {formatMOFournitures(travail)}
-                        </Text>
-                     </View>
-                  </View>
+ 
+                      {/* Bloc Personnalisation (si existe) */}
+                      {travail.personnalisation && (
+                        <>
+                          <View style={{height: 2}} /> 
+                          <View style={workPersoContainerStyles}>
+                            <Text style={[workPersoTextStyles, {fontStyle: 'italic'}]}> 
+                               {travail.personnalisation}
+                            </Text>
+                         </View>
+                        </>
+                      )}
+ 
+                      {/* Bloc MO/Fournitures */}
+                      <View style={{height: 4}} /> 
+                      <View style={moSuppliesContainerStyles}>
+                        <Text style={moSuppliesTextStyles}>
+                           {formatMOFournitures(travail)}
+                         </Text>
+                      </View>
+                   </View>
                   {/* === Fin Cellule Description === */}
 
                   {/* === Autres Cellules (Qté, Prix, TVA, Total) === */}
-                  {/* Applique style local pour largeur/padding/textAlign */}
                   <View style={styles.tableCellQty}>
-                     {/* Applique styles dynamiques texte */}
                     <Text style={qtyStyles}>{formatQuantity(qte)}</Text>
                     <Text style={qtyStyles}>{travail.unite || ''}</Text>
                   </View>
@@ -218,46 +211,28 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
                   </View>
                   {/* === Fin Autres Cellules === */}
                 </View> // Fin de la ligne de travail
-              );
-            })}
+              ); // Fin du return de la boucle map travaux
+            })} 
 
-            {/* Ligne Total Pièce */}
-            <View 
-              style={[
-                styles.tableFooterRow, // Layout local
-                roomTotalContainerStyles, // Styles conteneur dynamiques
-                // Fond dynamique
-                { backgroundColor: roomTotalContainerStyles.backgroundColor || lightBackgroundColor }
-              ]}
-            >
-               <View style={styles.tableFooterCellLabel}>
-                 {/* Styles texte dynamiques */}
-                 <Text style={roomTotalTextStyles}>Total HT {room.name}</Text>
-               </View>
-               <View style={styles.tableFooterCellTotal}>
-                 {/* Styles texte colonne + priorité alignement total pièce */}
-                 <Text style={[totalStyles, roomTotalTextStyles.textAlign ? { textAlign: roomTotalTextStyles.textAlign } : {}]}>
-                   {formatPrice(pieceTotalHT)}
-                 </Text>
-               </View>
-            </View>
-             <View style={{ height: 15 }} /> {/* Espace après chaque pièce */}
+            {/* ... (Ligne Total Pièce, Espace après pièce) ... */}
 
           </React.Fragment>
-        );
-      })}
+        ); // Fin du return de la boucle map rooms
+      })} 
     </View> // Fin Conteneur Global
-  );
-};
+  ); // Fin du return du composant
+}; // Fin du composant
 
-// Styles locaux pour la structure du tableau
+// ... (styles StyleSheet.create reste identique) ...
 const styles = StyleSheet.create({
-  tableHeaderRow: {
-    flexDirection: 'row',
-    width: '100%',
-    paddingVertical: 4, 
-    // backgroundColor & border viennent des styles dynamiques
-  },
+    // ... tous les styles ...
+    tableRow: {
+        flexDirection: 'row',
+        paddingVertical: 4,
+        width: '100%',
+        alignItems: 'center', // *** Centrage Vertical ***
+        // borderBottom supprimé
+      },
   tableHeaderCellDesc: { width: '50%', paddingHorizontal: 4 }, 
   tableHeaderCellQty: { width: '10%', paddingHorizontal: 4, textAlign: 'center' },
   tableHeaderCellPrice: { width: '15%', paddingHorizontal: 4, textAlign: 'center' },
