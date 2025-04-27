@@ -18,7 +18,7 @@ export const CoverFooterSection = ({ pdfSettings, projectState }: CoverFooterSec
   const containerStyles = getPdfStyles(pdfSettings, 'cover_footer', { isContainer: true });
   
   // Assemblage des informations légales de l'entreprise sans le type de société
-  const legalInfo = `${company.name} SASU au capital de ${company.capital_social || '10 000'} € - ${company.address || ''} ${company.postal_code || ''} ${company.city || ''} - SIRET : ${company.siret || ''} - Code APE : ${company.code_ape || ''} - N° TVA Intracommunautaire : ${company.tva_intracom || ''}`;
+  const legalInfo = `${company.name} SAS au capital de ${company.capital_social || '10 000'} - ${company.address || ''} ${company.postal_code || ''} ${company.city || ''} - SIRET : ${company.siret || ''} - Code APE : ${company.code_ape || ''} - N° TVA Intracommunautaire : ${company.tva_intracom || ''}`;
   
   return (
     <View style={[styles.container, containerStyles]}>
