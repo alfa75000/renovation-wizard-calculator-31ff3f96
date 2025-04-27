@@ -3,7 +3,7 @@
 import { Travail } from '@/types'; // Assure-toi que ce chemin est correct
 
 /**
- * Formate un prix avec séparateur de milliers français et 2 décimales
+ * Formate un prix avec séparateur de milliers français (espace normal) et 2 décimales
  * @param value - Valeur numérique à formater
  * @returns Chaîne formatée (ex: "1 588,02 €")
  */
@@ -12,33 +12,33 @@ export const formatPrice = (value: number | null | undefined): string => {
   if (isNaN(numValue)) {
     return '0,00 €'; 
   }
-  // Utilise toLocaleString avec les bonnes options pour le format français
-  return numValue.toLocaleString('fr-FR', { 
+  
+  // Formate en utilisant les standards français (peut utiliser espace insécable)
+  const formatted = numValue.toLocaleString('fr-FR', { 
     minimumFractionDigits: 2, 
     maximumFractionDigits: 2,
-    useGrouping: true // Active le séparateur de milliers
-  }) + ' €'; 
+    useGrouping: true 
+  });
+
+  // *** AJOUT : Remplace l'espace insécable (code 160) par un espace normal (code 32) ***
+  const spaceFixed = formatted.replace(/\s/g, ' '); 
+
+  return spaceFixed + ' €'; 
 }; 
 
 /**
- * Formate une quantité (pourrait utiliser toLocaleString aussi si besoin de séparateurs)
- * @param quantity - Quantité à formater
- * @returns Chaîne formatée
+ * Formate une quantité 
  */
 export const formatQuantity = (quantity: number | null | undefined): string => { 
   const numValue = Number(quantity);
   if (isNaN(numValue)) {
     return '0';
   }
-  // Pour l'instant, formatage simple. Décommente si tu veux des séparateurs/décimales.
-  // return numValue.toLocaleString('fr-FR', { maximumFractionDigits: 2, useGrouping: true });
   return `${numValue}`; 
 }; 
 
 /**
  * Formate les informations de main d'œuvre et fournitures + TVA
- * @param travail - Objet Travail contenant les données
- * @returns Chaîne formatée
  */
 export const formatMOFournitures = (travail: Travail): string => { 
     if (!travail) return '';
@@ -49,9 +49,9 @@ export const formatMOFournitures = (travail: Travail): string => {
     const prixUnitaireHT = fourn + mo;
     const totalHTLigne = prixUnitaireHT * qte;
     const montantTVALigne = (totalHTLigne * tvaRate) / 100;
-    const moFormatted = formatPrice(mo); // Utilise la nouvelle formatPrice
-    const fournFormatted = formatPrice(fourn); // Utilise la nouvelle formatPrice
-    const tvaAmountFormatted = formatPrice(montantTVALigne); // Utilise la nouvelle formatPrice
-    // Retourne le format demandé
+    // Utilise la fonction formatPrice mise à jour
+    const moFormatted = formatPrice(mo); 
+    const fournFormatted = formatPrice(fourn); 
+    const tvaAmountFormatted = formatPrice(montantTVALigne); 
     return `[ MO: ${moFormatted}/u ]  [ Fourn: ${fournFormatted}/u ]  [ Total TVA (${tvaRate}%) : ${tvaAmountFormatted} ]`; 
 };
