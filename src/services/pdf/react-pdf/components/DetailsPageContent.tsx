@@ -1,5 +1,3 @@
-// src/services/pdf/react-pdf/components/DetailsPageContent.tsx
-
 import React from 'react';
 import { View, Text, StyleSheet } from '@react-pdf/renderer';
 import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
@@ -29,23 +27,30 @@ const getTravauxForPiece = (pieceId: string, allTravaux: Travail[] = []): Travai
   return allTravaux.filter(t => t.pieceId === pieceId);
 };
 
+// Nouvelle fonction utilitaire pour convertir textAlign en alignSelf
+const getAlignSelf = (textAlign?: string) => {
+  switch (textAlign) {
+    case 'center': return 'center';
+    case 'right': return 'flex-end';
+    default: return 'flex-start';
+  }
+};
+
 interface DetailsPageContentProps {
   pdfSettings: PdfSettings;
   projectState: ProjectState;
 }
 
 export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageContentProps) => {
-  // Vérifie l'existence des données nécessaires
   const rooms = projectState.rooms || [];
   const travaux = projectState.travaux || [];
-  const metadata = projectState.metadata;
 
-  // --- Récupération des Styles ---
-  // (Comme dans le code précédent, récupérer tous les styles nécessaires)
-  const titleStyles = getPdfStyles(pdfSettings, 'detail_title', { isContainer: false });
+  // Récupération des styles
+  const titleTextStyles = getPdfStyles(pdfSettings, 'detail_title', { isContainer: false });
   const titleContainerStyles = getPdfStyles(pdfSettings, 'detail_title', { isContainer: true });
-  const tableHeaderStyles = getPdfStyles(pdfSettings, 'detail_table_header', { isContainer: false });
-  const roomTitleStyles = getPdfStyles(pdfSettings, 'room_title', { isContainer: false });
+  const tableHeaderTextStyles = getPdfStyles(pdfSettings, 'detail_table_header', { isContainer: false });
+  const tableHeaderContainerStyles = getPdfStyles(pdfSettings, 'detail_table_header', { isContainer: true });
+  const roomTitleTextStyles = getPdfStyles(pdfSettings, 'room_title', { isContainer: false });
   const roomTitleContainerStyles = getPdfStyles(pdfSettings, 'room_title', { isContainer: true });
   const workDetailsStyles = getPdfStyles(pdfSettings, 'work_details', { isContainer: false });
   const moSuppliesStyles = getPdfStyles(pdfSettings, 'mo_supplies', { isContainer: false });
@@ -53,52 +58,73 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
   const priceStyles = getPdfStyles(pdfSettings, 'price_column', { isContainer: false });
   const vatStyles = getPdfStyles(pdfSettings, 'vat_column', { isContainer: false });
   const totalStyles = getPdfStyles(pdfSettings, 'total_column', { isContainer: false });
-  const roomTotalLabelStyles = getPdfStyles(pdfSettings, 'room_total', { isContainer: false });
-  // --- Fin Récupération Styles ---
+  const roomTotalTextStyles = getPdfStyles(pdfSettings, 'room_total', { isContainer: false });
+  const roomTotalContainerStyles = getPdfStyles(pdfSettings, 'room_total', { isContainer: true });
 
   const roomsWithTravaux = rooms.filter(room => getTravauxForPiece(room.id, travaux).length > 0);
 
-  // Si aucune donnée à afficher, on peut retourner un message ou null
   if (roomsWithTravaux.length === 0) {
-      return <View><Text>Aucun travail à afficher dans les détails.</Text></View>;
+    return <View><Text>Aucun travail à afficher dans les détails.</Text></View>;
   }
 
   return (
-    <View> {/* Conteneur global du contenu */}
-
-      {/* 1. Titre Principal */}
-      <View style={titleContainerStyles}>
-        <Text style={titleStyles}>DÉTAILS DES TRAVAUX</Text>
+    <View>
+      {/* 1. Titre Principal avec alignSelf adaptatif */}
+      <View style={[
+        styles.titleContainer,
+        titleContainerStyles,
+        { alignSelf: getAlignSelf(titleTextStyles.textAlign) }
+      ]}>
+        <Text style={titleTextStyles}>DÉTAILS DES TRAVAUX</Text>
       </View>
-      <View style={{ height: 15 }} /> {/* Espace */}
+      <View style={{ height: 15 }} />
 
-      {/* 2. En-tête du Tableau */}
-      <View style={styles.tableHeaderRow} fixed> {/* En-tête fixe en haut de chaque nouvelle page pour ce tableau */}
-        {/* Applique les styles de texte aux Text */}
-        <View style={styles.tableHeaderCellDesc}><Text style={tableHeaderStyles}>Description</Text></View>
-        <View style={styles.tableHeaderCellQty}><Text style={tableHeaderStyles}>Quantité</Text></View>
-        <View style={styles.tableHeaderCellPrice}><Text style={tableHeaderStyles}>Prix HT Unit.</Text></View>
-        <View style={styles.tableHeaderCellVAT}><Text style={tableHeaderStyles}>TVA</Text></View>
-        <View style={styles.tableHeaderCellTotal}><Text style={tableHeaderStyles}>Total HT</Text></View>
+      {/* 2. En-tête du Tableau avec styles dynamiques */}
+      <View style={[styles.tableHeaderRow, tableHeaderContainerStyles]} fixed>
+        <View style={styles.tableHeaderCellDesc}>
+          <Text style={tableHeaderTextStyles}>Description</Text>
+        </View>
+        <View style={styles.tableHeaderCellQty}>
+          <Text style={[tableHeaderTextStyles, qtyStyles.textAlign ? { textAlign: qtyStyles.textAlign } : {}]}>
+            Quantité
+          </Text>
+        </View>
+        <View style={styles.tableHeaderCellPrice}>
+          <Text style={[tableHeaderTextStyles, priceStyles.textAlign ? { textAlign: priceStyles.textAlign } : {}]}>
+            Prix HT Unit.
+          </Text>
+        </View>
+        <View style={styles.tableHeaderCellVAT}>
+          <Text style={[tableHeaderTextStyles, vatStyles.textAlign ? { textAlign: vatStyles.textAlign } : {}]}>
+            TVA
+          </Text>
+        </View>
+        <View style={styles.tableHeaderCellTotal}>
+          <Text style={[tableHeaderTextStyles, totalStyles.textAlign ? { textAlign: totalStyles.textAlign } : {}]}>
+            Total HT
+          </Text>
+        </View>
       </View>
 
       {/* 3. Boucle sur les Pièces */}
       {roomsWithTravaux.map((room) => {
         const travauxPiece = getTravauxForPiece(room.id, travaux);
-        let pieceTotalHT = 0; 
+        let pieceTotalHT = 0;
 
         return (
           <React.Fragment key={room.id}>
-            {/* Titre de la Pièce */}
-            {/* Utilise break={true} pour tenter d'éviter qu'un titre de pièce soit seul en bas de page */}
-            <View style={roomTitleContainerStyles} break> 
-              <Text style={roomTitleStyles}>{room.name}</Text>
+            {/* Titre de la Pièce avec alignSelf adaptatif */}
+            <View style={[
+              styles.roomTitleContainer,
+              roomTitleContainerStyles,
+              { alignSelf: getAlignSelf(roomTitleTextStyles.textAlign) }
+            ]} break>
+              <Text style={roomTitleTextStyles}>{room.name}</Text>
             </View>
-            <View style={{ height: 5 }} /> 
+            <View style={{ height: 5 }} />
 
-            {/* Boucle sur les Travaux de la Pièce */}
-            {travauxPiece.map((travail, index) => { // Ajoute l'index pour la clé potentielle
-              // Vérifie la validité des données numériques
+            {/* Boucle sur les Travaux */}
+            {travauxPiece.map((travail, index) => {
               const qte = typeof travail.quantite === 'number' ? travail.quantite : 0;
               const fourn = typeof travail.prixFournitures === 'number' ? travail.prixFournitures : 0;
               const mo = typeof travail.prixMainOeuvre === 'number' ? travail.prixMainOeuvre : 0;
@@ -106,37 +132,30 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
 
               const prixUnitaireHT = fourn + mo;
               const totalHT = prixUnitaireHT * qte;
-              pieceTotalHT += totalHT; 
+              pieceTotalHT += totalHT;
 
               const descriptionText = [
-                `${travail.typeTravauxLabel || 'Type?'}: ${travail.sousTypeLabel || 'Sous-type?'}`, // Ajoute des fallbacks
+                `${travail.typeTravauxLabel || 'Type?'}: ${travail.sousTypeLabel || 'Sous-type?'}`,
                 travail.description,
-                travail.personnalisation,
-              ].filter(Boolean).join('\n'); 
+                travail.personnalisation
+              ].filter(Boolean).join('\n');
 
               return (
-                // Utilise minPresenceAhead pour essayer de garder la ligne entière sur une page
-                <View key={travail.id || `travail-${index}`} style={styles.tableRow} wrap={false} minPresenceAhead={20}> 
-                  {/* Cellule Description */}
+                <View key={travail.id || `travail-${index}`} style={styles.tableRow} wrap={false} minPresenceAhead={20}>
                   <View style={styles.tableCellDesc}>
-                    {/* Applique les styles de texte ici */}
                     <Text style={workDetailsStyles}>{descriptionText}</Text>
                     <Text style={moSuppliesStyles}>{formatMOFournitures(travail)}</Text>
                   </View>
-                  {/* Cellule Quantité */}
                   <View style={styles.tableCellQty}>
                     <Text style={qtyStyles}>{formatQuantity(qte)}</Text>
                     <Text style={qtyStyles}>{travail.unite || ''}</Text>
                   </View>
-                  {/* Cellule Prix Unit HT */}
                   <View style={styles.tableCellPrice}>
                     <Text style={priceStyles}>{formatPrice(prixUnitaireHT)}</Text>
                   </View>
-                  {/* Cellule TVA */}
                   <View style={styles.tableCellVAT}>
                     <Text style={vatStyles}>{`${tvaRate}%`}</Text>
                   </View>
-                  {/* Cellule Total HT */}
                   <View style={styles.tableCellTotal}>
                     <Text style={totalStyles}>{formatPrice(totalHT)}</Text>
                   </View>
@@ -144,14 +163,18 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
               );
             })}
 
-            {/* Ligne Total Pièce */}
-            <View style={styles.tableFooterRow}>
-               {/* Applique les styles de texte */}
-               <View style={styles.tableFooterCellLabel}><Text style={roomTotalLabelStyles}>Total HT {room.name}</Text></View>
-               <View style={styles.tableFooterCellTotal}><Text style={totalStyles}>{formatPrice(pieceTotalHT)}</Text></View>
+            {/* Total Pièce avec styles dynamiques */}
+            <View style={[styles.tableFooterRow, roomTotalContainerStyles]}>
+              <View style={styles.tableFooterCellLabel}>
+                <Text style={roomTotalTextStyles}>Total HT {room.name}</Text>
+              </View>
+              <View style={styles.tableFooterCellTotal}>
+                <Text style={[totalStyles, roomTotalTextStyles.textAlign ? { textAlign: roomTotalTextStyles.textAlign } : {}]}>
+                  {formatPrice(pieceTotalHT)}
+                </Text>
+              </View>
             </View>
-             <View style={{ height: 15 }} /> {/* Espace après chaque pièce */}
-
+            <View style={{ height: 15 }} />
           </React.Fragment>
         );
       })}
@@ -159,50 +182,84 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
   );
 };
 
-// Styles locaux pour la structure du tableau (garde les styles existants)
 const styles = StyleSheet.create({
+  titleContainer: {
+    width: 'auto',
+  },
+  roomTitleContainer: {
+    width: 'auto',
+  },
   tableHeaderRow: {
     flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-    backgroundColor: '#f3f4f6', 
-    paddingVertical: 5, 
     width: '100%',
   },
-   tableHeaderCellDesc: { width: '60%', paddingHorizontal: 4 }, 
-   tableHeaderCellQty: { width: '8%', paddingHorizontal: 4, textAlign: 'center' },
-   tableHeaderCellPrice: { width: '12%', paddingHorizontal: 4, textAlign: 'center' },
-   tableHeaderCellVAT: { width: '6%', paddingHorizontal: 4, textAlign: 'center' },
-   tableHeaderCellTotal: { width: '14%', paddingHorizontal: 4, textAlign: 'center' },
-   tableRow: {
+  tableHeaderCellDesc: { 
+    width: '60%', 
+    paddingHorizontal: 4 
+  },
+  tableHeaderCellQty: { 
+    width: '8%', 
+    paddingHorizontal: 4
+  },
+  tableHeaderCellPrice: { 
+    width: '12%', 
+    paddingHorizontal: 4
+  },
+  tableHeaderCellVAT: { 
+    width: '6%', 
+    paddingHorizontal: 4
+  },
+  tableHeaderCellTotal: { 
+    width: '14%', 
+    paddingHorizontal: 4
+  },
+  tableRow: {
     flexDirection: 'row',
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
-    paddingVertical: 4, 
+    paddingVertical: 4,
     width: '100%',
-    alignItems: 'flex-start', 
+    alignItems: 'flex-start',
   },
-  tableCellDesc: { width: '60%', paddingHorizontal: 4 }, 
-  tableCellQty: { width: '8%', paddingHorizontal: 4, textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent:'center' }, 
-  tableCellPrice: { width: '12%', paddingHorizontal: 4, textAlign: 'center' },
-  tableCellVAT: { width: '6%', paddingHorizontal: 4, textAlign: 'center' },
-  tableCellTotal: { width: '14%', paddingHorizontal: 4, textAlign: 'center' },
+  tableCellDesc: { 
+    width: '60%', 
+    paddingHorizontal: 4 
+  },
+  tableCellQty: { 
+    width: '8%', 
+    paddingHorizontal: 4,
+    display: 'flex',
+    justifyContent: 'center'
+  },
+  tableCellPrice: { 
+    width: '12%', 
+    paddingHorizontal: 4,
+    display: 'flex',
+    justifyContent: 'center'
+  },
+  tableCellVAT: { 
+    width: '6%', 
+    paddingHorizontal: 4,
+    display: 'flex',
+    justifyContent: 'center'
+  },
+  tableCellTotal: { 
+    width: '14%', 
+    paddingHorizontal: 4,
+    display: 'flex',
+    justifyContent: 'center'
+  },
   tableFooterRow: {
     flexDirection: 'row',
-    borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
-    backgroundColor: '#f9fafb', 
-    paddingVertical: 5,
     width: '100%',
-    marginTop: 5, 
+    marginTop: 5,
   },
-  tableFooterCellLabel: { 
-     flexGrow: 1, 
-     paddingHorizontal: 4 
-  }, 
-  tableFooterCellTotal: { 
-     width: '15%', 
-     paddingHorizontal: 4, 
-     textAlign: 'center' 
+  tableFooterCellLabel: {
+    flexGrow: 1,
+    paddingHorizontal: 4
+  },
+  tableFooterCellTotal: {
+    width: '15%',
+    paddingHorizontal: 4
   },
 });
