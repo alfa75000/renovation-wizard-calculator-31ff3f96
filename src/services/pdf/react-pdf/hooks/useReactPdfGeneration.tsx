@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
   // Style pour le footer fixe (similaire à celui dans PageFooter.tsx)
   fixedFooter: { 
     position: 'absolute',
-    bottom: 10, // Position verticale depuis le bas
+    bottom: 5, // Position verticale depuis le bas
     left: 20,  // Doit correspondre à la marge gauche (coverMargins[3])
     right: 20, // Doit correspondre à la marge droite (coverMargins[1])
     textAlign: 'center', // Ou utilise le style dynamique 'cover_footer'
