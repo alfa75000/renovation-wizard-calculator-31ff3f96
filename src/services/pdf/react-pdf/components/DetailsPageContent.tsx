@@ -1,11 +1,12 @@
+// src/services/pdf/react-pdf/components/DetailsPageContent.tsx
+
 import React from 'react';
 import { View, Text, StyleSheet } from '@react-pdf/renderer';
 import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
 import { ProjectState, Room, Travail } from '@/types'; 
 import { getPdfStyles } from '../utils/pdfStyleUtils';
 
-// === FONCTIONS DE FORMATAGE (Doivent exister ou être importées) ===
-// Assure-toi que ces fonctions existent et sont correctes
+// === FONCTIONS DE FORMATAGE (Assure-toi qu'elles sont correctes) ===
 const formatPrice = (value: number): string => { return `${(value || 0).toFixed(2)} €`; }; 
 const formatQuantity = (quantity: number): string => { return `${(quantity || 0)}`; }; 
 const formatMOFournitures = (travail: Travail): string => { 
@@ -13,22 +14,15 @@ const formatMOFournitures = (travail: Travail): string => {
     const mo = formatPrice(travail.prixMainOeuvre || 0);
     const fourn = formatPrice(travail.prixFournitures || 0);
     const tva = travail.tauxTVA || 0;
-    // Calcule le montant TVA pour l'affichage si nécessaire
-    // const itemTotalHT = ((travail.prixFournitures || 0) + (travail.prixMainOeuvre || 0)) * (travail.quantite || 0);
-    // const montantTVA = (itemTotalHT * tva) / 100;
-    // return `[ MO: ${mo}/u ] [ Fourn: ${fourn}/u ] [ TVA(${tva}%): ${formatPrice(montantTVA)} ]`; 
-    // Simplifié pour l'exemple :
      return `[ MO: ${mo}/u | Fourn: ${fourn}/u | TVA: ${tva}% ]`; 
 };
 // ===============================================================
 
-// Helper pour obtenir les travaux d'une pièce
-const getTravauxForPiece = (pieceId: string, allTravaux: Travail[] = []): Travail[] => { // Ajout valeur défaut
+const getTravauxForPiece = (pieceId: string, allTravaux: Travail[] = []): Travail[] => { 
   return allTravaux.filter(t => t.pieceId === pieceId);
 };
 
-// Nouvelle fonction utilitaire pour convertir textAlign en alignSelf
-const getAlignSelf = (textAlign?: string) => {
+const getAlignSelf = (textAlign?: Style['textAlign']): 'flex-start' | 'center' | 'flex-end' => { // Type plus précis
   switch (textAlign) {
     case 'center': return 'center';
     case 'right': return 'flex-end';
@@ -70,9 +64,9 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
   return (
     <View>
       {/* 1. Titre Principal avec alignSelf adaptatif */}
+      {/* Applique les styles dynamiques + le alignSelf calculé */}
       <View style={[
-        styles.titleContainer,
-        titleContainerStyles,
+        titleContainerStyles, 
         { alignSelf: getAlignSelf(titleTextStyles.textAlign) }
       ]}>
         <Text style={titleTextStyles}>DÉTAILS DES TRAVAUX</Text>
@@ -80,11 +74,13 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
       <View style={{ height: 15 }} />
 
       {/* 2. En-tête du Tableau avec styles dynamiques */}
+      {/* Applique les styles dynamiques au conteneur + le style local de layout */}
       <View style={[styles.tableHeaderRow, tableHeaderContainerStyles]} fixed>
         <View style={styles.tableHeaderCellDesc}>
           <Text style={tableHeaderTextStyles}>Description</Text>
         </View>
         <View style={styles.tableHeaderCellQty}>
+           {/* Fusionne style header + priorité alignement colonne */}
           <Text style={[tableHeaderTextStyles, qtyStyles.textAlign ? { textAlign: qtyStyles.textAlign } : {}]}>
             Quantité
           </Text>
@@ -114,8 +110,8 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
         return (
           <React.Fragment key={room.id}>
             {/* Titre de la Pièce avec alignSelf adaptatif */}
+             {/* Applique les styles dynamiques + le alignSelf calculé */}
             <View style={[
-              styles.roomTitleContainer,
               roomTitleContainerStyles,
               { alignSelf: getAlignSelf(roomTitleTextStyles.textAlign) }
             ]} break>
@@ -129,11 +125,9 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
               const fourn = typeof travail.prixFournitures === 'number' ? travail.prixFournitures : 0;
               const mo = typeof travail.prixMainOeuvre === 'number' ? travail.prixMainOeuvre : 0;
               const tvaRate = typeof travail.tauxTVA === 'number' ? travail.tauxTVA : 0;
-
               const prixUnitaireHT = fourn + mo;
               const totalHT = prixUnitaireHT * qte;
               pieceTotalHT += totalHT;
-
               const descriptionText = [
                 `${travail.typeTravauxLabel || 'Type?'}: ${travail.sousTypeLabel || 'Sous-type?'}`,
                 travail.description,
@@ -141,11 +135,14 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
               ].filter(Boolean).join('\n');
 
               return (
+                // Applique le style local pour la structure de ligne
                 <View key={travail.id || `travail-${index}`} style={styles.tableRow} wrap={false} minPresenceAhead={20}>
+                  {/* Applique le style local pour la structure de cellule */}
                   <View style={styles.tableCellDesc}>
                     <Text style={workDetailsStyles}>{descriptionText}</Text>
                     <Text style={moSuppliesStyles}>{formatMOFournitures(travail)}</Text>
                   </View>
+                   {/* Applique le style local pour la structure + centrage V */}
                   <View style={styles.tableCellQty}>
                     <Text style={qtyStyles}>{formatQuantity(qte)}</Text>
                     <Text style={qtyStyles}>{travail.unite || ''}</Text>
@@ -164,11 +161,13 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
             })}
 
             {/* Total Pièce avec styles dynamiques */}
+            {/* Applique les styles dynamiques au conteneur + le style local de layout */}
             <View style={[styles.tableFooterRow, roomTotalContainerStyles]}>
               <View style={styles.tableFooterCellLabel}>
                 <Text style={roomTotalTextStyles}>Total HT {room.name}</Text>
               </View>
               <View style={styles.tableFooterCellTotal}>
+                 {/* Fusionne style total colonne + priorité alignement total pièce */}
                 <Text style={[totalStyles, roomTotalTextStyles.textAlign ? { textAlign: roomTotalTextStyles.textAlign } : {}]}>
                   {formatPrice(pieceTotalHT)}
                 </Text>
@@ -182,84 +181,59 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
   );
 };
 
+// Styles locaux UNIQUEMENT pour le layout
 const styles = StyleSheet.create({
-  titleContainer: {
-    width: 'auto',
-  },
-  roomTitleContainer: {
-    width: 'auto',
-  },
+  // SUPPRIMÉ : titleContainer et roomTitleContainer (width: 'auto' était invalide)
   tableHeaderRow: {
     flexDirection: 'row',
     width: '100%',
+    // backgroundColor, border supprimés -> viennent de tableHeaderContainerStyles
+    paddingVertical: 4, // Garde un padding vertical par défaut
   },
-  tableHeaderCellDesc: { 
-    width: '60%', 
-    paddingHorizontal: 4 
-  },
-  tableHeaderCellQty: { 
-    width: '8%', 
-    paddingHorizontal: 4
-  },
-  tableHeaderCellPrice: { 
-    width: '12%', 
-    paddingHorizontal: 4
-  },
-  tableHeaderCellVAT: { 
-    width: '6%', 
-    paddingHorizontal: 4
-  },
-  tableHeaderCellTotal: { 
-    width: '14%', 
-    paddingHorizontal: 4
-  },
+  tableHeaderCellDesc: { width: '50%', paddingHorizontal: 4 }, // Ajuste les largeurs si besoin
+  tableHeaderCellQty: { width: '10%', paddingHorizontal: 4 },
+  tableHeaderCellPrice: { width: '15%', paddingHorizontal: 4 },
+  tableHeaderCellVAT: { width: '10%', paddingHorizontal: 4 },
+  tableHeaderCellTotal: { width: '15%', paddingHorizontal: 4 }, // Somme = 100%
   tableRow: {
     flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+    borderBottomWidth: 1,       // Garde la bordure de ligne par défaut
+    borderBottomColor: '#e5e7eb', // Garde la couleur par défaut
     paddingVertical: 4,
     width: '100%',
     alignItems: 'flex-start',
   },
-  tableCellDesc: { 
-    width: '60%', 
-    paddingHorizontal: 4 
-  },
+  tableCellDesc: { width: '50%', paddingHorizontal: 4 },
   tableCellQty: { 
-    width: '8%', 
-    paddingHorizontal: 4,
-    display: 'flex',
-    justifyContent: 'center'
+    width: '10%', paddingHorizontal: 4, 
+    display: 'flex', justifyContent: 'center', textAlign: 'center' // Ajout textAlign ici aussi
   },
   tableCellPrice: { 
-    width: '12%', 
-    paddingHorizontal: 4,
-    display: 'flex',
-    justifyContent: 'center'
+    width: '15%', paddingHorizontal: 4, 
+    display: 'flex', justifyContent: 'center', textAlign: 'center' // Ajout textAlign ici aussi
   },
   tableCellVAT: { 
-    width: '6%', 
-    paddingHorizontal: 4,
-    display: 'flex',
-    justifyContent: 'center'
+    width: '10%', paddingHorizontal: 4, 
+    display: 'flex', justifyContent: 'center', textAlign: 'center' // Ajout textAlign ici aussi
   },
   tableCellTotal: { 
-    width: '14%', 
-    paddingHorizontal: 4,
-    display: 'flex',
-    justifyContent: 'center'
+    width: '15%', paddingHorizontal: 4, 
+    display: 'flex', justifyContent: 'center', textAlign: 'center' // Ajout textAlign ici aussi
   },
   tableFooterRow: {
     flexDirection: 'row',
     width: '100%',
     marginTop: 5,
+     // backgroundColor, border supprimés -> viennent de roomTotalContainerStyles
+    paddingVertical: 4, // Garde un padding vertical par défaut
   },
   tableFooterCellLabel: {
     flexGrow: 1,
     paddingHorizontal: 4
   },
   tableFooterCellTotal: {
-    width: '15%',
-    paddingHorizontal: 4
+    width: '15%', // Doit correspondre à tableCellTotal
+    paddingHorizontal: 4,
+     // L'alignement vient du Text à l'intérieur maintenant
   },
 });
