@@ -1,3 +1,4 @@
+//src/services/pdf/generators/recapGenerator.ts
 import { Room, Travail, ProjectMetadata } from '@/types';
 import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
 import { PdfContent } from '@/services/pdf/types/pdfTypes';
