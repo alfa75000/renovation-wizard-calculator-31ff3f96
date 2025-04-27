@@ -1,3 +1,4 @@
+
 import { Style } from '@react-pdf/types';
 import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
 import { ElementSettings } from '@/features/devis/components/pdf-settings/types/elementSettings';
@@ -116,7 +117,7 @@ const applyElementSettingsToStyle = (
     style.backgroundColor = settings.fillColor;
   }
 
-  // Appliquer les marges externes (spacing)
+  // Application des marges externes (spacing)
   if (settings.spacing) {
     const { top, right, bottom, left } = settings.spacing;
     if (typeof top === 'number') style.marginTop = top;
@@ -125,7 +126,7 @@ const applyElementSettingsToStyle = (
     if (typeof left === 'number') style.marginLeft = left;
   }
 
-  // Appliquer les marges internes (padding)
+  // Application des marges internes (padding)
   if (settings.padding) {
     const { top, right, bottom, left } = settings.padding;
     if (typeof top === 'number') style.paddingTop = top;

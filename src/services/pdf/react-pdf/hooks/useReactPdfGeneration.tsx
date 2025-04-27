@@ -1,171 +1,156 @@
-// src/services/pdf/react-pdf/hooks/useReactPdfGeneration.tsx
+import { Style } from '@react-pdf/types';
+import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
+import { ElementSettings } from '@/features/devis/components/pdf-settings/types/elementSettings';
+import { PdfElementId } from '@/features/devis/components/pdf-settings/types/typography';
+import { ensureSupportedFont } from '@/services/pdf/utils/fontUtils';
 
-import React from 'react';
-import { useState } from 'react';
-import { pdf, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
-import { useProject } from '@/contexts/ProjectContext';
-import { usePdfSettings } from '@/services/pdf/hooks/usePdfSettings';
-import { toast } from 'sonner';
-
-// Importez vos composants de contenu
-import { CoverDocumentContent } from '../components/CoverDocumentContent';
-import { DetailsPageContent } from '../components/DetailsPageContent';
-import { RecapPageContent } from '../components/RecapPageContent';
-import { convertPageMargins, MarginTuple } from '../../v2/utils/styleUtils';
-
-// Pied de page simple
-const PageFooter = ({ pageNumber }) => (
-  <View style={styles.footer} fixed>
-    <Text style={styles.footerText}>
-      Page {pageNumber}
-    </Text>
-  </View>
-);
-
-export const useReactPdfGeneration = () => {
-  const [isGenerating, setIsGenerating] = useState(false);
-  const { state } = useProject();
-  const { pdfSettings } = usePdfSettings();
-
-  const generateReactPdf = async () => {
-    try {
-      setIsGenerating(true);
-      toast.loading('Génération du PDF en cours...', { id: 'pdf-gen' });
-
-      if (!pdfSettings || !state || !state.metadata) {
-        toast.error('Données ou paramètres PDF manquants.', { id: 'pdf-gen' });
-        setIsGenerating(false);
-        return false;
-      }
-
-      console.log("Génération PDF avec settings:", pdfSettings);
-      console.log("Et state:", state);
-
-      // Calcul des marges
-      const coverMargins: MarginTuple = convertPageMargins(
-        pdfSettings.margins?.cover as number[] | undefined
-      );
-      const detailsMargins: MarginTuple = convertPageMargins(
-        pdfSettings.margins?.details as number[] | undefined
-      );
-      const recapMargins: MarginTuple = convertPageMargins(
-        pdfSettings.margins?.recap as number[] | undefined
-      );
-
-      // Structure du Document PDF avec vos trois composants
-      const MyPdfDocument = (
-        <Document
-          title={`Devis ${state.metadata.devisNumber || 'Nouveau'}`}
-          author={state.metadata.company?.name || 'Mon Entreprise'}
-          subject={`Devis N°${state.metadata.devisNumber}`}
-          creator="Mon Application Devis"
-          producer="Mon Application Devis (@react-pdf/renderer)"
-        >
-          {/* Page 1: Page de garde */}
-          <Page 
-            size="A4" 
-            style={[
-              styles.page,
-              {
-                paddingTop: coverMargins[0],
-                paddingRight: coverMargins[1],
-                paddingBottom: coverMargins[2] + 30,
-                paddingLeft: coverMargins[3]
-              }
-            ]}
-          >
-            <CoverDocumentContent
-              pdfSettings={pdfSettings}
-              projectState={state}
-            />
-            <PageFooter pageNumber={1} />
-          </Page>
-
-          {/* Page 2: Page de détails */}
-          <Page 
-            size="A4" 
-            style={[
-              styles.page,
-              {
-                paddingTop: detailsMargins[0],
-                paddingRight: detailsMargins[1],
-                paddingBottom: detailsMargins[2] + 30,
-                paddingLeft: detailsMargins[3]
-              }
-            ]}
-          >
-            <DetailsPageContent
-              pdfSettings={pdfSettings}
-              projectState={state}
-            />
-            <PageFooter pageNumber={2} />
-          </Page>
-
-          {/* Page 3: Page récap */}
-          <Page 
-            size="A4" 
-            style={[
-              styles.page,
-              {
-                paddingTop: recapMargins[0],
-                paddingRight: recapMargins[1],
-                paddingBottom: recapMargins[2] + 30,
-                paddingLeft: recapMargins[3]
-              }
-            ]}
-          >
-            <RecapPageContent
-              pdfSettings={pdfSettings}
-              projectState={state}
-            />
-            <PageFooter pageNumber={3} />
-          </Page>
-        </Document>
-      );
-
-      // Génération du blob
-      const blob = await pdf(MyPdfDocument).toBlob();
-      const url = URL.createObjectURL(blob);
-      window.open(url, '_blank');
-      toast.success('PDF généré avec succès', { id: 'pdf-gen' });
-      return true;
-
-    } catch (error) {
-      console.error('Erreur lors de la génération du PDF:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
-      toast.error(`Erreur PDF: ${errorMessage}`, { id: 'pdf-gen' });
-      return false;
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  return {
-    isGenerating,
-    generateReactPdf
-  };
+// Types pour les options de style
+type PdfStyleOptions = {
+  isContainer?: boolean;
+  inheritParentStyles?: boolean;
 };
 
-// Styles pour les pages et les pieds de page
-const styles = StyleSheet.create({
-  page: {
-    backgroundColor: '#ffffff',
-    fontFamily: 'Helvetica',
-    display: 'flex',
-    flexDirection: 'column',
-  },
-  footer: {
-    position: 'absolute',
-    bottom: 10,
-    left: 0,
-    right: 0,
-    textAlign: 'center',
-  },
-  footerText: {
-    fontSize: 10,
-    color: '#666',
-  },
-  contentGrower: {
-    flexGrow: 1
+// Fonction principale pour obtenir les styles PDF
+export const getPdfStyles = (
+  pdfSettings: PdfSettings | null | undefined,
+  elementId: PdfElementId,
+  options: PdfStyleOptions = {}
+): Style => {
+  const { isContainer = false, inheritParentStyles = true } = options;
+
+  const baseStyles: Style = {
+    ...(inheritParentStyles && {
+      textAlign: 'left'
+    })
+  };
+
+  if (!pdfSettings?.elements) {
+    return baseStyles;
   }
-});
+
+  const defaultSettings = pdfSettings.elements['default'];
+  const defaultStyles = defaultSettings
+    ? applyElementSettingsToStyle({}, defaultSettings)
+    : {};
+
+  const elementSettings = pdfSettings.elements[elementId];
+  const elementSpecificStyles = elementSettings
+    ? applyElementSettingsToStyle({}, elementSettings)
+    : {};
+
+  // Fusion des styles: base + défaut + spécifique
+  let mergedStyles: Style = {
+    ...baseStyles,
+    ...defaultStyles,
+    ...elementSpecificStyles
+  };
+
+  // Si ce n'est pas un conteneur, on supprime les propriétés spécifiques aux conteneurs
+  if (!isContainer) {
+    const containerProperties: (keyof Style)[] = [
+      // Marges externes (spacing)
+      'marginTop', 'marginRight', 'marginBottom', 'marginLeft',
+      // Bordures
+      'borderTopWidth', 'borderRightWidth', 'borderBottomWidth', 'borderLeftWidth',
+      'borderColor', 'borderStyle', 'backgroundColor',
+      // Padding (espacement interne) - ajouté à la liste des propriétés à supprimer pour les textes
+      'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft'
+    ];
+    
+    containerProperties.forEach(prop => {
+      if (prop in mergedStyles) {
+        delete mergedStyles[prop];
+      }
+    });
+  }
+  
+  return mergedStyles;
+};
+
+// Fonctions helper pour simplifier l'utilisation dans les composants
+// Ces fonctions sont des wrappers autour de getPdfStyles avec des options préconfigurées
+export const getContainerStyles = (pdfSettings: PdfSettings, elementId: PdfElementId, additionalStyles: Style = {}): Style => {
+  return { ...getPdfStyles(pdfSettings, elementId, { isContainer: true }), ...additionalStyles };
+};
+
+export const getTextStyles = (pdfSettings: PdfSettings, elementId: PdfElementId, additionalStyles: Style = {}): Style => {
+  return { ...getPdfStyles(pdfSettings, elementId, { isContainer: false }), ...additionalStyles };
+};
+
+const applyElementSettingsToStyle = (
+  baseStyle: Style,
+  settings: ElementSettings
+): Style => {
+  const style: Style = { ...baseStyle };
+
+  // Application des propriétés de police et texte
+  if (settings.fontFamily) {
+    style.fontFamily = ensureSupportedFont(settings.fontFamily);
+  }
+
+  if (typeof settings.fontSize === 'number') {
+    style.fontSize = settings.fontSize;
+  }
+
+  if (settings.color) {
+    style.color = settings.color;
+  }
+
+  if (settings.isBold !== undefined) {
+    style.fontWeight = settings.isBold ? 'bold' : 'normal';
+  }
+
+  if (settings.isItalic !== undefined) {
+    style.fontStyle = settings.isItalic ? 'italic' : 'normal';
+  }
+
+  if (settings.alignment) {
+    style.textAlign = settings.alignment;
+  }
+
+  if (typeof settings.lineHeight === 'number') {
+    style.lineHeight = settings.lineHeight;
+  }
+
+  if (settings.fillColor) {
+    style.backgroundColor = settings.fillColor;
+  }
+
+  // Appliquer les marges externes (spacing)
+  if (settings.spacing) {
+    const { top, right, bottom, left } = settings.spacing;
+    if (typeof top === 'number') style.marginTop = top;
+    if (typeof right === 'number') style.marginRight = right;
+    if (typeof bottom === 'number') style.marginBottom = bottom;
+    if (typeof left === 'number') style.marginLeft = left;
+  }
+
+  // Appliquer les marges internes (padding)
+  if (settings.padding) {
+    const { top, right, bottom, left } = settings.padding;
+    if (typeof top === 'number') style.paddingTop = top;
+    if (typeof right === 'number') style.paddingRight = right;
+    if (typeof bottom === 'number') style.paddingBottom = bottom;
+    if (typeof left === 'number') style.paddingLeft = left;
+  }
+
+  // Application des bordures
+  if (settings.border) {
+    const { top, right, bottom, left, color, width = 1 } = settings.border;
+    
+    if (color) {
+      style.borderColor = color;
+    }
+
+    if (top || right || bottom || left) {
+      style.borderStyle = 'solid';
+      
+      if (top) style.borderTopWidth = width;
+      if (right) style.borderRightWidth = width;
+      if (bottom) style.borderBottomWidth = width;
+      if (left) style.borderLeftWidth = width;
+    }
+  }
+
+  return style;
+};
