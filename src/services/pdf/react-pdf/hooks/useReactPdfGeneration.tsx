@@ -2,23 +2,16 @@
 
 import React from 'react';
 import { useState } from 'react';
-// Importe Page ici aussi !
-import { pdf, Document, Page } from '@react-pdf/renderer'; 
+import { pdf, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 import { useProject } from '@/contexts/ProjectContext';
 import { usePdfSettings } from '@/services/pdf/hooks/usePdfSettings';
 import { toast } from 'sonner';
 
-// Modifiez ces imports pour utiliser les composants de contenu !
-import { CoverDocumentContent } from '../components/CoverDocumentContent'; 
+// Importez directement tous les composants dont vous avez besoin
+import { CoverDocumentContent } from '../components/CoverDocumentContent';
 import { DetailsPageContent } from '../components/DetailsPageContent';
 import { RecapPageContent } from '../components/RecapPageContent';
-// import { CGVPageContent } from '../components/CGVPageContent';
-
-// Importe l'utilitaire de marges
-import { convertPageMargins, MarginTuple } from '../../v2/utils/styleUtils'; 
-// Importe aussi le StyleSheet
-import { StyleSheet } from '@react-pdf/renderer'; 
-
+import { convertPageMargins, MarginTuple } from '../../v2/utils/styleUtils';
 
 export const useReactPdfGeneration = () => {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -28,118 +21,62 @@ export const useReactPdfGeneration = () => {
   const generateReactPdf = async () => {
     try {
       setIsGenerating(true);
-      toast.loading('Génération du PDF en cours...', { id: 'pdf-gen' }); 
+      toast.loading('Génération du PDF en cours...', { id: 'pdf-gen' });
 
-      if (!pdfSettings || !state || !state.metadata) { // Simplifie la vérification
+      if (!pdfSettings || !state || !state.metadata) {
         toast.error('Données ou paramètres PDF manquants.', { id: 'pdf-gen' });
-        setIsGenerating(false); 
+        setIsGenerating(false);
         return false;
       }
 
       console.log("Génération PDF avec settings:", pdfSettings);
       console.log("Et state:", state);
 
-      // --- Calcul des marges pour la page de garde ---
-      // (On le fait ici car la <Page> est ici)
+      // Calcul des marges
       const coverMargins: MarginTuple = convertPageMargins(
-         pdfSettings.margins?.cover as number[] | undefined
-       );
-      
-      // Ajoutez ces calculs de marges pour les autres pages
+        pdfSettings.margins?.cover as number[] | undefined
+      );
       const detailsMargins: MarginTuple = convertPageMargins(
-         pdfSettings.margins?.details as number[] | undefined
-       );
-      
+        pdfSettings.margins?.details as number[] | undefined
+      );
       const recapMargins: MarginTuple = convertPageMargins(
-         pdfSettings.margins?.recap as number[] | undefined
-       );
-      // --- Fin calcul marges ---
+        pdfSettings.margins?.recap as number[] | undefined
+      );
 
-      // Structure du Document PDF complet
+      // Vérifier si le PDF a bien plus d'une page (pour debug)
+      console.log("Structure du document: 1 page de garde + details + recap");
+
+      // Structure du Document PDF - SIMPLIFIÉE AU MAXIMUM
       const MyPdfDocument = (
-        <Document 
-          title={`Devis ${state.metadata.devisNumber || 'Nouveau'}`} 
-          author={state.metadata.company?.name || 'Mon Entreprise'}
-          subject={`Devis N°${state.metadata.devisNumber}`}
-          creator="Mon Application Devis" 
-          producer="Mon Application Devis (@react-pdf/renderer)" 
-        >
-          {/* === PAGE 1 : Page de Garde === */}
-          <Page 
-            size="A4" 
-            style={[ // Applique le style de page et les marges
-              styles.page,
-              {
-                paddingTop: coverMargins[0],
-                paddingRight: coverMargins[1],
-                paddingBottom: coverMargins[2], // Attention au footer fixe !
-                paddingLeft: coverMargins[3]
-              }
-            ]}
-           >
-             {/* Insère le CONTENU de la page de garde ici */}
-             <CoverDocumentContent 
-                pdfSettings={pdfSettings} 
-                projectState={state} 
-             />
+        <Document>
+          {/* Test simple pour vérifier si plusieurs pages fonctionnent */}
+          <Page size="A4" style={styles.basicPage}>
+            <Text style={styles.pageTitle}>PAGE 1 - COUVERTURE</Text>
+            <View style={styles.contentBox}>
+              <Text>Contenu de la page de couverture</Text>
+            </View>
           </Page>
 
-          {/* === PAGE 2 : Détails === */}
-          {/* IMPORTANT: Ajoutez une balise Page ici */}
-          <Page 
-            size="A4" 
-            style={[ // Applique le style de page et les marges
-              styles.page,
-              {
-                paddingTop: detailsMargins[0],
-                paddingRight: detailsMargins[1],
-                paddingBottom: detailsMargins[2],
-                paddingLeft: detailsMargins[3]
-              }
-            ]}
-          >
-            <DetailsPageContent 
-              pdfSettings={pdfSettings} 
-              projectState={state} 
-            />
-          </Page>
-           
-          {/* === PAGE 3 : Récap === */}
-          {/* IMPORTANT: Ajoutez une balise Page ici aussi */}
-          <Page 
-            size="A4" 
-            style={[ // Applique le style de page et les marges
-              styles.page,
-              {
-                paddingTop: recapMargins[0],
-                paddingRight: recapMargins[1],
-                paddingBottom: recapMargins[2],
-                paddingLeft: recapMargins[3]
-              }
-            ]}
-          >
-            <RecapPageContent 
-              pdfSettings={pdfSettings} 
-              projectState={state} 
-            />
+          <Page size="A4" style={styles.basicPage}>
+            <Text style={styles.pageTitle}>PAGE 2 - DÉTAILS</Text>
+            <View style={styles.contentBox}>
+              <Text>Contenu de la page de détails</Text>
+            </View>
           </Page>
 
-          {/* === PAGE 4 : CGV === */}
-          {/* 
-          <Page size="A4" style={styles.page}>
-            <CGVPageContent pdfSettings={pdfSettings} />
+          <Page size="A4" style={styles.basicPage}>
+            <Text style={styles.pageTitle}>PAGE 3 - RÉCAPITULATIF</Text>
+            <View style={styles.contentBox}>
+              <Text>Contenu de la page de récapitulatif</Text>
+            </View>
           </Page>
-          */}
-
         </Document>
       );
 
       // Génération du blob
       const blob = await pdf(MyPdfDocument).toBlob();
-
-      // ... (reste : ouvrir blob, toast, etc.) ...
-       const url = URL.createObjectURL(blob);
-      window.open(url, '_blank'); 
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
       toast.success('PDF généré avec succès', { id: 'pdf-gen' });
       return true;
 
@@ -159,21 +96,33 @@ export const useReactPdfGeneration = () => {
   };
 };
 
-// Styles locaux pour la page (si nécessaire, ex: pour le contentGrower)
+// Styles simplifiés pour le test
 const styles = StyleSheet.create({
+  basicPage: {
+    padding: 30,
+    backgroundColor: '#ffffff',
+  },
+  pageTitle: {
+    fontSize: 24,
+    marginBottom: 20,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  contentBox: {
+    margin: 10,
+    padding: 10,
+    border: '1px solid #000',
+    height: 400,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   page: {
     backgroundColor: '#ffffff',
-    fontFamily: 'Helvetica', // Police par défaut si non surchargée globalement
-    // --- IMPORTANT pour le footer fixe ---
-    // On ajoute le padding pour header/footer ici si CoverDocumentContent
-    // ne les gère pas avec position:absolute et fixed=true
-    // Si CoverFooterSection utilise marginTop:auto, il faut le flex ici :
-     display: 'flex',       
-     flexDirection: 'column'
-    // paddingBottom: 50, // Espace pour footer fixe
-    // paddingTop: 50,    // Espace pour header fixe
+    fontFamily: 'Helvetica',
+    display: 'flex',
+    flexDirection: 'column'
   },
   contentGrower: {
-     flexGrow: 1 
+    flexGrow: 1
   }
 });
