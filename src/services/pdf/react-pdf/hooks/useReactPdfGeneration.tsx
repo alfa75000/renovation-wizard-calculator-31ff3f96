@@ -13,12 +13,11 @@ import { DetailsPageContent } from '../components/DetailsPageContent';
 import { RecapPageContent } from '../components/RecapPageContent';
 import { convertPageMargins, MarginTuple } from '../../v2/utils/styleUtils';
 
-// Créez des composants spécifiques pour les en-têtes et pieds de page
-// (à adapter selon votre structure existante)
-const PageFooter = ({ pageNumber, pageCount }) => (
+// Pied de page simple
+const PageFooter = ({ pageNumber }) => (
   <View style={styles.footer} fixed>
     <Text style={styles.footerText}>
-      Page {pageNumber} sur {pageCount}
+      Page {pageNumber}
     </Text>
   </View>
 );
@@ -39,6 +38,9 @@ export const useReactPdfGeneration = () => {
         return false;
       }
 
+      console.log("Génération PDF avec settings:", pdfSettings);
+      console.log("Et state:", state);
+
       // Calcul des marges
       const coverMargins: MarginTuple = convertPageMargins(
         pdfSettings.margins?.cover as number[] | undefined
@@ -50,7 +52,7 @@ export const useReactPdfGeneration = () => {
         pdfSettings.margins?.recap as number[] | undefined
       );
 
-      // Structure du Document PDF avec en-têtes et pieds de page correctement gérés
+      // Structure du Document PDF avec vos trois composants
       const MyPdfDocument = (
         <Document
           title={`Devis ${state.metadata.devisNumber || 'Nouveau'}`}
@@ -59,7 +61,7 @@ export const useReactPdfGeneration = () => {
           creator="Mon Application Devis"
           producer="Mon Application Devis (@react-pdf/renderer)"
         >
-          {/* Page 1: Page de garde avec pied de page externe */}
+          {/* Page 1: Page de garde */}
           <Page 
             size="A4" 
             style={[
@@ -67,8 +69,7 @@ export const useReactPdfGeneration = () => {
               {
                 paddingTop: coverMargins[0],
                 paddingRight: coverMargins[1],
-                // Important: Augmentez le padding bottom pour faire place au pied de page
-                paddingBottom: coverMargins[2] + 30, 
+                paddingBottom: coverMargins[2] + 30,
                 paddingLeft: coverMargins[3]
               }
             ]}
@@ -77,11 +78,10 @@ export const useReactPdfGeneration = () => {
               pdfSettings={pdfSettings}
               projectState={state}
             />
-            {/* Pied de page fixe externe au composant */}
-            <PageFooter pageNumber={1} pageCount={3} />
+            <PageFooter pageNumber={1} />
           </Page>
 
-          {/* Page 2: Page de détails avec pied de page externe */}
+          {/* Page 2: Page de détails */}
           <Page 
             size="A4" 
             style={[
@@ -89,8 +89,7 @@ export const useReactPdfGeneration = () => {
               {
                 paddingTop: detailsMargins[0],
                 paddingRight: detailsMargins[1],
-                // Important: Augmentez le padding bottom pour faire place au pied de page
-                paddingBottom: detailsMargins[2] + 30, 
+                paddingBottom: detailsMargins[2] + 30,
                 paddingLeft: detailsMargins[3]
               }
             ]}
@@ -99,11 +98,10 @@ export const useReactPdfGeneration = () => {
               pdfSettings={pdfSettings}
               projectState={state}
             />
-            {/* Pied de page fixe externe au composant */}
-            <PageFooter pageNumber={2} pageCount={3} />
+            <PageFooter pageNumber={2} />
           </Page>
 
-          {/* Page 3: Page récap avec pied de page externe */}
+          {/* Page 3: Page récap */}
           <Page 
             size="A4" 
             style={[
@@ -111,8 +109,7 @@ export const useReactPdfGeneration = () => {
               {
                 paddingTop: recapMargins[0],
                 paddingRight: recapMargins[1],
-                // Important: Augmentez le padding bottom pour faire place au pied de page
-                paddingBottom: recapMargins[2] + 30, 
+                paddingBottom: recapMargins[2] + 30,
                 paddingLeft: recapMargins[3]
               }
             ]}
@@ -121,8 +118,7 @@ export const useReactPdfGeneration = () => {
               pdfSettings={pdfSettings}
               projectState={state}
             />
-            {/* Pied de page fixe externe au composant */}
-            <PageFooter pageNumber={3} pageCount={3} />
+            <PageFooter pageNumber={3} />
           </Page>
         </Document>
       );
@@ -164,7 +160,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     textAlign: 'center',
-    paddingHorizontal: 20,
   },
   footerText: {
     fontSize: 10,
