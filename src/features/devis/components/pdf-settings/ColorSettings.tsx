@@ -1,4 +1,4 @@
-
+//src/features/devis/components/pdf-settings/ColorSettings.tsx
 import React from 'react';
 import { ColorPicker } from './components/ColorPicker';
 import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
