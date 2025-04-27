@@ -21,8 +21,8 @@ export const PDF_ELEMENTS = [
   { id: 'project_values', name: 'Valeurs Projet', section: 'Page de garde' },
   { id: 'cover_footer', name: 'Pied de page (Garde)', section: 'Page de garde' },
   // Espacements Page de Garde (si on veut les contrôler spécifiquement)
-  // { id: 'space_after_header', name: 'Espace après En-tête (Garde)', section: 'Page de garde Espacements' },
-  // { id: 'space_after_slogan', name: 'Espace après Slogan (Garde)', section: 'Page de garde Espacements' },
+  { id: 'space_after_header', name: 'Espace après En-tête (Garde)', section: 'Page de garde Espacements' },
+  { id: 'space_after_slogan', name: 'Espace après Slogan (Garde)', section: 'Page de garde Espacements' },
   // ... etc pour la page de garde
 
   // === Page de détail des travaux ===
@@ -40,15 +40,18 @@ export const PDF_ELEMENTS = [
   { id: 'mo_supplies', name: 'Ligne MO/Fournitures', section: 'Détails des travaux' },
   { id: 'room_total', name: 'Ligne Total par Pièce', section: 'Détails des travaux' },
    // Espacements Page Détails (si besoin)
-  // { id: 'space_after_detail_title', name: 'Espace après Titre Détails', section: 'Détails Espacements' },
-  // { id: 'space_after_room_title', name: 'Espace après Titre Pièce', section: 'Détails Espacements' },
-  // { id: 'space_after_work_line', name: 'Espace après Ligne Travail', section: 'Détails Espacements' },
-  // { id: 'space_after_room_total', name: 'Espace après Total Pièce', section: 'Détails Espacements' },
+  { id: 'space_after_detail_title', name: 'Espace après Titre Détails', section: 'Détails Espacements' },
+  { id: 'space_after_room_title', name: 'Espace après Titre Pièce', section: 'Détails Espacements' },
+  { id: 'space_after_work_line', name: 'Espace après Ligne Travail', section: 'Détails Espacements' },
+  { id: 'space_after_room_total', name: 'Espace après Total Pièce', section: 'Détails Espacements' },
 
 
   // === Page de récapitulatif ===
   { id: 'recap_title', name: 'Titre "RÉCAPITULATIF"', section: 'Récapitulatif' },
   { id: 'recap_table_header', name: 'En-tête Tableau Récap.', section: 'Récapitulatif' },
+  // --- NOUVEAUX IDs pour le tableau récap ---
+  { id: 'recap_designation_column', name: 'Texte Colonne Désignations (Récap)', section: 'Récapitulatif' },
+  { id: 'recap_amount_column', name: 'Texte Colonne Montant HT (Récap)', section: 'Récapitulatif' },
   { id: 'signature_zone', name: 'Zone de Signature (Conteneur)', section: 'Récapitulatif' },
   { id: 'signature_text', name: 'Texte Explicatif Signature', section: 'Récapitulatif' },
   { id: 'approval_text', name: 'Texte "Bon pour accord..."', section: 'Récapitulatif' },
