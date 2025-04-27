@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import { CoverDocumentContent } from '../components/CoverDocumentContent'; 
 import { DetailsPage } from '../components/DetailsPage';
 import { RecapPage } from '../components/RecapPage';
-import { CoverFooterSection } from '../components/CoverFooterSection'; // Importe le footer spécifique
+import { PageFooter } from '../components/common/PageFooter'; // Utilisez le PageFooter commun au lieu de CoverFooterSection
 // import { CGVPage } from '../components/CGVPage';
 
 import { convertPageMargins, MarginTuple } from '../../v2/utils/styleUtils'; 
@@ -37,8 +37,10 @@ export const useReactPdfGeneration = () => {
       const coverMargins: MarginTuple = convertPageMargins(
          pdfSettings.margins?.cover as number[] | undefined
       );
-      // Ajuste cette valeur pour garantir assez d'espace pour le footer
-      const coverPaddingBottom = coverMargins[2] + 60; // Augmenté à 60 pour plus d'espace
+      
+      // Utilisez la même approche que DetailsPage.tsx - ajout d'espace fixe pour le footer
+      const footerSpace = 50; // Le même que dans DetailsPage.tsx
+      const pagePaddingBottom = coverMargins[2] + footerSpace;
 
       const MyPdfDocument = (
         <Document 
@@ -56,26 +58,21 @@ export const useReactPdfGeneration = () => {
               { 
                 paddingTop: coverMargins[0],
                 paddingRight: coverMargins[1],
-                paddingBottom: coverPaddingBottom, 
+                paddingBottom: pagePaddingBottom, // Même approche que DetailsPage.tsx
                 paddingLeft: coverMargins[3]
               }
             ]}
            >
-             {/* Utiliser un View englobant avec flexGrow pour pousser le footer vers le bas */}
-             <View style={styles.pageContentWrapper}>
-               <CoverDocumentContent 
-                  pdfSettings={pdfSettings} 
-                  projectState={state} 
-               />
-               {/* Le pousseur est important pour mettre le footer en bas de page */}
-               <View style={styles.contentGrower} /> 
-             </View>
+             {/* Contenu principal */}
+             <CoverDocumentContent 
+                pdfSettings={pdfSettings} 
+                projectState={state} 
+             />
              
-             {/* Footer Fixe - position absolute pour garantir qu'il reste en bas */}
-             <CoverFooterSection 
+             {/* Footer - utiliser le même PageFooter que les autres pages */}
+             <PageFooter 
                pdfSettings={pdfSettings} 
-               projectState={state} 
-               fixed={true}
+               company={state.metadata.company}
              />
           </Page>
 
@@ -119,20 +116,10 @@ export const useReactPdfGeneration = () => {
   };
 };
 
-// Styles locaux pour la page et le footer fixe de la page de garde
+// Styles simplifiés - comme dans DetailsPage.tsx
 const styles = StyleSheet.create({
   page: {
     backgroundColor: '#ffffff',
-    fontFamily: 'Helvetica', 
-    display: 'flex',       
-    flexDirection: 'column'
-  },
-  pageContentWrapper: {
-    display: 'flex',
-    flexDirection: 'column',
-    flex: 1
-  },
-  contentGrower: { 
-     flexGrow: 1 
+    fontFamily: 'Helvetica'
   }
 });
