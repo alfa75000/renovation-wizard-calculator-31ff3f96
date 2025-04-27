@@ -1,4 +1,4 @@
-
+//src/services/pdf/services/recapPdfService.ts
 import { Room, Travail, ProjectMetadata } from '@/types';
 import { PdfSettings } from '../config/pdfSettingsTypes';
 import { ensureSupportedFont } from '../utils/fontUtils';
