@@ -6,7 +6,7 @@ import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
 import { ProjectState, Room, Travail } from '@/types'; 
 import { getPdfStyles } from '../utils/pdfStyleUtils';
 
-// === FONCTIONS DE FORMATAGE ===
+// === FONCTIONS DE FORMATAGE (Assure-toi qu'elles sont correctes) ===
 const formatPrice = (value: number): string => { return `${(value || 0).toFixed(2)} €`; }; 
 const formatQuantity = (quantity: number): string => { return `${(quantity || 0)}`; }; 
 const formatMOFournitures = (travail: Travail): string => { 
@@ -16,12 +16,14 @@ const formatMOFournitures = (travail: Travail): string => {
     const tva = travail.tauxTVA || 0;
      return `[ MO: ${mo}/u | Fourn: ${fourn}/u | TVA: ${tva}% ]`; 
 };
-// ============================
+// ===============================================================
 
+// Helper pour obtenir les travaux d'une pièce
 const getTravauxForPiece = (pieceId: string, allTravaux: Travail[] = []): Travail[] => { 
   return allTravaux.filter(t => t.pieceId === pieceId);
 };
 
+// Fonction utilitaire pour convertir textAlign en alignSelf
 const getAlignSelf = (textAlign?: Style['textAlign']): 'flex-start' | 'center' | 'flex-end' => { 
   switch (textAlign) {
     case 'center': return 'center';
@@ -83,10 +85,13 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
 
       {/* 2. En-tête du Tableau */}
       <View 
-        style={[styles.tableHeaderRow, tableHeaderContainerStyles, { backgroundColor: tableHeaderContainerStyles.backgroundColor || lightBackgroundColor }]} 
+        style={[
+          styles.tableHeaderRow, 
+          tableHeaderContainerStyles, 
+          { backgroundColor: tableHeaderContainerStyles.backgroundColor || lightBackgroundColor }
+        ]} 
         fixed
       >
-        {/* ... Cellules en-tête */}
         <View style={styles.tableHeaderCellDesc}><Text style={tableHeaderTextStyles}>Description</Text></View>
         <View style={styles.tableHeaderCellQty}><Text style={[tableHeaderTextStyles, qtyStyles.textAlign ? { textAlign: qtyStyles.textAlign } : {}]}>Quantité</Text></View>
         <View style={styles.tableHeaderCellPrice}><Text style={[tableHeaderTextStyles, priceStyles.textAlign ? { textAlign: priceStyles.textAlign } : {}]}>Prix HT Unit.</Text></View>
@@ -101,7 +106,7 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
 
         return (
           <React.Fragment key={room.id}>
-            {/* Titre de la Pièce - MODIF: Supprimé 'break' */}
+            {/* Titre de la Pièce */}
             <View style={[
               roomTitleContainerStyles,
               { alignSelf: getAlignSelf(roomTitleTextStyles.textAlign) }
@@ -110,9 +115,8 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
             </View>
             <View style={{ height: 5 }} /> 
 
-            {/* Boucle sur les Travaux de la Pièce */}
+            {/* Boucle sur les Travaux */}
             {travauxPiece.map((travail, index) => {
-              // ... (calculs) ...
                const qte = typeof travail.quantite === 'number' ? travail.quantite : 0;
                const fourn = typeof travail.prixFournitures === 'number' ? travail.prixFournitures : 0;
                const mo = typeof travail.prixMainOeuvre === 'number' ? travail.prixMainOeuvre : 0;
@@ -122,12 +126,9 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
                pieceTotalHT += totalHT; 
 
               return (
-                // Ligne du tableau pour un travail - MODIF: Supprimé 'wrap={false}'
                 <View key={travail.id || `travail-${index}`} style={styles.tableRow}> 
-                  
-                  {/* Cellule Description Refactorisée */}
+                  {/* Cellule Description */}
                   <View style={styles.tableCellDesc}>
-                     {/* ... (Structure interne de la description) ... */}
                       {/* Bloc Type/Sous-type */}
                       <View style={workTypeContainerStyles}> 
                         <Text style={workTypeStyles}>
@@ -164,7 +165,6 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
                           </Text>
                        </View>
                   </View>
-
                   {/* Autres Cellules */}
                   <View style={styles.tableCellQty}>
                     <Text style={qtyStyles}>{formatQuantity(qte)}</Text>
@@ -183,7 +183,7 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
               );
             })}
 
-            {/* Ligne Total Pièce */}
+            {/* Ligne Total Pièce (Alignements corrigés) */}
             <View 
               style={[
                 styles.tableFooterRow, 
@@ -192,24 +192,25 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
               ]}
             >
                {/* Cellule Label Total */}
-               <View style={styles.tableFooterCellLabel}>
-                  {/* MODIF : Applique le style texte directement */}
+               <View style={styles.tableFooterCellLabel}> 
+                 {/* Applique le style texte (qui inclut textAlign) */}
                  <Text style={roomTotalTextStyles}> 
                     Total HT {room.name}
                  </Text>
                </View>
                {/* Cellule Valeur Total */}
                <View style={styles.tableFooterCellTotal}>
-                 {/* MODIF : Fusionne style colonne total + surcharge alignement par style total pièce */}
+                 {/* Applique styles de base colonne SAUF textAlign */}
+                 {/* Applique textAlign de la LIGNE total en priorité, fallback sur celui de la COLONNE total */}
                  <Text style={[
-                     totalStyles, 
-                     roomTotalTextStyles.textAlign ? { textAlign: roomTotalTextStyles.textAlign } : {} 
+                     {...totalStyles, textAlign: undefined }, 
+                     { textAlign: roomTotalTextStyles.textAlign || totalStyles.textAlign } 
                    ]}>
                    {formatPrice(pieceTotalHT)}
                  </Text>
                </View>
             </View>
-             <View style={{ height: 15 }} /> 
+             <View style={{ height: 15 }} /> {/* Espace après chaque pièce */}
 
           </React.Fragment>
         );
@@ -220,23 +221,21 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
 
 // Styles locaux pour la structure du tableau
 const styles = StyleSheet.create({
-  // ... (Header Row/Cells, Footer Row/Cells comme avant) ...
-   tableHeaderRow: {
+  tableHeaderRow: {
     flexDirection: 'row',
     width: '100%',
     paddingVertical: 4, 
   },
-   tableHeaderCellDesc: { width: '50%', paddingHorizontal: 4 }, 
-   tableHeaderCellQty: { width: '10%', paddingHorizontal: 4, textAlign: 'center' },
-   tableHeaderCellPrice: { width: '15%', paddingHorizontal: 4, textAlign: 'center' },
-   tableHeaderCellVAT: { width: '10%', paddingHorizontal: 4, textAlign: 'center' },
-   tableHeaderCellTotal: { width: '15%', paddingHorizontal: 4, textAlign: 'center' }, 
-   tableRow: {
+  tableHeaderCellDesc: { width: '50%', paddingHorizontal: 4 }, 
+  tableHeaderCellQty: { width: '10%', paddingHorizontal: 4, textAlign: 'center' },
+  tableHeaderCellPrice: { width: '15%', paddingHorizontal: 4, textAlign: 'center' },
+  tableHeaderCellVAT: { width: '10%', paddingHorizontal: 4, textAlign: 'center' },
+  tableHeaderCellTotal: { width: '15%', paddingHorizontal: 4, textAlign: 'center' }, 
+  tableRow: {
     flexDirection: 'row',
     paddingVertical: 4,
     width: '100%',
-    alignItems: 'center', // Centrage Vertical
-    // BorderBottom supprimée
+    alignItems: 'center', // Centrage Vertical des cellules
   },
   tableCellDesc: { 
       width: '50%', 
@@ -267,13 +266,15 @@ const styles = StyleSheet.create({
     width: '100%',
     marginTop: 5,
     paddingVertical: 4, 
+    alignItems: 'center', // Centre verticalement le label et la valeur
   },
   tableFooterCellLabel: { 
-     flexGrow: 1, 
+     width: '85%', // Largeur fixe pour le label
      paddingHorizontal: 4 
   }, 
   tableFooterCellTotal: { 
-     width: '15%', 
+     width: '15%', // Largeur fixe pour la valeur
      paddingHorizontal: 4, 
+     // Le textAlign est géré dans le <Text> ci-dessus
   },
 });
