@@ -1,3 +1,4 @@
+//src/services/pdf/pdfConstants.ts
 import type { Travail } from '@/types/travaux'; // Ajout de l'import du type Travail
 
 // Fichier de constantes pour la génération de PDF
