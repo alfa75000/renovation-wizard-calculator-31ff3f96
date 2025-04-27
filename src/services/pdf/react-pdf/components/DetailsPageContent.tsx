@@ -5,16 +5,10 @@ import { View, Text, StyleSheet } from '@react-pdf/renderer';
 import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
 import { ProjectState, Room, Travail } from '@/types'; // Assure-toi d'importer Room et Travail
 import { getPdfStyles } from '../utils/pdfStyleUtils';
-// Importe tes fonctions de formatage si elles sont séparées
-// import { formatPrice, formatQuantity, formatMOFournitures } from '@/services/pdf/utils/formatUtils'; 
-// Ou copie/colle les fonctions de formatage ici pour l'instant
+// Import depuis le fichier formatUtils nouvellement créé
+import { formatPrice, formatQuantity, formatMOFournitures } from '../../utils/formatUtils';
 
-// Recopie ici les fonctions de formatage depuis pdfUtils.ts (ancien code)
-const formatPrice = (value: number): string => { /* ... (code de formatPrice) ... */ return `${value.toFixed(2)} €`; }; // Simplifié
-const formatQuantity = (quantity: number): string => { /* ... (code de formatQuantity) ... */ return `${quantity}`; }; // Simplifié
-const formatMOFournitures = (travail: Travail): string => { /* ... (code de formatMOFournitures) ... */ return `MO: ${formatPrice(travail.prixMainOeuvre)} | Fourn: ${formatPrice(travail.prixFournitures)}`; }; // Simplifié
-
-// Helper pour obtenir les travaux d'une pièce (similaire à ce que tu avais)
+// Helper pour obtenir les travaux d'une pièce
 const getTravauxForPiece = (pieceId: string, allTravaux: Travail[]): Travail[] => {
   return allTravaux.filter(t => t.pieceId === pieceId);
 };
@@ -40,7 +34,6 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
   const vatStyles = getPdfStyles(pdfSettings, 'vat_column', { isContainer: false });
   const totalStyles = getPdfStyles(pdfSettings, 'total_column', { isContainer: false });
   const roomTotalLabelStyles = getPdfStyles(pdfSettings, 'room_total', { isContainer: false });
-  // Note: On pourrait aussi vouloir styler les <View> des cellules
 
   const roomsWithTravaux = rooms.filter(room => getTravauxForPiece(room.id, travaux).length > 0);
 
