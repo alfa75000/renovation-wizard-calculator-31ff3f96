@@ -1,37 +1,46 @@
+// src/services/pdf/react-pdf/components/DetailsPage.tsx
+
 import React from 'react';
-import { Page, StyleSheet, View, Text } from '@react-pdf/renderer'; // Supprime Document ici
+import { Page, StyleSheet } from '@react-pdf/renderer'; // Seulement Page et StyleSheet nécessaires ici
 import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
 import { ProjectState } from '@/types';
-import { convertPageMargins, MarginTuple } from '../../v2/utils/styleUtils'; 
+import { convertPageMargins, MarginTuple } from '../../v2/utils/styleUtils'; // Pour calculer les marges
+
+// Importe le contenu principal
 import { DetailsPageContent } from './DetailsPageContent'; 
-// Modifie les imports pour les composants communs
+// Importe les composants communs Header/Footer
 import { PageHeader } from './common/PageHeader'; 
 import { PageFooter } from './common/PageFooter'; 
-// Supprime getPdfStyles si plus utilisé directement ici
 
 interface DetailsPageProps {
   pdfSettings: PdfSettings;
   projectState: ProjectState;
 }
 
-// SUPPRIME les définitions locales de DetailsPageHeader et DetailsPageFooter
-
+// Exporte le composant de page complet
 export const DetailsPage = ({ pdfSettings, projectState }: DetailsPageProps) => {
+  
+  // Utilise les marges spécifiques aux détails si définies, sinon fallback sur celles de cover
   const detailMarginsInput = pdfSettings.margins?.details || pdfSettings.margins?.cover;
   const margins: MarginTuple = convertPageMargins(
     detailMarginsInput as number[] | undefined
   );
 
+  // Détermine les paddings de page en ajoutant l'espace nécessaire pour header/footer
+  // Ajuste les valeurs 50 si ton header/footer sont plus ou moins hauts
+  const pagePaddingTop = margins[0] + 50; // Marge utilisateur + Espace Header
+  const pagePaddingBottom = margins[2] + 50; // Marge utilisateur + Espace Footer
+
   return (
     <Page 
       size="A4" 
       style={[
-        styles.page,
+        styles.pageBase, // Style de base commun
         { 
-          paddingTop: margins[0],
-          paddingRight: margins[1],
-          paddingBottom: margins[2], 
-          paddingLeft: margins[3]
+          paddingTop: pagePaddingTop,      // Marge haut + espace header
+          paddingRight: margins[1],     // Marge droite utilisateur
+          paddingBottom: pagePaddingBottom, // Marge bas + espace footer
+          paddingLeft: margins[3]      // Marge gauche utilisateur
         }
       ]}
     >
@@ -39,12 +48,13 @@ export const DetailsPage = ({ pdfSettings, projectState }: DetailsPageProps) => 
       <PageHeader 
          pdfSettings={pdfSettings} 
          metadata={projectState.metadata}
-         render={({ pageNumber, totalPages }) => ( // Passe la fonction render
+         // Passe la fonction render pour la numérotation dynamique
+         render={({ pageNumber, totalPages }) => ( 
             `DEVIS N° ${projectState.metadata?.devisNumber || 'XXXX-XX'} - page ${pageNumber}/${totalPages}`
          )} 
        />
       
-      {/* Contenu principal */}
+      {/* Contenu principal de la page de détails */}
       <DetailsPageContent 
         pdfSettings={pdfSettings}
         projectState={projectState}
@@ -53,18 +63,19 @@ export const DetailsPage = ({ pdfSettings, projectState }: DetailsPageProps) => 
       {/* Pied de page fixe commun */}
       <PageFooter 
         pdfSettings={pdfSettings}
-        company={projectState.metadata.company}
+        // Passe directement l'objet company ou null/undefined
+        company={projectState.metadata?.company} 
       />
     </Page>
   );
 };
 
+// Styles locaux UNIQUEMENT pour la structure de base de la page
 const styles = StyleSheet.create({
-  page: {
-    backgroundColor: '#ffffff',
-    fontFamily: 'Helvetica', 
-    paddingBottom: 50, 
-    paddingTop: 50,    
-  },
-  // Supprime headerContainer et footerContainer d'ici, ils sont dans les composants communs
+  pageBase: {
+    backgroundColor: '#ffffff', // Fond blanc par défaut
+    fontFamily: 'Helvetica',   // Police par défaut si non surchargée par styles éléments
+    // Le padding dynamique est ajouté inline ci-dessus
+  }
+  // Les styles spécifiques au header/footer sont dans leurs composants respectifs
 });
