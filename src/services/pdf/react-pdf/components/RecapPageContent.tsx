@@ -6,7 +6,7 @@ import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
 import { ProjectState, Travail } from '@/types'; // Assure-toi d'importer Travail
 import { getPdfStyles } from '../utils/pdfStyleUtils';
 // Modifié pour utiliser le chemin relatif correct
-import { formatPrice } from '../../utils/formatUtils';
+import { formatPrice } from '../../utils/formatUtils'; 
 
 // --- Logique de Calcul des Totaux ---
 const calculateTotals = (travaux: Travail[] = []) => { // Ajoute une valeur par défaut pour travaux
