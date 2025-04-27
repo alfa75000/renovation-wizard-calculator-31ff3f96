@@ -37,8 +37,8 @@ export const useReactPdfGeneration = () => {
       const coverMargins: MarginTuple = convertPageMargins(
          pdfSettings.margins?.cover as number[] | undefined
       );
-       // Ajuste cette valeur si ton footer a une hauteur différente
-       const coverPaddingBottom = coverMargins[2] + 50; 
+      // Ajuste cette valeur pour garantir assez d'espace pour le footer
+      const coverPaddingBottom = coverMargins[2] + 60; // Augmenté à 60 pour plus d'espace
 
       const MyPdfDocument = (
         <Document 
@@ -61,19 +61,21 @@ export const useReactPdfGeneration = () => {
               }
             ]}
            >
-             {/* Contenu */}
-             <CoverDocumentContent 
-                pdfSettings={pdfSettings} 
-                projectState={state} 
-             />
-             {/* Pousseur */}
-             <View style={styles.contentGrower} /> 
-             {/* Footer Fixe */}
+             {/* Utiliser un View englobant avec flexGrow pour pousser le footer vers le bas */}
+             <View style={styles.pageContentWrapper}>
+               <CoverDocumentContent 
+                  pdfSettings={pdfSettings} 
+                  projectState={state} 
+               />
+               {/* Le pousseur est important pour mettre le footer en bas de page */}
+               <View style={styles.contentGrower} /> 
+             </View>
+             
+             {/* Footer Fixe - position absolute pour garantir qu'il reste en bas */}
              <CoverFooterSection 
                pdfSettings={pdfSettings} 
                projectState={state} 
-               // PAS DE PROP 'style' ICI 
-               fixed={true} // <-- La prop fixed suffit
+               fixed={true}
              />
           </Page>
 
@@ -125,9 +127,12 @@ const styles = StyleSheet.create({
     display: 'flex',       
     flexDirection: 'column'
   },
+  pageContentWrapper: {
+    display: 'flex',
+    flexDirection: 'column',
+    flex: 1
+  },
   contentGrower: { 
      flexGrow: 1 
-  },
-  // Supprime fixedFooter car le style est interne au composant CoverFooterSection
-  // fixedFooter: { ... } 
+  }
 });
