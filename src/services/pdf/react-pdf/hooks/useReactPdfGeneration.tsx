@@ -7,10 +7,21 @@ import { useProject } from '@/contexts/ProjectContext';
 import { usePdfSettings } from '@/services/pdf/hooks/usePdfSettings';
 import { toast } from 'sonner';
 
-// Import du composant de contenu réel pour la page de garde
+// Importez vos composants de contenu
 import { CoverDocumentContent } from '../components/CoverDocumentContent';
-// Les autres imports seront ajoutés progressivement
+import { DetailsPageContent } from '../components/DetailsPageContent';
+import { RecapPageContent } from '../components/RecapPageContent';
 import { convertPageMargins, MarginTuple } from '../../v2/utils/styleUtils';
+
+// Créez des composants spécifiques pour les en-têtes et pieds de page
+// (à adapter selon votre structure existante)
+const PageFooter = ({ pageNumber, pageCount }) => (
+  <View style={styles.footer} fixed>
+    <Text style={styles.footerText}>
+      Page {pageNumber} sur {pageCount}
+    </Text>
+  </View>
+);
 
 export const useReactPdfGeneration = () => {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -28,15 +39,18 @@ export const useReactPdfGeneration = () => {
         return false;
       }
 
-      console.log("Génération PDF avec settings:", pdfSettings);
-      console.log("Et state:", state);
-
-      // Calcul des marges pour la première page uniquement
+      // Calcul des marges
       const coverMargins: MarginTuple = convertPageMargins(
         pdfSettings.margins?.cover as number[] | undefined
       );
+      const detailsMargins: MarginTuple = convertPageMargins(
+        pdfSettings.margins?.details as number[] | undefined
+      );
+      const recapMargins: MarginTuple = convertPageMargins(
+        pdfSettings.margins?.recap as number[] | undefined
+      );
 
-      // Structure du Document PDF - PROGRESSION GRADUELLE
+      // Structure du Document PDF avec en-têtes et pieds de page correctement gérés
       const MyPdfDocument = (
         <Document
           title={`Devis ${state.metadata.devisNumber || 'Nouveau'}`}
@@ -45,15 +59,16 @@ export const useReactPdfGeneration = () => {
           creator="Mon Application Devis"
           producer="Mon Application Devis (@react-pdf/renderer)"
         >
-          {/* Page 1: Composant réel de couverture */}
-          <Page
-            size="A4"
+          {/* Page 1: Page de garde avec pied de page externe */}
+          <Page 
+            size="A4" 
             style={[
               styles.page,
               {
                 paddingTop: coverMargins[0],
                 paddingRight: coverMargins[1],
-                paddingBottom: coverMargins[2],
+                // Important: Augmentez le padding bottom pour faire place au pied de page
+                paddingBottom: coverMargins[2] + 30, 
                 paddingLeft: coverMargins[3]
               }
             ]}
@@ -62,24 +77,52 @@ export const useReactPdfGeneration = () => {
               pdfSettings={pdfSettings}
               projectState={state}
             />
+            {/* Pied de page fixe externe au composant */}
+            <PageFooter pageNumber={1} pageCount={3} />
           </Page>
 
-          {/* Page 2: Page simplifiée pour test */}
-          <Page size="A4" style={styles.basicPage}>
-            <Text style={styles.pageTitle}>PAGE 2 - DÉTAILS</Text>
-            <View style={styles.contentBox}>
-              <Text>Cette page est simplifiée pour tester le multi-pages</Text>
-              <Text>Elle sera remplacée par votre composant DetailsPage</Text>
-            </View>
+          {/* Page 2: Page de détails avec pied de page externe */}
+          <Page 
+            size="A4" 
+            style={[
+              styles.page,
+              {
+                paddingTop: detailsMargins[0],
+                paddingRight: detailsMargins[1],
+                // Important: Augmentez le padding bottom pour faire place au pied de page
+                paddingBottom: detailsMargins[2] + 30, 
+                paddingLeft: detailsMargins[3]
+              }
+            ]}
+          >
+            <DetailsPageContent
+              pdfSettings={pdfSettings}
+              projectState={state}
+            />
+            {/* Pied de page fixe externe au composant */}
+            <PageFooter pageNumber={2} pageCount={3} />
           </Page>
 
-          {/* Page 3: Page simplifiée pour test */}
-          <Page size="A4" style={styles.basicPage}>
-            <Text style={styles.pageTitle}>PAGE 3 - RÉCAPITULATIF</Text>
-            <View style={styles.contentBox}>
-              <Text>Cette page est simplifiée pour tester le multi-pages</Text>
-              <Text>Elle sera remplacée par votre composant RecapPage</Text>
-            </View>
+          {/* Page 3: Page récap avec pied de page externe */}
+          <Page 
+            size="A4" 
+            style={[
+              styles.page,
+              {
+                paddingTop: recapMargins[0],
+                paddingRight: recapMargins[1],
+                // Important: Augmentez le padding bottom pour faire place au pied de page
+                paddingBottom: recapMargins[2] + 30, 
+                paddingLeft: recapMargins[3]
+              }
+            ]}
+          >
+            <RecapPageContent
+              pdfSettings={pdfSettings}
+              projectState={state}
+            />
+            {/* Pied de page fixe externe au composant */}
+            <PageFooter pageNumber={3} pageCount={3} />
           </Page>
         </Document>
       );
@@ -107,32 +150,25 @@ export const useReactPdfGeneration = () => {
   };
 };
 
-// Styles pour les pages
+// Styles pour les pages et les pieds de page
 const styles = StyleSheet.create({
   page: {
     backgroundColor: '#ffffff',
     fontFamily: 'Helvetica',
     display: 'flex',
-    flexDirection: 'column'
+    flexDirection: 'column',
   },
-  // Styles pour les pages de test simplifiées
-  basicPage: {
-    padding: 30,
-    backgroundColor: '#ffffff',
-  },
-  pageTitle: {
-    fontSize: 24,
-    marginBottom: 20,
-    fontWeight: 'bold',
+  footer: {
+    position: 'absolute',
+    bottom: 10,
+    left: 0,
+    right: 0,
     textAlign: 'center',
+    paddingHorizontal: 20,
   },
-  contentBox: {
-    margin: 10,
-    padding: 10,
-    border: '1px solid #000',
-    height: 400,
-    justifyContent: 'center',
-    alignItems: 'center',
+  footerText: {
+    fontSize: 10,
+    color: '#666',
   },
   contentGrower: {
     flexGrow: 1
