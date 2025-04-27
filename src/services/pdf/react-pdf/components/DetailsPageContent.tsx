@@ -6,7 +6,7 @@ import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
 import { ProjectState, Room, Travail } from '@/types'; 
 import { getPdfStyles } from '../utils/pdfStyleUtils';
 
-// === FONCTIONS DE FORMATAGE (Assure-toi qu'elles sont correctes) ===
+// === FONCTIONS DE FORMATAGE ===
 const formatPrice = (value: number): string => { return `${(value || 0).toFixed(2)} €`; }; 
 const formatQuantity = (quantity: number): string => { return `${(quantity || 0)}`; }; 
 const formatMOFournitures = (travail: Travail): string => { 
@@ -16,14 +16,12 @@ const formatMOFournitures = (travail: Travail): string => {
     const tva = travail.tauxTVA || 0;
      return `[ MO: ${mo}/u | Fourn: ${fourn}/u | TVA: ${tva}% ]`; 
 };
-// ===============================================================
+// ============================
 
-// Helper pour obtenir les travaux d'une pièce
 const getTravauxForPiece = (pieceId: string, allTravaux: Travail[] = []): Travail[] => { 
   return allTravaux.filter(t => t.pieceId === pieceId);
 };
 
-// Fonction utilitaire pour convertir textAlign en alignSelf
 const getAlignSelf = (textAlign?: Style['textAlign']): 'flex-start' | 'center' | 'flex-end' => { 
   switch (textAlign) {
     case 'center': return 'center';
@@ -59,8 +57,8 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
   const qtyStyles = getPdfStyles(pdfSettings, 'qty_column', { isContainer: false });
   const priceStyles = getPdfStyles(pdfSettings, 'price_column', { isContainer: false });
   const vatStyles = getPdfStyles(pdfSettings, 'vat_column', { isContainer: false });
-  const totalStyles = getPdfStyles(pdfSettings, 'total_column', { isContainer: false });
-  const roomTotalTextStyles = getPdfStyles(pdfSettings, 'room_total', { isContainer: false });
+  const totalStyles = getPdfStyles(pdfSettings, 'total_column', { isContainer: false }); // Styles pour la colonne "Total HT"
+  const roomTotalTextStyles = getPdfStyles(pdfSettings, 'room_total', { isContainer: false }); // Styles pour la ligne "Total Pièce"
   const roomTotalContainerStyles = getPdfStyles(pdfSettings, 'room_total', { isContainer: true });
   // --- Fin Styles ---
 
@@ -92,6 +90,7 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
         ]} 
         fixed
       >
+        {/* Utilise les NOUVELLES largeurs de colonnes définies dans le StyleSheet */}
         <View style={styles.tableHeaderCellDesc}><Text style={tableHeaderTextStyles}>Description</Text></View>
         <View style={styles.tableHeaderCellQty}><Text style={[tableHeaderTextStyles, qtyStyles.textAlign ? { textAlign: qtyStyles.textAlign } : {}]}>Quantité</Text></View>
         <View style={styles.tableHeaderCellPrice}><Text style={[tableHeaderTextStyles, priceStyles.textAlign ? { textAlign: priceStyles.textAlign } : {}]}>Prix HT Unit.</Text></View>
@@ -129,61 +128,33 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
                 <View key={travail.id || `travail-${index}`} style={styles.tableRow}> 
                   {/* Cellule Description */}
                   <View style={styles.tableCellDesc}>
-                      {/* Bloc Type/Sous-type */}
+                      {/* Structure interne de la description */}
                       <View style={workTypeContainerStyles}> 
-                        <Text style={workTypeStyles}>
-                          {`${travail.typeTravauxLabel || '?'}: ${travail.sousTypeLabel || '?'}`}
-                        </Text>
+                        <Text style={workTypeStyles}>{`${travail.typeTravauxLabel || '?'}: ${travail.sousTypeLabel || '?'}`}</Text>
                       </View>
-                      {/* Bloc Description */}
                       {travail.description && (
                         <>
-                          <View style={{height: 2}} /> 
-                          <View style={workDescContainerStyles}>
-                            <Text style={workDescTextStyles}>
-                              {travail.description}
-                            </Text>
-                          </View>
+                          <View style={{height: 2}} /><View style={workDescContainerStyles}><Text style={workDescTextStyles}>{travail.description}</Text></View>
                         </>
                       )}
-                       {/* Bloc Personnalisation */}
                        {travail.personnalisation && (
                          <>
-                           <View style={{height: 2}} /> 
-                           <View style={workPersoContainerStyles}>
-                             <Text style={[workPersoTextStyles, {fontStyle: 'italic'}]}> 
-                                {travail.personnalisation}
-                             </Text>
-                          </View>
+                           <View style={{height: 2}} /><View style={workPersoContainerStyles}><Text style={[workPersoTextStyles, {fontStyle: 'italic'}]}>{travail.personnalisation}</Text></View>
                          </>
                        )}
-                       {/* Bloc MO/Fournitures */}
                        <View style={{height: 4}} /> 
-                       <View style={moSuppliesContainerStyles}>
-                         <Text style={moSuppliesTextStyles}>
-                            {formatMOFournitures(travail)}
-                          </Text>
-                       </View>
+                       <View style={moSuppliesContainerStyles}><Text style={moSuppliesTextStyles}>{formatMOFournitures(travail)}</Text></View>
                   </View>
-                  {/* Autres Cellules */}
-                  <View style={styles.tableCellQty}>
-                    <Text style={qtyStyles}>{formatQuantity(qte)}</Text>
-                    <Text style={qtyStyles}>{travail.unite || ''}</Text>
-                  </View>
-                  <View style={styles.tableCellPrice}>
-                    <Text style={priceStyles}>{formatPrice(prixUnitaireHT)}</Text>
-                  </View>
-                  <View style={styles.tableCellVAT}>
-                    <Text style={vatStyles}>{`${tvaRate}%`}</Text>
-                  </View>
-                  <View style={styles.tableCellTotal}>
-                    <Text style={totalStyles}>{formatPrice(totalHT)}</Text>
-                  </View>
+                  {/* Autres Cellules (avec les nouvelles largeurs via styles) */}
+                  <View style={styles.tableCellQty}><Text style={qtyStyles}>{formatQuantity(qte)}</Text><Text style={qtyStyles}>{travail.unite || ''}</Text></View>
+                  <View style={styles.tableCellPrice}><Text style={priceStyles}>{formatPrice(prixUnitaireHT)}</Text></View>
+                  <View style={styles.tableCellVAT}><Text style={vatStyles}>{`${tvaRate}%`}</Text></View>
+                  <View style={styles.tableCellTotal}><Text style={totalStyles}>{formatPrice(totalHT)}</Text></View>
                 </View>
               );
             })}
 
-            {/* Ligne Total Pièce (Alignements corrigés) */}
+            {/* Ligne Total Pièce (avec alignements corrigés et nouvelles largeurs via styles) */}
             <View 
               style={[
                 styles.tableFooterRow, 
@@ -191,26 +162,25 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
                 { backgroundColor: roomTotalContainerStyles.backgroundColor || lightBackgroundColor }
               ]}
             >
-               {/* Cellule Label Total */}
+               {/* Cellule Label Total (utilise style local pour largeur) */}
                <View style={styles.tableFooterCellLabel}> 
-                 {/* Applique le style texte (qui inclut textAlign) */}
                  <Text style={roomTotalTextStyles}> 
                     Total HT {room.name}
                  </Text>
                </View>
-               {/* Cellule Valeur Total */}
+               {/* Cellule Valeur Total (utilise style local pour largeur) */}
                <View style={styles.tableFooterCellTotal}>
-                 {/* Applique styles de base colonne SAUF textAlign */}
-                 {/* Applique textAlign de la LIGNE total en priorité, fallback sur celui de la COLONNE total */}
+                  {/* CORRECTION: Logique d'alignement corrigée */}
                  <Text style={[
-                     {...totalStyles, textAlign: undefined }, 
+                     {...totalStyles, textAlign: undefined }, // Base: Styles colonne Total (sauf alignement)
+                     // Priorité alignement: Ligne Total > Colonne Total
                      { textAlign: roomTotalTextStyles.textAlign || totalStyles.textAlign } 
                    ]}>
                    {formatPrice(pieceTotalHT)}
                  </Text>
                </View>
             </View>
-             <View style={{ height: 15 }} /> {/* Espace après chaque pièce */}
+             <View style={{ height: 15 }} /> 
 
           </React.Fragment>
         );
@@ -226,55 +196,60 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingVertical: 4, 
   },
-  tableHeaderCellDesc: { width: '50%', paddingHorizontal: 4 }, 
-  tableHeaderCellQty: { width: '10%', paddingHorizontal: 4, textAlign: 'center' },
-  tableHeaderCellPrice: { width: '15%', paddingHorizontal: 4, textAlign: 'center' },
-  tableHeaderCellVAT: { width: '10%', paddingHorizontal: 4, textAlign: 'center' },
-  tableHeaderCellTotal: { width: '15%', paddingHorizontal: 4, textAlign: 'center' }, 
+  // === NOUVELLES Largeurs Colonnes Header ===
+  tableHeaderCellDesc: { width: '60%', paddingHorizontal: 4 }, 
+  tableHeaderCellQty: { width: '8%', paddingHorizontal: 4, textAlign: 'center' },
+  tableHeaderCellPrice: { width: '12%', paddingHorizontal: 4, textAlign: 'center' },
+  tableHeaderCellVAT: { width: '6%', paddingHorizontal: 4, textAlign: 'center' },
+  tableHeaderCellTotal: { width: '14%', paddingHorizontal: 4, textAlign: 'center' }, 
+  // =======================================
   tableRow: {
     flexDirection: 'row',
     paddingVertical: 4,
     width: '100%',
-    alignItems: 'center', // Centrage Vertical des cellules
+    alignItems: 'center', 
   },
+  // === NOUVELLES Largeurs Colonnes Cellules ===
   tableCellDesc: { 
-      width: '50%', 
+      width: '60%', 
       paddingHorizontal: 4 
   }, 
   tableCellQty: { 
-      width: '10%', 
+      width: '8%', 
       paddingHorizontal: 4, 
       textAlign: 'center' 
   },
   tableCellPrice: { 
-      width: '15%', 
+      width: '12%', 
       paddingHorizontal: 4, 
       textAlign: 'center'
   },
   tableCellVAT: { 
-      width: '10%', 
+      width: '6%', 
       paddingHorizontal: 4, 
       textAlign: 'center'
   },
   tableCellTotal: { 
-      width: '15%', 
+      width: '14%', 
       paddingHorizontal: 4, 
       textAlign: 'center'
   },
+  // ==========================================
   tableFooterRow: {
     flexDirection: 'row',
     width: '100%',
     marginTop: 5,
     paddingVertical: 4, 
-    alignItems: 'center', // Centre verticalement le label et la valeur
+    alignItems: 'center', 
   },
+  // === NOUVELLES Largeurs Total Pièce ===
   tableFooterCellLabel: { 
-     width: '85%', // Largeur fixe pour le label
+     width: '86%', // Correspond à 60+8+12+6
      paddingHorizontal: 4 
   }, 
   tableFooterCellTotal: { 
-     width: '15%', // Largeur fixe pour la valeur
+     width: '14%', // Correspond à la dernière colonne
      paddingHorizontal: 4, 
-     // Le textAlign est géré dans le <Text> ci-dessus
   },
+   // =====================================
 });
