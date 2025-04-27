@@ -7,10 +7,9 @@ import { useProject } from '@/contexts/ProjectContext';
 import { usePdfSettings } from '@/services/pdf/hooks/usePdfSettings';
 import { toast } from 'sonner';
 
-// Importez directement tous les composants dont vous avez besoin
+// Import du composant de contenu réel pour la page de garde
 import { CoverDocumentContent } from '../components/CoverDocumentContent';
-import { DetailsPageContent } from '../components/DetailsPageContent';
-import { RecapPageContent } from '../components/RecapPageContent';
+// Les autres imports seront ajoutés progressivement
 import { convertPageMargins, MarginTuple } from '../../v2/utils/styleUtils';
 
 export const useReactPdfGeneration = () => {
@@ -32,42 +31,54 @@ export const useReactPdfGeneration = () => {
       console.log("Génération PDF avec settings:", pdfSettings);
       console.log("Et state:", state);
 
-      // Calcul des marges
+      // Calcul des marges pour la première page uniquement
       const coverMargins: MarginTuple = convertPageMargins(
         pdfSettings.margins?.cover as number[] | undefined
       );
-      const detailsMargins: MarginTuple = convertPageMargins(
-        pdfSettings.margins?.details as number[] | undefined
-      );
-      const recapMargins: MarginTuple = convertPageMargins(
-        pdfSettings.margins?.recap as number[] | undefined
-      );
 
-      // Vérifier si le PDF a bien plus d'une page (pour debug)
-      console.log("Structure du document: 1 page de garde + details + recap");
-
-      // Structure du Document PDF - SIMPLIFIÉE AU MAXIMUM
+      // Structure du Document PDF - PROGRESSION GRADUELLE
       const MyPdfDocument = (
-        <Document>
-          {/* Test simple pour vérifier si plusieurs pages fonctionnent */}
-          <Page size="A4" style={styles.basicPage}>
-            <Text style={styles.pageTitle}>PAGE 1 - COUVERTURE</Text>
-            <View style={styles.contentBox}>
-              <Text>Contenu de la page de couverture</Text>
-            </View>
+        <Document
+          title={`Devis ${state.metadata.devisNumber || 'Nouveau'}`}
+          author={state.metadata.company?.name || 'Mon Entreprise'}
+          subject={`Devis N°${state.metadata.devisNumber}`}
+          creator="Mon Application Devis"
+          producer="Mon Application Devis (@react-pdf/renderer)"
+        >
+          {/* Page 1: Composant réel de couverture */}
+          <Page
+            size="A4"
+            style={[
+              styles.page,
+              {
+                paddingTop: coverMargins[0],
+                paddingRight: coverMargins[1],
+                paddingBottom: coverMargins[2],
+                paddingLeft: coverMargins[3]
+              }
+            ]}
+          >
+            <CoverDocumentContent
+              pdfSettings={pdfSettings}
+              projectState={state}
+            />
           </Page>
 
+          {/* Page 2: Page simplifiée pour test */}
           <Page size="A4" style={styles.basicPage}>
             <Text style={styles.pageTitle}>PAGE 2 - DÉTAILS</Text>
             <View style={styles.contentBox}>
-              <Text>Contenu de la page de détails</Text>
+              <Text>Cette page est simplifiée pour tester le multi-pages</Text>
+              <Text>Elle sera remplacée par votre composant DetailsPage</Text>
             </View>
           </Page>
 
+          {/* Page 3: Page simplifiée pour test */}
           <Page size="A4" style={styles.basicPage}>
             <Text style={styles.pageTitle}>PAGE 3 - RÉCAPITULATIF</Text>
             <View style={styles.contentBox}>
-              <Text>Contenu de la page de récapitulatif</Text>
+              <Text>Cette page est simplifiée pour tester le multi-pages</Text>
+              <Text>Elle sera remplacée par votre composant RecapPage</Text>
             </View>
           </Page>
         </Document>
@@ -96,8 +107,15 @@ export const useReactPdfGeneration = () => {
   };
 };
 
-// Styles simplifiés pour le test
+// Styles pour les pages
 const styles = StyleSheet.create({
+  page: {
+    backgroundColor: '#ffffff',
+    fontFamily: 'Helvetica',
+    display: 'flex',
+    flexDirection: 'column'
+  },
+  // Styles pour les pages de test simplifiées
   basicPage: {
     padding: 30,
     backgroundColor: '#ffffff',
@@ -115,12 +133,6 @@ const styles = StyleSheet.create({
     height: 400,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  page: {
-    backgroundColor: '#ffffff',
-    fontFamily: 'Helvetica',
-    display: 'flex',
-    flexDirection: 'column'
   },
   contentGrower: {
     flexGrow: 1
