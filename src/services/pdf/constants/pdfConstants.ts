@@ -1,4 +1,4 @@
-
+//src/services/pdf/constants/pdfConstants.ts
 export const DARK_BLUE = "#002855";
 
 export const PDF_TEXTS = {
