@@ -32,7 +32,7 @@ export const useReactPdfGeneration = () => {
          pdfSettings.margins?.cover as number[] | undefined
       );
        // Calcule les paddings nécessaires pour le footer fixe de la page de garde
-       const coverPaddingBottom = coverMargins[2] + 50; // Marge user + espace footer (ajuste 50)
+       const coverPaddingBottom = coverMargins[2] + 30; // Marge user + espace footer (ajuste 50)
 
       const MyPdfDocument = (
         <Document /* ...props Document... */ >
