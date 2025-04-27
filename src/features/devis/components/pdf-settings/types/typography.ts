@@ -1,4 +1,4 @@
-
+//src/features/devis/components/pdf-settings/types/typography.ts
 // Liste des éléments du PDF qu'on peut personnaliser
 export const PDF_ELEMENTS = [
   // Élément par défaut pour les styles globaux
