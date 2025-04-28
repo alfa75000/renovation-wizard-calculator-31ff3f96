@@ -3,7 +3,7 @@ import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
 
 // Only list fonts that are properly configured
-export const AVAILABLE_FONTS = ['Roboto', 'Helvetica', 'Courier'];
+export const AVAILABLE_FONTS = ['Roboto', 'Helvetica', 'Courier', 'ModernSans'];
 
 /**
  * Configure pdfMake with the default fonts
