@@ -1,20 +1,17 @@
 // src/services/pdf/react-pdf/components/DetailsPageContent.tsx
 
 import React from 'react';
-import { View, Text, StyleSheet, Style } from '@react-pdf/renderer'; 
+import { View, Text, StyleSheet, Styles } from '@react-pdf/renderer';
 import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
 import { ProjectState, Room, Travail } from '@/types'; 
 import { getPdfStyles } from '../utils/pdfStyleUtils';
-// ASSURE-TOI que ce chemin est correct et que formatUtils contient la version de formatPrice avec toLocaleString
 import { formatPrice, formatQuantity, formatMOFournitures } from '@/services/pdf/utils/formatUtils'; 
 
-// Helper pour obtenir les travaux d'une pièce
 const getTravauxForPiece = (pieceId: string, allTravaux: Travail[] = []): Travail[] => { 
   return allTravaux.filter(t => t.pieceId === pieceId);
 };
 
-// Fonction utilitaire pour convertir textAlign en alignSelf
-const getAlignSelf = (textAlign?: Style['textAlign']): 'flex-start' | 'center' | 'flex-end' => { 
+const getAlignSelf = (textAlign?: Styles['textAlign']): 'flex-start' | 'center' | 'flex-end' => { 
   switch (textAlign) {
     case 'center': return 'center';
     case 'right': return 'flex-end';
@@ -31,7 +28,6 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
   const rooms = projectState.rooms || [];
   const travaux = projectState.travaux || [];
 
-  // --- Styles ---
   const titleTextStyles = getPdfStyles(pdfSettings, 'detail_title', { isContainer: false });
   const titleContainerStyles = getPdfStyles(pdfSettings, 'detail_title', { isContainer: true });
   const tableHeaderTextStyles = getPdfStyles(pdfSettings, 'detail_table_header', { isContainer: false });
@@ -52,9 +48,7 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
   const totalStyles = getPdfStyles(pdfSettings, 'total_column', { isContainer: false }); // Style TEXTE colonne Total HT
   const roomTotalTextStyles = getPdfStyles(pdfSettings, 'room_total', { isContainer: false }); // Style TEXTE ligne Total Pièce
   const roomTotalContainerStyles = getPdfStyles(pdfSettings, 'room_total', { isContainer: true }); // Style CONTENEUR ligne Total Pièce
-  // --- Fin Styles ---
 
-  // Récupération de la couleur de fond claire
   const lightBackgroundColor = pdfSettings?.colors?.background || '#f3f4f6'; 
 
   const roomsWithTravaux = rooms.filter(room => getTravauxForPiece(room.id, travaux).length > 0);
@@ -65,7 +59,6 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
 
   return (
     <View>
-      {/* 1. Titre Principal */}
       <View style={[
         titleContainerStyles, 
         { alignSelf: getAlignSelf(titleTextStyles.textAlign) }
@@ -74,7 +67,6 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
       </View>
       <View style={{ height: 15 }} />
 
-      {/* 2. En-tête du Tableau */}
       <View 
         style={[
           styles.tableHeaderRow, 
@@ -83,7 +75,6 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
         ]} 
         fixed
       >
-        {/* Cellules en-tête avec largeurs et alignement prioritaire */}
         <View style={styles.tableHeaderCellDesc}><Text style={tableHeaderTextStyles}>Description</Text></View>
         <View style={styles.tableHeaderCellQty}><Text style={[tableHeaderTextStyles, qtyStyles.textAlign ? { textAlign: qtyStyles.textAlign } : {}]}>Quantité</Text></View>
         <View style={styles.tableHeaderCellPrice}><Text style={[tableHeaderTextStyles, priceStyles.textAlign ? { textAlign: priceStyles.textAlign } : {}]}>Prix HT Unit.</Text></View>
@@ -91,14 +82,12 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
         <View style={styles.tableHeaderCellTotal}><Text style={[tableHeaderTextStyles, totalStyles.textAlign ? { textAlign: totalStyles.textAlign } : {}]}>Total HT</Text></View>
       </View>
 
-      {/* 3. Boucle sur les Pièces */}
       {roomsWithTravaux.map((room) => {
         const travauxPiece = getTravauxForPiece(room.id, travaux);
         let pieceTotalHT = 0; 
 
         return (
           <React.Fragment key={room.id}>
-            {/* Titre de la Pièce */}
             <View style={[
               roomTitleContainerStyles,
               { alignSelf: getAlignSelf(roomTitleTextStyles.textAlign) }
@@ -107,7 +96,6 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
             </View>
             <View style={{ height: 5 }} /> 
 
-            {/* Boucle sur les Travaux */}
             {travauxPiece.map((travail, index) => {
                const qte = typeof travail.quantite === 'number' ? travail.quantite : 0;
                const fourn = typeof travail.prixFournitures === 'number' ? travail.prixFournitures : 0;
@@ -119,15 +107,12 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
 
               return (
                 <View key={travail.id || `travail-${index}`} style={styles.tableRow}> 
-                  {/* Cellule Description */}
                   <View style={styles.tableCellDesc}>
-                      {/* Structure interne description */}
                       <View style={workTypeContainerStyles}><Text style={workTypeStyles}>{`${travail.typeTravauxLabel || '?'}: ${travail.sousTypeLabel || '?'}`}</Text></View>
                       {travail.description && (<><View style={{height: 2}} /><View style={workDescContainerStyles}><Text style={workDescTextStyles}>{travail.description}</Text></View></>)}
                       {travail.personnalisation && (<><View style={{height: 2}} /><View style={workPersoContainerStyles}><Text style={[workPersoTextStyles, {fontStyle: 'italic'}]}>{travail.personnalisation}</Text></View></>)}
                       <View style={{height: 4}} /><View style={moSuppliesContainerStyles}><Text style={moSuppliesTextStyles}>{formatMOFournitures(travail)}</Text></View>
                   </View>
-                  {/* Autres Cellules */}
                   <View style={styles.tableCellQty}><Text style={qtyStyles}>{formatQuantity(qte)}</Text><Text style={qtyStyles}>{travail.unite || ''}</Text></View>
                   <View style={styles.tableCellPrice}><Text style={priceStyles}>{formatPrice(prixUnitaireHT)}</Text></View>
                   <View style={styles.tableCellVAT}><Text style={vatStyles}>{`${tvaRate}%`}</Text></View>
@@ -136,7 +121,6 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
               );
             })}
 
-            {/* Ligne Total Pièce */}
             <View 
               style={[
                 styles.tableFooterRow, 
@@ -144,22 +128,17 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
                 { backgroundColor: roomTotalContainerStyles.backgroundColor || lightBackgroundColor }
               ]}
             >
-               {/* Cellule Label Total */}
                <View style={styles.tableFooterCellLabel}> 
                  <Text style={roomTotalTextStyles}>Total HT {room.name}</Text>
                </View>
-               {/* === Cellule Valeur Total - APPLICATION DE TON IDÉE === */}
                <View style={styles.tableFooterCellTotal}>
                  <Text style={[
-                     // Applique tous les styles de la LIGNE total pièce
                      roomTotalTextStyles, 
-                     // SURCHARGE le textAlign avec celui de la COLONNE total
                      { textAlign: totalStyles.textAlign } 
                    ]}>
                    {formatPrice(pieceTotalHT)}
                  </Text>
                </View>
-               {/* =============================================== */}
             </View>
              <View style={{ height: 15 }} /> 
 
@@ -170,7 +149,6 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
   );
 };
 
-// Styles locaux pour la structure du tableau (avec les bonnes largeurs)
 const styles = StyleSheet.create({
   tableHeaderRow: {
     flexDirection: 'row',

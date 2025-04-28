@@ -1,4 +1,3 @@
-
 import { z } from 'zod';
 import { ElementSettingsSchema } from '@/features/devis/components/pdf-settings/types/elementSettings';
 import { PdfElementId } from '@/features/devis/components/pdf-settings/types/typography';
@@ -43,11 +42,13 @@ export const PdfSettingsSchema = z.object({
   margins: z.object({
     cover: z.tuple([z.number(), z.number(), z.number(), z.number()]).default([40, 40, 40, 40]),
     details: z.tuple([z.number(), z.number(), z.number(), z.number()]).default([30, 70, 30, 40]),
-    recap: z.tuple([z.number(), z.number(), z.number(), z.number()]).default([40, 40, 40, 40])
+    recap: z.tuple([z.number(), z.number(), z.number(), z.number()]).default([40, 40, 40, 40]),
+    cgv: z.tuple([z.number(), z.number(), z.number(), z.number()]).default([40, 40, 40, 40])
   }).default({
     cover: [40, 40, 40, 40],
     details: [30, 70, 30, 40],
-    recap: [40, 40, 40, 40]
+    recap: [40, 40, 40, 40],
+    cgv: [40, 40, 40, 40]
   }),
   logoSettings: z.object({
     useDefaultLogo: z.boolean().default(true),
@@ -84,7 +85,8 @@ export const PdfSettingsSchema = z.object({
   margins: {
     cover: [40, 40, 40, 40],
     details: [30, 70, 30, 40],
-    recap: [40, 40, 40, 40]
+    recap: [40, 40, 40, 40],
+    cgv: [40, 40, 40, 40]
   },
   logoSettings: {
     useDefaultLogo: true,
