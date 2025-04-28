@@ -1,3 +1,6 @@
+// src/services/pdf/react-pdf/components/ContactSection.tsx
+
+import React from 'react';
 import { View, Text, StyleSheet } from '@react-pdf/renderer';
 import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
 import { ProjectState } from '@/types';
@@ -13,38 +16,52 @@ export const ContactSection = ({ pdfSettings, projectState }: ContactSectionProp
 
   if (!company) return null;
 
-  const labelStyles = getPdfStyles(pdfSettings, 'contact_labels', { isContainer: false });
-  const valueStyles = getPdfStyles(pdfSettings, 'contact_values', { isContainer: false });
-  // Utilise 'default' pour le conteneur global de la section contact, c'est ok.
-  const containerStyles = getPdfStyles(pdfSettings, 'default', { isContainer: true });
-  const tel1 = projectState.metadata?.company?.tel1;
-  const tel2 = projectState.metadata?.company?.tel2;
-  const email = projectState.metadata?.company?.email;
+  // Récupère les styles UNE SEULE FOIS pour éviter appels répétitifs
+  const labelTextStyles = getPdfStyles(pdfSettings, 'contact_labels', { isContainer: false });
+  const valueTextStyles = getPdfStyles(pdfSettings, 'contact_values', { isContainer: false });
+  // Style pour le conteneur de chaque ligne (peut partager 'contact_values' ou avoir son ID)
+  const lineContainerStyles = getPdfStyles(pdfSettings, 'contact_values', { isContainer: true }); 
+  // Style pour le conteneur global de la section (peut utiliser 'default' ou un ID 'contact_section')
+  const sectionContainerStyles = getPdfStyles(pdfSettings, 'default', { isContainer: true }); 
 
   return (
-    <View style={[styles.container, containerStyles]}>
+    // Conteneur global de la section
+    <View style={sectionContainerStyles}> 
       {/* Ligne Tel1 */}
-      {company.tel1 && ( // Ajout d'une vérification si tel1 existe
-        <View style={styles.contactRow}>
-          <Text style={[styles.label, labelStyles]}>Tél:</Text>
-          <Text style={[styles.value, valueStyles]}>{company.tel1}</Text>
+      {company.tel1 && (
+        // Conteneur pour la ligne, applique les styles (padding, border, margin...)
+        <View style={[styles.contactRow, lineContainerStyles]}> 
+          <View style={styles.labelContainer}> {/* Conteneur pour largeur fixe label */}
+            <Text style={labelTextStyles}>Tél:</Text>
+          </View>
+          <View style={styles.valueContainer}> {/* Conteneur pour valeur flex */}
+            <Text style={valueTextStyles}>{company.tel1}</Text>
+          </View>
         </View>
       )}
 
-      {/* Ligne Tel2 - Affichée seulement si tel2 existe */}
+      {/* Ligne Tel2 */}
       {company.tel2 && (
-        <View style={styles.contactRow}>
-          {/* PAS DE LABEL ici, mais un espace réservé pour l'alignement */}
-          <Text style={[styles.label, labelStyles]}>{''}</Text>
-          <Text style={[styles.value, valueStyles]}>{company.tel2}</Text>
+        <View style={[styles.contactRow, lineContainerStyles]}>
+           <View style={styles.labelContainer}>
+             {/* Label vide mais avec style pour maintenir l'alignement */}
+             <Text style={labelTextStyles}>{''}</Text> 
+           </View>
+          <View style={styles.valueContainer}>
+            <Text style={valueTextStyles}>{company.tel2}</Text>
+          </View>
         </View>
       )}
 
       {/* Ligne Email */}
-      {company.email && ( // Ajout d'une vérification si email existe
-        <View style={styles.contactRow}>
-          <Text style={[styles.label, labelStyles]}>Mail:</Text>
-          <Text style={[styles.value, valueStyles]}>{company.email}</Text>
+      {company.email && (
+        <View style={[styles.contactRow, lineContainerStyles]}>
+           <View style={styles.labelContainer}>
+             <Text style={labelTextStyles}>Mail:</Text>
+           </View>
+          <View style={styles.valueContainer}>
+            <Text style={valueTextStyles}>{company.email}</Text>
+          </View>
         </View>
       )}
     </View>
@@ -52,21 +69,19 @@ export const ContactSection = ({ pdfSettings, projectState }: ContactSectionProp
 };
 
 const styles = StyleSheet.create({
-  container: {
-    // Le marginBottom est géré par l'espaceur dans CoverDocument
-  },
+  // container: {}, // Le style vient de sectionContainerStyles
   contactRow: {
     flexDirection: 'row',
-    marginBottom: 2 // Réduit un peu l'espace entre les lignes de contact
+    // marginBottom vient maintenant de lineContainerStyles.marginBottom
   },
-  label: {
-    width: 40,       // Largeur fixe pour aligner les valeurs
-    marginRight: 5,  // Espace entre label et valeur
-    // Note: fontWeight, fontSize, color etc. viendront de labelStyles
-    // Le textAlign appliqué par labelStyles fonctionnera à l'intérieur de cette largeur fixe.
+  labelContainer: { // Nouveau conteneur pour gérer la largeur fixe
+    width: 40,       
+    marginRight: 5,  
+    // alignItems peut être utile ici si le label est multi-ligne
+    // alignItems: 'flex-start', 
   },
-  value: {
-    flex: 1 // Prend le reste de la place
-    // Note: Les styles de texte viendront de valueStyles
-  }
+  valueContainer: { // Nouveau conteneur pour que la valeur prenne le reste
+    flex: 1 
+  },
+  // Supprimé: label, value - leurs styles sont dans les <Text>
 });
