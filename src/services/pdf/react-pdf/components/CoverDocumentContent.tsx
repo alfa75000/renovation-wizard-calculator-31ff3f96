@@ -1,11 +1,9 @@
 // src/services/pdf/react-pdf/components/CoverDocumentContent.tsx 
-// NOTE LE NOUVEAU NOM DE FICHIER ET DE COMPOSANT !
 
 import React from 'react';
-import { StyleSheet, View } from '@react-pdf/renderer'; // Plus besoin de Document, Page ici
+import { StyleSheet, View, Text } from '@react-pdf/renderer'; // Import de Text nécessaire
 import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
 import { ProjectState } from '@/types';
-// Pas besoin de convertPageMargins ici car on ne gère plus les marges de la page
 
 // Imports des composants de la page de garde
 import { HeaderSection } from './HeaderSection';
@@ -15,28 +13,24 @@ import { ContactSection } from './ContactSection';
 import { QuoteInfoSection } from './QuoteInfoSection';
 import { ClientSection } from './ClientSection';
 import { ProjectSection } from './ProjectSection';
-//import { CoverFooterSection } from './CoverFooterSection';
 
-// Renomme l'interface
 interface CoverDocumentContentProps { 
   pdfSettings: PdfSettings;
   projectState: ProjectState;
 }
 
-// Renomme le composant et utilise la nouvelle interface
 export const CoverDocumentContent = ({ pdfSettings, projectState }: CoverDocumentContentProps) => {
-  // PAS de calcul de marges ici
-
-  // Retourne directement un fragment React ou un View racine contenant toutes les sections
+  // Important : ne jamais utiliser de fragment <> </> à la racine dans React PDF
+  // Utiliser toujours un View comme composant racine
   return (
-    <> 
+    <View style={styles.container}> 
       {/* 1. HeaderSection (Logo + Infos Assurance) */}
       <HeaderSection 
         pdfSettings={pdfSettings}
         projectState={projectState}
       />
       
-      {/* ESPACE VERTICAL 1 (space_after_header) */}
+      {/* ESPACE VERTICAL 1 - Utiliser un View avec height au lieu d'espaces textuels */}
       <View style={styles.spacer} /> 
       
       {/* 2. Section Slogan */}
@@ -45,7 +39,7 @@ export const CoverDocumentContent = ({ pdfSettings, projectState }: CoverDocumen
         projectState={projectState}
       />
       
-      {/* ESPACE VERTICAL 2 (space_after_slogan) */}
+      {/* ESPACE VERTICAL 2 */}
       <View style={styles.spacer} />
       
       {/* 3. Section Coordonnées Société */}
@@ -54,7 +48,7 @@ export const CoverDocumentContent = ({ pdfSettings, projectState }: CoverDocumen
         projectState={projectState}
       />
       
-      {/* ESPACE VERTICAL 3 (space_after_address) */}
+      {/* ESPACE VERTICAL 3 */}
       <View style={styles.spacer} />
       
       {/* 4. ContactSection */}
@@ -63,7 +57,7 @@ export const CoverDocumentContent = ({ pdfSettings, projectState }: CoverDocumen
         projectState={projectState}
       />
       
-      {/* ESPACE VERTICAL 4 (space_after_contact) */}
+      {/* ESPACE VERTICAL 4 */}
       <View style={styles.spacer} />
       
       {/* 5. QuoteInfoSection */}
@@ -72,7 +66,7 @@ export const CoverDocumentContent = ({ pdfSettings, projectState }: CoverDocumen
         projectState={projectState}
       />
       
-      {/* ESPACE VERTICAL 5 (space_after_quote_info) */}
+      {/* ESPACE VERTICAL 5 */}
       <View style={styles.spacer} />
       
       {/* 6. ClientSection */}
@@ -81,7 +75,7 @@ export const CoverDocumentContent = ({ pdfSettings, projectState }: CoverDocumen
         projectState={projectState}
       />
       
-      {/* ESPACE VERTICAL 6 (space_after_client_content) */}
+      {/* ESPACE VERTICAL 6 */}
       <View style={styles.spacer} />
       
       {/* 7. ProjectSection */}
@@ -90,22 +84,23 @@ export const CoverDocumentContent = ({ pdfSettings, projectState }: CoverDocumen
         projectState={projectState}
       />
       
-      {/* Pas besoin du contentGrower ici, le footer est géré différemment */}
-      {/* L'espace avant le footer peut être dans le spacer ou dans le style du footer */}
       {/* ESPACE VERTICAL 7 (space_before_footer) */}
       <View style={styles.spacerBeforeFooter} /> 
-
-    </>
+    </View>
   );
 };
 
-// Styles locaux pour les espaces (si besoin)
+// Styles locaux pour les espaces
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column'
+  },
   spacer: {
-     height: 12 // TODO: Rendre configurable 
+     height: 12 // Hauteur fixe pour l'espacement
   },
   spacerBeforeFooter: {
-     height: 24 // TODO: Rendre configurable 
+     height: 24 // Hauteur fixe plus grande pour l'espacement avant le pied de page
   }
-  // Pas besoin de 'page' ou 'contentGrower' ici
 });
