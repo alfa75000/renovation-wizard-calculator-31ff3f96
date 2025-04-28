@@ -3,7 +3,7 @@
 
 import React from 'react';
 import { View, Text, StyleSheet } from '@react-pdf/renderer'; 
-import type { Style } from '@react-pdf/renderer';
+import type { Style } from '@react-pdf/types'; 
 import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
 import { ProjectState, Room, Travail } from '@/types'; 
 import { getPdfStyles } from '../utils/pdfStyleUtils';
