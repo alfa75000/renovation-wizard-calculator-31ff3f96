@@ -85,7 +85,7 @@ const applyElementSettingsToStyle = (
 
   // Application des propriétés de police et texte
   if (settings.fontFamily) {
-    style.fontFamily = ensureSupportedFont(settings.fontFamily);
+    style.fontFamily = settings.fontFamily;
   }
 
   if (typeof settings.fontSize === 'number') {
