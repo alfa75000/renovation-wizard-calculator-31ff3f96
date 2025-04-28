@@ -1,5 +1,6 @@
-
-import { useState, useEffect } from "react";
+//src/features/travaux/components/TypeTravauxSelect.tsx
+import React, { useState, useEffect } from "react"; // <-- AJOUTE 'React' ICI
+//import { useState, useEffect } from "react";
 import { 
   Select, 
   SelectContent, 
