@@ -19,7 +19,7 @@ export const QuoteInfoSection = ({ pdfSettings, projectState }: QuoteInfoSection
   // Récupération des données
   const quoteNumber = metadata?.devisNumber || 'Non Défini';
   const quoteDateISO = metadata?.dateDevis || new Date().toISOString();
-  const quoteValidityText = "Validité : 3 mois";
+  const quoteValidityText = "(Validité : 3 mois)";
 
   // Formatage de la date
   const formattedQuoteDate = formatDate(quoteDateISO);
@@ -57,7 +57,7 @@ export const QuoteInfoSection = ({ pdfSettings, projectState }: QuoteInfoSection
         {/* 2. Bloc Date de Devis */}
         <View style={[quoteDateContainerStyles, styles.quoteItem]}>
           <Text style={quoteDateTextStyles}>
-            Date : {formattedQuoteDate}
+            du {formattedQuoteDate}
           </Text>
         </View>
 
