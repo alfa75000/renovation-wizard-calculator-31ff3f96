@@ -71,7 +71,7 @@ export const PDF_ELEMENTS = [
   { id: 'cgv_title', name: 'Titre "CGV"', section: 'CGV' },
   { id: 'cgv_section_titles', name: 'Titres Sections CGV', section: 'CGV' },
   { id: 'cgv_content', name: 'Contenu Textuel CGV', section: 'CGV' },
-  { id: 'cgv_footer', name: 'Pied de page (CGV)', section: 'CGV' } 
+  { id: 'cgv_footer', name: 'Pied de page (CGV)', section: 'CGV' }, 
   // --- ★★★ NOUVEAUX IDs pour Espacements CGV ★★★ ---
   { id: 'space_after_cgv_title', name: 'Espace après Titre CGV', section: 'CGV Espacements' },
   { id: 'space_after_cgv_section_title', name: 'Espace après Titre Section CGV', section: 'CGV Espacements' },
