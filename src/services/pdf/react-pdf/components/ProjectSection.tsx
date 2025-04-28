@@ -97,25 +97,31 @@ export const ProjectSection = ({ pdfSettings, projectState }: ProjectSectionProp
   // === Fin Helpers ===
 
   return (
+    // Applique les styles de conteneur à la section entière
     <View style={sectionContainerStyles}>
-      {/* Titre */}
-      <View style={titleContainerStyles}><Text style={titleTextStyles}>Chantier / Travaux</Text></View>
+      {/* Titre de la Section - MODIFIÉ */}
+      <View style={titleContainerStyles}><Text style={titleTextStyles}>Site concerné / Travaux prévus</Text></View> 
+      {/* Espace après le titre */}
       <VerticalSpacer pdfSettings={pdfSettings} elementId="space_after_project_title" defaultHeight={12} />
 
-      {/* Ligne Occupant */}
-      {renderProjectLine('project_labels', 'Occupant(s):', 'project_values', occupant)}
+      {/* Ligne Occupant - MODIFIÉ */}
+      {renderProjectLine('project_labels', 'Client final / Occupant(s) :', 'project_values', occupant)} 
+      {/* Espace après Occupant */}
       <VerticalSpacer pdfSettings={pdfSettings} elementId="space_between_project_lines" defaultHeight={12} />
 
-      {/* Bloc Adresse */}
-      {renderProjectBlock('project_labels', "Adresse Chantier / d'Intervention :", 'project_values', address)}
+      {/* Ligne Adresse - MODIFIÉ */}
+      {/* Utilise renderProjectLine pour potentiellement garder sur la même ligne */}
+      {renderProjectLine('project_labels', "Adresse du site / Lieu d’intervention :", 'project_values', address)} 
+       {/* Espace après Adresse */}
       <VerticalSpacer pdfSettings={pdfSettings} elementId="space_between_project_lines" defaultHeight={12} />
 
-      {/* Bloc Description */}
-      {renderProjectBlock('project_labels', 'Descriptif:', 'project_values', description)}
-       <VerticalSpacer pdfSettings={pdfSettings} elementId="space_between_project_lines" defaultHeight={12} />
+      {/* Ligne Description - SUPPRIMÉE */}
+      {/* {renderProjectBlock('project_labels', 'Descriptif:', 'project_values', description)} */}
+      {/* <VerticalSpacer pdfSettings={pdfSettings} elementId="space_between_project_lines" defaultHeight={12} /> */}
 
-       {/* Bloc Informations Complémentaires */}
-      {renderProjectBlock('project_labels', 'Informations complémentaires:', 'project_values', infoComplementaire)}
+       {/* Bloc Informations Complémentaires - MODIFIÉ */}
+       {/* Utilise renderProjectBlock pour forcer la valeur en dessous */}
+      {renderProjectBlock('project_labels', 'Nature des travaux :', 'project_values', infoComplementaire)} 
       {/* Pas d'espaceur après le dernier bloc */}
 
     </View>
