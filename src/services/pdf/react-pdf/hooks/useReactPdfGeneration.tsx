@@ -10,6 +10,8 @@ import { toast } from 'sonner';
 import { CoverDocumentContent } from '../components/CoverDocumentContent'; 
 import { DetailsPage } from '../components/DetailsPage';
 import { RecapPage } from '../components/RecapPage';
+// Import du composant CGVPage
+import { CGVPage } from '../components/CGVPage';
 import { PageFooter } from '../components/common/PageFooter'; 
 
 import { convertPageMargins, MarginTuple } from '../../v2/utils/styleUtils'; 
@@ -88,6 +90,12 @@ export const useReactPdfGeneration = () => {
              pdfSettings={pdfSettings} 
              projectState={state} 
            />
+
+          {/* === PAGE(S) M+1... : CGV === */}
+          <CGVPage 
+            pdfSettings={pdfSettings} 
+            projectState={state}
+          />
 
         </Document>
       );
