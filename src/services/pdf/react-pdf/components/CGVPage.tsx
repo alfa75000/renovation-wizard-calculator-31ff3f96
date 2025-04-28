@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Page, StyleSheet, View } from '@react-pdf/renderer';
 import { CGVPageContent } from './CGVPageContent';
@@ -13,12 +14,14 @@ interface CGVPageProps {
 }
 
 export const CGVPage: React.FC<CGVPageProps> = ({ pdfSettings, projectState }) => {
+  // Calcul des marges pour la page
   const pageMargins: MarginTuple = convertPageMargins(
     pdfSettings?.margins?.cgv as number[] | undefined
   );
   
+  // Ajoute de l'espace en bas pour le footer fixe
   const pagePaddingBottom = pageMargins[2] + 50;
-
+  
   return (
     <Page
       size="A4"
@@ -32,16 +35,18 @@ export const CGVPage: React.FC<CGVPageProps> = ({ pdfSettings, projectState }) =
         }
       ]}
     >
+      {/* En-tête (FIXE) */}
       <PageHeader
         pdfSettings={pdfSettings}
-        metadata={projectState.metadata}
-        render={({ pageNumber, totalPages }) => `Page ${pageNumber} sur ${totalPages}`}
+        devisNumber={projectState.metadata?.devisNumber}
       />
       
+      {/* Contenu CGV */}
       <View style={styles.content}>
         <CGVPageContent pdfSettings={pdfSettings} />
       </View>
       
+      {/* Pied de page (FIXE) */}
       <PageFooter
         pdfSettings={pdfSettings}
         company={projectState.metadata?.company}
