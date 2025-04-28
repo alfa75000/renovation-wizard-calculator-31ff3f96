@@ -1,7 +1,9 @@
+
 // src/services/pdf/react-pdf/components/RecapPageContent.tsx
 
 import React from 'react';
-import { View, Text, StyleSheet, Style } from '@react-pdf/renderer'; 
+import { View, Text, StyleSheet } from '@react-pdf/renderer'; 
+import type { Style } from '@react-pdf/renderer';
 import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
 import { ProjectState, Room, Travail } from '@/types'; 
 import { getPdfStyles } from '../utils/pdfStyleUtils';
@@ -176,8 +178,6 @@ const styles = StyleSheet.create({
   leftColumn: { width: '65%', paddingRight: 15 },
   rightColumn: { width: '35%', paddingLeft: 15 },
   totalRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 },
-  // === Séparateur Supprimé ===
-  // separator: { height: 1, backgroundColor: '#e5e7eb', marginVertical: 5 },
   
   // Styles Tableau Récap par Pièce
   recapTableHeaderRow: { 

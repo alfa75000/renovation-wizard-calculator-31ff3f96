@@ -1,3 +1,4 @@
+
 // src/services/pdf/react-pdf/components/ProjectSection.tsx
 
 import React from 'react'; 
@@ -6,6 +7,7 @@ import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
 import { ProjectState } from '@/types'; 
 import { getPdfStyles } from '../utils/pdfStyleUtils';
 import { VerticalSpacer } from './common/VerticalSpacer'; // Importe l'espaceur
+import { PdfElementId } from '@/features/devis/components/pdf-settings/types/typography';
 
 interface ProjectSectionProps {
   pdfSettings: PdfSettings;

@@ -1,13 +1,14 @@
 // src/services/pdf/react-pdf/components/DetailsPageContent.tsx
 
 import React from 'react';
-import { View, Text, StyleSheet, Style } from '@react-pdf/renderer'; 
+import { View, Text, StyleSheet } from '@react-pdf/renderer'; 
+import type { Style } from '@react-pdf/renderer';
 import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
 import { ProjectState, Room, Travail } from '@/types'; 
 import { getPdfStyles } from '../utils/pdfStyleUtils';
 import { formatPrice, formatQuantity, formatMOFournitures } from '@/services/pdf/utils/formatUtils'; 
-import { PDF_TEXTS } from '@/services/pdf/constants/pdfConstants'; // Vérifie si utilisé ici, sinon supprimer
-import { VerticalSpacer } from './common/VerticalSpacer'; // Vérifie si utilisé ici, sinon supprimer
+import { PDF_TEXTS } from '@/services/pdf/constants/pdfConstants'; 
+import { VerticalSpacer } from './common/VerticalSpacer'; 
 
 // --- Logique de Calcul & Helpers ---
 const calculateTotals = (travaux: Travail[] = []) => { 
@@ -99,7 +100,6 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
         <View style={styles.tableHeaderCellQty}><Text style={[tableHeaderTextStyles, qtyStyles.textAlign ? { textAlign: qtyStyles.textAlign } : {}]}>Quantité</Text></View>
         <View style={styles.tableHeaderCellPrice}><Text style={[tableHeaderTextStyles, priceStyles.textAlign ? { textAlign: priceStyles.textAlign } : {}]}>Prix HT U</Text></View>
         {/* Supprimé : Colonne TVA */}
-        {/* <View style={styles.tableHeaderCellVAT}><Text style={[tableHeaderTextStyles, vatStyles.textAlign ? { textAlign: vatStyles.textAlign } : {}]}>TVA</Text></View> */}
         <View style={styles.tableHeaderCellTotal}><Text style={[tableHeaderTextStyles, totalStyles.textAlign ? { textAlign: totalStyles.textAlign } : {}]}>Total HT </Text></View>
       </View>
 
@@ -141,7 +141,6 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
                   <View style={styles.tableCellQty}><Text style={qtyStyles}>{formatQuantity(qte)}</Text><Text style={qtyStyles}>{travail.unite || ''}</Text></View>
                   <View style={styles.tableCellPrice}><Text style={priceStyles}>{formatPrice(prixUnitaireHT)}</Text></View>
                   {/* Supprimé : Colonne TVA */}
-                  {/* <View style={styles.tableCellVAT}><Text style={vatStyles}>{`${tvaRate}%`}</Text></View> */}
                   <View style={styles.tableCellTotal}><Text style={totalStyles}>{formatPrice(totalHT)}</Text></View>
                 </View>
               );
@@ -191,9 +190,6 @@ const styles = StyleSheet.create({
   tableHeaderCellPrice: { width: '12%', paddingHorizontal: 4, textAlign: 'center' },
   // tableHeaderCellVAT: { width: '6%', paddingHorizontal: 4, textAlign: 'center' }, // Supprimé
   tableHeaderCellTotal: { width: '13%', paddingHorizontal: 4, textAlign: 'center' }, // 70+6+12+13 = 101% -> Ajustons Desc à 69%
-  // === Largeurs Colonnes Header AJUSTÉES (69-6-12-13) ===
-  // tableHeaderCellDesc: { width: '69%', paddingHorizontal: 4 }, 
-  // tableHeaderCellTotal: { width: '13%', paddingHorizontal: 4, textAlign: 'center' }, 
 
   tableRow: {
     flexDirection: 'row',
@@ -207,9 +203,6 @@ const styles = StyleSheet.create({
   tableCellPrice: { width: '12%', paddingHorizontal: 4, textAlign: 'center'}, 
   // tableCellVAT: { width: '6%', paddingHorizontal: 4, textAlign: 'center'}, // Supprimé
   tableCellTotal: { width: '13%', paddingHorizontal: 4, textAlign: 'center'}, 
-  // === Largeurs Colonnes Cellules AJUSTÉES (69-6-12-13) ===
-   // tableCellDesc: { width: '69%', paddingHorizontal: 4 }, 
-   // tableCellTotal: { width: '13%', paddingHorizontal: 4, textAlign: 'center'}, 
 
   tableFooterRow: {
     flexDirection: 'row',

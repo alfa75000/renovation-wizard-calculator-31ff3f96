@@ -1,3 +1,4 @@
+
 // src/features/devis/components/pdf-settings/types/typography.ts
 
 // Liste des éléments du PDF qu'on peut personnaliser
@@ -24,6 +25,12 @@ export const PDF_ELEMENTS = [
   { id: 'space_after_header', name: 'Espace après En-tête (Garde)', section: 'Page de garde Espacements' },
   { id: 'space_after_slogan', name: 'Espace après Slogan (Garde)', section: 'Page de garde Espacements' },
   // ... etc pour la page de garde
+
+  // --- ESPACEMENTS Projet/Chantier ---
+  { id: 'space_after_project_title', name: 'Espace après Titre Projet', section: 'Projet Espacements' },
+  { id: 'space_between_project_lines', name: 'Espace entre Lignes Projet', section: 'Projet Espacements' },
+  { id: 'space_after_project_label', name: 'Espace après Label Projet', section: 'Projet Espacements' },
+  // --- FIN ESPACEMENTS PROJET ---
 
   // === Page de détail des travaux ===
   { id: 'detail_header', name: 'En-tête de page (Détails)', section: 'Détails des travaux' }, 
