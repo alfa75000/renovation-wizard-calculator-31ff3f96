@@ -97,10 +97,10 @@ export const DetailsPageContent = ({ pdfSettings, projectState }: DetailsPageCon
         {/* Utilise les NOUVELLES largeurs */}
         <View style={styles.tableHeaderCellDesc}><Text style={tableHeaderTextStyles}>Description</Text></View>
         <View style={styles.tableHeaderCellQty}><Text style={[tableHeaderTextStyles, qtyStyles.textAlign ? { textAlign: qtyStyles.textAlign } : {}]}>Quantité</Text></View>
-        <View style={styles.tableHeaderCellPrice}><Text style={[tableHeaderTextStyles, priceStyles.textAlign ? { textAlign: priceStyles.textAlign } : {}]}>Prix HT Unit.</Text></View>
+        <View style={styles.tableHeaderCellPrice}><Text style={[tableHeaderTextStyles, priceStyles.textAlign ? { textAlign: priceStyles.textAlign } : {}]}>Prix HT U</Text></View>
         {/* Supprimé : Colonne TVA */}
         {/* <View style={styles.tableHeaderCellVAT}><Text style={[tableHeaderTextStyles, vatStyles.textAlign ? { textAlign: vatStyles.textAlign } : {}]}>TVA</Text></View> */}
-        <View style={styles.tableHeaderCellTotal}><Text style={[tableHeaderTextStyles, totalStyles.textAlign ? { textAlign: totalStyles.textAlign } : {}]}>Total HT</Text></View>
+        <View style={styles.tableHeaderCellTotal}><Text style={[tableHeaderTextStyles, totalStyles.textAlign ? { textAlign: totalStyles.textAlign } : {}]}>Total HT </Text></View>
       </View>
 
       {/* 3. Boucle sur les Pièces */}
@@ -185,9 +185,9 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingVertical: 4, 
   },
-  // === NOUVELLES Largeurs Colonnes Header (70-6-12-13) ===
-  tableHeaderCellDesc: { width: '70%', paddingHorizontal: 4 }, 
-  tableHeaderCellQty: { width: '6%', paddingHorizontal: 4, textAlign: 'center' },
+  // === NOUVELLES Largeurs Colonnes Header  ===
+  tableHeaderCellDesc: { width: '68%', paddingHorizontal: 4 }, 
+  tableHeaderCellQty: { width: '7%', paddingHorizontal: 4, textAlign: 'center' },
   tableHeaderCellPrice: { width: '12%', paddingHorizontal: 4, textAlign: 'center' },
   // tableHeaderCellVAT: { width: '6%', paddingHorizontal: 4, textAlign: 'center' }, // Supprimé
   tableHeaderCellTotal: { width: '13%', paddingHorizontal: 4, textAlign: 'center' }, // 70+6+12+13 = 101% -> Ajustons Desc à 69%
