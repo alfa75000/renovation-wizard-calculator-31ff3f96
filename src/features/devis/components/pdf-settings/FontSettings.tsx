@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { ElementSelector } from './components/ElementSelector';
 import { ElementSettingsForm } from './components/ElementSettingsForm';
@@ -19,15 +18,15 @@ export const FontSettings: React.FC<FontSettingsProps> = ({
 }) => {
   const [selectedElement, setSelectedElement] = React.useState('');
   const [elementSettings, setElementSettings] = React.useState<ElementSettings>(defaultElementSettings);
-  const [paletteColors, setPaletteColors] = useState([
-    '#1a1f2c',
-    '#9b87f5',
-    '#7E69AB',
-    '#6E59A5',
-    '#D6BCFA'
-  ]);
+  
+  const getPaletteColors = () => [
+    pdfSettings.colors.mainText,
+    pdfSettings.colors.detailsText,
+    pdfSettings.colors.coverLines,
+    pdfSettings.colors.detailsLines,
+    pdfSettings.colors.totalBoxLines
+  ];
 
-  // Mettre à jour les paramètres affichés quand un élément est sélectionné
   useEffect(() => {
     if (selectedElement && pdfSettings?.elements) {
       const settings = getElementSettings(selectedElement);
@@ -91,17 +90,6 @@ export const FontSettings: React.FC<FontSettingsProps> = ({
     return defaultElementSettings;
   };
 
-  // Cette fonction est maintenant utilisée pour stocker une couleur dans la palette
-  // sans l'appliquer à l'élément sélectionné
-  const handleUpdatePaletteColor = (color: string) => {
-    // Note: Nous conservons simplement la couleur dans la palette mais ne l'appliquons pas à l'élément
-    setPaletteColors(prevColors => {
-      // Nous ne faisons rien ici car cette logique est maintenant gérée dans ColorPalette
-      return prevColors;
-    });
-  };
-
-  // Cette fonction est appelée quand l'utilisateur clique sur "Appliquer"
   const handleColorChange = (color: string) => {
     if (selectedElement) {
       setElementSettings(prev => ({
@@ -129,8 +117,8 @@ export const FontSettings: React.FC<FontSettingsProps> = ({
               selectedElement={PDF_ELEMENTS.find(e => e.id === selectedElement)?.name || selectedElement}
               settings={elementSettings}
               onSave={handleElementSettingsChange}
-              defaultColors={paletteColors}
-              onDefaultColorClick={handleUpdatePaletteColor}
+              defaultColors={getPaletteColors()}
+              onDefaultColorClick={handleColorChange}
             />
           </CardContent>
         </Card>

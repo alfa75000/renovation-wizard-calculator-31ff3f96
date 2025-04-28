@@ -1,4 +1,3 @@
-
 import { z } from 'zod';
 import { ElementSettingsSchema } from '@/features/devis/components/pdf-settings/types/elementSettings';
 import { PdfElementId } from '@/features/devis/components/pdf-settings/types/typography';
@@ -16,14 +15,18 @@ export const PdfSettingsSchema = z.object({
     coverLines: z.string().default('#002855'),
     detailsLines: z.string().default('#4D7C8A'),
     totalBoxLines: z.string().default('#e5e7eb'),
-    background: z.string().default('#F3F4F6')
+    background: z.string().default('#F3F4F6'),
+    background2: z.string().default('#F1F0FB'),
+    background3: z.string().default('#FEF7CD')
   }).default({
     mainText: '#333333',
     detailsText: '#4D7C8A',
     coverLines: '#002855',
     detailsLines: '#4D7C8A',
     totalBoxLines: '#e5e7eb',
-    background: '#F3F4F6'
+    background: '#F3F4F6',
+    background2: '#F1F0FB',
+    background3: '#FEF7CD'
   }),
   lineSpacing: z.object({
     coverSections: z.number().default(1.5),
@@ -71,7 +74,9 @@ export const PdfSettingsSchema = z.object({
     coverLines: '#002855',
     detailsLines: '#4D7C8A',
     totalBoxLines: '#e5e7eb',
-    background: '#F3F4F6'
+    background: '#F3F4F6',
+    background2: '#F1F0FB',
+    background3: '#FEF7CD'
   },
   lineSpacing: {
     coverSections: 1.5,

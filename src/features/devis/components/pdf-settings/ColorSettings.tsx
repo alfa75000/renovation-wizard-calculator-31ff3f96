@@ -1,4 +1,4 @@
-//src/features/devis/components/pdf-settings/ColorSettings.tsx
+
 import React from 'react';
 import { ColorPicker } from './components/ColorPicker';
 import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
@@ -8,9 +8,6 @@ interface ColorSettingsProps {
   updatePdfSettings: (newSettings: Partial<PdfSettings>) => Promise<boolean>;
 }
 
-/**
- * Composant qui gère les paramètres de couleurs du PDF
- */
 export const ColorSettings: React.FC<ColorSettingsProps> = ({ 
   pdfSettings, 
   updatePdfSettings 
@@ -55,6 +52,16 @@ export const ColorSettings: React.FC<ColorSettingsProps> = ({
         label="Couleur de fond claire"
         value={pdfSettings.colors.background}
         onChange={(value) => handleColorChange('background', value)}
+      />
+      <ColorPicker
+        label="Couleur de fond claire 2"
+        value={pdfSettings.colors.background2}
+        onChange={(value) => handleColorChange('background2', value)}
+      />
+      <ColorPicker
+        label="Couleur de fond claire 3"
+        value={pdfSettings.colors.background3}
+        onChange={(value) => handleColorChange('background3', value)}
       />
     </div>
   );
