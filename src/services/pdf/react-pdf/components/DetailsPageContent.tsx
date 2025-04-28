@@ -186,8 +186,8 @@ const styles = StyleSheet.create({
     paddingVertical: 4, 
   },
   // === NOUVELLES Largeurs Colonnes Header  ===
-  tableHeaderCellDesc: { width: '68%', paddingHorizontal: 4 }, 
-  tableHeaderCellQty: { width: '7%', paddingHorizontal: 4, textAlign: 'center' },
+  tableHeaderCellDesc: { width: '67%', paddingHorizontal: 4 }, 
+  tableHeaderCellQty: { width: '8%', paddingHorizontal: 4, textAlign: 'center' },
   tableHeaderCellPrice: { width: '12%', paddingHorizontal: 4, textAlign: 'center' },
   // tableHeaderCellVAT: { width: '6%', paddingHorizontal: 4, textAlign: 'center' }, // Supprimé
   tableHeaderCellTotal: { width: '13%', paddingHorizontal: 4, textAlign: 'center' }, // 70+6+12+13 = 101% -> Ajustons Desc à 69%
