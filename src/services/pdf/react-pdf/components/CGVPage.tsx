@@ -1,72 +1,66 @@
-// src/services/pdf/react-pdf/components/CGVPage.tsx
 
 import React from 'react';
-import { Page, StyleSheet } from '@react-pdf/renderer'; 
+import { Page, StyleSheet, View } from '@react-pdf/renderer';
+import { CGVPageContent } from './CGVPageContent';
+import { PageFooter } from './common/PageFooter';
+import { PageHeader } from './common/PageHeader';
 import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
-// Importe ProjectState seulement si PageHeader/PageFooter en ont besoin
-import { ProjectState } from '@/types'; 
-// Utilise les marges de Récap ou Cover par défaut ? Ou ajoute des marges CGV ?
-import { convertPageMargins, MarginTuple } from '../../v2/utils/styleUtils'; 
-import { CGVPageContent } from './CGVPageContent'; 
-// Réutilise les Header/Footer communs
-import { PageHeader } from './common/PageHeader'; 
-import { PageFooter } from './common/PageFooter'; 
+import { ProjectState } from '@/types';
+import { convertPageMargins, MarginTuple } from '../../v2/utils/styleUtils';
 
 interface CGVPageProps {
-  pdfSettings: PdfSettings;
-  projectState: ProjectState; // Gardé si PageHeader/Footer l'utilisent
+  pdfSettings?: PdfSettings;
+  projectState: ProjectState;
 }
 
-export const CGVPage = ({ pdfSettings, projectState }: CGVPageProps) => {
-  // Utilise les marges de Récap par défaut pour les CGV, ou ajoute pdfSettings.margins.cgv
-  const cgvMarginsInput = pdfSettings.margins?.recap || pdfSettings.margins?.cover;
-  const margins: MarginTuple = convertPageMargins(
-    cgvMarginsInput as number[] | undefined
+export const CGVPage: React.FC<CGVPageProps> = ({ pdfSettings, projectState }) => {
+  // Calcul des marges pour la page
+  const pageMargins: MarginTuple = convertPageMargins(
+    pdfSettings?.margins?.cgv as number[] | undefined
   );
-
-  const pagePaddingTop = margins[0] + 50; 
-  const pagePaddingBottom = margins[2] + 50; 
-
+  
+  // Ajoute de l'espace en bas pour le footer fixe
+  const pagePaddingBottom = pageMargins[2] + 50;
+  
   return (
-      <Page 
-        size="A4" 
-        style={[
-          styles.pageBase, 
-          { 
-            paddingTop: pagePaddingTop,      
-            paddingRight: margins[1],     
-            paddingBottom: pagePaddingBottom, 
-            paddingLeft: margins[3]      
-          }
-        ]}
-      >
-        {/* En-tête fixe commun */}
-        <PageHeader 
-           pdfSettings={pdfSettings} 
-           metadata={projectState.metadata}
-           render={({ pageNumber, totalPages }) => ( 
-              `DEVIS N° ${projectState.metadata?.devisNumber || 'XXXX-XX'} - page ${pageNumber}/${totalPages}`
-           )} 
-         />
-        
-        {/* Contenu principal des CGV */}
-        <CGVPageContent 
-          pdfSettings={pdfSettings}
-          // projectState n'est probablement pas nécessaire ici
-        />
-
-        {/* Pied de page fixe commun (utilise l'ID 'cgv_footer' ou 'cover_footer') */}
-        <PageFooter 
-          pdfSettings={pdfSettings}
-          company={projectState.metadata?.company} 
-        />
-      </Page>
+    <Page
+      size="A4"
+      style={[
+        styles.page,
+        {
+          paddingTop: pageMargins[0],
+          paddingRight: pageMargins[1],
+          paddingBottom: pagePaddingBottom,
+          paddingLeft: pageMargins[3]
+        }
+      ]}
+    >
+      {/* En-tête (FIXE) */}
+      <PageHeader
+        pdfSettings={pdfSettings}
+        devisNumber={projectState.metadata?.devisNumber}
+      />
+      
+      {/* Contenu CGV */}
+      <View style={styles.content}>
+        <CGVPageContent pdfSettings={pdfSettings} />
+      </View>
+      
+      {/* Pied de page (FIXE) */}
+      <PageFooter
+        pdfSettings={pdfSettings}
+        company={projectState.metadata?.company}
+      />
+    </Page>
   );
 };
 
 const styles = StyleSheet.create({
-  pageBase: {
-    backgroundColor: '#ffffff', 
-    fontFamily: 'Helvetica',   
+  page: {
+    backgroundColor: '#ffffff',
+    fontFamily: 'Helvetica',
+  },
+  content: {
+    flex: 1,
   }
 });

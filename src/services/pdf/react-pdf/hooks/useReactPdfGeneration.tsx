@@ -1,3 +1,4 @@
+
 // src/services/pdf/react-pdf/hooks/useReactPdfGeneration.tsx
 
 import React from 'react';
@@ -82,6 +83,7 @@ export const useReactPdfGeneration = () => {
              <PageFooter 
                pdfSettings={pdfSettings} 
                company={state.metadata.company}
+               // Supprimé la prop 'style' qui causait l'erreur TypeScript
              />
           </Page>
 
@@ -103,7 +105,7 @@ export const useReactPdfGeneration = () => {
           {/* CGVPage gère sa propre Page, Header, Footer fixes et marges */}
            <CGVPage 
               pdfSettings={pdfSettings} 
-              projectState={state} // Passe projectState si CGVPage utilise Header/Footer
+              projectState={state} 
            /> 
           {/* ========================== */}
 

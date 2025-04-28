@@ -1,41 +1,57 @@
-//Nouveau Fichier : src/services/pdf/react-pdf/components/common/PageFooter.tsx
-import React from 'react';
-import { View, Text, StyleSheet } from '@react-pdf/renderer';
-import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
-import { ProjectState } from '@/types'; // Pour le type CompanyData
-import { getPdfStyles } from '../../utils/pdfStyleUtils';
 
-interface PageFooterProps {
-  pdfSettings: PdfSettings;
-  company: ProjectState['metadata']['company']; // Passe directement l'objet company
+import React from 'react';
+import { Text, View, StyleSheet } from '@react-pdf/renderer';
+import { CompanyData } from '@/types';
+import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
+
+export interface CoverFooterSectionProps {
+  pdfSettings?: PdfSettings;
+  company?: CompanyData | null;
 }
 
-export const PageFooter = ({ pdfSettings, company }: PageFooterProps) => {
-   const footerTextStyles = getPdfStyles(pdfSettings, 'cover_footer', { isContainer: false });
-   const footerContainerStyles = getPdfStyles(pdfSettings, 'cover_footer', { isContainer: true });
+export const PageFooter: React.FC<CoverFooterSectionProps> = ({ pdfSettings, company }) => {
+  // S'assurer qu'il n'y a pas de texte en dehors des composants Text
+  if (!company) {
+    return <View style={styles.footer}></View>;
+  }
 
-   if (!company) return null;
-
-   // Utilise "SASU" par défaut si pas de type défini, ou supprime si non pertinent
-   const companyType = 'SAS'; // À remplacer par company.legal_form si ça existe
-   const legalInfo = `${company.name} ${companyType} au capital de ${company.capital_social || '10 000'} - ${company.address || ''} ${company.postal_code || ''} ${company.city || ''} - SIRET : ${company.siret || ''} - Code APE : ${company.code_ape || ''} - N° TVA Intracommunautaire : ${company.tva_intracom || ''}`;
+  const companyName = company?.name || '';
+  const capitalSocial = company?.capital_social || '';
+  const address = company?.address || '';
+  const postalCode = company?.postal_code || '';
+  const city = company?.city || '';
+  const siret = company?.siret || '';
+  const codeApe = company?.code_ape || '';
+  const tvaIntracom = company?.tva_intracom || '';
 
   return (
-    <View 
-      style={[styles.footerContainer, footerContainerStyles]} 
-      fixed // Reste fixe sur chaque page
-    >
-      <Text style={footerTextStyles}>{legalInfo}</Text>
+    <View style={styles.footer} fixed>
+      <Text style={styles.footerText}>
+        {companyName && `${companyName} - `}
+        {capitalSocial && `SASU au Capital de ${capitalSocial}€ - `}
+        {`${address} ${postalCode} ${city} - `}
+        {siret && `Siret : ${siret} - `}
+        {codeApe && `Code APE : ${codeApe} - `}
+        {tvaIntracom && `N° TVA Intracommunautaire : ${tvaIntracom}`}
+      </Text>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-   footerContainer: {
+  footer: {
     position: 'absolute',
-    bottom: 20, // Ajuste si besoin
-    left: 40,  // Doit correspondre aux marges de page
-    right: 40, // Doit correspondre aux marges de page
+    bottom: 20,
+    left: 0,
+    right: 0,
     textAlign: 'center',
-   }
+    marginTop: 15,
+    paddingTop: 5,
+    paddingHorizontal: 40
+  },
+  footerText: {
+    fontSize: 7,
+    color: '#1a1f2c',
+    textAlign: 'center',
+  }
 });
