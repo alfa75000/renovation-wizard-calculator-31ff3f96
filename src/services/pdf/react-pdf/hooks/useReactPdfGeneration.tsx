@@ -2,24 +2,16 @@
 
 import React from 'react';
 import { useState } from 'react';
-// Importe les composants nécessaires de react-pdf
-import { pdf, Document, Page, StyleSheet, View } from '@react-pdf/renderer'; 
+import { pdf, Document, Page, StyleSheet, View, Text } from '@react-pdf/renderer'; 
 import { useProject } from '@/contexts/ProjectContext';
 import { usePdfSettings } from '@/services/pdf/hooks/usePdfSettings';
 import { toast } from 'sonner';
 
-// Importe le CONTENU de la page de garde
 import { CoverDocumentContent } from '../components/CoverDocumentContent'; 
-// Importe les COMPOSANTS DE PAGE complets pour les autres sections
 import { DetailsPage } from '../components/DetailsPage';
 import { RecapPage } from '../components/RecapPage';
-// === AJOUT : Import de la page CGV ===
-import { CGVPage } from '../components/CGVPage'; 
-// ====================================
-// Importe le Footer commun pour la page de garde aussi
 import { PageFooter } from '../components/common/PageFooter'; 
 
-// Importe l'utilitaire de marges
 import { convertPageMargins, MarginTuple } from '../../v2/utils/styleUtils'; 
 
 export const useReactPdfGeneration = () => {
@@ -41,15 +33,14 @@ export const useReactPdfGeneration = () => {
       console.log("Génération PDF avec settings:", pdfSettings);
       console.log("Et state:", state);
 
-      // --- Calcul des marges pour la page de garde ---
       const coverMargins: MarginTuple = convertPageMargins(
          pdfSettings.margins?.cover as number[] | undefined
       );
-      // Ajoute de l'espace en bas pour le footer fixe (ajuste 50 si besoin)
-      const coverPagePaddingBottom = coverMargins[2] + 50; 
-      // --- Fin calcul marges ---
+      
+      // Utilisez la même approche que DetailsPage.tsx - ajout d'espace fixe pour le footer
+      const footerSpace = 50; // Le même que dans DetailsPage.tsx
+      const pagePaddingBottom = coverMargins[2] + footerSpace;
 
-      // Structure du Document PDF complet
       const MyPdfDocument = (
         <Document 
           title={`Devis ${state.metadata.devisNumber || 'Nouveau'}`} 
@@ -62,23 +53,24 @@ export const useReactPdfGeneration = () => {
           <Page 
             size="A4" 
             style={[
-              styles.pageBase, // Style de base (fond, police par défaut)
-              { // Marges / Paddings spécifiques à la page de garde
+              styles.page, 
+              { 
                 paddingTop: coverMargins[0],
                 paddingRight: coverMargins[1],
-                paddingBottom: coverPagePaddingBottom, // Espace pour le footer fixe
+                paddingBottom: pagePaddingBottom, // Même approche que DetailsPage.tsx
                 paddingLeft: coverMargins[3]
               }
             ]}
            >
-             {/* Contenu */}
-             <CoverDocumentContent 
-                pdfSettings={pdfSettings} 
-                projectState={state} 
-             />
+             {/* Contenu principal - IMPORTANT : Enveloppé dans une View pour éviter les espaces textuels */}
+             <View style={styles.contentWrapper}>
+               <CoverDocumentContent 
+                  pdfSettings={pdfSettings} 
+                  projectState={state} 
+               />
+             </View>
              
-             {/* Footer commun (FIXE) pour la page de garde */}
-             {/* Note: La prop 'render' pour la pagination n'est pas utile ici car c'est toujours la page 1 */}
+             {/* Footer - utiliser le même PageFooter que les autres pages */}
              <PageFooter 
                pdfSettings={pdfSettings} 
                company={state.metadata.company}
@@ -86,39 +78,28 @@ export const useReactPdfGeneration = () => {
           </Page>
 
           {/* === PAGE(S) 2...N : Détails === */}
-          {/* DetailsPage gère sa propre Page, Header, Footer fixes et marges */}
           <DetailsPage 
              pdfSettings={pdfSettings} 
              projectState={state} 
           />
            
           {/* === PAGE(S) N+1...M : Récap === */}
-          {/* RecapPage gère sa propre Page, Header, Footer fixes et marges */}
            <RecapPage 
              pdfSettings={pdfSettings} 
              projectState={state} 
            />
 
-          {/* === PAGE(S) M+1... : CGV === */}
-          {/* CGVPage gère sa propre Page, Header, Footer fixes et marges */}
-           <CGVPage 
-              pdfSettings={pdfSettings} 
-              projectState={state} // Passe projectState si CGVPage utilise Header/Footer
-           /> 
-          {/* ========================== */}
-
         </Document>
       );
 
-       // --- Génération et ouverture ---
-       const blob = await pdf(MyPdfDocument).toBlob();
-       const url = URL.createObjectURL(blob);
-       window.open(url, '_blank'); 
-       toast.success('PDF généré avec succès', { id: 'pdf-gen' });
-       return true;
+      // Génération du blob
+      const blob = await pdf(MyPdfDocument).toBlob();
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank'); 
+      toast.success('PDF généré avec succès', { id: 'pdf-gen' });
+      return true;
 
     } catch (error) {
-       // --- Gestion Erreur ---
        console.error('Erreur lors de la génération du PDF:', error);
        const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
        toast.error(`Erreur PDF: ${errorMessage}`, { id: 'pdf-gen' });
@@ -134,13 +115,15 @@ export const useReactPdfGeneration = () => {
   };
 };
 
-// Styles locaux MINIMAUX pour le hook (juste le style de base de la page de garde)
+// Styles simplifiés
 const styles = StyleSheet.create({
-  pageBase: {
+  page: {
     backgroundColor: '#ffffff',
-    fontFamily: 'Helvetica', 
-    // Pas besoin de display:flex ici car le footer est maintenant un composant fixe
-    // importé directement dans la page de garde (comme dans DetailsPage)
+    fontFamily: 'Helvetica'
   },
-  // contentGrower n'est plus nécessaire ici car PageFooter est fixe
+  contentWrapper: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column'
+  }
 });
