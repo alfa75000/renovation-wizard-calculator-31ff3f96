@@ -1,10 +1,11 @@
 // src/services/pdf/react-pdf/components/ProjectSection.tsx
 
-import React from 'react'; // Import React pour JSX
+import React from 'react'; 
 import { View, Text, StyleSheet } from '@react-pdf/renderer';
 import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
-import { ProjectState } from '@/types'; // Assure-toi que ProjectState et ProjectMetadata sont bien définis ici
+import { ProjectState } from '@/types'; 
 import { getPdfStyles } from '../utils/pdfStyleUtils';
+import { VerticalSpacer } from './common/VerticalSpacer'; // Importe l'espaceur
 
 interface ProjectSectionProps {
   pdfSettings: PdfSettings;
@@ -12,102 +13,124 @@ interface ProjectSectionProps {
 }
 
 export const ProjectSection = ({ pdfSettings, projectState }: ProjectSectionProps) => {
-  // Accède aux métadonnées où se trouvent les infos projet
   const metadata = projectState.metadata;
 
-  // Récupération des styles dynamiques via l'utilitaire
+  // Styles
   const titleContainerStyles = getPdfStyles(pdfSettings, 'project_title', { isContainer: true });
   const titleTextStyles = getPdfStyles(pdfSettings, 'project_title', { isContainer: false });
   const labelTextStyles = getPdfStyles(pdfSettings, 'project_labels', { isContainer: false });
   const valueTextStyles = getPdfStyles(pdfSettings, 'project_values', { isContainer: false });
-  // On peut styler le conteneur global de la section si on a un ID 'project_section' ou utiliser 'default'
+  // Styles pour les CONTENEURS des lignes label/valeur (peut utiliser project_values ou un ID dédié)
+  const lineContainerStyles = getPdfStyles(pdfSettings, 'project_values', { isContainer: true }); 
   const sectionContainerStyles = getPdfStyles(pdfSettings, 'default', { isContainer: true });
 
-  // Récupération des données projet avec les bons chemins
-  const occupant = metadata?.occupant || ''; // Utilise chaîne vide si null/undefined
+  // Données
+  const occupant = metadata?.occupant || ''; 
   const address = metadata?.adresseChantier || '';
   const description = metadata?.descriptionProjet || '';
   const infoComplementaire = metadata?.infoComplementaire || '';
 
-  // Helper pour afficher une ligne Label/Valeur uniquement si la valeur existe
-  const renderProjectLine = (labelId: string, labelText: string, valueId: string, valueText: string | undefined | null, addSpacingAfter = true) => {
-    if (!valueText) return null; // N'affiche rien si la valeur est vide
+  // === Helper Refactorisé pour retourner un <View> stylé ===
+  const renderProjectLine = (
+      labelId: PdfElementId, 
+      labelText: string, 
+      valueId: PdfElementId, 
+      valueText: string | undefined | null,
+      lineId: PdfElementId = valueId // ID pour le conteneur de la ligne entière
+  ) => {
+    if (!valueText) return null; 
+
+    const lineContainerStyle = getPdfStyles(pdfSettings, lineId, {isContainer: true});
+    const labelStyle = getPdfStyles(pdfSettings, labelId, {isContainer: false});
+    const valueStyle = getPdfStyles(pdfSettings, valueId, {isContainer: false});
 
     return (
-      <>
-        <View style={styles.lineWrapper}>
-           {/* Optionnel: Conteneur pour le label si on veut lui appliquer des styles de conteneur */}
-           {/* <View style={getPdfStyles(pdfSettings, labelId, { isContainer: true })}> */}
-              <Text style={[labelTextStyles, styles.label]}>{labelText}</Text>
-           {/* </View> */}
-           {/* Optionnel: Conteneur pour la valeur */}
-           {/* <View style={getPdfStyles(pdfSettings, valueId, { isContainer: true })}> */}
-             <Text style={valueTextStyles}>{valueText}</Text>
-           {/* </View> */}
-        </View>
-        {addSpacingAfter && <View style={{ height: 12 /* TODO: Rendre configurable (space_between_project_lines) */ }} />}
-      </>
+      // Conteneur principal de la ligne (applique padding/margin/border)
+      <View style={[styles.lineWrapper, lineContainerStyle]}> 
+         {/* Conteneur pour label (pour style local si besoin) */}
+         <View style={styles.labelContainer}> 
+            <Text style={labelStyle}>{labelText}</Text>
+         </View>
+         {/* Conteneur pour valeur */}
+         <View style={styles.valueContainer}> 
+           <Text style={valueStyle}>{valueText}</Text>
+         </View>
+      </View>
     );
   }
 
-  // Helper pour afficher Label puis Valeur sur ligne suivante
-   const renderProjectBlock = (labelId: string, labelText: string, valueId: string, valueText: string | undefined | null, addSpacingAfter = true) => {
+  // === Helper Refactorisé pour Label puis Valeur ===
+   const renderProjectBlock = (
+      labelId: PdfElementId, 
+      labelText: string, 
+      valueId: PdfElementId, 
+      valueText: string | undefined | null,
+      labelLineId: PdfElementId = labelId, // ID conteneur ligne label
+      valueLineId: PdfElementId = valueId  // ID conteneur ligne valeur
+   ) => {
     if (!valueText) return null;
+
+    const labelContainerStyle = getPdfStyles(pdfSettings, labelLineId, {isContainer: true});
+    const labelStyle = getPdfStyles(pdfSettings, labelId, {isContainer: false});
+    const valueContainerStyle = getPdfStyles(pdfSettings, valueLineId, {isContainer: true});
+    const valueStyle = getPdfStyles(pdfSettings, valueId, {isContainer: false});
 
     return (
        <>
-        <View style={styles.lineWrapper}>
-           <Text style={[labelTextStyles, styles.label]}>{labelText}</Text>
+        {/* Conteneur Ligne Label */}
+        <View style={[styles.lineWrapper, labelContainerStyle]}>
+           <Text style={labelStyle}>{labelText}</Text>
         </View>
-        <View style={{ height: 6 /* TODO: Configurable (space_after_project_label) */ }} />
-        <View style={styles.lineWrapper}>
-           <Text style={valueTextStyles}>{valueText}</Text>
+        
+        {/* Espaceur configurable */}
+        <VerticalSpacer pdfSettings={pdfSettings} elementId="space_after_project_label" defaultHeight={6} /> 
+        
+        {/* Conteneur Ligne Valeur */}
+        <View style={[styles.lineWrapper, valueContainerStyle]}>
+           <Text style={valueStyle}>{valueText}</Text>
         </View>
-         {addSpacingAfter && <View style={{ height: 12 /* TODO: Configurable (space_after_project_value) */ }} />}
       </>
     );
    }
-
+  // === Fin Helpers ===
 
   return (
-    // Applique les styles de conteneur à la section entière
     <View style={sectionContainerStyles}>
-      {/* Titre de la Section */}
-      <View style={titleContainerStyles}>
-        <Text style={titleTextStyles}>Chantier / Travaux</Text>
-      </View>
-
-      {/* Espace après le titre */}
-      <View style={{ height: 12 /* TODO: Rendre configurable (space_after_project_title) */ }} />
+      {/* Titre */}
+      <View style={titleContainerStyles}><Text style={titleTextStyles}>Chantier / Travaux</Text></View>
+      <VerticalSpacer pdfSettings={pdfSettings} elementId="space_after_project_title" defaultHeight={12} />
 
       {/* Ligne Occupant */}
-      {renderProjectLine('project_labels', 'Occupant(s):', 'project_values', occupant, true)}
+      {renderProjectLine('project_labels', 'Occupant(s):', 'project_values', occupant)}
+      <VerticalSpacer pdfSettings={pdfSettings} elementId="space_between_project_lines" defaultHeight={12} />
 
-      {/* Ligne Adresse */}
-      {renderProjectBlock('project_labels', "Adresse Chantier / d'Intervention :", 'project_values', address, true)}
+      {/* Bloc Adresse */}
+      {renderProjectBlock('project_labels', "Adresse Chantier / d'Intervention :", 'project_values', address)}
+      <VerticalSpacer pdfSettings={pdfSettings} elementId="space_between_project_lines" defaultHeight={12} />
 
-      {/* Ligne Description */}
-      {renderProjectBlock('project_labels', 'Descriptif:', 'project_values', description, true)}
+      {/* Bloc Description */}
+      {renderProjectBlock('project_labels', 'Descriptif:', 'project_values', description)}
+       <VerticalSpacer pdfSettings={pdfSettings} elementId="space_between_project_lines" defaultHeight={12} />
 
-       {/* Ligne Informations Complémentaires */}
-      {renderProjectBlock('project_labels', 'Informations complémentaires:', 'project_values', infoComplementaire, false /* Pas d'espace après le dernier */)}
+       {/* Bloc Informations Complémentaires */}
+      {renderProjectBlock('project_labels', 'Informations complémentaires:', 'project_values', infoComplementaire)}
+      {/* Pas d'espaceur après le dernier bloc */}
 
     </View>
   );
 };
 
-// Styles locaux UNIQUEMENT pour le layout, pas pour la déco (qui vient de getPdfStyles)
+// Styles locaux pour layout
 const styles = StyleSheet.create({
-  lineWrapper: { // Pour aligner label et valeur sur la même ligne si besoin, ou juste pour le groupement
+  lineWrapper: { // Style pour chaque ligne (label+valeur ou label seul ou valeur seule)
     flexDirection: 'row',
-    flexWrap: 'wrap' // Permet au texte de passer à la ligne si trop long
+    flexWrap: 'wrap' 
   },
-  label: {
-     // On pourrait mettre un marginRight ici si on veut un espace fixe après le label
-     marginRight: 5,
-     // Le fontWeight vient de labelTextStyles maintenant
+  labelContainer: { // Conteneur du label dans renderProjectLine
+     // Pas de style spécifique ici, le style vient du Text et du parent lineWrapper
+     marginRight: 5, // Garde l'espace après le label
+  },
+  valueContainer: { // Conteneur de la valeur dans renderProjectLine
+      flex: 1, // Prend l'espace restant
   }
-  // value: {} // Le style de value vient entièrement de valueTextStyles
-  // title: {} // Le style de title vient entièrement de titleTextStyles
-  // container: {} // Le style du container vient de sectionContainerStyles
 });
