@@ -1,9 +1,9 @@
-//src/services/pdf/utils/fontUtils.ts
+
 import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
 
 // Only list fonts that are properly configured
-export const AVAILABLE_FONTS = ['Roboto', 'Helvetica', 'Courier', 'ModernSans'];
+export const AVAILABLE_FONTS = ['Roboto', 'Helvetica', 'Courier'];
 
 /**
  * Configure pdfMake with the default fonts
