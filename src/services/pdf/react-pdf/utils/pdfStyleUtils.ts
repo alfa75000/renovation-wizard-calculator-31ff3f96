@@ -1,4 +1,3 @@
-//src/services/pdf/react-pdf/utils/pdfStyleUtils.ts
 import { Style } from '@react-pdf/types';
 import { PdfSettings } from '@/services/pdf/config/pdfSettingsTypes';
 import { ElementSettings } from '@/features/devis/components/pdf-settings/types/elementSettings';
