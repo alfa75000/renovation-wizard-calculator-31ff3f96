@@ -1,563 +1,649 @@
 
-# Documentation Exhaustive - Application Devis
-
-## Table des matières
-
-1. [Vue d'ensemble du projet](#1-vue-densemble-du-projet)
-2. [Arborescence du projet](#2-arborescence-du-projet)
-3. [Interface Utilisateur (UI)](#3-interface-utilisateur-ui)
-   - [Pages et routes](#31-pages-et-routes)
-   - [Composants UI](#32-composants-ui)
-4. [Logique métier et Gestion d'État](#4-logique-métier-et-gestion-détat)
-   - [Contextes React](#41-contextes-react)
-   - [Reducers](#42-reducers)
-   - [Hooks personnalisés](#43-hooks-personnalisés)
-5. [Services et Accès aux Données](#5-services-et-accès-aux-données)
-   - [Structure des tables Supabase](#51-structure-des-tables-supabase)
-   - [Services d'accès aux données](#52-services-daccès-aux-données)
-6. [Flux de données spécifiques](#6-flux-de-données-spécifiques)
-   - [Sauvegarde ("Enregistrer")](#61-sauvegarde-enregistrer)
-   - [Sauvegarde sous ("Enregistrer Sous")](#62-sauvegarde-sous-enregistrer-sous)
-   - [Chargement (loadProject)](#63-chargement-loadproject)
-   - [Création nouveau (createNewProject)](#64-création-nouveau-createnewproject)
-7. [Système de génération PDF](#7-système-de-génération-pdf)
-   - [Migration vers @react-pdf/renderer](#71-migration-vers-react-pdfrenderer)
-   - [Composants PDF](#72-composants-pdf)
-   - [Utilitaires et styles](#73-utilitaires-et-styles)
-8. [Système de paramètres PDF](#8-système-de-paramètres-pdf)
-   - [Chargement et sauvegarde des paramètres](#81-chargement-et-sauvegarde-des-paramètres)
-   - [Composants d'édition des paramètres](#82-composants-dédition-des-paramètres)
-
-## 1. Vue d'ensemble du projet
-
-L'application "Devis" est une application web développée en React/TypeScript/Vite avec Supabase comme backend. Elle permet la création et la gestion de devis pour des travaux de bâtiment. L'application offre des fonctionnalités complètes pour gérer les projets, les pièces d'un logement, les travaux à effectuer, et génère des documents PDF professionnels pour les devis.
-
-Le projet est actuellement en phase de migration de la génération PDF depuis une ancienne méthode (probablement pdfMake) vers `@react-pdf/renderer`.
-
-### Technologies principales utilisées :
-- **Frontend** : React, TypeScript, Vite
-- **État** : Contextes React, useReducer
-- **UI** : Tailwind CSS, Shadcn/ui
-- **Backend/Base de données** : Supabase
-- **Génération de PDF** : @react-pdf/renderer
-- **Requêtes API** : TanStack Query (anciennement React Query)
-- **Navigation** : React Router
-
-## 2. Arborescence du projet
-
-Voici l'arborescence principale du projet (excluant node_modules, .git, et fichiers de configuration standard) :
-
-```
-src/
-├── App.tsx                    # Point d'entrée principal de l'application
-├── components/                # Composants UI réutilisables
-│   ├── Layout.tsx             # Structure globale des pages
-│   ├── ui/                    # Composants UI de base (shadcn)
-├── contexts/                  # Contextes React pour la gestion d'état globale
-│   ├── ProjectContext.tsx     # Contexte principal du projet
-│   ├── TravauxTypesContext.tsx # Types de travaux disponibles
-│   └── ...
-├── features/                  # Organisation par fonctionnalité
-│   ├── chantier/              # Gestion des projets/chantiers
-│   ├── devis/                 # Génération et configuration des devis
-│   │   └── components/
-│   │       └── pdf-settings/  # Composants de configuration PDF
-│   ├── property/              # Gestion des propriétés/biens
-│   ├── recap/                 # Récapitulatif des travaux
-│   └── travaux/               # Gestion des travaux
-├── hooks/                     # Hooks personnalisés
-├── integrations/              # Intégrations externes
-│   └── supabase/              # Client et types Supabase
-├── pages/                     # Pages de l'application
-│   ├── EditionDevis.tsx       # Page d'édition du devis
-│   ├── Recapitulatif.tsx      # Page de récapitulatif
-│   └── ...
-└── services/                  # Services et logique métier
-    ├── pdf/                   # Services liés à la génération de PDF
-    │   ├── config/            # Configuration du PDF
-    │   ├── constants/         # Constantes pour le PDF
-    │   ├── generators/        # Générateurs de contenu PDF
-    │   ├── hooks/             # Hooks liés au PDF
-    │   ├── react-pdf/         # Composants spécifiques React-PDF
-    │   ├── services/          # Services de génération PDF
-    │   └── utils/             # Utilitaires pour le PDF
-    └── ...
-```
-
-## 3. Interface Utilisateur (UI)
-
-### 3.1 Pages et routes
-
-L'application comporte plusieurs pages principales correspondant aux différentes étapes de création d'un devis :
-
-1. **InfosChantier** (`/infos-chantier`) : Saisie des informations générales du projet et du client.
-2. **Travaux** (`/travaux`) : Ajout et configuration des travaux à réaliser pour chaque pièce.
-3. **Recapitulatif** (`/recapitulatif`) : Vue d'ensemble des travaux avec totaux.
-4. **EditionDevis** (`/edition-devis`) : Configuration de l'apparence du devis PDF.
-5. **Parametres** (`/parametres`) : Paramètres généraux de l'application.
-6. **AdminTravaux** (`/admin/travaux`) : Administration des types de travaux (section admin).
-
-#### Détail de la page EditionDevis (`src/pages/EditionDevis.tsx`) :
-
-Ce fichier définit la page d'édition du devis avec:
-- Un état local `activeTab` pour gérer la navigation entre les onglets
-- Un bouton de génération de PDF qui utilise le hook `useReactPdfGeneration`
-- Deux onglets principaux : 
-  - "Éléments à imprimer" (`PrintableFieldsForm`)
-  - "Paramètres d'édition PDF" (`PdfSettingsForm`)
-
-Le composant utilise `QueryClientProvider` pour gérer les requêtes API. Il affiche le titre du projet en cours d'édition, récupéré depuis l'état global via `useProject`.
-
-#### Détail de la page Recapitulatif (`src/pages/Recapitulatif.tsx`) :
-
-Ce fichier définit la page de récapitulatif du devis avec:
-- Un bouton de retour aux travaux
-- Des boutons pour éditer et imprimer le devis
-- Le composant `PropertyInfoCard` pour afficher les informations du bien
-- Le composant `TravauxRecapContent` pour afficher le récapitulatif des travaux
-
-La fonction `handlePrintDevis` utilise `generateDetailsPDF` pour créer un PDF détaillé du devis, en utilisant les paramètres PDF récupérés via `usePdfSettings`.
-
-### 3.2 Composants UI
-
-#### Composants principaux :
-
-1. **PdfSettingsForm** : Formulaire de configuration des paramètres du PDF.
-2. **FontSettings** : Configuration des polices et styles de texte pour le PDF.
-3. **ColorSettings** : Configuration des couleurs utilisées dans le PDF.
-4. **ElementSelector** : Sélection des éléments à styliser dans le PDF.
-5. **ElementSettingsForm** : Formulaire d'édition des styles pour un élément sélectionné.
-
-#### Analyse détaillée du composant `FontSettings` (`src/features/devis/components/pdf-settings/FontSettings.tsx`) :
-
-Le composant `FontSettings` permet de personnaliser les styles de texte pour différents éléments du PDF :
-
-- **Props** :
-  - `pdfSettings: PdfSettings` : Les paramètres PDF actuels
-  - `updatePdfSettings: (newSettings: Partial<PdfSettings>) => Promise<boolean>` : Fonction pour mettre à jour les paramètres
-
-- **États locaux** :
-  - `selectedElement: string` : L'élément actuellement sélectionné pour édition
-  - `elementSettings: ElementSettings` : Les paramètres de style de l'élément sélectionné
-
-- **Fonctions** :
-  - `getPaletteColors()` : Récupère les couleurs principales depuis les paramètres PDF
-  - `getElementSettings(elementId)` : Récupère les paramètres de style pour un élément donné
-  - `handleElementSettingsChange(newSettings)` : Met à jour les paramètres d'un élément
-  - `handleColorChange(color)` : Met à jour la couleur de l'élément sélectionné
-
-Le composant utilise `useEffect` pour charger les paramètres de l'élément sélectionné lorsque celui-ci change. Il permet de personnaliser chaque élément typographique du PDF en conservant les styles dans l'objet `elements` des paramètres PDF.
-
-#### Analyse du composant `ColorSettings` (`src/features/devis/components/pdf-settings/ColorSettings.tsx`) :
-
-Le composant `ColorSettings` permet de personnaliser les couleurs globales du PDF :
-
-- **Props** :
-  - `pdfSettings: PdfSettings` : Les paramètres PDF actuels
-  - `updatePdfSettings: (newSettings: Partial<PdfSettings>) => Promise<boolean>` : Fonction pour mettre à jour les paramètres
-
-- **Fonctions** :
-  - `handleColorChange(key, value)` : Met à jour une couleur spécifique dans les paramètres
-
-Le composant affiche une grille de composants `ColorPicker` pour chaque couleur configurable du PDF :
-- Couleur des textes généraux (`mainText`)
-- Couleur des textes MO/TVA/Détails (`detailsText`)
-- Couleur des traits page de garde (`coverLines`)
-- Couleur des traits pages détails/récap (`detailsLines`)
-- Couleur des cadres Total TTC (`totalBoxLines`)
-- Couleur de fond claire (`background`)
-- Couleur de fond claire 2 (`background2`)
-- Couleur de fond claire 3 (`background3`)
-
-## 4. Logique métier et Gestion d'État
-
-### 4.1 Contextes React
-
-#### ProjectContext (`src/contexts/ProjectContext.tsx`)
-
-Contexte principal de l'application qui gère l'état global du projet en cours. Il utilise un reducer pour manipuler l'état et fournit des actions pour modifier cet état.
-
-- **État** :
-  - `property` : Informations sur le bien (adresse, type, etc.)
-  - `rooms` : Liste des pièces du projet
-  - `metadata` : Métadonnées du projet (nom, numéro de devis, etc.)
-  - `currentProjectId` : ID du projet en cours d'édition
-  - `savedState` : État de sauvegarde du projet
-
-- **Actions** :
-  - `SET_PROPERTY` : Définit les propriétés du bien
-  - `ADD_ROOM` : Ajoute une nouvelle pièce
-  - `UPDATE_ROOM` : Met à jour une pièce existante
-  - `DELETE_ROOM` : Supprime une pièce
-  - `LOAD_PROJECT` : Charge un projet complet
-  - `SET_METADATA` : Définit les métadonnées du projet
-  - `SET_CURRENT_PROJECT_ID` : Définit l'ID du projet en cours
-  - `RESET_PROJECT` : Réinitialise le projet
-  - `UPDATE_SAVED_STATE` : Met à jour l'état de sauvegarde
-
-#### TravauxTypesContext (`src/contexts/TravauxTypesContext.tsx`)
-
-Gère les types de travaux disponibles dans l'application.
-
-- **État** :
-  - `workTypes` : Types de travaux
-  - `serviceGroups` : Groupes de services
-  - `services` : Services disponibles
-  - `loading` : État de chargement
-
-- **Actions** :
-  - `SET_WORK_TYPES` : Définit les types de travaux
-  - `SET_SERVICE_GROUPS` : Définit les groupes de services
-  - `SET_SERVICES` : Définit les services disponibles
-  - `SET_LOADING` : Définit l'état de chargement
-
-### 4.2 Reducers
-
-#### projectReducer (`src/features/project/reducers/projectReducer.ts`)
-
-Reducer principal qui gère les modifications de l'état du projet. Il traite les actions envoyées par le contexte ProjectContext.
-
-Il contient la logique pour :
-- Ajouter, modifier et supprimer des pièces
-- Mettre à jour les propriétés du bien
-- Charger un projet complet
-- Réinitialiser le projet
-
-### 4.3 Hooks personnalisés
-
-#### usePdfSettings (`src/services/pdf/hooks/usePdfSettings.ts`)
-
-Hook qui gère le chargement et la sauvegarde des paramètres PDF.
-
-- **État retourné** :
-  - `pdfSettings` : Paramètres PDF actuels
-  - `updatePdfSettings` : Fonction pour mettre à jour les paramètres
-  - `resetPdfSettings` : Fonction pour réinitialiser les paramètres
-
-Le hook utilise `useAppState` pour récupérer et mettre à jour les paramètres PDF stockés dans l'état de l'application. Il valide les paramètres avec le schéma Zod `PdfSettingsSchema`.
-
-Quand `updatePdfSettings` est appelé, il :
-1. Vérifie que l'utilisateur est connecté
-2. Valide les nouveaux paramètres avec Zod
-3. Met à jour l'état local et persiste les changements via `updateAppStatePdfSettings`
-
-#### useProjectInfo (`src/features/chantier/hooks/useProjectInfo.tsx`)
-
-Hook qui combine les fonctionnalités de `useProjectMetadata` et `useProjectOperations` pour fournir un accès complet aux informations et opérations du projet.
-
-- **Valeurs retournées** :
-  - Données de l'état du projet global (`projectState`, `isLoading`, etc.)
-  - Métadonnées du projet et leurs setters (de `useProjectMetadata`)
-  - Opérations sur le projet (`handleChargerProjet`, `handleSaveProject`, etc.)
-
-Ce hook sert de façade unifiée pour accéder à toutes les fonctionnalités liées au projet.
-
-## 5. Services et Accès aux Données
-
-### 5.1 Structure des tables Supabase
-
-L'application utilise plusieurs tables Supabase pour stocker ses données :
-
-#### app_state
-- Stocke l'état global de l'application par utilisateur
-- Contient les paramètres PDF (`pdf_settings`)
-- Colonnes principales : `id`, `user_id`, `current_project_id`, `pdf_settings`, `auto_save_options`
-
-#### projects_save
-- Stocke les projets sauvegardés
-- Colonnes principales : `id`, `name`, `client_id`, `project_data`, `general_data`, `status`, `devis_number`
-
-#### clients
-- Stocke les informations des clients
-- Colonnes principales : `id`, `nom`, `prenom`, `adresse`, `code_postal`, `ville`, `tel1`, `email`
-
-#### rooms
-- Stocke les informations des pièces d'un projet
-- Colonnes principales : `id`, `project_id`, `name`, `surface`, `wall_height`, `perimeter`
-
-#### room_works
-- Stocke les travaux associés à chaque pièce
-- Colonnes principales : `id`, `room_id`, `service_id`, `quantity`, `prix_fournitures`, `prix_main_oeuvre`, `taux_tva`
-
-#### services et service_groups
-- Stocke les services et groupes de services disponibles
-- Colonnes principales pour services : `id`, `name`, `description`, `labor_price`, `supply_price`, `unit`, `group_id`
-- Colonnes principales pour service_groups : `id`, `name`, `work_type_id`
-
-### 5.2 Services d'accès aux données
-
-#### pdfDocumentService (`src/services/pdf/services/pdfDocumentService.ts`)
-
-Service qui génère des documents PDF à l'aide de pdfMake. Cette partie du code semble être en cours de migration vers @react-pdf/renderer.
-
-- **Fonction principale** : `generatePdfDocument(options)`
-  - Prend en entrée des options comme le contenu, les métadonnées, etc.
-  - Configure les polices avec `configurePdfFonts()`
-  - Définit l'en-tête et le pied de page si demandé
-  - Génère et ouvre le PDF via pdfMake
-
-Le service contient également beaucoup de logs de débogage liés au logo et aux images, suggérant qu'il y a eu des problèmes avec ces éléments.
-
-#### pdfGenerationService (`src/services/pdfGenerationService.ts`)
-
-Simple fichier de réexportation qui expose les services de génération PDF :
-- `generateDetailsPDF` : Génère un PDF détaillé du devis
-- `generateRecapPDF` : Génère un PDF de récapitulatif
-- `generateCompletePDF` : Génère un PDF complet
-
-## 6. Flux de données spécifiques
-
-### 6.1 Sauvegarde ("Enregistrer")
-
-Le flux de sauvegarde d'un projet implique plusieurs composants et services :
-
-1. L'utilisateur clique sur "Enregistrer" dans l'interface.
-2. La fonction `handleSaveProject` du hook `useProjectOperations` est appelée.
-3. Cette fonction vérifie si `currentProjectId` existe :
-   - Si oui, elle appelle `projectService.updateProject` pour mettre à jour le projet existant.
-   - Si non, elle appelle `projectService.createProject` pour créer un nouveau projet.
-4. Une fois le projet sauvegardé, l'ID retourné est défini comme `currentProjectId`.
-5. L'état `savedState` est mis à jour via `dispatch({ type: 'UPDATE_SAVED_STATE', payload: true })`.
-
-### 6.2 Sauvegarde sous ("Enregistrer Sous")
-
-Le flux "Enregistrer Sous" est similaire à "Enregistrer", mais force la création d'un nouveau projet :
-
-1. L'utilisateur clique sur "Enregistrer Sous" et entre un nouveau nom de projet.
-2. La fonction de sauvegarde est appelée avec un flag pour forcer la création d'un nouveau projet.
-3. Le service de projet appelle `projectService.createProject` pour créer une nouvelle entrée.
-4. Le nouvel ID est défini comme `currentProjectId`.
-5. L'état `savedState` est mis à jour.
-
-### 6.3 Chargement (loadProject)
-
-Le processus de chargement d'un projet existant :
-
-1. L'utilisateur sélectionne un projet à ouvrir dans la liste.
-2. La fonction `handleChargerProjet` du hook `useProjectOperations` est appelée avec l'ID du projet.
-3. Cette fonction appelle `projectService.fetchProjectById` pour récupérer les données.
-4. Une fois les données récupérées, elles sont chargées dans le contexte via `dispatch({ type: 'LOAD_PROJECT', payload: data })`.
-5. L'ID du projet est défini comme `currentProjectId`.
-6. L'état `savedState` est réinitialisé à `true` via `dispatch({ type: 'UPDATE_SAVED_STATE', payload: true })`.
-
-### 6.4 Création nouveau (createNewProject)
-
-Le processus de création d'un nouveau projet :
-
-1. L'utilisateur clique sur "Nouveau Projet".
-2. La fonction `handleCreateNew` est appelée.
-3. Si des modifications non sauvegardées existent, une confirmation est demandée.
-4. Le contexte est réinitialisé via `dispatch({ type: 'RESET_PROJECT' })`.
-5. `currentProjectId` est mis à `null`.
-6. L'utilisateur est redirigé vers la page de création de projet.
-
-## 7. Système de génération PDF
-
-### 7.1 Migration vers @react-pdf/renderer
-
-Le projet est en cours de migration de pdfMake vers @react-pdf/renderer pour la génération de PDF. Cette migration n'est pas encore complète, et certaines parties du code peuvent encore utiliser l'ancienne méthode.
-
-#### Architecture de la génération PDF avec @react-pdf/renderer :
-
-- **Hooks** :
-  - `useReactPdfGeneration` : Gère la génération du PDF avec React-PDF
-
-- **Composants PDF** :
-  - Organisation par type de page (couverture, détails, récapitulatif, CGV)
-  - Composants communs réutilisables (en-tête, pied de page, etc.)
-
-- **Utilitaires** :
-  - `pdfStyleUtils.ts` : Génère et applique les styles en fonction des paramètres
-  - `reactPdfFonts.ts` : Enregistre les polices disponibles
-  - `formatUtils.ts` : Formatte les données pour l'affichage PDF
-
-### 7.2 Composants PDF
-
-Les composants PDF sont organisés en plusieurs fichiers dans le dossier `src/services/pdf/react-pdf/components/` :
-
-#### Pages principales :
-
-1. **CoverPage** : Page de garde du devis
-   - En-tête avec logo de l'entreprise
-   - Informations de contact et d'entreprise
-   - Informations du client
-   - Informations du projet
-   - Pied de page
-
-2. **DetailsPage** : Pages de détail des travaux
-   - Tableau des travaux par pièce
-   - Prix unitaires, quantités, totaux
-   - Descriptions des travaux
-
-3. **RecapPage** : Page de récapitulatif
-   - Totaux par pièce
-   - Total global HT et TTC
-   - Zone de signature
-   - Texte de salutation
-
-4. **CGVPage** : Page des conditions générales de vente
-   - Sections et sous-sections des CGV
-   - Mise en forme structurée
-
-#### Composants communs :
-
-- **PageHeader** : En-tête commun à toutes les pages
-- **PageFooter** : Pied de page commun à toutes les pages
-- **VerticalSpacer** : Composant pour ajouter des espacements verticaux personnalisables
-
-### 7.3 Utilitaires et styles
-
-#### pdfStyleUtils.ts (`src/services/pdf/react-pdf/utils/pdfStyleUtils.ts`)
-
-Utilitaire central qui gère l'application des styles aux composants PDF en fonction des paramètres configurés par l'utilisateur.
-
-- **Fonction principale** : `getPdfStyles(pdfSettings)`
-  - Génère un objet de styles pour tous les éléments du PDF
-  - Applique les couleurs, polices et espacement définis dans les paramètres
-  - Fusionne les styles par défaut avec les styles personnalisés
-
-- **Fonctions auxiliaires** :
-  - `mergeStyles` : Fusionne plusieurs objets de style
-  - `filterContainerStyles` : Extrait les styles spécifiques aux conteneurs
-  - `filterTextStyles` : Extrait les styles spécifiques au texte
-
-#### reactPdfFonts.ts (`src/services/pdf/utils/reactPdfFonts.ts`)
-
-Gère l'enregistrement des polices disponibles pour le PDF.
-
-- Utilise `Font.register` de '@react-pdf/renderer' pour enregistrer les polices
-- Définit les variantes de chaque police (normal, bold, italic, etc.)
-- Charge les polices standard (Roboto, Arial, Times New Roman)
-
-#### formatUtils.ts (`src/services/pdf/utils/formatUtils.ts`)
-
-Utilitaires de formatage pour les valeurs affichées dans le PDF.
-
-- **Fonctions principales** :
-  - `formatPrice` : Formate un nombre en prix (X,XX €)
-  - `formatQuantity` : Formate une quantité avec unité
-  - `formatDate` : Formate une date selon le format souhaité
-
-## 8. Système de paramètres PDF
-
-### 8.1 Chargement et sauvegarde des paramètres
-
-#### usePdfSettings (`src/services/pdf/hooks/usePdfSettings.ts`)
-
-Ce hook gère le cycle de vie des paramètres PDF :
-
-- **Chargement** : Récupère les paramètres depuis `appState.pdf_settings`
-- **Validation** : Utilise Zod (`PdfSettingsSchema`) pour valider les données
-- **Mise à jour** : Permet de mettre à jour et persister les paramètres
-- **Réinitialisation** : Permet de réinitialiser les paramètres aux valeurs par défaut
-
-Les paramètres PDF sont stockés dans la table `app_state` de Supabase, dans la colonne `pdf_settings` de type JSONB.
-
-#### Structure des paramètres PDF (`src/services/pdf/config/pdfSettingsTypes.ts`)
-
-Le fichier définit le schéma Zod et le type TypeScript pour les paramètres PDF :
-
-- `fontFamily` : Police principale du document
-- `colors` : Couleurs utilisées dans le document
-  - `mainText` : Couleur du texte principal
-  - `detailsText` : Couleur du texte des détails
-  - `coverLines` : Couleur des lignes de la page de garde
-  - `detailsLines` : Couleur des lignes des pages de détail
-  - `totalBoxLines` : Couleur des lignes du tableau des totaux
-  - `background` : Couleur de fond principale
-  - `background2` : Couleur de fond secondaire
-  - `background3` : Couleur de fond tertiaire
-- `lineSpacing` : Espacements entre les lignes
-- `margins` : Marges des différentes pages
-- `logoSettings` : Configuration du logo
-- `elements` : Styles personnalisés pour chaque élément du PDF
-
-Chaque paramètre a une valeur par défaut définie dans le schéma Zod.
-
-### 8.2 Composants d'édition des paramètres
-
-#### PdfSettingsForm (`src/features/devis/components/PdfSettingsForm.tsx`)
-
-Formulaire principal qui regroupe tous les composants d'édition des paramètres PDF :
-
-- **Onglets** :
-  - "Polices et Couleurs" : Paramètres de typographie et de couleurs
-  - "Espacements" : Paramètres d'espacement et de marges
-  - "Logo" : Configuration du logo
-
-- **Composants enfants** :
-  - `FontSettings` : Configuration des polices et styles de texte
-  - `ColorSettings` : Configuration des couleurs
-  - `SpacingSettings` : Configuration des espacements
-  - `MarginSettings` : Configuration des marges
-  - `LogoSettings` : Configuration du logo
-
-#### ElementSettingsForm (`src/features/devis/components/pdf-settings/components/ElementSettingsForm.tsx`)
-
-Formulaire d'édition des styles pour un élément spécifique du PDF :
-
-- **Contrôles** :
-  - Sélection de police
-  - Taille de police
-  - Style (gras, italique)
-  - Couleur
-  - Alignement
-  - Couleur de fond
-  - Hauteur de ligne
-  - Espacements
-  - Marges intérieures
-  - Bordures
-
-Ce composant utilise plusieurs sous-composants pour chaque type de paramètre :
-
-- `StyleControls` : Contrôles pour le style du texte (gras, italique)
-- `ColorPicker` : Sélecteur de couleur
-- `AlignmentControl` : Contrôle d'alignement du texte
-- `SpacingControl` : Contrôle des espacements
-- `PaddingControl` : Contrôle des marges intérieures
-- `BorderControl` : Contrôle des bordures
-
-#### ElementSelector (`src/features/devis/components/pdf-settings/components/ElementSelector.tsx`)
-
-Permet de sélectionner un élément du PDF à éditer parmi une liste organisée par sections :
-
-- Page de garde
-- Détails des travaux
-- Récapitulatif
-- CGV
-- Espacements (pour chaque section)
-
-Les éléments disponibles sont définis dans `PDF_ELEMENTS` dans le fichier `typography.ts`.
-
-#### Types d'éléments (`src/features/devis/components/pdf-settings/types/typography.ts`)
-
-Ce fichier définit tous les éléments personnalisables du PDF :
-
-- **Éléments généraux** : Styles par défaut
-- **Page de garde** : En-tête, logo, informations client, informations projet
-- **Détails des travaux** : Titre de section, titres de pièce, descriptions, prix
-- **Récapitulatif** : Tableau des totaux, zone de signature, texte de salutation
-- **CGV** : Titres de section, contenu textuel, puces
-
-Chaque élément a un identifiant unique (`id`), un nom affichable (`name`) et appartient à une section (`section`).
-
-#### Types de paramètres d'éléments (`src/features/devis/components/pdf-settings/types/elementSettings.ts`)
-
-Ce fichier définit la structure des paramètres de style pour un élément :
-
-- `fontFamily` : Police de caractères
-- `fontSize` : Taille de police
-- `isBold`, `isItalic` : Style de texte
-- `color` : Couleur du texte
-- `alignment` : Alignement du texte (gauche, centre, droite, justifié)
-- `fillColor` : Couleur de fond
-- `lineHeight` : Hauteur de ligne
-- `spacing` : Espacements externes
-- `padding` : Espacements internes
-- `border` : Paramètres de bordure
-
-Ce fichier définit également le schéma Zod pour la validation des paramètres et les valeurs par défaut.
-
----
-
-Cette documentation couvre de manière exhaustive l'état actuel du projet "Application Devis", avec un focus particulier sur la partie génération PDF qui est en cours de migration vers `@react-pdf/renderer`. Chaque composant, fichier et flux de données a été analysé en détail pour fournir une vision claire et complète du projet.
+# Documentation Exhaustive - Application Devis Bâtiment
+
+## III. Description Détaillée des Fichiers Sources (`src/`)
+
+### `src/App.tsx`
+- **Rôle Principal :** Point d'entrée principal de l'application, définit le routeur et les fournisseurs de contexte globaux.
+- **Imports Clés :**
+  - React, React Router (BrowserRouter, Routes, Route)
+  - Composants de pages (InfosChantier, Travaux, Recapitulatif, EditionDevis, etc.)
+  - Contextes (ProjectProvider, ClientsProvider, TravauxTypesProvider)
+  - Composants UI globaux (Layout, Toaster)
+- **Exports Principaux :** `export default App`
+- **Logique :**
+  - Configuration du routeur React Router avec définition de toutes les routes de l'application
+  - Encapsulation de l'application dans les fournisseurs de contexte pour la gestion d'état globale
+  - Configuration des notifications toast via le composant Toaster
+  - Gestion des redirections vers la page NotFound pour les routes inexistantes
+
+### `src/components/Layout.tsx`
+- **Rôle Principal :** Définit la structure commune à toutes les pages de l'application.
+- **Imports Clés :**
+  - React
+  - TitleHeader, Navigation (composants de mise en page)
+- **Exports Principaux :** `export const Layout`
+- **Composant React :**
+  - **Props :** 
+    - `title`: string (titre de la page)
+    - `subtitle`: string (sous-titre de la page)
+    - `children`: React.ReactNode (contenu de la page)
+  - **Logique :** Aucun état local, compose simplement la structure de la page
+  - **Rendu JSX :** Structure la page avec un header de titre, une navigation et le contenu passé via les enfants
+
+### `src/components/RenovationEstimator.tsx`
+- **Rôle Principal :** Composant principal pour l'estimation de travaux de rénovation.
+- **Imports Clés :**
+  - React, hooks React (useState, useEffect)
+  - useProject (contexte de projet)
+  - Composants UI (Button, Card, etc.)
+- **Exports Principaux :** `export default RenovationEstimator`
+- **Composant React :**
+  - **État Local :** 
+    - `activeTab`: string (onglet actif)
+    - `propertyInfo`: object (informations sur le bien)
+    - `rooms`: array (liste des pièces)
+  - **Effets :**
+    - Synchronisation des données du contexte avec l'état local
+    - Sauvegarde automatique lors des modifications importantes
+  - **Fonctions Internes :**
+    - `handleAddRoom`: Ajoute une nouvelle pièce
+    - `handleUpdateRoom`: Met à jour une pièce existante
+    - `handleDeleteRoom`: Supprime une pièce
+    - `handleSaveProject`: Sauvegarde le projet actuel
+  - **Rendu JSX :** Interface à onglets avec formulaire de propriété et gestion des pièces
+
+### `src/contexts/ProjectContext.tsx`
+- **Rôle Principal :** Fournit le contexte global pour gérer l'état du projet.
+- **Imports Clés :**
+  - React, createContext, useReducer, useContext
+  - projectReducer (reducer pour la manipulation de l'état du projet)
+  - Types (ProjectState, ProjectAction, etc.)
+- **Exports Principaux :**
+  - `export const ProjectProvider`
+  - `export const useProject`
+- **Contexte React :**
+  - **Structure de l'État :** 
+    - `property`: Informations sur le bien (type, étages, surface)
+    - `rooms`: Liste des pièces avec leurs caractéristiques
+    - `travaux`: Liste des travaux associés aux pièces
+    - `metadata`: Métadonnées du projet (nom, numéro de devis, etc.)
+    - `currentProjectId`: ID du projet en cours d'édition
+    - `savedState`: État de sauvegarde du projet
+  - **Reducer Associé :**
+    - Action `SET_PROPERTY`: Met à jour les propriétés du bien
+    - Action `ADD_ROOM`: Ajoute une nouvelle pièce
+    - Action `UPDATE_ROOM`: Met à jour une pièce existante
+    - Action `DELETE_ROOM`: Supprime une pièce
+    - Action `ADD_TRAVAIL`: Ajoute un travail à une pièce
+    - Action `UPDATE_TRAVAIL`: Met à jour un travail
+    - Action `DELETE_TRAVAIL`: Supprime un travail
+    - Action `LOAD_PROJECT`: Charge un projet complet
+    - Action `SET_METADATA`: Met à jour les métadonnées du projet
+    - Action `SET_CURRENT_PROJECT_ID`: Définit l'ID du projet en cours
+    - Action `UPDATE_SAVED_STATE`: Met à jour l'état de sauvegarde
+    - Action `RESET_PROJECT`: Réinitialise le projet
+  - **Provider :**
+    - Initialise l'état avec des valeurs par défaut
+    - Fournit l'état et la fonction dispatch aux composants enfants
+  - **Hook Consommateur :**
+    - `useProject`: Retourne l'état et la fonction dispatch du contexte
+
+### `src/contexts/TravauxTypesContext.tsx`
+- **Rôle Principal :** Gère les types de travaux disponibles dans l'application.
+- **Imports Clés :**
+  - React, createContext, useReducer, useContext, useEffect
+  - supabase (client Supabase)
+  - Types (WorkType, ServiceGroup, Service)
+- **Exports Principaux :**
+  - `export const TravauxTypesProvider`
+  - `export const useTravauxTypes`
+- **Contexte React :**
+  - **Structure de l'État :** 
+    - `workTypes`: Types de travaux disponibles
+    - `serviceGroups`: Groupes de services par type de travaux
+    - `services`: Services disponibles par groupe
+    - `loading`: État de chargement des données
+  - **Reducer Associé :**
+    - Action `SET_WORK_TYPES`: Définit les types de travaux
+    - Action `SET_SERVICE_GROUPS`: Définit les groupes de services
+    - Action `SET_SERVICES`: Définit les services disponibles
+    - Action `SET_LOADING`: Définit l'état de chargement
+  - **Provider :**
+    - Initialise l'état avec des valeurs vides et chargement initial
+    - Charge les données depuis Supabase au montage du composant
+    - Organise les données en hiérarchie (types > groupes > services)
+    - Fournit l'état et des fonctions utilitaires aux composants enfants
+  - **Hook Consommateur :**
+    - `useTravauxTypes`: Expose l'état et des fonctions pour accéder aux types de travaux, groupes et services
+
+### `src/contexts/ClientsContext.tsx`
+- **Rôle Principal :** Gère les clients et leurs informations.
+- **Imports Clés :**
+  - React, createContext, useReducer, useContext, useEffect
+  - supabase (client Supabase)
+  - Types (Client, ClientsState, ClientsAction)
+- **Exports Principaux :**
+  - `export const ClientsProvider`
+  - `export const useClients`
+- **Contexte React :**
+  - **Structure de l'État :** 
+    - `clients`: Liste des clients
+  - **Reducer Associé :**
+    - Action `ADD_CLIENT`: Ajoute un nouveau client
+    - Action `UPDATE_CLIENT`: Met à jour un client existant
+    - Action `DELETE_CLIENT`: Supprime un client
+    - Action `LOAD_CLIENTS`: Charge une liste de clients
+    - Action `RESET_CLIENTS`: Réinitialise la liste des clients
+  - **Provider :**
+    - Initialise l'état avec une liste de clients vide
+    - Charge les clients depuis Supabase au montage du composant
+    - Fournit l'état et des fonctions utilitaires aux composants enfants
+  - **Hook Consommateur :**
+    - `useClients`: Expose l'état des clients et les fonctions pour les manipuler
+
+### `src/features/project/reducers/projectReducer.ts`
+- **Rôle Principal :** Reducer principal pour gérer les modifications de l'état du projet.
+- **Imports Clés :**
+  - Types (ProjectState, ProjectAction, etc.)
+- **Exports Principaux :**
+  - `export const initialState`
+  - `export const projectReducer`
+- **Logique :**
+  - Définit l'état initial du projet avec des propriétés vides, des listes vides pour les pièces et les travaux
+  - Implémente la logique pour chaque action du contexte ProjectContext :
+    - Gestion des propriétés du bien (SET_PROPERTY)
+    - Gestion des pièces (ADD_ROOM, UPDATE_ROOM, DELETE_ROOM)
+    - Gestion des travaux (ADD_TRAVAIL, UPDATE_TRAVAIL, DELETE_TRAVAIL)
+    - Chargement complet d'un projet (LOAD_PROJECT)
+    - Gestion des métadonnées (SET_METADATA)
+    - Gestion de l'ID du projet courant (SET_CURRENT_PROJECT_ID)
+    - Gestion de l'état de sauvegarde (UPDATE_SAVED_STATE)
+    - Réinitialisation du projet (RESET_PROJECT)
+
+### `src/features/chantier/hooks/useProjectOperations.tsx`
+- **Rôle Principal :** Hook pour gérer les opérations sur les projets (chargement, sauvegarde, suppression).
+- **Imports Clés :**
+  - React hooks (useState, useCallback, useEffect)
+  - useProject (contexte de projet)
+  - projectService (service d'accès aux données des projets)
+- **Exports Principaux :** `export const useProjectOperations`
+- **État Interne :**
+  - `isLoading`: Indicateur de chargement
+  - `projects`: Liste des projets sauvegardés
+  - `error`: Message d'erreur éventuel
+  - `hasUnsavedChanges`: Indicateur de changements non sauvegardés
+- **Effets :**
+  - Chargement de la liste des projets au montage du composant
+  - Suivi des changements non sauvegardés
+- **Fonctions Retournées :**
+  - `handleChargerProjet`: Charge un projet existant par son ID
+  - `handleDeleteProject`: Supprime un projet existant
+  - `handleSaveProject`: Sauvegarde le projet actuel (avec option de création ou mise à jour)
+  - `checkForUnsavedChanges`: Vérifie s'il y a des changements non sauvegardés
+  - `handleCreateNew`: Crée un nouveau projet vide
+
+### `src/features/chantier/hooks/useProjectMetadata.tsx`
+- **Rôle Principal :** Hook pour gérer les métadonnées du projet.
+- **Imports Clés :**
+  - React hooks (useState, useCallback, useEffect)
+  - useProject (contexte de projet)
+  - devisService (service lié aux devis)
+- **Exports Principaux :** `export const useProjectMetadata`
+- **État Interne :**
+  - `nomProjet`: Nom du projet
+  - `numeroDevis`: Numéro du devis
+  - `dateDevis`: Date du devis
+  - `dateValidite`: Date de validité du devis
+  - `adresseChantier`: Adresse du chantier
+  - `occupant`: Occupant du bien
+  - `infoComplementaire`: Informations complémentaires
+  - `companyId`: ID de la société
+  - `clientId`: ID du client
+  - `clientsData`: Données des clients associés
+- **Effets :**
+  - Synchronisation des états locaux avec les métadonnées du projet
+- **Fonctions Retournées :**
+  - Setters pour chaque métadonnée
+  - `handleGenerateProjectName`: Génère un nom de projet automatique
+  - `handleGenerateDevisNumber`: Génère un numéro de devis automatique
+
+### `src/services/pdf/hooks/usePdfSettings.ts`
+- **Rôle Principal :** Hook pour gérer le chargement et la sauvegarde des paramètres PDF.
+- **Imports Clés :**
+  - React hooks (useState, useCallback, useEffect)
+  - useAppState (hook d'accès à l'état global de l'application)
+  - Zod (pour la validation des données)
+  - Types (PdfSettings, PdfSettingsSchema)
+- **Exports Principaux :** `export const usePdfSettings`
+- **État Interne :**
+  - `pdfSettings`: Paramètres PDF actuels
+- **Effets :**
+  - Chargement des paramètres PDF depuis l'état de l'application au montage
+- **Fonctions Retournées :**
+  - `updatePdfSettings`: Met à jour les paramètres PDF et les persiste
+  - `resetPdfSettings`: Réinitialise les paramètres PDF aux valeurs par défaut
+
+### `src/features/devis/components/pdf-settings/FontSettings.tsx`
+- **Rôle Principal :** Composant pour configurer les polices et styles de texte des éléments du PDF.
+- **Imports Clés :**
+  - React, hooks React (useState, useEffect)
+  - Composants UI (Select, Label, etc.)
+  - Types (PdfSettings, ElementSettings)
+- **Exports Principaux :** Composant FontSettings
+- **Composant React :**
+  - **Props :**
+    - `pdfSettings`: Paramètres PDF actuels
+    - `updatePdfSettings`: Fonction pour mettre à jour les paramètres
+  - **État Local :**
+    - `selectedElement`: Élément actuellement sélectionné
+    - `elementSettings`: Paramètres de style de l'élément sélectionné
+  - **Fonctions Internes :**
+    - `getPaletteColors`: Récupère les couleurs du thème PDF
+    - `getElementSettings`: Récupère les paramètres de style d'un élément
+    - `handleElementSettingsChange`: Met à jour les paramètres d'un élément
+  - **Rendu JSX :**
+    - Sélecteur d'élément à éditer
+    - Formulaire pour configurer la police, taille, style et couleurs
+    - Prévisualisation du texte avec les styles appliqués
+
+### `src/features/devis/components/pdf-settings/ColorSettings.tsx`
+- **Rôle Principal :** Composant pour configurer les couleurs globales du PDF.
+- **Imports Clés :**
+  - React
+  - ColorPicker (composant de sélection de couleur)
+  - Types (PdfSettings)
+- **Exports Principaux :** Composant ColorSettings
+- **Composant React :**
+  - **Props :**
+    - `pdfSettings`: Paramètres PDF actuels
+    - `updatePdfSettings`: Fonction pour mettre à jour les paramètres
+  - **Fonctions Internes :**
+    - `handleColorChange`: Met à jour une couleur spécifique dans les paramètres
+  - **Rendu JSX :**
+    - Grille de sélecteurs de couleurs pour chaque élément du thème PDF
+    - Libellés explicatifs pour chaque couleur
+
+### `src/services/pdf/react-pdf/utils/pdfStyleUtils.ts`
+- **Rôle Principal :** Utilitaires pour générer et appliquer des styles aux composants PDF.
+- **Imports Clés :**
+  - @react-pdf/renderer (StyleSheet)
+  - Types (PdfSettings, ElementSettings)
+- **Exports Principaux :**
+  - `export const getPdfStyles`
+  - `export const applyElementSettingsToStyle`
+- **Logique :**
+  - `getPdfStyles`: Génère un objet de styles pour un élément du PDF en fonction des paramètres et options
+    - Combine les styles de base avec les styles personnalisés pour chaque élément
+    - Sépare les styles pour les conteneurs et pour le texte
+  - `applyElementSettingsToStyle`: Applique les paramètres d'un élément à un style
+    - Convertit les valeurs de couleur, taille, alignement, etc. en propriétés de style React-PDF
+    - Gère les marges, espacements, bordures et autres propriétés de mise en page
+
+### `src/services/pdf/react-pdf/components/CoverPage.tsx`
+- **Rôle Principal :** Composant React-PDF pour la page de garde du devis.
+- **Imports Clés :**
+  - @react-pdf/renderer (Page, View, Text, Image, StyleSheet)
+  - Composants communs (HeaderSection, FooterSection)
+  - Utilitaires (getPdfStyles)
+- **Exports Principaux :** `export const CoverPage`
+- **Composant React-PDF :**
+  - **Props :**
+    - `pdfSettings`: Paramètres PDF
+    - `projectState`: État du projet
+  - **Logique :**
+    - Génère les styles de la page en fonction des paramètres PDF
+    - Extrait les informations du projet et du client à afficher
+  - **Rendu :**
+    - En-tête avec logo de l'entreprise
+    - Section de titre "DEVIS"
+    - Informations du client et du projet
+    - Détails du devis (numéro, date, validité)
+    - Description du projet
+    - Pied de page
+
+### `src/services/pdf/react-pdf/components/DetailsPage.tsx`
+- **Rôle Principal :** Composant React-PDF pour les pages de détail du devis.
+- **Imports Clés :**
+  - @react-pdf/renderer (Page, View, Text, StyleSheet)
+  - Composants communs (HeaderSection, FooterSection)
+  - Utilitaires (getPdfStyles, formatPrice)
+- **Exports Principaux :** `export const DetailsPage`
+- **Composant React-PDF :**
+  - **Props :**
+    - `pdfSettings`: Paramètres PDF
+    - `projectState`: État du projet
+  - **Logique :**
+    - Génère les styles de la page en fonction des paramètres PDF
+    - Groupe les travaux par pièce
+    - Calcule les sous-totaux et totaux
+  - **Rendu :**
+    - En-tête de page
+    - Pour chaque pièce :
+      - Titre de la pièce avec surface
+      - Tableau des travaux avec colonnes (description, quantité, prix unitaire, total)
+      - Sous-total de la pièce
+    - Pied de page avec numéro de page
+
+### `src/services/pdf/react-pdf/components/RecapPage.tsx`
+- **Rôle Principal :** Composant React-PDF pour la page de récapitulatif du devis.
+- **Imports Clés :**
+  - @react-pdf/renderer (Page, View, Text, StyleSheet)
+  - Composants communs (HeaderSection, FooterSection)
+  - Utilitaires (getPdfStyles, formatPrice, calculerTotaux)
+- **Exports Principaux :** `export const RecapPage`
+- **Composant React-PDF :**
+  - **Props :**
+    - `pdfSettings`: Paramètres PDF
+    - `projectState`: État du projet
+  - **Logique :**
+    - Génère les styles de la page en fonction des paramètres PDF
+    - Calcule les totaux par taux de TVA et le total global
+  - **Rendu :**
+    - En-tête de page
+    - Titre "RÉCAPITULATIF"
+    - Tableau des totaux par taux de TVA
+    - Total général HT, TVA et TTC
+    - Zone de signature et conditions de paiement
+    - Mentions légales et conditions générales résumées
+    - Pied de page
+
+### `src/services/pdf/react-pdf/components/CGVPage.tsx`
+- **Rôle Principal :** Composant React-PDF pour la page des conditions générales de vente.
+- **Imports Clés :**
+  - @react-pdf/renderer (Page, View, Text, StyleSheet)
+  - Composants communs (HeaderSection, FooterSection)
+  - Utilitaires (getPdfStyles)
+- **Exports Principaux :** `export const CGVPage`
+- **Composant React-PDF :**
+  - **Props :**
+    - `pdfSettings`: Paramètres PDF
+    - `projectState`: État du projet
+  - **Logique :**
+    - Génère les styles de la page en fonction des paramètres PDF
+  - **Rendu :**
+    - En-tête de page
+    - Titre "CONDITIONS GÉNÉRALES DE VENTE"
+    - Sections des CGV (Objet, Durée, Prix, Paiement, etc.)
+    - Texte légal détaillé avec formatage structuré
+    - Pied de page
+
+### `src/services/pdf/hooks/useReactPdfGeneration.tsx`
+- **Rôle Principal :** Hook pour gérer la génération de PDF avec @react-pdf/renderer.
+- **Imports Clés :**
+  - React hooks (useState, useCallback)
+  - @react-pdf/renderer (pdf, Document)
+  - Components PDF (CoverPage, DetailsPage, RecapPage, CGVPage)
+  - usePdfSettings (hook pour les paramètres PDF)
+  - useProject (contexte de projet)
+- **Exports Principaux :** `export const useReactPdfGeneration`
+- **État Interne :**
+  - `isGenerating`: Indicateur de génération en cours
+- **Fonctions Retournées :**
+  - `generatePdf`: Génère un PDF complet avec toutes les pages (couverture, détails, récapitulatif, CGV)
+    - Crée un Document React-PDF avec les composants de page
+    - Configure les polices et styles
+    - Génère un blob PDF et l'ouvre dans une nouvelle fenêtre
+  - `generatePdfBlob`: Version utilitaire qui retourne le blob PDF au lieu de l'ouvrir
+  - `isGenerating`: État de génération actuel
+
+### `src/services/projectSaveService.ts`
+- **Rôle Principal :** Service pour gérer la sauvegarde et le chargement des projets.
+- **Imports Clés :**
+  - supabase (client Supabase)
+  - Types (Project, ProjectState)
+  - Utilitaires (devisService)
+- **Exports Principaux :**
+  - `export const fetchProjectSaves`
+  - `export const fetchProjectSaveById`
+  - `export const createProjectSave`
+  - `export const updateProjectSave`
+  - `export const deleteProjectSave`
+  - `export const generateDefaultProjectName`
+  - `export const generateDevisNumber`
+  - `export const isDevisNumberUnique`
+- **Logique / Fonctions :**
+  - `fetchProjectSaves`: Récupère la liste des projets sauvegardés
+  - `fetchProjectSaveById`: Récupère un projet par son ID
+  - `createProjectSave`: Crée un nouveau projet sauvegardé
+    - Valide et prépare les données du projet
+    - Insère les données dans la table projects_save
+    - Gère les erreurs et retourne l'ID du projet créé
+  - `updateProjectSave`: Met à jour un projet existant
+    - Valide et prépare les données de mise à jour
+    - Met à jour l'entrée dans la table projects_save
+    - Gère les erreurs et retourne un booléen indiquant le succès
+  - `deleteProjectSave`: Supprime un projet existant
+  - `generateDefaultProjectName`: Génère un nom par défaut pour un nouveau projet
+  - `generateDevisNumber`: Génère un numéro de devis unique
+  - `isDevisNumberUnique`: Vérifie si un numéro de devis est unique
+
+### `src/services/pdf/config/pdfSettingsTypes.ts`
+- **Rôle Principal :** Définit les types et schémas de validation pour les paramètres PDF.
+- **Imports Clés :**
+  - zod (bibliothèque de validation)
+- **Exports Principaux :**
+  - `export const PdfSettingsSchema`
+  - `export type PdfSettings`
+  - `export const DEFAULT_PDF_SETTINGS`
+- **Logique :**
+  - Définit le schéma Zod pour valider la structure des paramètres PDF :
+    - `fontFamily`: Police principale
+    - `colors`: Couleurs du thème (texte principal, fond, lignes, etc.)
+    - `margins`: Marges pour différents types de pages
+    - `lineSpacing`: Espacements entre lignes et sections
+    - `logoSettings`: Configuration du logo
+    - `elements`: Styles personnalisés par élément
+  - Exporte le type TypeScript généré à partir du schéma
+  - Définit les valeurs par défaut pour les nouveaux projets
+
+### `src/features/devis/components/pdf-settings/types/elementSettings.ts`
+- **Rôle Principal :** Définit les types pour les paramètres de style des éléments PDF.
+- **Imports Clés :**
+  - zod (bibliothèque de validation)
+- **Exports Principaux :**
+  - `export const ElementSettingsSchema`
+  - `export type ElementSettings`
+  - `export const DEFAULT_ELEMENT_SETTINGS`
+- **Logique :**
+  - Définit le schéma Zod pour les paramètres d'un élément :
+    - `fontFamily`: Police de l'élément
+    - `fontSize`: Taille de police
+    - `isBold`, `isItalic`: Style de texte
+    - `color`: Couleur du texte
+    - `alignment`: Alignement du texte
+    - `fillColor`: Couleur de fond
+    - `lineHeight`: Hauteur de ligne
+    - `spacing`: Espacements externes
+    - `padding`: Espacements internes
+    - `border`: Configuration des bordures
+  - Exporte le type TypeScript généré à partir du schéma
+  - Définit les valeurs par défaut pour un nouvel élément
+
+### `src/features/devis/components/pdf-settings/types/typography.ts`
+- **Rôle Principal :** Définit les éléments typographiques du PDF et leurs groupes.
+- **Imports Clés :**
+  - Types (PdfElementId)
+- **Exports Principaux :**
+  - `export const PDF_ELEMENTS`
+  - `export const PDF_ELEMENT_SECTIONS`
+  - `export type PdfElementId`
+- **Logique :**
+  - Définit les identifiants pour tous les éléments typographiques du PDF
+  - Groupe les éléments par sections (page de garde, détails, récapitulatif, CGV)
+  - Fournit des informations de libellé pour l'interface utilisateur
+  - Définit les relations parent-enfant entre les éléments pour l'héritage de style
+
+### `src/features/devis/components/pdf-settings/components/ElementSelector.tsx`
+- **Rôle Principal :** Composant pour sélectionner un élément du PDF à éditer.
+- **Imports Clés :**
+  - React
+  - Composants UI (Accordion, Button)
+  - Types (PDF_ELEMENTS, PDF_ELEMENT_SECTIONS)
+- **Exports Principaux :** Composant ElementSelector
+- **Composant React :**
+  - **Props :**
+    - `selectedElement`: ID de l'élément sélectionné
+    - `onElementSelect`: Fonction appelée lors de la sélection d'un élément
+  - **Logique :**
+    - Organise les éléments du PDF par sections
+    - Filtre les éléments par section
+  - **Rendu JSX :**
+    - Accordéon avec les sections d'éléments (Page de garde, Détails, Récapitulatif, CGV)
+    - Boutons pour chaque élément avec indication de sélection
+
+### `src/features/devis/components/pdf-settings/components/ElementSettingsForm.tsx`
+- **Rôle Principal :** Formulaire pour éditer les styles d'un élément spécifique du PDF.
+- **Imports Clés :**
+  - React
+  - Composants UI (Input, Select, Tabs, etc.)
+  - Sous-composants (StyleControls, ColorPicker, etc.)
+  - Types (ElementSettings)
+- **Exports Principaux :** Composant ElementSettingsForm
+- **Composant React :**
+  - **Props :**
+    - `elementSettings`: Paramètres actuels de l'élément
+    - `onSettingsChange`: Fonction appelée lors de la modification des paramètres
+    - `paletteColors`: Couleurs du thème disponibles
+  - **État Local :**
+    - `activeTab`: Onglet actif du formulaire
+  - **Fonctions Internes :**
+    - `handleChange`: Gère les changements génériques sur les paramètres
+    - Fonctions spécifiques pour chaque type de paramètre (police, couleur, alignement, etc.)
+  - **Rendu JSX :**
+    - Interface à onglets avec les groupes de paramètres :
+      - Style de texte (police, taille, gras, italique)
+      - Couleurs (texte, fond)
+      - Alignement et espacement
+      - Marges et bordures
+    - Prévisualisation du texte avec les styles appliqués
+
+### `src/hooks/useAppState.ts`
+- **Rôle Principal :** Hook pour accéder et manipuler l'état global de l'application stocké dans Supabase.
+- **Imports Clés :**
+  - React hooks (useState, useEffect, useCallback)
+  - supabase (client Supabase)
+  - Types (AppState, PdfSettings)
+- **Exports Principaux :** `export const useAppState`
+- **État Interne :**
+  - `appState`: État global de l'application
+  - `isLoading`: Indicateur de chargement
+  - `error`: Message d'erreur éventuel
+  - `userProfile`: Profil de l'utilisateur
+  - `isAdmin`: Indicateur si l'utilisateur est administrateur
+- **Effets :**
+  - Chargement de l'état de l'application et du profil utilisateur au montage
+- **Fonctions Retournées :**
+  - `updateAppStatePdfSettings`: Met à jour les paramètres PDF dans l'état global
+  - `updateAppStateCurrentProjectId`: Met à jour l'ID du projet courant
+  - `updateAutoSaveOptions`: Met à jour les options de sauvegarde automatique
+  - `isLoading`, `error`, `appState`: État actuel de chargement et données
+
+### `src/pages/EditionDevis.tsx`
+- **Rôle Principal :** Page pour configurer et générer le PDF du devis.
+- **Imports Clés :**
+  - React, hooks React (useState)
+  - Composants UI (Tabs, Button)
+  - useReactPdfGeneration (hook pour la génération PDF)
+  - PdfSettingsForm, PrintableFieldsForm (formulaires de configuration)
+- **Exports Principaux :** `export default EditionDevis`
+- **Composant React :**
+  - **État Local :**
+    - `activeTab`: Onglet actif ("elements" ou "settings")
+  - **Fonctions Internes :**
+    - `handleGeneratePdf`: Génère le PDF avec les paramètres actuels
+  - **Rendu JSX :**
+    - Titre de la page avec nom du projet
+    - Bouton pour générer le PDF
+    - Interface à onglets avec :
+      - "Éléments à imprimer" : Configuration des sections à inclure
+      - "Paramètres d'édition PDF" : Configuration des styles et mise en page
+
+### `src/pages/Recapitulatif.tsx`
+- **Rôle Principal :** Page de récapitulatif des travaux et du devis.
+- **Imports Clés :**
+  - React
+  - Composants UI (Button, Card)
+  - useProject (contexte de projet)
+  - PropertyInfoCard, TravauxRecapContent (composants de récapitulatif)
+  - generateDetailsPDF (fonction de génération PDF)
+- **Exports Principaux :** `export default Recapitulatif`
+- **Composant React :**
+  - **Fonctions Internes :**
+    - `handlePrintDevis`: Génère le PDF du devis
+  - **Rendu JSX :**
+    - Titre de la page
+    - Informations sur le bien (PropertyInfoCard)
+    - Récapitulatif des travaux par pièce (TravauxRecapContent)
+    - Totaux globaux par taux de TVA
+    - Boutons d'action (retour aux travaux, édition du devis, impression)
+
+### `src/integrations/supabase/client.ts`
+- **Rôle Principal :** Configure et exporte le client Supabase pour l'application.
+- **Imports Clés :**
+  - @supabase/supabase-js
+- **Exports Principaux :**
+  - `export const supabase`
+- **Logique :**
+  - Récupère l'URL et la clé d'API Supabase depuis les variables d'environnement
+  - Crée et exporte une instance du client Supabase
+  - Configure les options du client (stockage local, etc.)
+
+### `src/lib/utils.ts`
+- **Rôle Principal :** Fonctions utilitaires réutilisables dans l'application.
+- **Imports Clés :**
+  - clsx, tailwind-merge (utilitaires CSS)
+  - date-fns (manipulation de dates)
+- **Exports Principaux :**
+  - `export function cn`
+  - `export function formaterPrix`
+  - `export function formaterDate`
+  - `export function formaterMontantLettre`
+- **Logique / Fonctions :**
+  - `cn`: Utilitaire pour combiner les classes CSS Tailwind
+  - `formaterPrix`: Formate un nombre en prix (X,XX €)
+  - `formaterDate`: Formate une date selon le format français
+  - `formaterMontantLettre`: Convertit un montant en toutes lettres
+  - Autres fonctions mathématiques et de formatage
+
+### `src/features/travaux/utils/travauxUtils.ts`
+- **Rôle Principal :** Utilitaires pour les calculs et la manipulation des travaux.
+- **Imports Clés :**
+  - Types (Travail)
+- **Exports Principaux :**
+  - `export const calculerPrixUnitaireHT`
+  - `export const calculerTotalHT`
+  - `export const calculerTotalTTC`
+  - `export const calculerTotauxParTVA`
+  - `export const filtrerTravauxParPiece`
+- **Logique / Fonctions :**
+  - `calculerPrixUnitaireHT`: Calcule le prix unitaire HT (fournitures + main d'œuvre)
+  - `calculerTotalHT`: Calcule le total HT d'un travail (prix unitaire × quantité)
+  - `calculerTotalTTC`: Calcule le total TTC d'un travail (total HT + TVA)
+  - `calculerTotauxParTVA`: Groupe les travaux par taux de TVA et calcule les totaux
+  - `filtrerTravauxParPiece`: Filtre les travaux par ID de pièce
+
+### `src/components/room/RoomForm.tsx`
+- **Rôle Principal :** Formulaire pour créer ou modifier une pièce.
+- **Imports Clés :**
+  - React, hooks React (useState, useEffect)
+  - Composants UI (Input, Select, Button)
+  - Types (Room)
+- **Exports Principaux :** `export default RoomForm`
+- **Composant React :**
+  - **Props :**
+    - `initialRoom`: Données initiales de la pièce (pour l'édition)
+    - `onSubmit`: Fonction appelée lors de la soumission du formulaire
+    - `onCancel`: Fonction appelée lors de l'annulation
+  - **État Local :**
+    - `room`: Données de la pièce en cours d'édition
+    - `errors`: Erreurs de validation
+  - **Fonctions Internes :**
+    - `handleChange`: Met à jour les champs du formulaire
+    - `handleSubmit`: Valide et soumet le formulaire
+    - `validateForm`: Valide les données du formulaire
+    - `calculateSurface`: Calcule la surface en fonction des dimensions
+  - **Rendu JSX :**
+    - Champs pour le nom, type, dimensions
+    - Champs calculés (surface, périmètre)
+    - Boutons de soumission et d'annulation
