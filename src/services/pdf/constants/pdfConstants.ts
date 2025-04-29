@@ -31,7 +31,7 @@ export const PDF_TEXTS = {
         content: "Un acompte de 30 % ainsi que le règlement des fournitures sont exigés à la commande. Le solde est dû à réception des travaux, sur présentation de la facture. Le règlement devra intervenir sous 7 jours calendaires après facturation.\n\nPour tout devis supérieur à 1 000 € TTC, l'entreprise pourra demander un ou plusieurs acomptes intermédiaires, en fonction de l'avancement des travaux.",
         subsections: [
           {
-            title: "➤ Retards et impayés",
+            title: "- Retards et impayés",
             content: "Tout retard de paiement entraînera, de plein droit et sans mise en demeure :",
             bullets: [
               "Des pénalités de retard au taux de 15 % annuels (1,25 % par mois entamé) sur le montant TTC dû.",
@@ -41,11 +41,11 @@ export const PDF_TEXTS = {
             content_after: "L'entreprise pourra suspendre ou retarder les travaux sans responsabilité si les paiements ne sont pas conformes. Elle décline toute responsabilité pour les conséquences de cette suspension (retard de chantier, dégradations, désordres, pénalités de retard, etc.)."
           },
           {
-            title: "➤ Clause de réserve de propriété",
+            title: "- Clause de réserve de propriété",
             content: "Les fournitures, matériaux, équipements et installations posés restent la propriété de l'entreprise jusqu'au paiement intégral du montant dû. En cas de non-paiement, l'entreprise se réserve le droit d'en exiger la restitution immédiate, sans préjudice pour les prestations déjà effectuées."
           },
           {
-            title: "➤ Commandes et fournitures",
+            title: "- Commandes et fournitures",
             content: "Toute commande de matériel, sur stock ou sur mesure, est définitive. Les produits sont ni repris ni échangés, sauf accord exceptionnel de l'entreprise.\n\nEn cas de retour accepté, tous les frais engagés (transport, frais de reprise, frais de traitement ou de restockage du fournisseur) seront à la charge exclusive du Client."
           }
         ]
