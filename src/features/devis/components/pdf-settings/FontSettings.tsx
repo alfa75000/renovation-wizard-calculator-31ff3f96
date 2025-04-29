@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { ElementSelector } from './components/ElementSelector';
 import { ElementSettingsForm } from './components/ElementSettingsForm';
@@ -19,6 +20,7 @@ export const FontSettings: React.FC<FontSettingsProps> = ({
   const [selectedElement, setSelectedElement] = React.useState('');
   const [elementSettings, setElementSettings] = React.useState<ElementSettings>(defaultElementSettings);
   
+  // Fonction pour récupérer les 5 principales couleurs des paramètres PDF
   const getPaletteColors = () => [
     pdfSettings.colors.mainText,
     pdfSettings.colors.detailsText,

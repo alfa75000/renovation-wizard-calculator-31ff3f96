@@ -1,3 +1,4 @@
+
 import { z } from 'zod';
 import { ElementSettingsSchema } from '@/features/devis/components/pdf-settings/types/elementSettings';
 import { PdfElementId } from '@/features/devis/components/pdf-settings/types/typography';
