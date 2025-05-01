@@ -1,17 +1,14 @@
-//src/components/layout/SaveAsDialog.tsx
+// src/components/layout/SaveAsDialog.tsx
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../ui/dialog';
 import { Label } from '../ui/label';
 import { Button } from '../ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Input } from '../ui/input';
-import { Textarea } from '../ui/textarea';
-import { RefreshCw } from 'lucide-react';
-import { useClients } from '@/contexts/ClientsContext';
-import { useProject } from '@/contexts/ProjectContext';
-import { generateDevisNumber } from '@/services/projectService';
 import { toast } from 'sonner';
+// Importer la bonne fonction depuis le hook d'opérations
 import { useProjectOperations } from '@/features/chantier/hooks/useProjectOperations';
+// Importer useProject seulement si on veut pré-remplir avec le nom actuel
+import { useProject } from '@/contexts/ProjectContext';
 
 interface SaveAsDialogProps {
   open: boolean;
@@ -24,249 +21,87 @@ export const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
   onOpenChange,
   dialogTitle = "Enregistrer Sous"
 }) => {
-  const { state, dispatch } = useProject();
-  const { state: clientsState } = useClients();
-  const { handleSaveProject } = useProjectOperations();
-  
-  // États locaux pour le formulaire
-  const [clientId, setClientId] = useState<string>(state.metadata.clientId || '');
-  const [projectName, setProjectName] = useState<string>(state.metadata.nomProjet || '');
-  const [projectDescription, setProjectDescription] = useState<string>(state.metadata.descriptionProjet || '');
-  const [projectDate, setProjectDate] = useState<string>(state.metadata.dateDevis || '');
-  const [devisNumber, setDevisNumber] = useState<string>(state.metadata.devisNumber || '');
-  const [isGeneratingDevisNumber, setIsGeneratingDevisNumber] = useState<boolean>(false);
+  // Récupérer UNIQUEMENT la fonction handleSaveProjectAs et l'état pour pré-remplir
+  const { handleSaveProjectAs } = useProjectOperations();
+  const { state: projectState } = useProject(); // Pour le nom actuel
+
+  // État local UNIQUEMENT pour le nouveau nom
+  const [newProjectName, setNewProjectName] = useState<string>('');
   const [isSaving, setIsSaving] = useState<boolean>(false);
-  
-  // Synchroniser les champs avec les données du projet courant
+
+  // Pré-remplir le champ avec le nom actuel lorsque la modale s'ouvre
   useEffect(() => {
-    if (open) {
-      setClientId(state.metadata.clientId || '');
-      setProjectDescription(state.metadata.descriptionProjet || '');
-      setProjectName(state.metadata.nomProjet || '');
-      setDevisNumber(state.metadata.devisNumber || '');
-      
-      // Utiliser la date du projet si elle existe, sinon la date du jour
-      if (state.metadata.dateDevis) {
-        setProjectDate(state.metadata.dateDevis);
-      } else {
-        const today = new Date();
-        const formattedDate = today.toISOString().split('T')[0];
-        setProjectDate(formattedDate);
-      }
+    if (open && projectState?.metadata?.nomProjet) {
+      // Suggérer le nom actuel, l'utilisateur peut le modifier
+      setNewProjectName(projectState.metadata.nomProjet);
+    } else if (open) {
+      // Si pas de nom actuel, laisser vide
+      setNewProjectName('');
     }
-  }, [open, state.metadata]);
-  
-  // Générer le nom du projet automatiquement
-  useEffect(() => {
-    if (clientId && (devisNumber || projectDescription)) {
-      const client = clientsState.clients.find(c => c.id === clientId);
-      if (client) {
-        const clientName = `${client.nom} ${client.prenom || ''}`.trim();
-        let newName = '';
-        
-        if (devisNumber) {
-          newName = `Devis n° ${devisNumber} - ${clientName}`;
-        } else {
-          newName = clientName;
-        }
-        
-        if (projectDescription) {
-          newName += projectDescription.length > 40 
-            ? ` - ${projectDescription.substring(0, 40)}...` 
-            : ` - ${projectDescription}`;
-        }
-        
-        setProjectName(newName);
-      }
+    // Réinitialiser l'état de sauvegarde quand la modale se ferme ou s'ouvre
+    setIsSaving(false);
+  }, [open, projectState?.metadata?.nomProjet]);
+
+  // Fonction de sauvegarde simplifiée
+  const handleSave = async () => {
+    if (!newProjectName || newProjectName.trim() === '') {
+      toast.error("Veuillez entrer un nom pour le projet.");
+      return;
     }
-  }, [devisNumber, clientId, projectDescription, clientsState.clients]);
-  
-  // Générer un numéro de devis
-  const handleGenerateDevisNumber = async () => {
+
+    setIsSaving(true);
     try {
-      setIsGeneratingDevisNumber(true);
-      const newDevisNumber = await generateDevisNumber();
-      setDevisNumber(newDevisNumber);
-      
-      if (clientId) {
-        const client = clientsState.clients.find(c => c.id === clientId);
-        if (client) {
-          const clientName = `${client.nom} ${client.prenom || ''}`.trim();
-          let newName = `Devis n° ${newDevisNumber} - ${clientName}`;
-          
-          if (projectDescription) {
-            newName += projectDescription.length > 40 
-              ? ` - ${projectDescription.substring(0, 40)}...` 
-              : ` - ${projectDescription}`;
-          }
-          
-          setProjectName(newName);
-        }
+      // Appeler la fonction dédiée "Enregistrer Sous" avec le nom saisi
+      const success = await handleSaveProjectAs(newProjectName.trim());
+
+      if (success) {
+        // La fonction handleSaveProjectAs gère déjà les toasts et la mise à jour de l'état
+        onOpenChange(false); // Fermer la modale en cas de succès
       }
-      
-      toast.success('Numéro de devis généré avec succès');
+      // Le finally gère le isSaving = false
     } catch (error) {
-      console.error('Erreur lors de la génération du numéro de devis:', error);
-      toast.error('Erreur lors de la génération du numéro de devis');
+       // Normalement, handleSaveProjectAs devrait déjà afficher un toast d'erreur
+       // mais on peut log ici au cas où.
+       console.error("Erreur renvoyée par handleSaveProjectAs:", error);
     } finally {
-      setIsGeneratingDevisNumber(false);
+       // S'assurer que l'état de sauvegarde est réinitialisé
+       setIsSaving(false);
     }
   };
-  
-  // Fonction unique de sauvegarde
-  const handleSaveProjectData = async () => {
-    try {
-      setIsSaving(true);
-      
-      if (!clientId) {
-        toast.error('Veuillez sélectionner un client avant de sauvegarder le projet');
-        setIsSaving(false);
-        return;
-      }
-      
-      // Mettre à jour le state global avec les valeurs du formulaire
-      dispatch({
-        type: 'UPDATE_METADATA',
-        payload: {
-          clientId,
-          nomProjet: projectName,
-          descriptionProjet: projectDescription,
-          dateDevis: projectDate,
-          devisNumber
-        }
-      });
-      
-      // Préparer les données du projet pour la sauvegarde
-      const projectData = {
-        client_id: clientId,
-        name: projectName,
-        description: projectDescription,
-        general_data: {
-          dateDevis: projectDate,
-          infoComplementaire: state.metadata.infoComplementaire || ''
-        },
-        devis_number: devisNumber,
-        address: state.metadata.adresseChantier || '',
-        occupant: state.metadata.occupant || ''
-      };
-      
-      console.log('Données projet à sauvegarder:', projectData);
-      
-      // Appel direct à la fonction de sauvegarde centralisée
-      const result = await handleSaveProject(projectData);
-      
-      if (result) {
-        // Fermer le modal uniquement si la sauvegarde a réussi
-        onOpenChange(false);
-      }
-      
-    } catch (error) {
-      console.error('Erreur lors de l\'enregistrement du projet:', error);
-      toast.error('Erreur lors de l\'enregistrement du projet');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-  
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>{dialogTitle}</DialogTitle>
+          <DialogDescription>
+            Entrez un nouveau nom pour enregistrer une copie de ce projet.
+          </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="devisNumber" className="text-right">
-              Numéro du devis
+            <Label htmlFor="project-name-save-as" className="text-right">
+              Nouveau nom
             </Label>
-            <div className="col-span-3 flex gap-2">
-              <Input
-                id="devisNumber"
-                value={devisNumber}
-                onChange={(e) => setDevisNumber(e.target.value)}
-                placeholder="Ex: 2504-1"
-                className="flex-1"
-              />
-              <Button 
-                type="button" 
-                variant="outline" 
-                size="icon" 
-                onClick={handleGenerateDevisNumber}
-                disabled={isGeneratingDevisNumber}
-              >
-                <RefreshCw className={`h-4 w-4 ${isGeneratingDevisNumber ? 'animate-spin' : ''}`} />
-              </Button>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="client-save" className="text-right">
-              Client
-            </Label>
-            <Select value={clientId} onValueChange={setClientId}>
-              <SelectTrigger id="client-save" className="col-span-3">
-                <SelectValue placeholder="Sélectionnez un client" />
-              </SelectTrigger>
-              <SelectContent>
-                {clientsState.clients.map((client) => (
-                  <SelectItem key={client.id} value={client.id}>
-                    {client.nom} {client.prenom}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="project-description" className="text-right">
-              Description
-            </Label>
-            <Textarea
-              id="project-description"
-              className="col-span-3"
-              placeholder="Description du projet (100 caractères max)"
-              value={projectDescription}
-              onChange={(e) => {
-                if (e.target.value.length <= 100) {
-                  setProjectDescription(e.target.value);
-                }
-              }}
-              maxLength={100}
-              rows={2}
-            />
-          </div>
-          
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="project-name-save" className="text-right">
-              Nom du projet
-            </Label>
+            {/* Input éditable pour le nouveau nom */}
             <Input
-              id="project-name-save"
-              className="col-span-3 bg-gray-50"
-              value={projectName}
-              readOnly
-            />
-          </div>
-          
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="date-start-save" className="text-right">
-              Date de début
-            </Label>
-            <Input
-              id="date-start-save"
-              type="date"
+              id="project-name-save-as"
               className="col-span-3"
-              value={projectDate}
-              onChange={(e) => setProjectDate(e.target.value)}
+              value={newProjectName}
+              onChange={(e) => setNewProjectName(e.target.value)}
+              placeholder="Nom de la nouvelle sauvegarde"
+              disabled={isSaving} // Désactiver pendant la sauvegarde
             />
           </div>
+          {/* Autres champs retirés */}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSaving}>
             Annuler
           </Button>
-          <Button onClick={handleSaveProjectData} disabled={isSaving}>
-            {isSaving ? 'Enregistrement...' : 'Enregistrer'}
+          {/* Le bouton Enregistrer appelle maintenant handleSave */}
+          <Button onClick={handleSave} disabled={isSaving || !newProjectName.trim()}>
+            {isSaving ? 'Enregistrement...' : 'Enregistrer Sous'}
           </Button>
         </DialogFooter>
       </DialogContent>
