@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '../ui/button';
-import { FilePlus2, FolderOpen, Save, SaveAll, Check, AlertCircle, Play } from 'lucide-react';
+import { FilePlus2, FolderOpen, Save, SaveAll, Check, AlertCircle } from 'lucide-react';
 import { useProject } from '@/contexts/ProjectContext';
 import { Popover, PopoverTrigger, PopoverContent } from '../ui/popover';
 import { Badge } from '../ui/badge';
@@ -10,7 +10,6 @@ import { useAppState, AutoSaveOptions } from '@/hooks/useAppState';
 import { UserSelector } from '@/components/user/UserSelector';
 import { Switch } from '../ui/switch';
 import { toast } from 'sonner';
-import { supabase } from '@/lib/supabase';
 
 interface ProjectBarProps {
   onNewProject: () => void;
@@ -19,7 +18,6 @@ interface ProjectBarProps {
   onSaveAsProject: () => void;
   projectDisplayName?: string;
   hasUnsavedChanges?: boolean;
-  showLoadLastProject?: boolean; // Nouvelle prop
 }
 
 // Define default auto save options outside the component
@@ -35,14 +33,9 @@ export const ProjectBar: React.FC<ProjectBarProps> = ({
   onSaveProject,
   onSaveAsProject,
   projectDisplayName,
-  hasUnsavedChanges,
-  showLoadLastProject
+  hasUnsavedChanges
 }) => {
-  const { 
-    currentProjectId, 
-    projects,
-    loadProject
-  } = useProject();
+  const { currentProjectId, projects } = useProject();
   const { 
     isLoading, 
     currentUser, 
@@ -97,27 +90,6 @@ export const ProjectBar: React.FC<ProjectBarProps> = ({
     }
   };
 
-  const handleLoadLastProject = async () => {
-    try {
-      const { data: appStateData } = await supabase
-        .from('app_state')
-        .select('current_project_id')
-        .eq('user_id', (await supabase.from('app_users').select('id').eq('username', 'Admin').single()).data?.id || '')
-        .single();
-        
-      if (appStateData?.current_project_id) {
-        // Décommenter cette ligne et utiliser loadProject du contexte
-        await loadProject(appStateData.current_project_id);
-        toast.success("Projet précédent chargé avec succès");
-      } else {
-        toast.info("Aucun projet précédent à charger");
-      }
-    } catch (error) {
-      console.error('Erreur lors du chargement du dernier projet:', error);
-      toast.error('Erreur lors du chargement du dernier projet');
-    }
-  };
-
   return (
     <div className="max-w-6xl mx-auto px-4 py-2 mb-2 flex flex-col border-b">
       {/* Première ligne: sélecteur d'utilisateur et boutons d'action */}
@@ -149,12 +121,6 @@ export const ProjectBar: React.FC<ProjectBarProps> = ({
             <SaveAll className="mr-1" size={16} />
             Enregistrer Sous
           </Button>
-          {showLoadLastProject && (
-            <Button variant="outline" size="sm" onClick={handleLoadLastProject}>
-              <Play className="mr-1" size={16} />
-              Continuer le Projet
-            </Button>
-          )}
         </div>
         
         {/* Indicateur d'état avec popover pour options d'auto-sauvegarde */}
