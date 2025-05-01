@@ -25,7 +25,7 @@ export const Layout: React.FC<LayoutProps> = ({
   
   const { 
     handleSaveProject, 
-    handleSaveAsProject, // Nouvelle fonction pour "Enregistrer sous"
+    handleSaveAsProject, // Utiliser la fonction correcte et bien exportée
     handleNewProject, 
     currentProjectId 
   } = useProjectOperations();
@@ -122,7 +122,8 @@ export const Layout: React.FC<LayoutProps> = ({
         open={saveAsDialogOpen}
         onOpenChange={setSaveAsDialogOpen}
         dialogTitle="Enregistrer Sous"
-        saveFunction={handleSaveAsProject} // Utilise la nouvelle fonction dédiée "Enregistrer Sous"
+        // Passer la fonction saveFunction avec le bon type et le bon nom
+        saveFunction={handleSaveAsProject}
       />
       
       <OpenProjectDialog 

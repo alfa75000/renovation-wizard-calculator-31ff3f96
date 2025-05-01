@@ -1,3 +1,4 @@
+
 // src/components/layout/SaveAsDialog.tsx
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../ui/dialog';
@@ -14,15 +15,18 @@ interface SaveAsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   dialogTitle?: string;
+  // Ajout de la prop saveFunction pour permettre de passer une fonction de sauvegarde personnalisée
+  saveFunction?: (newName: string) => Promise<boolean>;
 }
 
 export const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
   open,
   onOpenChange,
-  dialogTitle = "Enregistrer Sous"
+  dialogTitle = "Enregistrer Sous",
+  saveFunction
 }) => {
-  // Récupérer UNIQUEMENT la fonction handleSaveProjectAs et l'état pour pré-remplir
-  const { handleSaveProjectAs } = useProjectOperations();
+  // Récupérer UNIQUEMENT la fonction handleSaveAsProject pour la fonction par défaut
+  const { handleSaveAsProject } = useProjectOperations();
   const { state: projectState } = useProject(); // Pour le nom actuel
 
   // État local UNIQUEMENT pour le nouveau nom
@@ -51,16 +55,25 @@ export const SaveAsDialog: React.FC<SaveAsDialogProps> = ({
 
     setIsSaving(true);
     try {
+      // Utiliser la fonction passée en prop si elle existe, sinon utiliser handleSaveAsProject du hook
+      const saveFn = saveFunction || handleSaveAsProject;
+      
+      if (typeof saveFn !== 'function') {
+        console.error("La fonction de sauvegarde n'est pas disponible:", saveFn);
+        toast.error("Erreur: La fonction de sauvegarde n'est pas disponible");
+        return;
+      }
+      
       // Appeler la fonction dédiée "Enregistrer Sous" avec le nom saisi
-      const success = await handleSaveProjectAs(newProjectName.trim());
+      const success = await saveFn(newProjectName.trim());
 
       if (success) {
-        // La fonction handleSaveProjectAs gère déjà les toasts et la mise à jour de l'état
+        // La fonction handleSaveAsProject gère déjà les toasts et la mise à jour de l'état
         onOpenChange(false); // Fermer la modale en cas de succès
       }
       // Le finally gère le isSaving = false
     } catch (error) {
-       // Normalement, handleSaveProjectAs devrait déjà afficher un toast d'erreur
+       // Normalement, handleSaveAsProject devrait déjà afficher un toast d'erreur
        // mais on peut log ici au cas où.
        console.error("Erreur renvoyée par handleSaveProjectAs:", error);
     } finally {

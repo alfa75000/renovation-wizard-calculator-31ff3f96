@@ -327,7 +327,7 @@ export const useProjectOperations = () => {
    * Fonction dédiée à "Enregistrer sous" - Toujours crée un nouveau projet (INSERT)
    * Vérifie également que le numéro de devis n'existe pas déjà dans la base
    */
-  const handleSaveAsProject = useCallback(async (projectInfo?: any) => {
+  const handleSaveAsProject = useCallback(async (newProjectName: string) => {
     const toastId = 'saving-as-project';
     
     try {
@@ -367,23 +367,23 @@ export const useProjectOperations = () => {
       
       // Valider que le client ID est présent
       const metadata = state.metadata || defaultMetadata;
-      const clientId = metadata.clientId || projectInfo?.client_id;
+      const clientId = metadata.clientId;
       
       if (!clientId) {
         toast.error('Veuillez sélectionner un client avant de sauvegarder le projet', { id: toastId });
         return false;
       }
       
-      // Préparer les données du projet
+      // Préparer les données du projet - On utilise le nouveau nom passé en paramètre
       const combinedProjectInfo = {
         client_id: clientId,
-        name: metadata.nomProjet ? `${metadata.nomProjet} (copie)` : 'Projet sans nom',
-        description: metadata.descriptionProjet || projectInfo?.description || '',
-        address: metadata.adresseChantier || projectInfo?.address || '',
-        occupant: metadata.occupant || projectInfo?.occupant || '',
+        name: newProjectName || `${metadata.nomProjet || 'Projet'} (copie)`,
+        description: metadata.descriptionProjet || '',
+        address: metadata.adresseChantier || '',
+        occupant: metadata.occupant || '',
         general_data: {
-          infoComplementaire: metadata.infoComplementaire || projectInfo?.general_data?.infoComplementaire || '',
-          dateDevis: metadata.dateDevis || projectInfo?.general_data?.dateDevis || new Date().toISOString().split('T')[0]
+          infoComplementaire: metadata.infoComplementaire || '',
+          dateDevis: metadata.dateDevis || new Date().toISOString().split('T')[0]
         },
         devis_number: currentDevisNumber,
         project_data: {
@@ -396,7 +396,10 @@ export const useProjectOperations = () => {
           },
           rooms: state.rooms || [],
           travaux: state.travaux || [],
-          metadata: metadata
+          metadata: {
+            ...metadata,
+            nomProjet: newProjectName || `${metadata.nomProjet || 'Projet'} (copie)`
+          }
         }
       };
       
@@ -472,7 +475,7 @@ export const useProjectOperations = () => {
     handleChargerProjet,
     handleDeleteProject,
     handleSaveProject,
-    handleSaveAsProject, // Nouvelle fonction exposée
+    handleSaveAsProject, // Assurons-nous d'exposer cette fonction
     handleNewProject,
     currentProjectId,
     projects,
