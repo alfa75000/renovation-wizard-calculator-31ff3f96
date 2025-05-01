@@ -25,7 +25,7 @@ export const Layout: React.FC<LayoutProps> = ({
   
   const { 
     handleSaveProject, 
-    handleSaveAsProject, // Utiliser la fonction correcte et bien exportée
+    handleSaveAsProject, 
     handleNewProject, 
     currentProjectId 
   } = useProjectOperations();
@@ -107,7 +107,6 @@ export const Layout: React.FC<LayoutProps> = ({
         onSaveAsProject={handleSmartSaveAsProject}
         projectDisplayName={projectName}
         hasUnsavedChanges={hasUnsavedChanges}
-        showLoadLastProject={!currentProjectId}
       />
       
       <TitleHeader title={title} subtitle={subtitle} />

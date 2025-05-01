@@ -1,3 +1,4 @@
+
 //src/features/chantier/hooks/useProjectOperations.tsx
 import { useCallback } from 'react';
 import { useProject } from '@/contexts/ProjectContext';
@@ -135,7 +136,7 @@ export const useProjectOperations = () => {
   
   /**
    * Fonction centralisée de sauvegarde de projet
-   * Cette fonction est le SEUL point de sauvegarde de toute l'application
+   * Cette fonction est le SEUL point de sauvegarde normale de l'application
    * Elle est également utilisée par l'auto-sauvegarde
    */
   const handleSaveProject = useCallback(async (projectInfo?: any) => {
@@ -323,10 +324,143 @@ export const useProjectOperations = () => {
     }
   }, [state, currentProjectId, refreshProjects, setCurrentProjectId, updateSavedState, updateCurrentProject, currentUser]);
 
+  /**
+   * Nouvelle fonction pour "Enregistrer Sous"
+   * Cette fonction crée TOUJOURS un nouveau projet (INSERT)
+   */
+  const handleSaveAsProject = useCallback(async (newProjectName: string) => {
+    const toastId = 'saving-project-as';
+    
+    try {
+      toast.loading('Création d\'une copie du projet en cours...', { id: toastId });
+      
+      // Vérifier que state existe
+      if (!state) {
+        console.error('Erreur: state est undefined dans handleSaveAsProject');
+        toast.error('Erreur: État du projet non disponible', { id: toastId });
+        return false;
+      }
+      
+      // Créer un objet metadata par défaut avec la structure appropriée
+      const defaultMetadata: ProjectMetadata = {
+        clientId: '',
+        nomProjet: '',
+        descriptionProjet: '',
+        adresseChantier: '',
+        occupant: '',
+        infoComplementaire: '',
+        dateDevis: '',
+        devisNumber: ''
+      };
+      
+      // Récupérer les métadonnées actuelles
+      const metadata = state.metadata || defaultMetadata;
+      const clientId = metadata.clientId;
+      
+      if (!clientId) {
+        toast.error('Veuillez sélectionner un client avant de sauvegarder une copie du projet', { id: toastId });
+        return false;
+      }
+      
+      // Générer une date actuelle pour les nouvelles données
+      const currentDate = new Date().toISOString().split('T')[0];
+      
+      // Préparer les données du projet avec le nouveau nom
+      const newProjectInfo = {
+        client_id: clientId,
+        name: newProjectName,  // Utiliser le nouveau nom explicitement
+        description: metadata.descriptionProjet || '',
+        address: metadata.adresseChantier || '',
+        occupant: metadata.occupant || '',
+        general_data: {
+          infoComplementaire: metadata.infoComplementaire || '',
+          dateDevis: metadata.dateDevis || currentDate
+        },
+        devis_number: metadata.devisNumber || '',
+        project_data: {
+          property: state.property || {
+            type: 'Appartement',
+            floors: 1,
+            totalArea: 0,
+            rooms: 0,
+            ceilingHeight: 2.5,
+          },
+          rooms: state.rooms || [],
+          travaux: state.travaux || [],
+          metadata: {
+            ...metadata,
+            nomProjet: newProjectName  // Mettre à jour aussi dans les métadonnées
+          }
+        }
+      };
+      
+      console.log('Création d\'une nouvelle copie du projet avec nom:', newProjectName);
+      
+      // TOUJOURS faire un INSERT (jamais un UPDATE)
+      const { data, error } = await supabase
+        .from('projects_save')
+        .insert(newProjectInfo)
+        .select();
+        
+      if (error) {
+        console.error('Erreur lors de la création de la copie du projet:', error);
+        toast.error('Erreur lors de la création de la copie du projet', { id: toastId });
+        return false;
+      }
+      
+      console.log('Copie du projet créée avec succès:', data);
+      toast.success('Copie du projet créée avec succès', { id: toastId });
+      
+      // Mettre à jour l'ID du projet courant pour basculer vers le nouveau projet
+      if (data && data[0] && data[0].id) {
+        const newProjectId = data[0].id;
+        setCurrentProjectId(newProjectId);
+        
+        // Mettre à jour le projet courant dans l'état de l'application
+        if (currentUser) {
+          const success = await updateCurrentProject(newProjectId);
+          if (!success) {
+            console.error('Échec de updateCurrentProject pour la copie du projet');
+            
+            // Tentative de mise à jour directe
+            try {
+              const { error: updateError } = await supabase
+                .from('app_state')
+                .update({ current_project_id: newProjectId })
+                .eq('user_id', currentUser.id);
+                
+              if (updateError) {
+                console.error('Échec de la mise à jour directe pour la copie du projet:', updateError);
+              } else {
+                console.log('Mise à jour directe réussie pour la copie du projet');
+              }
+            } catch (e) {
+              console.error('Exception lors de la mise à jour directe pour la copie du projet:', e);
+            }
+          } else {
+            console.log('Mise à jour réussie de current_project_id pour la copie du projet');
+          }
+        }
+      }
+      
+      // Mettre à jour l'état de sauvegarde
+      updateSavedState();
+      
+      // Rafraîchir la liste des projets après la sauvegarde
+      await refreshProjects();
+      return true;
+    } catch (error) {
+      console.error('Erreur lors de l\'enregistrement de la copie du projet:', error);
+      toast.error('Erreur lors de l\'enregistrement de la copie du projet', { id: toastId });
+      return false;
+    }
+  }, [state, refreshProjects, setCurrentProjectId, updateSavedState, updateCurrentProject, currentUser]);
+
   return {
     handleChargerProjet,
     handleDeleteProject,
     handleSaveProject,
+    handleSaveAsProject,  // Exposer la nouvelle fonction
     handleNewProject,
     currentProjectId,
     projects,
