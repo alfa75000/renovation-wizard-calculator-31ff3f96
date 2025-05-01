@@ -2,7 +2,7 @@
 import { useCallback } from 'react';
 import { useProject } from '@/contexts/ProjectContext';
 import { toast } from 'sonner';
-import { ProjectMetadata, ProjectState, Client } from '@/types'; // Client ajouté pour le nom
+import { ProjectMetadata, ProjectState, Client } from '@/types'; // Client et ProjectState importés
 import { supabase } from '@/lib/supabase';
 import { useAppState } from '@/hooks/useAppState';
 import { generateDevisNumber } from '@/services/projectService'; // Importer la fonction de génération
@@ -15,12 +15,13 @@ export const useProjectOperations = () => {
   const {
     loadProject,
     deleteCurrentProject,
+    // contextSaveProject est ignoré
     currentProjectId,
-    projects,
+    projects, // Récupéré pour la vérification du nom dans Save As
     hasUnsavedChanges,
     isLoading,
     state,
-    dispatch,
+    dispatch, // Important pour mettre à jour l'état
     refreshProjects,
     setCurrentProjectId,
     updateSavedState,
@@ -30,13 +31,13 @@ export const useProjectOperations = () => {
   const { updateCurrentProject, currentUser } = useAppState();
   const { state: clientsState } = useClients(); // Pour obtenir les détails client
 
-  // --- handleNewProject --- (Inchangé)
+  // --- handleNewProject ---
   const handleNewProject = useCallback(async () => {
-    // ... (code inchangé) ...
-     try {
+    try {
       createNewProject();
       if (currentUser) {
         await updateCurrentProject(null);
+         // Logique de fallback directe retirée pour la clarté
       }
       return true;
     } catch (error) {
@@ -47,14 +48,14 @@ export const useProjectOperations = () => {
   }, [createNewProject, updateCurrentProject, currentUser]);
 
 
-  // --- handleChargerProjet --- (Inchangé)
+  // --- handleChargerProjet ---
   const handleChargerProjet = useCallback(async (projetId: string) => {
-     // ... (code inchangé) ...
-     try {
+    try {
       await loadProject(projetId);
       console.log('Projet chargé, mise à jour de current_project_id dans app_state:', projetId);
       if (currentUser) {
         await updateCurrentProject(projetId);
+         // Logique de fallback directe retirée pour la clarté
       } else {
         console.error('Pas d\'utilisateur courant pour la mise à jour de app_state');
       }
@@ -64,10 +65,9 @@ export const useProjectOperations = () => {
     }
   }, [loadProject, updateCurrentProject, currentUser]);
 
-  // --- handleDeleteProject --- (Inchangé)
+  // --- handleDeleteProject ---
   const handleDeleteProject = useCallback(async () => {
-    // ... (code inchangé) ...
-     try {
+    try {
       await deleteCurrentProject();
       if (currentUser) {
         await updateCurrentProject(null);
@@ -81,24 +81,27 @@ export const useProjectOperations = () => {
   }, [deleteCurrentProject, updateCurrentProject, currentUser]);
 
 
-  // --- Fonction handleSaveProject (Enregistrer) --- (Inchangé par rapport à la version précédente corrigée)
+  // --- Fonction handleSaveProject (Enregistrer) ---
+  // Met à jour UNIQUEMENT un projet existant.
   const handleSaveProject = useCallback(async (projectInfo?: { isAutoSave?: boolean }) => {
     const toastId = 'saving-project';
     const isAutoSave = projectInfo?.isAutoSave;
 
+    // 1. Vérifier si un projet est chargé
     if (!currentProjectId) {
       if (!isAutoSave) {
         toast.info('Utilisez "Enregistrer Sous" pour la première sauvegarde.', { id: toastId });
       }
-      return false;
+      return false; // Ne peut pas enregistrer un projet inexistant
     }
 
+    // 2. Procéder à la MISE À JOUR
     try {
       if (!isAutoSave) {
         toast.loading('Mise à jour en cours...', { id: toastId });
       }
 
-      if (!state || !currentUser) {
+      if (!state || !currentUser) { // Vérifier aussi currentUser pour user_id
         console.error('Erreur: état ou utilisateur non disponible dans handleSaveProject (UPDATE)');
         if (!isAutoSave) {
           toast.error('Erreur lors de la mise à jour : état ou utilisateur non disponible', { id: toastId });
@@ -106,14 +109,16 @@ export const useProjectOperations = () => {
         return false;
       }
 
-      const metadata = state.metadata || ({} as ProjectMetadata);
-      const clientId = metadata.clientId;
+      // --- Préparation des données pour UPDATE ---
+      const metadata = state.metadata || ({} as ProjectMetadata); // Assurer que metadata existe
+      const clientId = metadata.clientId; // Client ID depuis l'état
 
-      if (!clientId && !isAutoSave) {
+       if (!clientId && !isAutoSave) {
            toast.error('Veuillez sélectionner un client avant de sauvegarder le projet', { id: toastId });
            return false;
        }
 
+      // On ne met à jour que les champs nécessaires et project_data
       const updatePayload = {
         client_id: clientId,
         name: metadata.nomProjet || 'Projet sans nom',
@@ -125,17 +130,19 @@ export const useProjectOperations = () => {
           dateDevis: metadata.dateDevis || new Date().toISOString().split('T')[0]
         },
         devis_number: metadata.devisNumber || '',
+        // S'assurer que l'état complet et à jour est sauvegardé dans project_data
         project_data: {
-            ...state,
-            id: currentProjectId,
-            isDirty: false,
-        } as ProjectState
+            ...state, // Copie l'état courant
+            id: currentProjectId, // Assure que l'ID est bien dans les données sauvegardées
+            isDirty: false, // Marqué comme non-sale dans les données sauvegardées
+        } as ProjectState // Assertion de type pour typescript
       };
+      // -----------------------------------------
 
       console.log('Mise à jour du projet existant:', currentProjectId);
       const { data, error } = await supabase
         .from('projects_save')
-        .update(updatePayload)
+        .update(updatePayload) // Utilise l'objet préparé
         .eq('id', currentProjectId)
         .select()
         .single();
@@ -153,8 +160,9 @@ export const useProjectOperations = () => {
         toast.success('Projet mis à jour avec succès', { id: toastId });
       }
 
+      // Mettre à jour l'état local : marquer comme non-sale
       dispatch({ type: 'SET_DIRTY', payload: false });
-      updateSavedState();
+      updateSavedState(); // Peut-être pour une logique UI supplémentaire
 
       return true;
 
@@ -168,12 +176,13 @@ export const useProjectOperations = () => {
   }, [state, currentProjectId, currentUser, supabase, dispatch, updateSavedState]);
 
 
-  // --- Fonction handleSaveProjectAs (Enregistrer Sous) --- (Modifiée pour unicité devisNumber)
-  const handleSaveProjectAs = useCallback(async (desiredBaseName: string) => { // Renommé pour clarté
+  // --- Fonction handleSaveProjectAs (Enregistrer Sous) ---
+  // Crée TOUJOURS un nouveau projet avec vérification du nom et du numéro de devis.
+  const handleSaveProjectAs = useCallback(async (desiredBaseName: string) => {
     const toastId = 'saving-project-as';
     toast.loading('Enregistrement sous...', { id: toastId });
 
-    if (!state || !currentUser || !clientsState.clients) { // Vérifier aussi clientsState
+    if (!state || !currentUser || !clientsState.clients) {
       toast.error('Impossible d\'enregistrer : état, utilisateur ou données client non disponible.', { id: toastId });
       return false;
     }
@@ -197,50 +206,51 @@ export const useProjectOperations = () => {
       let devisNumberToCheck = finalDevisNumber;
       let devisNumberExists = false;
 
-      // Fonction interne pour vérifier si un devisNumber existe déjà pour cet utilisateur
+      // Fonction interne pour vérifier si un devisNumber existe déjà pour cet utilisateur (CORRIGÉE)
       const checkDevisNumberExists = async (numberToCheck: string | null | undefined): Promise<boolean> => {
-          if (!numberToCheck) return false; // Un numéro vide n'existe pas en tant que tel
+          if (!numberToCheck || !currentUser) return false;
           const { data, error } = await supabase
               .from('projects_save')
-              .select('id', { count: 'exact', head: true })
+              .select('id') // Sélectionner juste l'ID
               .eq('user_id', currentUser.id)
-              .eq('devis_number', numberToCheck); // Vérifie le numéro de devis
+              .eq('devis_number', numberToCheck) // Filtre sur devis_number
+              .limit(1) // Limiter à 1 résultat
+              .maybeSingle(); // Utiliser maybeSingle()
 
           if (error) {
               console.error("Erreur lors de la vérification du numéro de devis:", error);
-              throw new Error("Erreur technique lors de la vérification du numéro de devis.");
+              toast.error(`Erreur technique lors de la vérification du numéro de devis: ${error.message}`);
+              return true; // Considérer comme existant par sécurité
           }
-          return (data?.count ?? 0) > 0;
+          return data !== null; // Existe si data n'est pas null
       };
 
       devisNumberExists = await checkDevisNumberExists(devisNumberToCheck);
 
       if (devisNumberExists || !finalDevisNumber) {
           console.log(`Numéro de devis "${finalDevisNumber}" existe ou est vide, génération d'un nouveau...`);
-          finalDevisNumber = await generateDevisNumber(); // Appel service existant
-          projectStateToSave.metadata.devisNumber = finalDevisNumber; // Mettre à jour dans la copie
+          finalDevisNumber = await generateDevisNumber();
+          projectStateToSave.metadata.devisNumber = finalDevisNumber;
           toast.info(`Nouveau numéro de devis généré : ${finalDevisNumber}`);
       }
       // --- Fin Vérification Numéro Devis ---
 
       // --- Re-génération du nom de projet basé sur le numéro de devis FINAL ---
-      let baseNameToMakeUnique = trimmedBaseName; // Utiliser le nom demandé par l'utilisateur comme base
-
-      // Optionnel : si vous voulez que le nom reflète TOUJOURS le numéro de devis et le client
-       const client = clientsState.clients.find(c => c.id === projectStateToSave.metadata.clientId);
-       if (client && finalDevisNumber) {
+      let baseNameToMakeUnique = trimmedBaseName;
+      const client = clientsState.clients.find(c => c.id === projectStateToSave.metadata.clientId);
+      if (client && finalDevisNumber) {
            const clientName = `${client.nom} ${client.prenom || ''}`.trim();
            let generatedName = `Devis n° ${finalDevisNumber} - ${clientName}`;
            const desc = projectStateToSave.metadata.descriptionProjet;
            if (desc) {
                generatedName += desc.length > 40 ? ` - ${desc.substring(0, 40)}...` : ` - ${desc}`;
            }
-           baseNameToMakeUnique = generatedName; // Utiliser ce nom généré comme base pour l'unicité
+           baseNameToMakeUnique = generatedName;
            console.log("Nom de base recalculé:", baseNameToMakeUnique);
        } else {
-         // Sinon, on garde le nom demandé par l'utilisateur comme base
          console.log("Utilisation du nom demandé comme base:", baseNameToMakeUnique);
        }
+       // --- Fin Re-génération Nom ---
 
 
       // --- Vérification de l'unicité du nom FINAL ---
@@ -248,26 +258,24 @@ export const useProjectOperations = () => {
       let counter = 1;
       let nameExists = true;
 
-      // Fonction interne pour vérifier si un nom existe déjà (MODIFIÉE pour utiliser GET + limit)
+      // Fonction interne pour vérifier si un nom existe déjà (CORRIGÉE)
       const checkNameExists = async (nameToCheck: string): Promise<boolean> => {
+          if (!currentUser) return false;
           const { data, error } = await supabase
               .from('projects_save')
-              .select('id') // Sélectionne juste l'ID
+              .select('id')
               .eq('user_id', currentUser.id)
               .eq('name', nameToCheck)
-              .limit(1) // Limite à 1 résultat
-              .maybeSingle(); // Retourne null si pas trouvé, l'objet si trouvé
+              .limit(1)
+              .maybeSingle();
 
           if (error) {
               console.error("Erreur lors de la vérification du nom:", error);
-              // Ne pas lancer l'erreur ici pour l'instant, gérer via le retour
               toast.error(`Erreur technique lors de la vérification du nom: ${error.message}`);
-              // Considérer que le nom existe pour éviter une sauvegarde potentiellement erronée
-              return true; // Ou lancer l'erreur si on préfère bloquer
+              return true; // Prévention
           }
-          return data !== null; // Retourne true si un enregistrement est trouvé
+          return data !== null;
       };
-
 
       nameExists = await checkNameExists(uniqueName);
 
@@ -310,8 +318,8 @@ export const useProjectOperations = () => {
       const { data: newlySavedProject, error } = await supabase
           .from('projects_save')
           .insert(insertPayload)
-          .select()
-          .single();
+          .select() // Sélectionner l'enregistrement complet inséré
+          .single(); // S'attendre à une seule ligne
 
       if (error || !newlySavedProject) {
           console.error('Erreur lors de la création du projet (Enregistrer Sous):', error);
@@ -333,21 +341,22 @@ export const useProjectOperations = () => {
           finalStateToLoad.isDirty = false;
       } else {
            console.warn("project_data n'a pas été retourné ou est invalide.");
-           // Créer un nouvel état vide mais avec les bonnes métadonnées minimales
            finalStateToLoad = createNewProject();
-           finalStateToLoad.id = newProjectId;
-           finalStateToLoad.metadata = { // Assigner les métadonnées importantes
-             ...finalStateToLoad.metadata, // Garder les défauts pour le reste
-             nomProjet: uniqueName,
-             clientId: insertPayload.client_id,
-             devisNumber: finalDevisNumber,
-             dateDevis: insertPayload.general_data.dateDevis,
-             descriptionProjet: insertPayload.description,
-             adresseChantier: insertPayload.address,
-             occupant: insertPayload.occupant,
-             infoComplementaire: insertPayload.general_data.infoComplementaire,
-           };
-           finalStateToLoad.isDirty = false;
+           if(finalStateToLoad) { // Vérifier si createNewProject a retourné quelque chose
+             finalStateToLoad.id = newProjectId;
+             finalStateToLoad.metadata = {
+               ...finalStateToLoad.metadata,
+               nomProjet: uniqueName,
+               clientId: insertPayload.client_id,
+               devisNumber: finalDevisNumber,
+               dateDevis: insertPayload.general_data.dateDevis,
+               descriptionProjet: insertPayload.description,
+               adresseChantier: insertPayload.address,
+               occupant: insertPayload.occupant,
+               infoComplementaire: insertPayload.general_data.infoComplementaire,
+             };
+             finalStateToLoad.isDirty = false;
+           }
       }
 
        if(finalStateToLoad){
