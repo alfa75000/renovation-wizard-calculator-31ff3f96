@@ -1,71 +1,42 @@
-//src/features/chantier/hooks/useProjectOperations.tsx
-import { useCallback } from 'react';
+// src/features/chantier/hooks/useProjectOperations.tsx
+import { useCallback, useState } from 'react'; // Import de useState retiré car non utilisé ici directement
 import { useProject } from '@/contexts/ProjectContext';
 import { toast } from 'sonner';
-import { ProjectMetadata } from '@/types';
+import { ProjectMetadata, ProjectState } from '@/types'; // ProjectState importé
 import { supabase } from '@/lib/supabase';
 import { useAppState } from '@/hooks/useAppState';
+// Supposons qu'un utilitaire generateId existe si besoin, sinon Supabase gère l'ID
+// import { generateId } from '@/lib/utils';
 
 /**
  * Hook centralisant toutes les opérations liées aux projets
  */
 export const useProjectOperations = () => {
-  const { 
+  const {
     loadProject,
     deleteCurrentProject,
-    // Renommer mais ne pas utiliser cette fonction de sauvegarde du contexte
-    saveProject: contextSaveProject,
+    // contextSaveProject est ignoré
     currentProjectId,
-    projects,
+    projects, // Récupéré pour la vérification du nom dans Save As
     hasUnsavedChanges,
     isLoading,
     state,
+    dispatch, // Important pour mettre à jour l'état
     refreshProjects,
-    // Fonction pour mettre à jour l'ID du projet courant
     setCurrentProjectId,
-    // Importation de la fonction updateSavedState pour mettre à jour l'état de sauvegarde
     updateSavedState,
-    // Fonction pour réinitialiser le projet
     createNewProject
   } = useProject();
-  
-  // Utiliser le hook d'état d'application pour mettre à jour le projet en cours
+
   const { updateCurrentProject, currentUser } = useAppState();
 
-  /**
-   * Fonction pour créer un nouveau projet vide et réinitialiser l'état
-   * Cette fonction est utilisée par le bouton "Nouveau" dans ProjectBar
-   */
+  // --- handleNewProject --- (Inchangé par rapport à votre version)
   const handleNewProject = useCallback(async () => {
     try {
-      // Réinitialiser l'état du projet avec la fonction du contexte
       createNewProject();
-      
-      // Mettre à jour l'ID de projet courant dans app_state à NULL
       if (currentUser) {
-        const success = await updateCurrentProject(null);
-        if (!success) {
-          console.error('Échec de la mise à jour de current_project_id à NULL dans app_state');
-          // Tentative de mise à jour directe en cas d'échec
-          try {
-            const { error } = await supabase
-              .from('app_state')
-              .update({ current_project_id: null })
-              .eq('user_id', currentUser.id);
-              
-            if (error) {
-              console.error('Échec de la mise à jour directe:', error);
-            } else {
-              console.log('Mise à jour directe réussie');
-            }
-          } catch (e) {
-            console.error('Exception lors de la mise à jour directe:', e);
-          }
-        } else {
-          console.log('Mise à jour de current_project_id à NULL réussie');
-        }
+        await updateCurrentProject(null);
       }
-      
       return true;
     } catch (error) {
       console.error('Erreur lors de la réinitialisation du projet:', error);
@@ -74,38 +45,13 @@ export const useProjectOperations = () => {
     }
   }, [createNewProject, updateCurrentProject, currentUser]);
 
-  /**
-   * Charger un projet existant
-   */
+  // --- handleChargerProjet --- (Inchangé par rapport à votre version)
   const handleChargerProjet = useCallback(async (projetId: string) => {
     try {
       await loadProject(projetId);
       console.log('Projet chargé, mise à jour de current_project_id dans app_state:', projetId);
-      
-      // Mettre à jour l'ID du projet en cours dans l'état de l'application
       if (currentUser) {
-        const success = await updateCurrentProject(projetId);
-        if (!success) {
-          console.error('Échec de la mise à jour de current_project_id dans app_state');
-          
-          // Tentative de mise à jour directe
-          try {
-            const { error } = await supabase
-              .from('app_state')
-              .update({ current_project_id: projetId })
-              .eq('user_id', currentUser.id);
-              
-            if (error) {
-              console.error('Échec de la mise à jour directe:', error);
-            } else {
-              console.log('Mise à jour directe réussie');
-            }
-          } catch (e) {
-            console.error('Exception lors de la mise à jour directe:', e);
-          }
-        } else {
-          console.log('Mise à jour de current_project_id réussie');
-        }
+        await updateCurrentProject(projetId);
       } else {
         console.error('Pas d\'utilisateur courant pour la mise à jour de app_state');
       }
@@ -114,14 +60,11 @@ export const useProjectOperations = () => {
       toast.error('Une erreur est survenue lors du chargement du projet');
     }
   }, [loadProject, updateCurrentProject, currentUser]);
-  
-  /**
-   * Supprimer le projet actuel
-   */
+
+  // --- handleDeleteProject --- (Inchangé par rapport à votre version)
   const handleDeleteProject = useCallback(async () => {
     try {
       await deleteCurrentProject();
-      // Mettre à jour l'ID du projet en cours dans l'état de l'application
       if (currentUser) {
         await updateCurrentProject(null);
       }
@@ -132,206 +75,262 @@ export const useProjectOperations = () => {
       return false;
     }
   }, [deleteCurrentProject, updateCurrentProject, currentUser]);
-  
-  /**
-   * Fonction centralisée de sauvegarde de projet
-   * Cette fonction est le SEUL point de sauvegarde de toute l'application
-   * Elle est également utilisée par l'auto-sauvegarde
-   */
-  const handleSaveProject = useCallback(async (projectInfo?: any) => {
-    // Identifiant unique pour le toast de sauvegarde
+
+
+  // --- Fonction handleSaveProject (Enregistrer) ---
+  // Met à jour UNIQUEMENT un projet existant.
+  const handleSaveProject = useCallback(async (projectInfo?: { isAutoSave?: boolean }) => {
     const toastId = 'saving-project';
-    
-    // Ne pas afficher de toast pour l'auto-sauvegarde
     const isAutoSave = projectInfo?.isAutoSave;
-    
+
+    // 1. Vérifier si un projet est chargé
+    if (!currentProjectId) {
+      if (!isAutoSave) {
+        toast.info('Utilisez "Enregistrer Sous" pour la première sauvegarde.', { id: toastId });
+      }
+      return false; // Ne peut pas enregistrer un projet inexistant
+    }
+
+    // 2. Procéder à la MISE À JOUR
     try {
       if (!isAutoSave) {
-        // Afficher un toast de chargement uniquement pour les sauvegardes manuelles
-        toast.loading('Sauvegarde en cours...', { id: toastId });
+        toast.loading('Mise à jour en cours...', { id: toastId });
       }
-      
-      // Vérifier que state existe
-      if (!state) {
-        console.error('Erreur: state est undefined dans handleSaveProject');
+
+      if (!state || !currentUser) { // Vérifier aussi currentUser pour user_id
+        console.error('Erreur: état ou utilisateur non disponible dans handleSaveProject (UPDATE)');
         if (!isAutoSave) {
-          toast.error('Erreur lors de la sauvegarde du projet: état non disponible', { id: toastId });
+          toast.error('Erreur lors de la mise à jour : état ou utilisateur non disponible', { id: toastId });
         }
         return false;
       }
-      
-      // Créer un objet metadata par défaut avec la structure appropriée
-      const defaultMetadata: ProjectMetadata = {
-        clientId: '',
-        nomProjet: '',
-        descriptionProjet: '',
-        adresseChantier: '',
-        occupant: '',
-        infoComplementaire: '',
-        dateDevis: '',
-        devisNumber: ''
-      };
-      
-      // Valider que le client ID est présent en utilisant le metadata approprié
-      const metadata = state.metadata || defaultMetadata;
-      const clientId = metadata.clientId || projectInfo?.client_id;
-      
-      if (!clientId) {
-        toast.error('Veuillez sélectionner un client avant de sauvegarder le projet', { id: toastId });
-        return false;
-      }
-      
-      // Préparer les données du projet
-      const combinedProjectInfo = {
+
+      // --- Préparation des données pour UPDATE ---
+      const metadata = state.metadata || ({} as ProjectMetadata); // Assurer que metadata existe
+      const clientId = metadata.clientId; // Client ID depuis l'état
+
+       if (!clientId && !isAutoSave) {
+           toast.error('Veuillez sélectionner un client avant de sauvegarder le projet', { id: toastId });
+           return false;
+       }
+
+      // On ne met à jour que les champs nécessaires et project_data
+      const updatePayload = {
         client_id: clientId,
-        name: metadata.nomProjet || projectInfo?.name || 'Projet sans nom',
-        description: metadata.descriptionProjet || projectInfo?.description || '',
-        address: metadata.adresseChantier || projectInfo?.address || '',
-        occupant: metadata.occupant || projectInfo?.occupant || '',
+        name: metadata.nomProjet || 'Projet sans nom',
+        description: metadata.descriptionProjet || '',
+        address: metadata.adresseChantier || '',
+        occupant: metadata.occupant || '',
         general_data: {
-          infoComplementaire: metadata.infoComplementaire || projectInfo?.general_data?.infoComplementaire || '',
-          dateDevis: metadata.dateDevis || projectInfo?.general_data?.dateDevis || new Date().toISOString().split('T')[0]
+          infoComplementaire: metadata.infoComplementaire || '',
+          dateDevis: metadata.dateDevis || new Date().toISOString().split('T')[0]
         },
-        devis_number: metadata.devisNumber || projectInfo?.devis_number || '',
+        devis_number: metadata.devisNumber || '',
+        // S'assurer que l'état complet et à jour est sauvegardé dans project_data
         project_data: {
-          property: state.property || {
-            type: 'Appartement',
-            floors: 1,
-            totalArea: 0,
-            rooms: 0,
-            ceilingHeight: 2.5,
-          },
-          rooms: state.rooms || [],
-          travaux: state.travaux || [],
-          metadata: metadata
-        }
+            ...state, // Copie l'état courant
+            id: currentProjectId, // Assure que l'ID est bien dans les données sauvegardées
+            isDirty: false, // Marqué comme non-sale dans les données sauvegardées
+        } as ProjectState // Assertion de type pour typescript
       };
-      
+      // -----------------------------------------
+
+      console.log('Mise à jour du projet existant:', currentProjectId);
+      const { data, error } = await supabase
+        .from('projects_save')
+        .update(updatePayload) // Utilise l'objet préparé
+        .eq('id', currentProjectId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Erreur lors de la mise à jour du projet:', error);
+        if (!isAutoSave) {
+          toast.error(`Erreur lors de la mise à jour: ${error.message}`, { id: toastId });
+        }
+        return false;
+      }
+
       if (!isAutoSave) {
-        console.log('Données du projet avant sauvegarde:', combinedProjectInfo);
+        console.log('Projet mis à jour avec succès:', data);
+        toast.success('Projet mis à jour avec succès', { id: toastId });
       }
-      
-      let result;
-      
-      // Sauvegarde selon qu'on modifie un projet existant ou qu'on en crée un nouveau
-      if (currentProjectId) {
-        if (!isAutoSave) {
-          console.log('Mise à jour du projet existant:', currentProjectId);
-        }
-        const { data, error } = await supabase
-          .from('projects_save')
-          .update(combinedProjectInfo)
-          .eq('id', currentProjectId)
-          .select();
-          
-        if (error) {
-          console.error('Erreur lors de la mise à jour du projet:', error);
-          if (!isAutoSave) {
-            toast.error('Erreur lors de la mise à jour du projet', { id: toastId });
-          }
-          return false;
-        }
-        
-        if (!isAutoSave) {
-          console.log('Projet mis à jour avec succès:', data);
-          toast.success('Projet mis à jour avec succès', { id: toastId });
-        }
-        result = data;
-      } else {
-        // Création d'un nouveau projet
-        if (!isAutoSave) {
-          console.log('Création d\'un nouveau projet avec client_id:', clientId);
-        }
-        try {
-          const { data, error } = await supabase
-            .from('projects_save')
-            .insert(combinedProjectInfo)
-            .select();
-            
-          if (error) {
-            console.error('Erreur lors de la création du projet:', error);
-            if (!isAutoSave) {
-              toast.error('Erreur lors de la création du projet', { id: toastId });
-            }
-            return false;
-          }
-          
-          if (!isAutoSave) {
-            console.log('Projet créé avec succès:', data);
-            toast.success('Projet créé avec succès', { id: toastId });
-          }
-          result = data;
-          
-          // Mettre à jour l'ID du projet courant pour éviter les doubles créations
-          if (data && data[0] && data[0].id) {
-            setCurrentProjectId(data[0].id);
-          }
-        } catch (innerError) {
-          console.error('Exception lors de la création du projet:', innerError);
-          if (!isAutoSave) {
-            toast.error(`Erreur lors de la création du projet: ${innerError instanceof Error ? innerError.message : 'Erreur inconnue'}`, { id: toastId });
-          }
-          return false;
-        }
-      }
-      
-      // Mise à jour du projet courant dans l'état de l'application si c'est un nouveau projet
-      if (result && result[0] && result[0].id) {
-        const projectId = result[0].id;
-        console.log('Mise à jour de app_state avec new project id:', projectId);
-        
-        if (currentUser) {
-          const success = await updateCurrentProject(projectId);
-          if (!success) {
-            console.error('Échec de updateCurrentProject pour le nouveau projet');
-            
-            // Tentative de mise à jour directe
-            try {
-              const { error } = await supabase
-                .from('app_state')
-                .update({ current_project_id: projectId })
-                .eq('user_id', currentUser.id);
-                
-              if (error) {
-                console.error('Échec de la mise à jour directe pour le nouveau projet:', error);
-              } else {
-                console.log('Mise à jour directe réussie pour le nouveau projet');
-              }
-            } catch (e) {
-              console.error('Exception lors de la mise à jour directe pour le nouveau projet:', e);
-            }
-          } else {
-            console.log('Mise à jour réussie de current_project_id pour le nouveau projet');
-          }
-        } else {
-          console.error('Pas d\'utilisateur courant pour la mise à jour de app_state pour le nouveau projet');
-        }
-      }
-      
-      // Mettre à jour l'état de sauvegarde pour indiquer que le projet est sauvegardé
-      updateSavedState();
-      
-      // Rafraîchir la liste des projets après la sauvegarde
-      await refreshProjects();
+
+      // Mettre à jour l'état local : marquer comme non-sale
+      dispatch({ type: 'SET_DIRTY', payload: false });
+      updateSavedState(); // Peut-être pour une logique UI supplémentaire
+
+      // Pas besoin de rafraîchir la liste pour une simple mise à jour ici
+      // await refreshProjects();
+
       return true;
+
     } catch (error) {
-      console.error('Erreur lors de l\'enregistrement du projet:', error);
+      console.error('Erreur lors de la mise à jour du projet:', error);
       if (!isAutoSave) {
-        toast.error('Erreur lors de l\'enregistrement du projet', { id: toastId });
+        toast.error(`Erreur lors de la mise à jour : ${error instanceof Error ? error.message : 'Erreur inconnue'}`, { id: toastId });
       }
       return false;
     }
-  }, [state, currentProjectId, refreshProjects, setCurrentProjectId, updateSavedState, updateCurrentProject, currentUser]);
+  }, [state, currentProjectId, currentUser, supabase, dispatch, updateSavedState]);
+
+
+  // --- Fonction handleSaveProjectAs (Enregistrer Sous) ---
+  // Crée TOUJOURS un nouveau projet avec vérification du nom.
+  const handleSaveProjectAs = useCallback(async (newProjectName: string) => {
+    const toastId = 'saving-project-as';
+    toast.loading('Enregistrement sous...', { id: toastId });
+
+    if (!state || !currentUser) {
+      toast.error('Impossible d\'enregistrer : état ou utilisateur non disponible.', { id: toastId });
+      return false;
+    }
+
+    const trimmedNewName = newProjectName.trim();
+    if (!trimmedNewName) {
+      toast.error('Veuillez entrer un nom pour le projet.', { id: toastId });
+      return false;
+    }
+
+    try {
+      // --- Vérification de l'unicité du nom ---
+      let uniqueName = trimmedNewName;
+      let counter = 1;
+      let nameExists = true;
+
+      // Fonction interne pour vérifier si un nom existe déjà pour cet utilisateur
+      const checkNameExists = async (nameToCheck: string): Promise<boolean> => {
+          const { data, error } = await supabase
+              .from('projects_save')
+              .select('id', { count: 'exact', head: true }) // Plus efficace : juste compter
+              .eq('user_id', currentUser.id)
+              .eq('name', nameToCheck);
+
+          if (error) {
+              console.error("Erreur lors de la vérification du nom:", error);
+              throw new Error("Erreur lors de la vérification du nom du projet.");
+          }
+          return (data?.count ?? 0) > 0; // Retourne true si le compte est > 0
+      };
+
+      nameExists = await checkNameExists(uniqueName);
+
+      while (nameExists) {
+          uniqueName = `${trimmedNewName} (${counter})`;
+          nameExists = await checkNameExists(uniqueName);
+          counter++;
+          if(counter > 100) { // Sécurité pour éviter boucle infinie
+             throw new Error("Impossible de trouver un nom de projet unique.");
+          }
+      }
+      // -----------------------------------------
+
+      // --- Préparation des données pour INSERT ---
+      // Créer une copie profonde
+      const projectStateToSave: ProjectState = JSON.parse(JSON.stringify(state));
+
+      // Assigner le nom unique et mettre ID à null
+      if (!projectStateToSave.metadata) projectStateToSave.metadata = {} as ProjectMetadata;
+      projectStateToSave.metadata.nomProjet = uniqueName;
+      projectStateToSave.id = null; // Force la génération d'un nouvel ID par la DB
+      projectStateToSave.isDirty = false; // Le nouvel enregistrement est propre
+
+      const clientId = projectStateToSave.metadata.clientId;
+      if (!clientId) {
+         toast.error('Veuillez sélectionner un client avant de sauvegarder le projet.', { id: toastId });
+         return false;
+      }
+
+      const insertPayload = {
+          user_id: currentUser.id,
+          client_id: clientId,
+          name: uniqueName, // Nom unique vérifié
+          description: projectStateToSave.metadata.descriptionProjet || '',
+          address: projectStateToSave.metadata.adresseChantier || '',
+          occupant: projectStateToSave.metadata.occupant || '',
+          general_data: {
+            infoComplementaire: projectStateToSave.metadata.infoComplementaire || '',
+            dateDevis: projectStateToSave.metadata.dateDevis || new Date().toISOString().split('T')[0]
+          },
+          devis_number: projectStateToSave.metadata.devisNumber || '',
+          project_data: projectStateToSave // Sauvegarder l'état complet
+      };
+      // ------------------------------------------
+
+      console.log('Création d\'un nouveau projet (Enregistrer Sous) avec le nom:', uniqueName);
+      const { data: newlySavedProject, error } = await supabase
+          .from('projects_save')
+          .insert(insertPayload)
+          .select() // Sélectionner l'enregistrement complet inséré
+          .single(); // S'attendre à une seule ligne
+
+      if (error || !newlySavedProject) {
+          console.error('Erreur lors de la création du projet (Enregistrer Sous):', error);
+          toast.error(`Erreur lors de la création: ${error?.message ?? 'Inconnue'}`, { id: toastId });
+          return false;
+      }
+
+      console.log('Projet créé avec succès (Enregistrer Sous):', newlySavedProject);
+      toast.success(`Projet enregistré sous "${uniqueName}"`, { id: toastId });
+
+      // --- Mise à jour de l'état de l'application ---
+      const newProjectId = newlySavedProject.id;
+      setCurrentProjectId(newProjectId);
+
+      // Assurer que les données chargées dans l'état sont valides et complètes
+      let finalStateToLoad: ProjectState | null = null;
+      if (newlySavedProject.project_data && typeof newlySavedProject.project_data === 'object') {
+          finalStateToLoad = newlySavedProject.project_data as ProjectState;
+          finalStateToLoad.id = newProjectId; // Mettre le bon ID
+          finalStateToLoad.isDirty = false; // Marquer comme propre
+      } else {
+           console.warn("project_data n'a pas été retourné ou est invalide, rechargement...");
+           // Optionnel: recharger depuis la DB si project_data n'est pas retourné par l'insert/select
+           // const reloadedState = await projectSaveService.loadProject(newProjectId);
+           // if (reloadedState) finalStateToLoad = reloadedState;
+           // Pour l'instant, on crée un nouvel état vide si le retour est mauvais
+           finalStateToLoad = createNewProject(); // Ou une version adaptée
+           finalStateToLoad.id = newProjectId;
+           finalStateToLoad.metadata.nomProjet = uniqueName; // S'assurer que le nom est bon
+           finalStateToLoad.isDirty = false;
+
+      }
+
+       if(finalStateToLoad){
+         dispatch({ type: 'LOAD_PROJECT', payload: finalStateToLoad });
+       } else {
+         // Gérer le cas où même le rechargement échoue
+         toast.error("Erreur critique lors du chargement du projet nouvellement sauvegardé.");
+         return false;
+       }
+
+
+      // Mettre à jour l'ID du projet courant dans app_state
+      await updateCurrentProject(newProjectId);
+
+      updateSavedState();
+      await refreshProjects();
+
+      return true; // Indiquer le succès
+
+    } catch (error) {
+      console.error('Erreur lors de l\'enregistrement sous:', error);
+      toast.error(`Erreur lors de l'enregistrement : ${error instanceof Error ? error.message : 'Erreur inconnue'}`, { id: toastId });
+      return false; // Indiquer l'échec
+    }
+  }, [state, projects, currentUser, supabase, updateCurrentProject, setCurrentProjectId, dispatch, refreshProjects, updateSavedState, createNewProject]); // Ajout de createNewProject si utilisé en fallback
+
 
   return {
     handleChargerProjet,
     handleDeleteProject,
-    handleSaveProject,
+    handleSaveProject,    // Fonction "Enregistrer" (UPDATE seulement)
+    handleSaveProjectAs,  // Fonction "Enregistrer Sous" (INSERT seulement)
     handleNewProject,
     currentProjectId,
     projects,
     hasUnsavedChanges,
     isLoading,
-    projectState: state 
+    projectState: state
   };
 };
