@@ -4,6 +4,9 @@ import { Label } from '../ui/label';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { toast } from 'sonner';
+import { useProjectOperations } from '@/features/chantier/hooks/useProjectOperations';
+import { useProject } from '@/contexts/ProjectContext';
+
 
 interface SaveAsDialogProps {
   open: boolean;
