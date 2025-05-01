@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -57,35 +56,25 @@ export function OpenProjectDialog({ open, onOpenChange }: OpenProjectDialogProps
   const [showOnlyWithDevis, setShowOnlyWithDevis] = useState(false);
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
   
-  // Modifié: Correction du problème de rafraîchissement des projets
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [hasRefreshed, setHasRefreshed] = useState(false);
   
-  // Modifié: Utilisation de useEffect pour rafraîchir les projets à l'ouverture
   useEffect(() => {
-    const handleRefresh = async () => {
-      if (open && !isRefreshing) {
-        setIsRefreshing(true);
-        console.log("Rafraîchissement des projets...");
-        try {
-          await refreshProjects();
-        } catch (error) {
+    if (open && !hasRefreshed) {
+      console.log("Rafraîchissement des projets...");
+      refreshProjects()
+        .then(() => {
+          setHasRefreshed(true);
+        })
+        .catch(error => {
           console.error('Erreur lors du rafraîchissement des projets:', error);
           toast.error('Erreur lors du chargement de la liste des projets');
-        } finally {
-          setIsRefreshing(false);
-        }
-      }
-    };
-    
-    handleRefresh();
-  }, [open, refreshProjects]);
-
-  // Réinitialiser l'état de rafraîchissement lorsque le dialogue se ferme
-  useEffect(() => {
-    if (!open) {
-      setIsRefreshing(false);
+        });
     }
-  }, [open]);
+    
+    if (!open) {
+      setHasRefreshed(false);
+    }
+  }, [open, refreshProjects, hasRefreshed]);
 
   useEffect(() => {
     const newActiveFilters: string[] = [];
@@ -188,7 +177,6 @@ export function OpenProjectDialog({ open, onOpenChange }: OpenProjectDialogProps
     }
   }, [open]);
 
-  // Modifié: Assurer que le dialogue reste ouvert pendant le chargement
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] flex flex-col">
@@ -347,7 +335,7 @@ export function OpenProjectDialog({ open, onOpenChange }: OpenProjectDialogProps
         </div>
         
         <ScrollArea className="flex-grow border rounded-md h-[400px]">
-          {isLoading || isRefreshing ? (
+          {isLoading ? (
             <div className="py-8 flex justify-center">
               <Loader />
             </div>
