@@ -1,3 +1,4 @@
+
 import React, { ReactNode, useState } from 'react';
 import { useProject } from '@/contexts/ProjectContext';
 import { ProjectBar } from './layout/ProjectBar';
@@ -9,6 +10,7 @@ import { LayoutProps } from './Layout.d';
 import { useProjectOperations } from '@/features/chantier/hooks/useProjectOperations';
 import { toast } from 'sonner';
 import { useAutoSave } from '@/hooks/useAutoSave';
+import { isDevisNumberUnique } from '@/services/devisService';
 
 export const Layout: React.FC<LayoutProps> = ({ 
   children, 
@@ -21,7 +23,12 @@ export const Layout: React.FC<LayoutProps> = ({
     hasUnsavedChanges
   } = useProject();
   
-  const { handleSaveProject, handleNewProject, currentProjectId } = useProjectOperations();
+  const { 
+    handleSaveProject, 
+    handleSaveAsProject, // Nouvelle fonction pour "Enregistrer sous"
+    handleNewProject, 
+    currentProjectId 
+  } = useProjectOperations();
   
   // Activer l'auto-sauvegarde au niveau global de l'application
   useAutoSave();
@@ -55,6 +62,29 @@ export const Layout: React.FC<LayoutProps> = ({
       // Note: Le toast d'erreur est maintenant affiché dans handleSaveProject
     }
   };
+  
+  // Fonction pour gérer l'action "Enregistrer sous" avec vérification du numéro de devis
+  const handleSmartSaveAsProject = async () => {
+    try {
+      // Vérifier d'abord que le devis number n'existe pas déjà
+      const currentDevisNumber = state?.metadata?.devisNumber;
+      
+      if (currentDevisNumber) {
+        const isUnique = await isDevisNumberUnique(currentDevisNumber);
+        
+        if (!isUnique) {
+          toast.error('Ce numéro de devis existe déjà. Veuillez le modifier avant de continuer.');
+          return;
+        }
+      }
+      
+      // Si le numéro de devis n'existe pas encore ou est unique, ouvrir la boîte de dialogue
+      setSaveAsDialogOpen(true);
+    } catch (error) {
+      console.error('Erreur lors de la vérification du numéro de devis:', error);
+      toast.error('Une erreur est survenue lors de la vérification du numéro de devis');
+    }
+  };
 
   // Fonction de confirmation pour la création d'un nouveau projet
   const confirmAndHandleNewProject = () => {
@@ -74,7 +104,7 @@ export const Layout: React.FC<LayoutProps> = ({
         onNewProject={confirmAndHandleNewProject}
         onOpenProject={() => setOpenProjectDialogOpen(true)}
         onSaveProject={handleSmartSaveProject}
-        onSaveAsProject={() => setSaveAsDialogOpen(true)}
+        onSaveAsProject={handleSmartSaveAsProject}
         projectDisplayName={projectName}
         hasUnsavedChanges={hasUnsavedChanges}
         showLoadLastProject={!currentProjectId}
@@ -92,6 +122,7 @@ export const Layout: React.FC<LayoutProps> = ({
         open={saveAsDialogOpen}
         onOpenChange={setSaveAsDialogOpen}
         dialogTitle="Enregistrer Sous"
+        saveFunction={handleSaveAsProject} // Utilise la nouvelle fonction dédiée "Enregistrer Sous"
       />
       
       <OpenProjectDialog 

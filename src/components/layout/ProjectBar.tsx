@@ -18,6 +18,7 @@ interface ProjectBarProps {
   onSaveAsProject: () => void;
   projectDisplayName?: string;
   hasUnsavedChanges?: boolean;
+  showLoadLastProject?: boolean;
 }
 
 // Define default auto save options outside the component
@@ -33,7 +34,8 @@ export const ProjectBar: React.FC<ProjectBarProps> = ({
   onSaveProject,
   onSaveAsProject,
   projectDisplayName,
-  hasUnsavedChanges
+  hasUnsavedChanges,
+  showLoadLastProject
 }) => {
   const { currentProjectId, projects } = useProject();
   const { 
