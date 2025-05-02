@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useTravaux } from '../hooks/useTravaux';
 import TravailCard from './TravailCard';
@@ -45,7 +44,7 @@ const TravauxList: React.FC<TravauxListProps> = ({ pieceId, onStartEdit }) => {
       // Pour les menuiseries et autres surfaces, on vérifie si l'ID correspond
       return travaux.filter(travail => 
         travail.menuiserieId === filterType || 
-        travail.autreElementId === filterType
+        travail.surfaceImpactee === filterType
       );
     }
   }, [travaux, filterType]);
