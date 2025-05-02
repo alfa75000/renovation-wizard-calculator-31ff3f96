@@ -1,403 +1,281 @@
+import React, { useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Form } from '@/components/ui/form';
+import { Room, Travail, SousTypeTravauxItemReference, Service } from '@/types';
+import { TypeTravauxSelect } from './TypeTravauxSelect';
+import { ServiceGroupSelect } from './ServiceGroupSelect';
+import { SousTypeSelect } from './SousTypeSelect';
+import { QuantitySection } from './QuantitySection';
+import { PriceSection } from './PriceSection';
+import { DescriptionSection } from './DescriptionSection';
+import { TvaSelect } from './TvaSelect';
+import { SurfaceImpacteeSelect } from './SurfaceImpacteeSelect';
+import { useTravauxTypes } from '../hooks/useTravauxTypes';
+import { toast } from 'sonner';
 
-import React, { useState, useEffect, useMemo } from "react";
-import { Button } from "@/components/ui/button";
-import TypeTravauxSelect from "./TypeTravauxSelect";
-import ServiceGroupSelect from "./ServiceGroupSelect";
-import SousTypeSelect from "./SousTypeSelect";
-import { Room, Travail, SurfaceImpactee } from "@/types";
-import { Service, UniteType } from "@/types/supabase";
-import DescriptionSection from "./DescriptionSection";
-import QuantitySection from "./QuantitySection";
-import PriceSection from "./PriceSection";
-import { Label } from "@/components/ui/label";
-import { RefreshCw } from "lucide-react";
-import UpdateServiceModal from "./UpdateServiceModal";
-import { updateService, cloneServiceWithChanges } from "@/services/travauxService";
-import { toast } from "sonner";
-import { 
-  AlertDialog, 
-  AlertDialogAction, 
-  AlertDialogCancel, 
-  AlertDialogContent, 
-  AlertDialogDescription, 
-  AlertDialogFooter, 
-  AlertDialogHeader, 
-  AlertDialogTitle 
-} from "@/components/ui/alert-dialog";
+// --- Schéma de validation Zod ---
+// (Identique à la version précédente, avec preprocess pour les nombres)
+const travailFormSchema = z.object({
+  typeTravauxId: z.string().min(1, "Type de travaux requis"),
+  groupId: z.string().min(1, "Groupe requis"),
+  sousTypeId: z.string().min(1, "Prestation requise"),
+  description: z.string().min(1, "Description requise"),
+  quantite: z.preprocess(
+    (val) => (val === "" || val === null || val === undefined || isNaN(Number(val))) ? undefined : Number(val),
+    z.number({invalid_type_error: "Quantité invalide"}).min(0.01, "Quantité > 0 requise")
+  ),
+  unite: z.string().min(1, "Unité requise"),
+  laborPrice: z.preprocess(
+    (val) => (val === "" || val === null || val === undefined || isNaN(Number(val))) ? 0 : Number(val),
+    z.number({invalid_type_error: "Prix invalide"}).min(0, "Prix MO >= 0")
+  ),
+  supplyPrice: z.preprocess(
+     (val) => (val === "" || val === null || val === undefined || isNaN(Number(val))) ? 0 : Number(val),
+    z.number({invalid_type_error: "Prix invalide"}).min(0, "Prix F. >= 0")
+  ),
+  tauxTVA: z.preprocess(
+    (val) => (val === "" || val === null || val === undefined || isNaN(Number(val))) ? undefined : Number(val),
+    z.number({invalid_type_error: "TVA invalide"}).min(0, "TVA >= 0 requise")
+  ),
+  surfaceImpactee: z.string().optional().default("Aucune"),
+  typeTravauxLabel: z.string().optional(),
+  sousTypeLabel: z.string().optional(),
+  prixUnitaireHT: z.number().optional(),
+});
+
+type TravailFormValues = z.infer<typeof travailFormSchema>;
 
 interface TravailFormProps {
-  piece: Room | null;
-  onAddTravail: (travail: Omit<Travail, "id">) => void;
-  travailAModifier: Travail | null;
+  piece: Room | undefined;
+  onAddTravail: (travailData: Omit<Travail, 'id'> | Travail) => void;
+  travailAModifier?: Travail | null;
+  selectedElementContext?: string;
+  calculatedLinear?: number;
 }
 
 const TravailForm: React.FC<TravailFormProps> = ({
   piece,
   onAddTravail,
   travailAModifier,
+  selectedElementContext,
+  calculatedLinear
 }) => {
-  const [typeTravauxId, setTypeTravauxId] = useState<string>(travailAModifier?.typeTravauxId || "");
-  const [typeTravauxLabel, setTypeTravauxLabel] = useState<string>(travailAModifier?.typeTravauxLabel || "");
-  const [groupId, setGroupId] = useState<string>("");
-  const [groupLabel, setGroupLabel] = useState<string>("");
-  const [sousTypeId, setSousTypeId] = useState<string>(travailAModifier?.sousTypeId || "");
-  const [sousTypeLabel, setSousTypeLabel] = useState<string>(travailAModifier?.sousTypeLabel || "");
-  const [selectedService, setSelectedService] = useState<Service | null>(null);
-  const [description, setDescription] = useState<string>(travailAModifier?.description || "");
-  const [quantite, setQuantite] = useState<number>(travailAModifier?.quantite || 0);
-  const [unite, setUnite] = useState<UniteType>("M²");
-  const [prixFournitures, setPrixFournitures] = useState<number>(
-    travailAModifier?.prixFournitures || 0
-  );
-  const [prixMainOeuvre, setPrixMainOeuvre] = useState<number>(
-    travailAModifier?.prixMainOeuvre || 0
-  );
-  const [tauxTVA, setTauxTVA] = useState<number>(travailAModifier?.tauxTVA || 10);
-  const [surfaceImpactee, setSurfaceImpactee] = useState<SurfaceImpactee>('Mur');
-  
-  const [isCustomUnite, setIsCustomUnite] = useState<boolean>(true);
-  const [isCustomSurface, setIsCustomSurface] = useState<boolean>(true);
-  
-  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState<boolean>(false);
-  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState<boolean>(false);
-  
-  const [initialValues, setInitialValues] = useState<{
-    description: string;
-    surfaceImpactee: SurfaceImpactee;
-    unite: UniteType;
-    prixFournitures: number;
-    prixMainOeuvre: number;
-  } | null>(null);
+  const { state: travauxTypesState } = useTravauxTypes();
 
-  useEffect(() => {
-    setGroupId("");
-    setGroupLabel("");
-    setSousTypeId("");
-    setSousTypeLabel("");
-    setSelectedService(null);
-  }, [typeTravauxId]);
+  // Initialisation react-hook-form
+  const form = useForm<TravailFormValues>({
+    resolver: zodResolver(travailFormSchema),
+    // Mettre à jour les valeurs par défaut pour utiliser ?? et undefined pour les nombres
+    defaultValues: {
+      typeTravauxId: travailAModifier?.typeTravauxId || '',
+      // Assurez-vous que votre type Travail a bien groupId, sinon adaptez
+      groupId: travailAModifier?.groupId || '',
+      sousTypeId: travailAModifier?.sousTypeId || '',
+      description: travailAModifier?.description || '',
+      quantite: travailAModifier?.quantite ?? undefined,
+      unite: travailAModifier?.unite || '',
+      laborPrice: travailAModifier?.laborPrice ?? 0,
+      supplyPrice: travailAModifier?.supplyPrice ?? 0,
+      tauxTVA: travailAModifier?.tauxTVA ?? undefined, // Ou une valeur par défaut comme 20 ?
+      surfaceImpactee: travailAModifier?.surfaceImpactee || 'Aucune',
+      typeTravauxLabel: travailAModifier?.typeTravauxLabel || '',
+      sousTypeLabel: travailAModifier?.sousTypeLabel || '',
+      prixUnitaireHT: travailAModifier?.prixUnitaireHT || 0,
+    },
+  });
 
-  useEffect(() => {
-    setSousTypeId("");
-    setSousTypeLabel("");
-    setSelectedService(null);
-  }, [groupId]);
+  const { control, watch, setValue, reset, handleSubmit, formState } = form; // Extraire plus de méthodes
 
+  const selectedTypeTravauxId = watch('typeTravauxId');
+  const selectedGroupId = watch('groupId');
+  const selectedSousTypeId = watch('sousTypeId');
+
+  // --- EFFET POUR PRÉ-REMPLIR POUR LES PLINTHES ---
   useEffect(() => {
-    if (selectedService) {
-      setPrixFournitures(selectedService.supply_price || 0);
-      setPrixMainOeuvre(selectedService.labor_price || 0);
-      
-      const serviceUnit = selectedService.unit || "Unité";
-      setUnite(serviceUnit as UniteType);
-      
-      setIsCustomUnite(!selectedService.unit);
-      
-      setDescription(selectedService.description || "");
-      
-      setSurfaceImpactee(selectedService.surface_impactee || 'Aucune');
-      
-      setIsCustomSurface(!selectedService.surface_impactee);
-      
-      if (piece) {
-        let quantiteInitiale = 0;
-        
-        switch (selectedService.surface_impactee) {
-          case 'Mur':
-            quantiteInitiale = piece.surfaceNetteMurs || piece.wallSurfaceRaw || 0;
-            break;
-          case 'Plafond':
-            quantiteInitiale = piece.surfaceNettePlafond || piece.surfaceBrutePlafond || 0;
-            break;
-          case 'Sol':
-            quantiteInitiale = piece.surfaceNetteSol || piece.surfaceBruteSol || 0;
-            break;
-          default:
-            quantiteInitiale = 1;
+    if (!travailAModifier && selectedElementContext === 'plinthes' && typeof calculatedLinear === 'number' && calculatedLinear > 0) {
+       console.log("Pré-remplissage pour Plinthes (Effet). Linéaire reçu:", calculatedLinear);
+       toast.info(`Pré-remplissage pour Plinthes activé (${calculatedLinear} ml)`);
+       setValue('surfaceImpactee', 'Aucune', { shouldValidate: true, shouldDirty: true });
+       setValue('quantite', calculatedLinear, { shouldValidate: true, shouldDirty: true });
+       setValue('unite', 'ml', { shouldValidate: true, shouldDirty: true });
+    }
+  }, [selectedElementContext, travailAModifier, calculatedLinear, setValue]);
+  // --- FIN EFFET PLINTHES ---
+
+  // --- EFFET POUR METTRE À JOUR CHAMPS SELON SOUS-TYPE SÉLECTIONNÉ ---
+  useEffect(() => {
+    if (!selectedSousTypeId) return;
+    if (selectedElementContext === 'plinthes' && !travailAModifier) return;
+
+    let foundService: SousTypeTravauxItemReference | Service | null = null;
+
+    for (const type of travauxTypesState.types) {
+        if (type.sousTypes?.find(st => st.id === selectedSousTypeId)) {
+            foundService = type.sousTypes.find(st => st.id === selectedSousTypeId) ?? null;
+        } else if (type.serviceGroups) {
+            for (const group of type.serviceGroups) {
+                const service = group.services?.find(s => s.id === selectedSousTypeId);
+                if (service) {
+                    foundService = service;
+                    break;
+                }
+            }
         }
-        
-        setQuantite(parseFloat(quantiteInitiale.toFixed(2)));
+      if (foundService) break;
+    }
+
+    if (foundService) {
+      console.log("Service/Sous-type trouvé:", foundService.label);
+      // Pré-remplir seulement en mode ajout, OU si le sous-type change explicitement
+      const shouldPrefill = !travailAModifier || (travailAModifier && travailAModifier.sousTypeId !== selectedSousTypeId);
+
+      if (shouldPrefill) {
+          setValue('description', foundService.description || foundService.label, { shouldDirty: true });
+          setValue('unite', foundService.unite, { shouldDirty: true });
+          // Gérer les prix - Assurez-vous que ces propriétés existent sur votre type trouvé
+          setValue('laborPrice', foundService.labor_price ?? foundService.prixUnitaire ?? 0, { shouldDirty: true });
+          setValue('supplyPrice', foundService.supply_price ?? 0, { shouldDirty: true });
+          setValue('tauxTVA', foundService.taux_tva ?? 0, { shouldDirty: true });
       }
-      
-      setInitialValues({
-        description: selectedService.description || "",
-        surfaceImpactee: selectedService.surface_impactee || 'Aucune',
-        unite: serviceUnit as UniteType,
-        prixFournitures: selectedService.supply_price || 0,
-        prixMainOeuvre: selectedService.labor_price || 0,
-      });
-    }
-  }, [selectedService, piece]);
-
-  useEffect(() => {
-    if (piece && selectedService) {
-      let quantiteAjustee = 0;
-      
-      switch (surfaceImpactee) {
-        case 'Mur':
-          quantiteAjustee = piece.surfaceNetteMurs || piece.wallSurfaceRaw || 0;
-          break;
-        case 'Plafond':
-          quantiteAjustee = piece.surfaceNettePlafond || piece.surfaceBrutePlafond || 0;
-          break;
-        case 'Sol':
-          quantiteAjustee = piece.surfaceNetteSol || piece.surfaceBruteSol || 0;
-          break;
-        default:
-          return;
-      }
-      
-      setQuantite(parseFloat(quantiteAjustee.toFixed(2)));
-    }
-  }, [surfaceImpactee, piece]);
-
-  const hasChanges = useMemo(() => {
-    if (!initialValues || !selectedService) return false;
-    
-    return (
-      description !== initialValues.description ||
-      surfaceImpactee !== initialValues.surfaceImpactee ||
-      unite !== initialValues.unite ||
-      prixFournitures !== initialValues.prixFournitures ||
-      prixMainOeuvre !== initialValues.prixMainOeuvre
-    );
-  }, [
-    initialValues,
-    selectedService,
-    description,
-    surfaceImpactee,
-    unite,
-    prixFournitures,
-    prixMainOeuvre
-  ]);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!typeTravauxId || !sousTypeId || !piece) {
-      console.error("Données manquantes pour ajouter un travail");
-      return;
-    }
-
-    // Si des modifications ont été effectuées, ouvrir la boîte de dialogue de confirmation
-    if (hasChanges) {
-      setIsConfirmDialogOpen(true);
+      // Mettre à jour les labels dans tous les cas de sélection
+      setValue('sousTypeLabel', foundService.label);
+      const parentType = travauxTypesState.types.find(t =>
+          t.id === foundService?.typeTravauxId ||
+          t.serviceGroups?.some(g => g.id === foundService?.group_id)
+      );
+      setValue('typeTravauxLabel', parentType?.label || '');
     } else {
-      // Si aucune modification, ajouter simplement le travail
-      addTravail();
+       console.log("Aucun service trouvé pour l'ID:", selectedSousTypeId);
     }
-  };
 
-  const addTravail = () => {
-    if (!typeTravauxId || !sousTypeId || !piece) {
-      console.error("Données manquantes pour ajouter un travail");
-      return;
-    }
-    
-    onAddTravail({
-      pieceId: piece.id,
-      typeTravauxId,
-      typeTravauxLabel,
-      sousTypeId,
-      sousTypeLabel,
-      description,
-      quantite,
-      unite,
-      prixFournitures,
-      prixMainOeuvre,
-      tauxTVA,
-      commentaire: "",
-      surfaceImpactee,
-    });
-  };
+  // La dépendance à travailAModifier est retirée pour permettre la mise à jour si on change le sous-type en mode édition
+  }, [selectedSousTypeId, travauxTypesState.types, setValue, selectedElementContext]);
+  // --- FIN EFFET SOUS-TYPE ---
 
-  const handleOpenUpdateModal = () => {
-    if (!selectedService) {
-      toast.error("Veuillez d'abord sélectionner une prestation");
-      return;
+  // --- EFFETS RESET ---
+  useEffect(() => {
+    // Reset seulement si on n'est pas en train d'éditer le même travail
+    if (!travailAModifier || (travailAModifier && travailAModifier.groupId !== selectedGroupId)) {
+        setValue('sousTypeId', '');
     }
-    setIsUpdateModalOpen(true);
-  };
+  }, [selectedGroupId, setValue, travailAModifier]);
 
-  const handleServiceUpdate = async (updateType: 'update' | 'create', serviceData: Partial<Service>): Promise<Service | null> => {
-    if (!selectedService) return null;
-    
-    console.log("--- DEBUG: handleServiceUpdate appelé avec:", {
-      updateType,
-      serviceData,
-      selectedServiceId: selectedService.id
-    });
-    
-    try {
-      let updatedService: Service | null = null;
-      
-      if (updateType === 'update') {
-        console.log("--- DEBUG: Tentative de mise à jour du service existant");
-        updatedService = await updateService(selectedService.id, serviceData);
-        if (updatedService) {
-          console.log("Service mis à jour avec succès:", updatedService);
-          toast.success("La prestation a été mise à jour avec succès");
-          setSelectedService(updatedService);
-        }
-      } else {
-        console.log("--- DEBUG: Tentative de création d'un nouveau service");
-        updatedService = await cloneServiceWithChanges(selectedService.id, serviceData);
-        console.log("--- DEBUG: Résultat de cloneServiceWithChanges:", updatedService);
-        
-        if (updatedService) {
-          console.log("Nouvelle prestation créée avec succès:", updatedService);
-          toast.success("Nouvelle prestation créée avec succès");
-          setSousTypeId(updatedService.id);
-          setSousTypeLabel(updatedService.name);
-          setSelectedService(updatedService);
-        } else {
-          console.error("Échec de la création de la prestation");
-        }
-      }
-      
-      return updatedService;
-    } catch (error) {
-      console.error("Erreur lors de la mise à jour du service:", error);
-      toast.error("Une erreur est survenue lors de la mise à jour");
-      return null;
-    }
-  };
+  useEffect(() => {
+     if (!travailAModifier || (travailAModifier && travailAModifier.typeTravauxId !== selectedTypeTravauxId)) {
+       setValue('groupId', '');
+       setValue('sousTypeId', '');
+     }
+  }, [selectedTypeTravauxId, setValue, travailAModifier]);
+  // --- FIN EFFETS RESET ---
+
+  // --- Fonction de Soumission ---
+  function onSubmit(values: TravailFormValues) {
+    console.log("Données du formulaire validées:", values);
+
+    const finalTravailData: Omit<Travail, 'id'> & { id?: string } = {
+        ...(travailAModifier ? { id: travailAModifier.id } : {}),
+        pieceId: piece?.id ?? '',
+        typeTravauxId: values.typeTravauxId,
+        groupId: values.groupId, // Assurez-vous que ce champ est bien géré
+        sousTypeId: values.sousTypeId,
+        typeTravauxLabel: values.typeTravauxLabel || 'Type Inconnu',
+        sousTypeLabel: values.sousTypeLabel || 'Prestation Inconnue',
+        description: values.description,
+        quantite: values.quantite,
+        unite: values.unite,
+        prixUnitaireHT: (values.laborPrice ?? 0) + (values.supplyPrice ?? 0),
+        laborPrice: values.laborPrice ?? 0,
+        supplyPrice: values.supplyPrice ?? 0,
+        tauxTVA: values.tauxTVA ?? 0,
+        surfaceImpactee: values.surfaceImpactee || 'Aucune',
+    };
+
+     if (!finalTravailData.pieceId) {
+       toast.error("Erreur interne : Impossible d'associer le travail à une pièce.");
+       return;
+     }
+
+    onAddTravail(finalTravailData as Travail | Omit<Travail, 'id'>);
+  }
+  // --- Fin onSubmit ---
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <TypeTravauxSelect
-          value={typeTravauxId}
-          onChange={(id: string, label: string) => {
-            setTypeTravauxId(id);
-            setTypeTravauxLabel(label);
-          }}
-        />
-      </div>
+    <Form {...form}>
+      {formState.errors.root && (
+         <div className="text-red-600 text-sm mb-4">{formState.errors.root.message}</div>
+      )}
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <Card className="overflow-hidden">
+          <CardHeader>
+            <CardTitle>Détails du Travail</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Sélecteurs Hiérarchiques */}
+            <TypeTravauxSelect control={control} name="typeTravauxId" label="Type de travaux *" />
+            <ServiceGroupSelect
+              control={control}
+              name="groupId"
+              label="Groupe de services *"
+              typeTravauxId={selectedTypeTravauxId}
+            />
+            <SousTypeSelect
+              control={control}
+              name="sousTypeId"
+              label="Prestation *"
+              typeTravauxId={selectedTypeTravauxId} // Peut être utile pour contexte
+              groupId={selectedGroupId} // Requis pour filtrer
+            />
 
-      {typeTravauxId && (
-        <div>
-          <ServiceGroupSelect
-            workTypeId={typeTravauxId}
-            value={groupId}
-            onChange={(id: string, label: string) => {
-              setGroupId(id);
-              setGroupLabel(label);
-            }}
-          />
+            {/* Description */}
+            <DescriptionSection control={control} name="description" label="Description *" />
+
+             {/* Quantité & Unité */}
+             <QuantitySection
+                control={control}
+                nameQuantite="quantite"
+                nameUnite="unite"
+                label="Quantité *"
+             />
+
+            {/* Prix */}
+            <PriceSection
+              control={control}
+              nameLabor="laborPrice"
+              nameSupply="supplyPrice"
+              labelPrixMO="Prix Unit. MO (€ HT) *"
+              labelPrixFourniture="Prix Unit. Fourniture (€ HT) *"
+            />
+
+             {/* TVA */}
+             <TvaSelect control={control} name="tauxTVA" label="Taux de TVA (%) *" />
+
+            {/* Surface Impactée */}
+            <SurfaceImpacteeSelect
+                control={control}
+                name="surfaceImpactee"
+                label="Surface Impactée"
+            />
+
+            {/* TODO: Ajouter conditionnellement MenuiserieTypeSelect */}
+
+          </CardContent>
+        </Card>
+
+        <div className="flex justify-end space-x-2">
+          {/* Le reset réinitialise aux defaultValues (qui sont basés sur travailAModifier si présent) */}
+          <Button type="button" variant="outline" onClick={() => reset()}>
+            Annuler les modifs
+          </Button>
+          <Button type="submit" disabled={formState.isSubmitting}>
+            {formState.isSubmitting ? 'Enregistrement...' : (travailAModifier ? 'Modifier Travail' : 'Ajouter Travail')}
+          </Button>
         </div>
-      )}
-
-      {groupId && (
-        <div>
-          <Label htmlFor="sousType">Prestation</Label>
-          <SousTypeSelect
-            groupId={groupId}
-            value={sousTypeId}
-            onChange={(id: string, label: string, service: Service) => {
-              setSousTypeId(id);
-              setSousTypeLabel(label);
-              setSelectedService(service);
-            }}
-          />
-        </div>
-      )}
-
-      {sousTypeId && (
-        <>
-          <DescriptionSection 
-            description={description}
-            setDescription={setDescription}
-          />
-          
-          <div className="mt-1 mb-3">
-            <Button 
-              type="button" 
-              variant={hasChanges ? "reset" : "outline"} 
-              size="sm" 
-              onClick={handleOpenUpdateModal}
-              className={`flex items-center gap-1 text-xs w-full ${hasChanges ? "bg-orange-500 hover:bg-orange-600 text-white" : ""}`}
-            >
-              <RefreshCw className="h-3.5 w-3.5" />
-              Mettre à jour la base de données
-            </Button>
-          </div>
-
-          <QuantitySection
-            quantite={quantite}
-            setQuantite={setQuantite}
-            unite={unite}
-            setUnite={(value) => setUnite(value as UniteType)}
-            surfaceImpactee={surfaceImpactee}
-            setSurfaceImpactee={setSurfaceImpactee}
-            isCustomUnite={isCustomUnite}
-            isCustomSurface={isCustomSurface}
-          />
-
-          <PriceSection
-            prixFournitures={prixFournitures}
-            setPrixFournitures={setPrixFournitures}
-            prixMainOeuvre={prixMainOeuvre}
-            setPrixMainOeuvre={setPrixMainOeuvre}
-            tauxTVA={tauxTVA}
-            setTauxTVA={setTauxTVA}
-            unite={unite}
-          />
-        </>
-      )}
-
-      <div className="pt-4">
-        <Button
-          type="submit"
-          disabled={!typeTravauxId || !sousTypeId || !piece}
-          className="w-full"
-        >
-          {travailAModifier ? "Modifier" : "Ajouter"} le travail
-        </Button>
-      </div>
-
-      <AlertDialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Modifications détectées</AlertDialogTitle>
-            <AlertDialogDescription>
-              Vous avez modifié certains paramètres de cette prestation. Souhaitez-vous mettre à jour la base de données avec ces modifications?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => {
-              setIsConfirmDialogOpen(false);
-              addTravail();
-            }}>
-              Non, juste ajouter le travail
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={() => {
-              setIsConfirmDialogOpen(false);
-              setIsUpdateModalOpen(true);
-            }}>
-              Oui, mettre à jour la base de données
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {isUpdateModalOpen && selectedService && (
-        <UpdateServiceModal
-          isOpen={isUpdateModalOpen}
-          onClose={() => setIsUpdateModalOpen(false)}
-          currentService={selectedService}
-          updatedService={{
-            name: sousTypeLabel,
-            description: description,
-            labor_price: prixMainOeuvre,
-            supply_price: prixFournitures,
-            unit: unite,
-            surface_impactee: surfaceImpactee
-          }}
-          onConfirmUpdate={handleServiceUpdate}
-        />
-      )}
-    </form>
+      </form>
+    </Form>
   );
 };
 

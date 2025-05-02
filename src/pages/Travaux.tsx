@@ -1,17 +1,16 @@
-import React, { useState, useEffect, useMemo } from "react"; // Ajout de useMemo
+import React, { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { ChevronRight, PlusCircle, ArrowLeft, ArrowRight, Paintbrush } from "lucide-react"; // Retrait Square (non utilisé ici)
+import { ChevronRight, PlusCircle, ArrowLeft, ArrowRight, Paintbrush } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Layout } from "@/components/Layout"; // Assurez-vous que le chemin est correct
 import { useProject } from "@/contexts/ProjectContext";
 import { useTravaux } from "@/features/travaux/hooks/useTravaux";
-import { Room, Travail, MenuiserieItem, AutreSurfaceItem } from "@/types"; // Types ajoutés
-import { toast } from "sonner"; // Utilisation de sonner directement
+import { Room, Travail, MenuiserieItem, AutreSurfaceItem } from "@/types";
+import { toast } from "sonner";
 import TravailForm from "@/features/travaux/components/TravailForm";
-// Retrait import TravailCard car utilisé dans TravauxList
-import TravauxList from "@/features/travaux/components/TravauxList"; // Import de TravauxList
+import TravauxList from "@/features/travaux/components/TravauxList";
 import {
   Select,
   SelectContent,
@@ -19,9 +18,10 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select";
-import { Label } from "@/components/ui/label"; // Ajout de Label
+import { Label } from "@/components/ui/label";
+// Pas besoin d'importer useCalculSurfaces ici
 
-// Le composant PieceSelect reste tel quel
+// --- Composant PieceSelect ---
 interface PieceSelectProps {
   pieces: Room[];
   selectedPieceId: string | null;
@@ -33,8 +33,7 @@ const PieceSelect: React.FC<PieceSelectProps> = ({
   selectedPieceId,
   onSelect
 }) => {
-  // ... (code inchangé de PieceSelect)
-   return (
+  return (
     <div className="flex flex-col space-y-2">
       {pieces.length > 0 ? (
         pieces.map(piece => (
@@ -44,7 +43,8 @@ const PieceSelect: React.FC<PieceSelectProps> = ({
             className="justify-start"
             onClick={() => onSelect(piece.id)}
           >
-            {piece.name} ({piece.surface?.toFixed(2)} m²) {/* Sécurisation de surface */}
+            {/* Utiliser optional chaining pour les propriétés */}
+            {piece.name} ({piece.surface?.toFixed(2) ?? 'N/A'} m²)
           </Button>
         ))
       ) : (
@@ -56,121 +56,115 @@ const PieceSelect: React.FC<PieceSelectProps> = ({
     </div>
   );
 };
+// --- Fin Composant PieceSelect ---
 
 
+// --- Composant Principal Travaux ---
 const Travaux: React.FC = () => {
   const { state: projectState } = useProject();
-  const { rooms } = projectState || { rooms: [] }; // Gérer le cas où projectState est null/undefined au début
-  const { getTravauxForPiece, addTravail, deleteTravail, updateTravail } = useTravaux(); // updateTravail ajouté
+  const { rooms } = projectState || { rooms: [] }; // Gestion état initial/null
+  const { getTravauxForPiece, addTravail, deleteTravail, updateTravail } = useTravaux();
 
-  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null); // Renommé pour clarté
+  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [travailAModifier, setTravailAModifier] = useState<Travail | null>(null);
-  // L'état pour le filtre Select : 'piece', 'plinthes', 'menuiserie-ID', 'surface-ID'
-  const [selectedElementId, setSelectedElementId] = useState<string>("piece");
+  const [selectedElementId, setSelectedElementId] = useState<string>("piece"); // 'piece' par défaut
 
+  // Effet pour sélectionner la première pièce ou réinitialiser
   useEffect(() => {
     if (!selectedRoomId && rooms.length > 0) {
       setSelectedRoomId(rooms[0].id);
-      setSelectedElementId("piece"); // Réinitialiser le filtre si la pièce change
+      setSelectedElementId("piece");
     }
-
-    if (selectedRoomId && !rooms.find(room => room.id === selectedRoomId)) {
+    // Vérifier si la pièce sélectionnée existe toujours dans la liste
+    if (selectedRoomId && !rooms.some(room => room.id === selectedRoomId)) {
       const newSelectedRoomId = rooms.length > 0 ? rooms[0].id : null;
       setSelectedRoomId(newSelectedRoomId);
-      setSelectedElementId("piece"); // Réinitialiser le filtre
+      setSelectedElementId("piece"); // Réinitialiser le filtre aussi
     }
-  }, [rooms, selectedRoomId]);
+  }, [rooms, selectedRoomId]); // Retrait de setSelectedRoomId des dépendances pour éviter boucle potentielle
 
+  // Calculer les infos de la pièce sélectionnée
   const selectedRoomInfo = useMemo(() => {
      return selectedRoomId ? rooms.find(room => room.id === selectedRoomId) ?? null : null;
   }, [selectedRoomId, rooms]);
 
+  // Récupérer directement le linéaire net depuis l'objet Room
+  const linearNetPlinthes = useMemo(() => {
+    // Utilise la propriété confirmée 'lineaireNet'
+    return selectedRoomInfo?.lineaireNet ?? 0;
+  }, [selectedRoomInfo]);
 
-  // Les travaux sont maintenant récupérés dans TravauxList, pas besoin ici
-  // const travauxForSelectedRoom = selectedRoomId
-  //   ? getTravauxForPiece(selectedRoomId)
-  //   : [];
-
-  const handleAddTravailClick = () => {
-    if (!selectedRoomId) {
-      toast.error("Veuillez d'abord sélectionner une pièce pour ajouter des travaux.");
-      return;
-    }
-    setTravailAModifier(null); // Assure qu'on est en mode ajout
-    setIsDrawerOpen(true);
-  };
-
-  // Renommé pour clarté, reçoit le travail complet de TravauxList/TravailCard
-  const handleStartEditTravail = (travail: Travail) => {
-    console.log("TravauxPage: Édition demandée pour:", travail);
-    setTravailAModifier(travail);
-    setIsDrawerOpen(true);
-  };
-
-  // Gère la soumission du formulaire (ajout ou modification)
-  const handleSubmitTravail = (travailData: Omit<Travail, 'id'> | Travail) => {
-    if (!selectedRoomId) return;
-
-    try {
-        if (travailAModifier && 'id' in travailData) {
-            // Logique de modification
-            updateTravail(travailAModifier.id, travailData);
-            toast.success("Le travail a été modifié avec succès.");
-            setTravailAModifier(null); // Réinitialiser après modif
-        } else {
-            // Logique d'ajout (assurer que pieceId est correct)
-            addTravail({
-                ...(travailData as Omit<Travail, 'id'>), // Cast si nécessaire
-                pieceId: selectedRoomId,
-            });
-            toast.success("Le travail a été ajouté avec succès.");
-        }
-        setIsDrawerOpen(false);
-     } catch(error) {
-        console.error("Erreur lors de la sauvegarde du travail:", error);
-        toast.error("Erreur lors de l'enregistrement du travail.");
-     }
-  };
-
-  // La fonction handleDeleteTravail est maintenant dans TravauxList, on retire celle-ci
-
-  // Construction de la liste des éléments pour le Select (CORRIGÉE et SÉCURISÉE)
+  // Construction de la liste des éléments pour le Select
   const selectElements = useMemo(() => {
-    if (!selectedRoomInfo) return [];
+    if (!selectedRoomInfo) return [{ id: "piece", name: "Pièce (Tous travaux)" }];
 
-    const elements = [
-        { id: "piece", name: `Pièce : ${selectedRoomInfo.name}` },
-        { id: "plinthes", name: "Plinthes" }, // Gardé tel quel pour l'instant
+    const elements: { id: string; name: string }[] = [
+        { id: "piece", name: `Pièce : ${selectedRoomInfo.name} (Tous travaux)` },
+        ...(linearNetPlinthes > 0 ? [{ id: "plinthes", name: `Plinthes (${linearNetPlinthes.toFixed(2)} ml)` }] : []),
     ];
 
-    // Ajout des menuiseries
-    if (selectedRoomInfo.menuiseries && selectedRoomInfo.menuiseries.length > 0) {
+    if (selectedRoomInfo.menuiseries?.length) {
         selectedRoomInfo.menuiseries.forEach((m: MenuiserieItem) => {
-            // Créer un nom descriptif si possible
-            const itemName = m.description || `Menuiserie ${m.largeur}x${m.hauteur}`; // Utiliser description si dispo
-            elements.push({
-                id: `menuiserie-${m.id}`,
-                name: itemName
-            });
+            const itemName = m.description || `Menuiserie (${m.largeur || '?'})x(${m.hauteur || '?'})`;
+            elements.push({ id: `menuiserie-${m.id}`, name: itemName });
         });
     }
-
-    // Ajout des autres surfaces
-    if (selectedRoomInfo.autresSurfaces && selectedRoomInfo.autresSurfaces.length > 0) {
+    if (selectedRoomInfo.autresSurfaces?.length) {
         selectedRoomInfo.autresSurfaces.forEach((a: AutreSurfaceItem) => {
-             // Créer un nom descriptif
-             const itemName = a.description || `Autre Surface (${a.quantite} ${a.unite})`; // Utiliser description si dispo
-             elements.push({
-                id: `surface-${a.id}`,
-                name: itemName
-             });
+             const itemName = a.description || `Autre Surface (${a.quantite} ${a.unite})`;
+             elements.push({ id: `surface-${a.id}`, name: itemName });
         });
     }
 
     return elements;
+  }, [selectedRoomInfo, linearNetPlinthes]);
 
-  }, [selectedRoomInfo]);
+
+  // Ouvre la sheet pour ajouter un travail
+  const handleAddTravailClick = () => {
+    if (!selectedRoomId) {
+      toast.error("Veuillez d'abord sélectionner une pièce.");
+      return;
+    }
+    setTravailAModifier(null); // Mode ajout
+    setIsDrawerOpen(true);
+  };
+
+  // Ouvre la sheet pour modifier un travail existant
+  const handleStartEditTravail = (travail: Travail) => {
+    setTravailAModifier(travail); // Mode édition
+    setIsDrawerOpen(true);
+  };
+
+  // Gère la soumission du formulaire depuis la sheet
+  const handleSubmitTravail = (travailData: Omit<Travail, 'id'> | Travail) => {
+    if (!selectedRoomId) {
+        toast.error("Aucune pièce n'est sélectionnée pour ajouter le travail.");
+        return;
+    }
+
+    try {
+        if (travailAModifier && 'id' in travailData && travailData.id === travailAModifier.id) {
+            // Modification : passer l'ID et les données mises à jour
+            updateTravail(travailAModifier.id, travailData);
+            toast.success("Le travail a été modifié avec succès.");
+            setTravailAModifier(null);
+        } else {
+            // Ajout : s'assurer que pieceId est bien l'ID de la pièce sélectionnée
+            addTravail({
+                ...(travailData as Omit<Travail, 'id'>), // Exclure l'id potentiel venant du formulaire
+                pieceId: selectedRoomId,
+            });
+            toast.success("Le travail a été ajouté avec succès.");
+        }
+        setIsDrawerOpen(false); // Fermer la sheet après succès
+     } catch(error) {
+        console.error("Erreur lors de la sauvegarde du travail:", error);
+        toast.error("Erreur lors de l'enregistrement du travail.");
+        // Ne pas fermer la sheet en cas d'erreur pour permettre correction
+     }
+  };
 
   return (
     <Layout
@@ -178,28 +172,29 @@ const Travaux: React.FC = () => {
       subtitle="Sélectionnez une pièce et ajoutez les travaux à effectuer"
     >
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Colonne Sélection Pièce */}
         <Card className="order-2 lg:order-1">
           <CardHeader>
             <CardTitle>Pièces</CardTitle>
             <CardDescription>
-              Sélectionnez une pièce pour ajouter ou voir les travaux
+              Sélectionnez une pièce pour voir ou ajouter des travaux
             </CardDescription>
           </CardHeader>
           <CardContent>
             <PieceSelect
               pieces={rooms}
-              selectedPieceId={selectedRoomId} // Utilise le nouvel état renommé
+              selectedPieceId={selectedRoomId}
               onSelect={(id) => {
                  setSelectedRoomId(id);
-                 setSelectedElementId("piece"); // Réinitialise le filtre quand on change de pièce
+                 setSelectedElementId("piece");
               }}
             />
           </CardContent>
         </Card>
 
+        {/* Colonne Travaux */}
         <Card className="lg:col-span-2 order-1 lg:order-2">
-          <CardHeader className="flex flex-row items-center justify-between space-x-4">
-            {/* Titre et description */}
+          <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
                <CardTitle className="flex items-center gap-2">
                 <Paintbrush className="h-5 w-5" />
@@ -210,16 +205,15 @@ const Travaux: React.FC = () => {
               </CardTitle>
               {selectedRoomInfo && (
                  <CardDescription>
-                    {selectedRoomInfo.name} ({selectedRoomInfo.surface?.toFixed(2)} m²)
+                    Surface: {selectedRoomInfo.surface?.toFixed(2) ?? 'N/A'} m² - Hauteur: {selectedRoomInfo.hauteur?.toFixed(2) ?? 'N/A'} m
                  </CardDescription>
               )}
             </div>
-            {/* Bouton Ajouter */}
-            <div className="flex-shrink-0">
+            <div className="flex-shrink-0 w-full sm:w-auto">
               <Button
-                onClick={handleAddTravailClick} // Utilise la nouvelle fonction
+                onClick={handleAddTravailClick}
                 disabled={!selectedRoomId}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 w-full sm:w-auto"
               >
                 <PlusCircle className="h-4 w-4" />
                 Ajouter un travail
@@ -227,11 +221,11 @@ const Travaux: React.FC = () => {
             </div>
           </CardHeader>
           <CardContent>
-            {/* Filtre Select ajouté ici */}
+            {/* Filtre Select */}
             {selectedRoomId && (
-                <div className="mb-6"> {/* Augmentation de la marge */}
+                <div className="mb-6">
                     <Label htmlFor="element-filter" className="block text-sm font-medium text-gray-700 mb-1">
-                        Afficher les travaux pour :
+                        Ajouter un travail relatif à :
                     </Label>
                     <Select
                         value={selectedElementId}
@@ -249,19 +243,15 @@ const Travaux: React.FC = () => {
                         ))}
                         </SelectContent>
                     </Select>
-                    {/* TODO: Ajouter la logique de filtrage des travaux basée sur selectedElementId */}
-                    {/* Pour l'instant, TravauxList affiche toujours tous les travaux de la pièce */}
                     </div>
             )}
 
-
             <h3 className="text-lg font-medium mb-3 border-t pt-4">Liste des Travaux</h3>
-            {/* Utilisation de TravauxList */}
+            {/* Affichage de la liste */}
             <TravauxList
                 pieceId={selectedRoomId}
-                selectedRoomInfo={selectedRoomInfo} // Passer les infos de la pièce
-                onStartEdit={handleStartEditTravail} // Passer le handler d'édition
-                // onAddTravailClick={handleAddTravailClick} // Passer le handler pour le bouton dans le message vide
+                selectedRoomInfo={selectedRoomInfo}
+                onStartEdit={handleStartEditTravail} // Passe le handler pour démarrer l'édition
             />
           </CardContent>
         </Card>
@@ -270,7 +260,7 @@ const Travaux: React.FC = () => {
       {/* Boutons de navigation */}
       <div className="flex justify-between mt-8">
         <Button asChild variant="outline" className="flex items-center gap-2">
-          <Link to="/chantier"> {/* Correction du lien retour */}
+          <Link to="/chantier">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Retour Infos Chantier
           </Link>
@@ -291,16 +281,16 @@ const Travaux: React.FC = () => {
             <SheetTitle>
               {travailAModifier ? "Modifier le travail" : "Ajouter un travail"}
             </SheetTitle>
-             {/* Ajouter la description de la pièce ici si souhaité */}
              {selectedRoomInfo && <p className="text-sm text-muted-foreground">Pièce : {selectedRoomInfo.name}</p>}
           </SheetHeader>
-
           <div className="py-4">
-            {/* S'assurer que selectedRoomInfo est passé si nécessaire au formulaire */}
             <TravailForm
-              piece={selectedRoomInfo ?? undefined} // Passer la pièce sélectionnée
-              onAddTravail={handleSubmitTravail} // Utilise la nouvelle fonction unifiée
+              piece={selectedRoomInfo ?? undefined}
+              onAddTravail={handleSubmitTravail}
               travailAModifier={travailAModifier}
+              // Passer le contexte et le linéaire pré-calculé
+              selectedElementContext={selectedElementId}
+              calculatedLinear={selectedElementId === 'plinthes' ? linearNetPlinthes : undefined}
             />
           </div>
         </SheetContent>
