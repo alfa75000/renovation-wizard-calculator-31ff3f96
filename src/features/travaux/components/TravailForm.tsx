@@ -1,20 +1,19 @@
 // src/features/travaux/components/TravailForm.tsx
-// Version ORIGINALE utilisant useState pour chaque champ
+// Version utilisant useState pour chaque champ - CORRIGÉE pour la logique Plinthes
 
 import React, { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import TypeTravauxSelect from "./TypeTravauxSelect"; // Suppose que ces composants acceptent value/onChange
-import ServiceGroupSelect from "./ServiceGroupSelect"; // Suppose que ces composants acceptent value/onChange
-import SousTypeSelect from "./SousTypeSelect";       // Suppose que ce composant accepte value/onChange et passe le service complet
+import TypeTravauxSelect from "./TypeTravauxSelect";
+import ServiceGroupSelect from "./ServiceGroupSelect";
+import SousTypeSelect from "./SousTypeSelect";
 import { Room, Travail, SurfaceImpactee } from "@/types";
-import { Service, UniteType } from "@/types/supabase"; // Assurez-vous que ces types sont corrects
-import DescriptionSection from "./DescriptionSection"; // Suppose qu'il prend description/setDescription
-import QuantitySection from "./QuantitySection";       // Suppose qu'il prend quantite/setQuantite, unite/setUnite etc.
-import PriceSection from "./PriceSection";           // Suppose qu'il prend les états de prix/TVA et leurs setters
-import { Label } from "@/components/ui/label";       // Utilisé ? Vérifier si besoin
+import { Service, UniteType } from "@/types/supabase"; // Assurez-vous que UniteType et Service sont correctement définis
+import DescriptionSection from "./DescriptionSection";
+import QuantitySection from "./QuantitySection";
+import PriceSection from "./PriceSection";
+import { Label } from "@/components/ui/label"; // Utilisé ? Probablement pas directement ici
 import { RefreshCw } from "lucide-react";
 import UpdateServiceModal from "./UpdateServiceModal";
-// Assurez-vous que ces fonctions de service existent et ont la bonne signature
 import { updateService, cloneServiceWithChanges } from "@/services/travauxService";
 import { toast } from "sonner";
 import {
@@ -29,53 +28,41 @@ import {
 } from "@/components/ui/alert-dialog";
 
 interface TravailFormProps {
-  piece: Room | null; // Accepte null si aucune pièce sélectionnée
-  onAddTravail: (travail: Omit<Travail, "id">) => void; // La logique parent gère l'ajout vs modif
+  piece: Room | null;
+  onAddTravail: (travail: Omit<Travail, "id"> | Travail) => void; // Accepte aussi Travail pour la modif
   travailAModifier: Travail | null;
-   // Ajouter les props pour la logique plinthe si on l'intègre ICI
-   selectedElementContext?: string;
-   calculatedLinear?: number;
+  selectedElementContext?: string;
+  calculatedLinear?: number;
 }
 
 const TravailForm: React.FC<TravailFormProps> = ({
   piece,
   onAddTravail,
   travailAModifier,
-  selectedElementContext, // Prop pour plinthe
-  calculatedLinear      // Prop pour plinthe
+  selectedElementContext,
+  calculatedLinear
 }) => {
-  // États locaux pour chaque champ du formulaire
-  const [typeTravauxId, setTypeTravauxId] = useState<string>(travailAModifier?.typeTravauxId || "");
-  const [typeTravauxLabel, setTypeTravauxLabel] = useState<string>(travailAModifier?.typeTravauxLabel || "");
-  const [groupId, setGroupId] = useState<string>(travailAModifier?.groupId || ""); // Assurez-vous que groupId est dans Travail
-  const [groupLabel, setGroupLabel] = useState<string>(""); // Probablement pas dans Travail, juste pour l'UI
-  const [sousTypeId, setSousTypeId] = useState<string>(travailAModifier?.sousTypeId || "");
-  const [sousTypeLabel, setSousTypeLabel] = useState<string>(travailAModifier?.sousTypeLabel || "");
-  const [selectedService, setSelectedService] = useState<Service | null>(null); // Stocke l'objet service de référence
-  const [description, setDescription] = useState<string>(travailAModifier?.description || "");
-  const [quantite, setQuantite] = useState<number>(travailAModifier?.quantite || 0);
-  // Assurer que UniteType est correctement défini (ex: 'M²', 'ml', 'u', 'forfait')
-  const [unite, setUnite] = useState<UniteType>(travailAModifier?.unite as UniteType || "M²");
-  // Adapter les noms si votre type Travail utilise laborPrice/supplyPrice
-  const [prixFournitures, setPrixFournitures] = useState<number>(
-    travailAModifier?.supplyPrice ?? travailAModifier?.prixFournitures ?? 0 // Utiliser les noms probables
-  );
-  const [prixMainOeuvre, setPrixMainOeuvre] = useState<number>(
-    travailAModifier?.laborPrice ?? travailAModifier?.prixMainOeuvre ?? 0 // Utiliser les noms probables
-  );
-  const [tauxTVA, setTauxTVA] = useState<number>(travailAModifier?.tauxTVA || 10); // Valeur par défaut commune
-  // Assurer que SurfaceImpactee est correctement défini (ex: 'Mur', 'Sol', 'Plafond', 'Aucune')
-  const [surfaceImpactee, setSurfaceImpactee] = useState<SurfaceImpactee>(travailAModifier?.surfaceImpactee as SurfaceImpactee || 'Aucune');
-
-  // États pour gérer la personnalisation par rapport au service de référence
-  const [isCustomUnite, setIsCustomUnite] = useState<boolean>(!travailAModifier?.unite); // Ou une logique basée sur la comparaison
-  const [isCustomSurface, setIsCustomSurface] = useState<boolean>(!travailAModifier?.surfaceImpactee); // Ou une logique basée sur la comparaison
-
-  // États pour les modales
+  // --- États Locaux ---
+  const [typeTravauxId, setTypeTravauxId] = useState<string>('');
+  const [typeTravauxLabel, setTypeTravauxLabel] = useState<string>('');
+  const [groupId, setGroupId] = useState<string>('');
+  // const [groupLabel, setGroupLabel] = useState<string>(''); // Pas stocké dans Travail a priori
+  const [sousTypeId, setSousTypeId] = useState<string>('');
+  const [sousTypeLabel, setSousTypeLabel] = useState<string>('');
+  const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [description, setDescription] = useState<string>('');
+  const [quantite, setQuantite] = useState<number>(0);
+  // Assurez-vous que UniteType inclut 'ml'
+  const [unite, setUnite] = useState<UniteType>("M²");
+  const [prixFournitures, setPrixFournitures] = useState<number>(0);
+  const [prixMainOeuvre, setPrixMainOeuvre] = useState<number>(0);
+  const [tauxTVA, setTauxTVA] = useState<number>(10); // Défaut 10%
+  // Assurez-vous que SurfaceImpactee inclut 'Aucune'
+  const [surfaceImpactee, setSurfaceImpactee] = useState<SurfaceImpactee>('Aucune');
+  const [isCustomUnite, setIsCustomUnite] = useState<boolean>(false);
+  const [isCustomSurface, setIsCustomSurface] = useState<boolean>(false);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState<boolean>(false);
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState<boolean>(false);
-
-  // Stocke les valeurs initiales venant du service sélectionné pour détecter les changements manuels
   const [initialValues, setInitialValues] = useState<{
     description: string;
     surfaceImpactee: SurfaceImpactee;
@@ -84,22 +71,61 @@ const TravailForm: React.FC<TravailFormProps> = ({
     prixMainOeuvre: number;
   } | null>(null);
 
-  // Effet pour réinitialiser groupe/sous-type quand type change
+   // --- Effet pour initialiser ou réinitialiser le formulaire ---
+   useEffect(() => {
+    if (travailAModifier) {
+        // Mode édition : charger les données du travail à modifier
+        setTypeTravauxId(travailAModifier.typeTravauxId || '');
+        setTypeTravauxLabel(travailAModifier.typeTravauxLabel || '');
+        setGroupId(travailAModifier.groupId || '');
+        setSousTypeId(travailAModifier.sousTypeId || '');
+        setSousTypeLabel(travailAModifier.sousTypeLabel || '');
+        setDescription(travailAModifier.description || '');
+        setQuantite(travailAModifier.quantite || 0);
+        setUnite((travailAModifier.unite as UniteType) || 'M²');
+        setPrixFournitures(travailAModifier.supplyPrice ?? travailAModifier.prixFournitures ?? 0);
+        setPrixMainOeuvre(travailAModifier.laborPrice ?? travailAModifier.prixMainOeuvre ?? 0);
+        setTauxTVA(travailAModifier.tauxTVA || 10);
+        setSurfaceImpactee((travailAModifier.surfaceImpactee as SurfaceImpactee) || 'Aucune');
+        setSelectedService(null); // Le service sera trouvé par l'effet sur sousTypeId si nécessaire
+        setInitialValues(null); // Reset des valeurs initiales
+        setIsCustomSurface(false); // A réévaluer si on veut détecter les modifs en édition
+        setIsCustomUnite(false);
+    } else {
+        // Mode ajout : réinitialiser la plupart des champs
+        // Garder typeTravauxId, groupId, sousTypeId car ils peuvent être sélectionnés avant l'effet plinthe
+        setDescription('');
+        setQuantite(0);
+        setUnite('M²');
+        setPrixFournitures(0);
+        setPrixMainOeuvre(0);
+        setTauxTVA(10);
+        setSurfaceImpactee('Aucune');
+        setSousTypeLabel('');
+        // Ne pas réinitialiser typeTravauxLabel ici
+        setSelectedService(null);
+        setInitialValues(null);
+        setIsCustomSurface(false);
+        setIsCustomUnite(false);
+    }
+  }, [travailAModifier]); // Se déclenche quand on passe du mode ajout à édition ou vice-versa
+
+
+  // --- Effet pour réinitialiser groupe/sous-type quand type change (seulement en mode ajout) ---
   useEffect(() => {
-    // Ne pas reset si on charge pour modification
-    if (!travailAModifier || travailAModifier.typeTravauxId !== typeTravauxId) {
+    if (!travailAModifier) { // Ne s'applique qu'en mode ajout
         setGroupId("");
-        setGroupLabel("");
+        // setGroupLabel(""); // Pas d'état pour ça
         setSousTypeId("");
         setSousTypeLabel("");
         setSelectedService(null);
-        setInitialValues(null); // Réinitialiser aussi les valeurs initiales
+        setInitialValues(null);
     }
   }, [typeTravauxId, travailAModifier]); // S'exécute quand typeTravauxId change
 
-  // Effet pour réinitialiser sous-type quand groupe change
+  // --- Effet pour réinitialiser sous-type quand groupe change (seulement en mode ajout) ---
   useEffect(() => {
-    if (!travailAModifier || travailAModifier.groupId !== groupId) {
+    if (!travailAModifier) { // Ne s'applique qu'en mode ajout
         setSousTypeId("");
         setSousTypeLabel("");
         setSelectedService(null);
@@ -107,213 +133,194 @@ const TravailForm: React.FC<TravailFormProps> = ({
     }
   }, [groupId, travailAModifier]); // S'exécute quand groupId change
 
-  // Effet pour pré-remplir les champs quand un service (sous-type) est sélectionné
-  useEffect(() => {
-    if (selectedService) {
-      // Seulement si on n'est PAS en train d'éditer OU si le sous-type a réellement changé
-      const shouldUpdateFields = !travailAModifier || (travailAModifier && travailAModifier.sousTypeId !== selectedService.id);
-
-      if (shouldUpdateFields) {
-          const serviceUnit = (selectedService.unite as UniteType) || "M²"; // Fallback unité
-          const serviceSurface = (selectedService.surface_impactee as SurfaceImpactee) || 'Aucune'; // Fallback surface
-          const serviceDesc = selectedService.description || selectedService.name || ""; // Fallback description
-
-          // Stocker les valeurs initiales venant de CE service
-          setInitialValues({
-            description: serviceDesc,
-            surfaceImpactee: serviceSurface,
-            unite: serviceUnit,
-            prixFournitures: selectedService.supply_price || 0,
-            prixMainOeuvre: selectedService.labor_price || 0,
-          });
-
-          // Mettre à jour les champs du formulaire
-          setPrixFournitures(selectedService.supply_price || 0);
-          setPrixMainOeuvre(selectedService.labor_price || 0);
-          setTauxTVA(selectedService.taux_tva || 10); // Utiliser la TVA du service ou un défaut
-          setUnite(serviceUnit);
-          setDescription(serviceDesc);
-          setSurfaceImpactee(serviceSurface);
-
-          // Réinitialiser les indicateurs custom
-          setIsCustomUnite(false); // On utilise la valeur du service
-          setIsCustomSurface(false); // On utilise la valeur du service
-
-          // Calculer la quantité initiale basée sur la surface impactée du service
-          if (piece) {
-            let quantiteInitiale = 1; // Défaut si pas de surface correspondante
-
-            switch (serviceSurface) { // Utiliser serviceSurface ici
-              case 'Mur':
-                quantiteInitiale = piece.surfaceNetteMurs || piece.wallSurfaceRaw || 0;
-                break;
-              case 'Plafond':
-                quantiteInitiale = piece.surfaceNettePlafond || piece.surfaceBrutePlafond || 0;
-                break;
-              case 'Sol':
-                quantiteInitiale = piece.surfaceNetteSol || piece.surfaceBruteSol || 0;
-                break;
-               // Pas de 'default: 1' ici, car si 'Aucune', on garde 1
-            }
-            // Appliquer 1 si l'unité n'est pas M² ou Ml, ou si surface est 'Aucune'
-            if (serviceUnit !== 'M²' && serviceUnit !== 'ml' || serviceSurface === 'Aucune') {
-                quantiteInitiale = 1;
-            }
-
-            setQuantite(parseFloat(quantiteInitiale.toFixed(2)));
-          } else {
-             setQuantite(1); // Si pas de pièce, quantité = 1 par défaut
-          }
-
-      } else if (travailAModifier && travailAModifier.sousTypeId === selectedService.id) {
-         // Si on édite et qu'on re-sélectionne le même service,
-         // on remet les valeurs initiales stockées pour ce service
-         // au cas où l'utilisateur avait commencé à les modifier puis changé d'avis
-         if(initialValues){
-             setDescription(initialValues.description);
-             setSurfaceImpactee(initialValues.surfaceImpactee);
-             setUnite(initialValues.unite);
-             setPrixFournitures(initialValues.prixFournitures);
-             setPrixMainOeuvre(initialValues.prixMainOeuvre);
-             // Recalculer la quantité basée sur la surface impactée initiale
-              if (piece) {
-                let q = 1;
-                switch (initialValues.surfaceImpactee) {
-                    case 'Mur': q = piece.surfaceNetteMurs || piece.wallSurfaceRaw || 0; break;
-                    case 'Plafond': q = piece.surfaceNettePlafond || piece.surfaceBrutePlafond || 0; break;
-                    case 'Sol': q = piece.surfaceNetteSol || piece.surfaceBruteSol || 0; break;
-                }
-                if (initialValues.unite !== 'M²' && initialValues.unite !== 'ml' || initialValues.surfaceImpactee === 'Aucune') q = 1;
-                setQuantite(parseFloat(q.toFixed(2)));
-              } else { setQuantite(1); }
-
-         }
-         setIsCustomUnite(false);
-         setIsCustomSurface(false);
-      }
-
-    } else {
-       // Si selectedService devient null (ex: changement de groupe), reset initialValues
-       setInitialValues(null);
-    }
-  // Dépendances : se déclenche quand le service sélectionné ou la pièce change
-  }, [selectedService, piece, travailAModifier]); // Retrait de setQuantite etc. des dépendances
-
-  // Effet pour recalculer la quantité si SEULEMENT la surface impactée change MANUELLEMENT
-  useEffect(() => {
-    // S'exécute seulement si on a un service sélectionné et une pièce
-    // et si la surface sélectionnée est différente de celle du service initial
-    if (piece && selectedService && initialValues && surfaceImpactee !== initialValues.surfaceImpactee) {
-        let quantiteAjustee = 1; // Défaut
-        switch (surfaceImpactee) { // Utilise la valeur actuelle de l'état surfaceImpactee
-            case 'Mur':
-            quantiteAjustee = piece.surfaceNetteMurs || piece.wallSurfaceRaw || 0;
-            break;
-            case 'Plafond':
-            quantiteAjustee = piece.surfaceNettePlafond || piece.surfaceBrutePlafond || 0;
-            break;
-            case 'Sol':
-            quantiteAjustee = piece.surfaceNetteSol || piece.surfaceBruteSol || 0;
-            break;
-            // Pas de default, garde 1 si 'Aucune' ou autre
-        }
-        // Appliquer 1 si l'unité n'est pas M² ou Ml, ou si surface est 'Aucune'
-        if (unite !== 'M²' && unite !== 'ml' || surfaceImpactee === 'Aucune') {
-            quantiteAjustee = 1;
-        }
-
-        setQuantite(parseFloat(quantiteAjustee.toFixed(2)));
-        setIsCustomSurface(true); // Marquer comme custom car différent de l'initial
-    } else if (initialValues && surfaceImpactee === initialValues.surfaceImpactee) {
-        setIsCustomSurface(false); // Revenir à non-custom si on re-sélectionne la valeur initiale
-    }
-  // Dépendances : se déclenche si la surface impactée est modifiée manuellement
-  }, [surfaceImpactee, piece, selectedService, initialValues]);
-
-   // Effet pour marquer l'unité comme custom si elle diffère de l'initiale
-   useEffect(() => {
-       if (initialValues && unite !== initialValues.unite) {
-           setIsCustomUnite(true);
-       } else if (initialValues && unite === initialValues.unite) {
-           setIsCustomUnite(false);
-       }
-   }, [unite, initialValues]);
-
-
-  // --- LOGIQUE PLINTHE (À AJOUTER ICI) ---
+  // --- Effet pour pré-remplir pour PLINTHES (Prioritaire) ---
   useEffect(() => {
     // S'applique seulement en mode AJOUT si l'élément est 'plinthes' et qu'on a un linéaire
     if (!travailAModifier && selectedElementContext === 'plinthes' && typeof calculatedLinear === 'number' && calculatedLinear > 0) {
-       console.log("Pré-remplissage pour Plinthes (Effet Formulaire). Linéaire reçu:", calculatedLinear);
+       console.log("Effet PLINTHES : Pré-remplissage activé. Linéaire:", calculatedLinear);
        toast.info(`Pré-remplissage pour Plinthes activé (${calculatedLinear} ml)`);
 
-       // Écraser les valeurs des états locaux concernés
-       setSurfaceImpactee('Aucune'); // Forcer "Aucune"
-       setQuantite(calculatedLinear); // Utilise la prop directement
-       setUnite('ml'); // Forcer "ml"
+       // Forcer les valeurs spécifiques aux plinthes
+       setSurfaceImpactee('Aucune');
+       setQuantite(calculatedLinear);
+       setUnite('ml'); // *** Assurez-vous que 'ml' est une valeur valide pour UniteType ***
 
-       // Marquer comme custom car on force des valeurs différentes du service potentiellement sélectionné
+       // Marquer comme custom car on force ces valeurs
        setIsCustomSurface(true);
        setIsCustomUnite(true);
 
-       // Optionnel : Forcer la sélection d'un type/groupe/sous-type "Plinthes"
-       // (Nécessite une fonction pour trouver le service par nom/clé et appeler les setters appropriés)
-       // findAndSetPlintheService();
+       // Reset initialValues pour que hasChanges soit false initialement pour les plinthes
+       // (car on ne compare pas à un service de référence pour les plinthes ici)
+       setInitialValues(null);
+
+       // Optionnel: Forcer la sélection d'un type/groupe/sous-type "Plinthes"
+       // findAndSetPlintheService(); // Implémenter cette fonction si nécessaire
     }
-  }, [selectedElementContext, travailAModifier, calculatedLinear]); // Dépend de la prop calculatedLinear
-  // --- FIN LOGIQUE PLINTHE ---
+  }, [selectedElementContext, travailAModifier, calculatedLinear]); // S'exécute si contexte ou linéaire change
+
+  // --- Effet pour pré-remplir selon le SERVICE sélectionné (sauf si contexte plinthes) ---
+  useEffect(() => {
+    // 1. Ne rien faire si aucun service n'est sélectionné
+    if (!selectedService) {
+        setInitialValues(null); // Reset des valeurs de référence si le service est déselectionné
+        return;
+    };
+
+    // 2. Ne PAS écraser quantité/unité/surface si on est dans le contexte PLINTHES en mode ajout
+    const isPlintheContextInAddMode = !travailAModifier && selectedElementContext === 'plinthes';
+
+    console.log(`Effet SERVICE: ${selectedService.label}. Contexte Plinthes (ajout)? ${isPlintheContextInAddMode}`);
+
+    // 3. Trouver le type parent pour le label
+    const parentType = travauxTypesState.types.find(t =>
+        t.id === selectedService.typeTravauxId ||
+        t.serviceGroups?.some(g => g.id === selectedService.group_id)
+    );
+    setTypeTravauxLabel(parentType?.label || ''); // Mettre à jour le label du type
+    setSousTypeLabel(selectedService.name); // Mettre à jour le label du sous-type
+
+    // 4. Définir les valeurs initiales basées sur CE service pour comparaison future
+    const serviceUnit = (selectedService.unite as UniteType) || "M²";
+    const serviceSurface = (selectedService.surface_impactee as SurfaceImpactee) || 'Aucune';
+    const serviceDesc = selectedService.description || selectedService.name || "";
+    const initialDataFromService = {
+        description: serviceDesc,
+        surfaceImpactee: serviceSurface,
+        unite: serviceUnit,
+        prixFournitures: selectedService.supply_price || 0,
+        prixMainOeuvre: selectedService.labor_price || 0,
+    };
+    setInitialValues(initialDataFromService); // Mémoriser les valeurs du service
+    console.log("Effet SERVICE: InitialValues mis à jour:", initialDataFromService);
+
+    // 5. Mettre à jour les champs du formulaire, SAUF ceux gérés par plinthes si applicable
+    setDescription(serviceDesc);
+    setPrixFournitures(selectedService.supply_price || 0);
+    setPrixMainOeuvre(selectedService.labor_price || 0);
+    setTauxTVA(selectedService.taux_tva || 10);
+
+    if (!isPlintheContextInAddMode) {
+        console.log("Effet SERVICE: Mise à jour Quantité/Unité/Surface");
+        setUnite(serviceUnit);
+        setSurfaceImpactee(serviceSurface);
+
+        // Calculer la quantité initiale basée sur la surface impactée du service
+        if (piece) {
+            let quantiteInitiale = 1;
+            switch (serviceSurface) {
+                case 'Mur': quantiteInitiale = piece.surfaceNetteMurs || piece.wallSurfaceRaw || 0; break;
+                case 'Plafond': quantiteInitiale = piece.surfaceNettePlafond || piece.surfaceBrutePlafond || 0; break;
+                case 'Sol': quantiteInitiale = piece.surfaceNetteSol || piece.surfaceBruteSol || 0; break;
+            }
+             if (serviceUnit !== 'M²' && serviceUnit !== 'ml' || serviceSurface === 'Aucune') {
+                quantiteInitiale = 1;
+            }
+            setQuantite(parseFloat(quantiteInitiale.toFixed(2)));
+        } else {
+            setQuantite(1);
+        }
+        // Puisque l'on vient de mettre les valeurs du service, ce n'est pas custom
+        setIsCustomUnite(false);
+        setIsCustomSurface(false);
+
+    } else {
+       console.log("Effet SERVICE: Quantité/Unité/Surface NON mis à jour (contexte plinthes)");
+       // On garde les valeurs forcées par l'effet plinthe
+       setIsCustomUnite(true); // C'est custom par rapport au service sélectionné
+       setIsCustomSurface(true);
+    }
+
+  // Dépendances : service sélectionné, pièce (pour calcul quantité), mode édition
+  }, [selectedService, piece, travailAModifier, selectedElementContext]); // Ajouter toutes les dépendances lues
+
+  // Effet pour recalculer la quantité si SEULEMENT la surface impactée change MANUELLEMENT
+  // (et qu'on n'est pas en contexte plinthes qui force déjà la quantité)
+  useEffect(() => {
+    if (piece && selectedService && initialValues && surfaceImpactee !== initialValues.surfaceImpactee && selectedElementContext !== 'plinthes') {
+        console.log("Effet SURFACE CHANGEE: Recalcul quantité pour surface", surfaceImpactee);
+        let quantiteAjustee = 1;
+        switch (surfaceImpactee) {
+            case 'Mur': quantiteAjustee = piece.surfaceNetteMurs || piece.wallSurfaceRaw || 0; break;
+            case 'Plafond': quantiteAjustee = piece.surfaceNettePlafond || piece.surfaceBrutePlafond || 0; break;
+            case 'Sol': quantiteAjustee = piece.surfaceNetteSol || piece.surfaceBruteSol || 0; break;
+        }
+         if (unite !== 'M²' && unite !== 'ml' || surfaceImpactee === 'Aucune') {
+            quantiteAjustee = 1;
+        }
+        setQuantite(parseFloat(quantiteAjustee.toFixed(2)));
+        setIsCustomSurface(true);
+    } else if (initialValues && surfaceImpactee === initialValues.surfaceImpactee) {
+        // Si on revient à la valeur initiale du service, ce n'est plus custom
+        // Sauf si on est toujours en contexte plinthe qui est par définition custom par rapport au service
+        if (selectedElementContext !== 'plinthes') {
+             setIsCustomSurface(false);
+        }
+    }
+  }, [surfaceImpactee, piece, selectedService, initialValues, unite, selectedElementContext]); // Ajouter selectedElementContext
+
+   // Effet pour marquer l'unité comme custom si elle diffère de l'initiale
+   useEffect(() => {
+        // Sauf si on est en contexte plinthe qui force 'ml'
+       if (initialValues && unite !== initialValues.unite && selectedElementContext !== 'plinthes') {
+           setIsCustomUnite(true);
+       } else if (initialValues && unite === initialValues.unite && selectedElementContext !== 'plinthes') {
+           setIsCustomUnite(false);
+       }
+   }, [unite, initialValues, selectedElementContext]);
 
 
-  // Détecter les changements manuels par rapport aux valeurs initiales du service
+  // --- Détection des changements ---
   const hasChanges = useMemo(() => {
-    if (!initialValues) return false; // Pas de changements si pas de service chargé
+    if (!initialValues || !selectedService) return false; // Pas de changement si pas de référence
+    // Ne pas considérer comme un changement si on est en contexte plinthe (valeurs forcées)
+    if (!travailAModifier && selectedElementContext === 'plinthes') return false;
 
+    // Comparer les valeurs actuelles aux valeurs initiales DU SERVICE sélectionné
     const descChanged = description !== initialValues.description;
     const surfaceChanged = surfaceImpactee !== initialValues.surfaceImpactee;
     const uniteChanged = unite !== initialValues.unite;
     const prixFChanged = prixFournitures !== initialValues.prixFournitures;
     const prixMOChanged = prixMainOeuvre !== initialValues.prixMainOeuvre;
 
-    // Retourne true si au moins un champ pertinent a changé
-    return descChanged || surfaceChanged || uniteChanged || prixFChanged || prixMOChanged;
+    const changed = descChanged || surfaceChanged || uniteChanged || prixFChanged || prixMOChanged;
+    // console.log("hasChanges:", changed, {descChanged, surfaceChanged, uniteChanged, prixFChanged, prixMOChanged});
+    return changed;
   }, [
-    initialValues,
-    description,
-    surfaceImpactee,
-    unite,
-    prixFournitures,
-    prixMainOeuvre
+    initialValues, selectedService, description, surfaceImpactee, unite,
+    prixFournitures, prixMainOeuvre, travailAModifier, selectedElementContext
   ]);
 
-  // Gérer la soumission du formulaire
+  // --- Soumission du formulaire ---
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!typeTravauxId || !sousTypeId || !piece) {
-      toast.error("Veuillez compléter tous les champs requis (Type, Groupe, Prestation).");
-      console.error("Données manquantes:", { typeTravauxId, sousTypeId, piece });
+    if (!typeTravauxId || !groupId || !sousTypeId || !piece) {
+      toast.error("Veuillez sélectionner Type, Groupe et Prestation.");
+      console.error("Données manquantes:", { typeTravauxId, groupId, sousTypeId, piece });
       return;
     }
 
-    // Si des modifications ont été détectées par rapport au service de base,
-    // demander à l'utilisateur ce qu'il veut faire.
-    if (hasChanges && !travailAModifier) { // Seulement en mode ajout pour l'instant
+    // Si ajout et changements détectés par rapport au service -> Confirmer
+    if (hasChanges && !travailAModifier) {
+      console.log("Changements détectés, ouverture confirmation...");
       setIsConfirmDialogOpen(true);
     } else {
-      // Sinon (pas de modifs ou mode édition), ajouter/modifier directement le travail
+      // Sinon (pas de modifs ou mode édition), ajouter/modifier directement
+      console.log("Pas de changements détectés ou mode édition, ajout/modif direct.");
       addOrUpdateTravail();
     }
   };
 
-  // Fonction interne pour effectivement ajouter ou modifier le travail
+  // --- Ajout/Modification effective ---
   const addOrUpdateTravail = () => {
-    if (!typeTravauxId || !sousTypeId || !piece) return; // Double vérification
+    if (!typeTravauxId || !groupId || !sousTypeId || !piece) return;
 
-    const travailData: Omit<Travail, 'id'> = {
+    // Utiliser les états locaux actuels pour construire l'objet
+    const travailData: Omit<Travail, 'id'> & { id?: string } = {
+      ...(travailAModifier ? { id: travailAModifier.id } : {}),
       pieceId: piece.id,
       typeTravauxId,
       typeTravauxLabel,
-      groupId: groupId, // Assurer que groupId est inclus
+      groupId, // Assurez-vous que groupId est bien dans votre type Travail si nécessaire
       sousTypeId,
       sousTypeLabel,
       description,
@@ -322,74 +329,71 @@ const TravailForm: React.FC<TravailFormProps> = ({
       prixFournitures,
       prixMainOeuvre,
       tauxTVA,
-      // Calculer prixUnitaireHT pour l'objet Travail
-      prixUnitaireHT: (prixFournitures ?? 0) + (prixMainOeuvre ?? 0),
+      prixUnitaireHT: (prixFournitures ?? 0) + (prixMainOeuvre ?? 0), // Recalculer
       surfaceImpactee: surfaceImpactee as SurfaceImpactee,
-      commentaire: travailAModifier?.commentaire || "", // Garder commentaire si édition
+      commentaire: travailAModifier?.commentaire || "",
+      // S'assurer que laborPrice et supplyPrice sont inclus si votre type Travail final les utilise
+      laborPrice: prixMainOeuvre,
+      supplyPrice: prixFournitures,
     };
 
-    if (travailAModifier) {
-        // Passer l'objet complet avec l'ID pour la modification
-        onAddTravail({ ...travailData, id: travailAModifier.id });
-    } else {
-        onAddTravail(travailData);
-    }
+    onAddTravail(travailData as Travail | Omit<Travail, 'id'>); // Appeler la prop du parent
   };
 
-  // Ouvre la modale de mise à jour du service de référence
+
+  // --- Ouverture modale MàJ service ---
   const handleOpenUpdateModal = () => {
     if (!selectedService) {
-      toast.error("Veuillez d'abord sélectionner une prestation pour la mettre à jour.");
+      toast.error("Veuillez sélectionner une prestation pour la mettre à jour.");
       return;
     }
     setIsUpdateModalOpen(true);
   };
 
-  // Gère le retour de la modale de mise à jour du service
-  const handleServiceUpdate = async (updateType: 'update' | 'create', serviceData: Partial<Service>): Promise<Service | null> => {
+  // --- Gestion retour modale MàJ service ---
+   const handleServiceUpdate = async (updateType: 'update' | 'create', serviceData: Partial<Service>): Promise<Service | null> => {
     if (!selectedService) return null;
-
     try {
-      let updatedOrNewService: Service | null = null;
-
-      if (updateType === 'update') {
-        // Mettre à jour le service existant dans la DB
-        updatedOrNewService = await updateService(selectedService.id, serviceData);
-        if (updatedOrNewService) {
-          toast.success("La prestation de référence a été mise à jour.");
-          // Mettre à jour l'état local avec le service modifié
-          setSelectedService(updatedOrNewService);
-          // Réappliquer les valeurs du service mis à jour au formulaire ? Optionnel.
-          // resetFormWithService(updatedOrNewService);
+        let updatedOrNewService: Service | null = null;
+        if (updateType === 'update') {
+            updatedOrNewService = await updateService(selectedService.id, serviceData);
+            if (updatedOrNewService) {
+                toast.success("Prestation de référence mise à jour.");
+                setSelectedService(updatedOrNewService); // Mettre à jour l'état local service
+                 // L'effet sur selectedService va normalement réappliquer les valeurs
+            }
+        } else {
+            updatedOrNewService = await cloneServiceWithChanges(selectedService.id, serviceData);
+            if (updatedOrNewService) {
+                toast.success("Nouvelle prestation de référence créée.");
+                // Mettre à jour les sélections pour pointer vers le nouveau service
+                setSousTypeId(updatedOrNewService.id); // Ceci déclenchera l'effet sur selectedService
+                setSousTypeLabel(updatedOrNewService.name);
+                // Inutile de faire setSelectedService ici, l'effet s'en chargera
+            }
         }
-      } else { // updateType === 'create'
-        // Créer une nouvelle prestation basée sur l'ancienne + modifications
-        updatedOrNewService = await cloneServiceWithChanges(selectedService.id, serviceData);
+        setIsUpdateModalOpen(false);
+        // Après la mise à jour de la référence, on considère que les changements sont appliqués
+        // On peut donc ajouter le travail directement sans re-confirmer
         if (updatedOrNewService) {
-          toast.success("Nouvelle prestation de référence créée.");
-          // Mettre à jour la sélection pour pointer vers le nouveau service
-          setSousTypeId(updatedOrNewService.id);
-          setSousTypeLabel(updatedOrNewService.name);
-          setSelectedService(updatedOrNewService); // Mettre à jour l'état local
-          // Les champs du formulaire seront mis à jour par l'effet dépendant de selectedService
+             addOrUpdateTravail();
         }
-      }
-      setIsUpdateModalOpen(false); // Fermer la modale de mise à jour
-      return updatedOrNewService; // Retourner le service affecté
+        return updatedOrNewService;
     } catch (error) {
-      console.error("Erreur lors de la mise à jour/création du service:", error);
-      toast.error("Une erreur est survenue lors de la mise à jour de la prestation de référence.");
-      setIsUpdateModalOpen(false);
-      return null;
+        console.error("Erreur lors de la mise à jour/création du service:", error);
+        toast.error("Erreur lors de la mise à jour de la prestation de référence.");
+        setIsUpdateModalOpen(false);
+        return null;
     }
-  };
+};
 
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* Type de Travaux Select */}
       <div>
-        <Label htmlFor="type-travaux">Type de travaux *</Label>
+        {/* Utiliser un Label standard si FormField n'est pas utilisé */}
+        <label htmlFor="type-travaux-select" className="block text-sm font-medium mb-1">Type de travaux *</label>
         <TypeTravauxSelect
           value={typeTravauxId}
           onChange={(id, label) => {
@@ -402,13 +406,13 @@ const TravailForm: React.FC<TravailFormProps> = ({
       {/* Groupe de Services Select (conditionnel) */}
       {typeTravauxId && (
         <div>
-          <Label htmlFor="groupe-service">Groupe de services *</Label>
+          <label htmlFor="groupe-service-select" className="block text-sm font-medium mb-1">Groupe de services *</label>
           <ServiceGroupSelect
             workTypeId={typeTravauxId}
             value={groupId}
-            onChange={(id, label) => {
+            onChange={(id, label) => { // Récupérer le label si nécessaire pour l'UI
               setGroupId(id);
-              setGroupLabel(label); // Stocker label si nécessaire
+              // setGroupLabel(label); // Si vous avez un état pour ça
             }}
           />
         </div>
@@ -417,14 +421,14 @@ const TravailForm: React.FC<TravailFormProps> = ({
       {/* Prestation (Sous-Type) Select (conditionnel) */}
       {groupId && (
         <div>
-          <Label htmlFor="sousType">Prestation *</Label>
+          <label htmlFor="sous-type-select" className="block text-sm font-medium mb-1">Prestation *</label>
           <SousTypeSelect
             groupId={groupId}
             value={sousTypeId}
             onChange={(id, label, service) => {
               setSousTypeId(id);
               setSousTypeLabel(label);
-              setSelectedService(service); // Mettre à jour l'objet service complet
+              setSelectedService(service); // Met à jour l'objet service
             }}
           />
         </div>
@@ -436,45 +440,49 @@ const TravailForm: React.FC<TravailFormProps> = ({
           {/* Description Section */}
           <DescriptionSection
             description={description}
-            setDescription={setDescription}
+            setDescription={setDescription} // Passer le setter
           />
 
           {/* Bouton Mise à Jour Base de Données */}
-          <div className="mt-1 mb-3">
-            <Button
-              type="button"
-              variant={hasChanges ? "destructive" : "outline"} // Change la couleur si modifs
-              size="sm"
-              onClick={handleOpenUpdateModal}
-              className={`flex items-center gap-1 text-xs w-full ${hasChanges ? "hover:bg-destructive/90" : ""}`} // Ajuste le hover
-              title={hasChanges ? "Certains paramètres diffèrent de la base de données. Cliquez pour mettre à jour ou créer une nouvelle prestation." : "Mettre à jour la prestation de référence dans la base de données"}
-            >
-              <RefreshCw className="h-3.5 w-3.5" />
-              {hasChanges ? "Mettre à jour / Cloner la prestation de référence..." : "Modifier la prestation de référence..."}
-            </Button>
-          </div>
+           {/* Conditionner l'affichage du bouton si on n'est pas en mode plinthe ? */}
+          {selectedElementContext !== 'plinthes' && (
+              <div className="mt-1 mb-3">
+                <Button
+                  type="button"
+                  variant={hasChanges ? "destructive" : "outline"}
+                  size="sm"
+                  onClick={handleOpenUpdateModal}
+                  className={`flex items-center gap-1 text-xs w-full ${hasChanges ? "hover:bg-destructive/90" : ""}`}
+                  title={hasChanges ? "Valeurs modifiées par rapport à la référence. Mettre à jour/Cloner la référence ?" : "Modifier la prestation de référence"}
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                  {hasChanges ? "Gérer la prestation de référence..." : "Modifier la prestation de référence..."}
+                </Button>
+              </div>
+           )}
+
 
           {/* Quantité Section */}
           <QuantitySection
             quantite={quantite}
-            setQuantite={setQuantite}
+            setQuantite={setQuantite} // Passer le setter
             unite={unite}
-            setUnite={(value) => setUnite(value as UniteType)}
+            setUnite={(value) => setUnite(value as UniteType)} // Passer le setter
             surfaceImpactee={surfaceImpactee}
-            setSurfaceImpactee={(value) => setSurfaceImpactee(value as SurfaceImpactee)}
-            isCustomUnite={isCustomUnite}   // Indique si l'unité est modifiée
-            isCustomSurface={isCustomSurface} // Indique si la surface est modifiée
+            setSurfaceImpactee={(value) => setSurfaceImpactee(value as SurfaceImpactee)} // Passer le setter
+            isCustomUnite={isCustomUnite}
+            isCustomSurface={isCustomSurface}
           />
 
           {/* Price Section */}
           <PriceSection
             prixFournitures={prixFournitures}
-            setPrixFournitures={setPrixFournitures}
+            setPrixFournitures={setPrixFournitures} // Passer le setter
             prixMainOeuvre={prixMainOeuvre}
-            setPrixMainOeuvre={setPrixMainOeuvre}
+            setPrixMainOeuvre={setPrixMainOeuvre}   // Passer le setter
             tauxTVA={tauxTVA}
-            setTauxTVA={setTauxTVA}
-            unite={unite}
+            setTauxTVA={setTauxTVA}             // Passer le setter
+            unite={unite} // Peut être utile pour afficher €/unité
           />
         </>
       )}
@@ -483,7 +491,7 @@ const TravailForm: React.FC<TravailFormProps> = ({
       <div className="pt-4">
         <Button
           type="submit"
-          disabled={!typeTravauxId || !sousTypeId || !piece || !selectedService} // Désactivé si pas de prestation valide
+          disabled={!typeTravauxId || !groupId || !sousTypeId || !piece || !selectedService}
           className="w-full"
         >
           {travailAModifier ? "Modifier le travail" : "Ajouter le travail"}
@@ -496,25 +504,21 @@ const TravailForm: React.FC<TravailFormProps> = ({
           <AlertDialogHeader>
             <AlertDialogTitle>Modifications détectées</AlertDialogTitle>
             <AlertDialogDescription>
-              Vous avez modifié la description, l'unité, la surface impactée ou les prix par rapport à la prestation de référence.
-              Voulez-vous mettre à jour la prestation dans la base de données avant d'ajouter ce travail ?
+              Les détails saisis diffèrent de la prestation de référence. Voulez-vous mettre à jour/cloner la référence avant d'ajouter ce travail ?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => {
               setIsConfirmDialogOpen(false);
-              addOrUpdateTravail(); // Ajouter/Modifier SANS mettre à jour la référence
+              addOrUpdateTravail(); // Ajouter avec les valeurs modifiées SANS toucher la réf
             }}>
-              Non, utiliser ces valeurs juste pour ce devis
+              Non, utiliser ces valeurs <br/>uniquement pour ce devis
             </AlertDialogCancel>
             <AlertDialogAction onClick={() => {
               setIsConfirmDialogOpen(false);
-              // Ouvrir la modale de mise à jour pour choisir entre update/create
-              handleOpenUpdateModal();
-              // L'ajout réel se fera après la confirmation dans l'autre modale si nécessaire
-              // ou l'utilisateur devra recliquer sur Ajouter/Modifier après la màj de la ref
+              handleOpenUpdateModal(); // Ouvrir la modale pour gérer la référence
             }}>
-              Oui, gérer la prestation de référence...
+              Oui, gérer la référence...
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -526,26 +530,16 @@ const TravailForm: React.FC<TravailFormProps> = ({
           isOpen={isUpdateModalOpen}
           onClose={() => setIsUpdateModalOpen(false)}
           currentService={selectedService}
-          // Passer les valeurs ACTUELLES du formulaire comme valeurs mises à jour proposées
+          // Passer les valeurs ACTUELLES du formulaire
           updatedService={{
-            // name: sousTypeLabel, // Ne pas proposer de changer le nom ici ?
+            // name: sousTypeLabel, // Le nom n'est généralement pas modifié ici
             description: description,
             labor_price: prixMainOeuvre,
             supply_price: prixFournitures,
-            unite: unite, // Note: 'unit' dans Supabase, 'unite' ici? Cohérence!
-            surface_impactee: surfaceImpactee // Note: 'surface_impactee' dans Supabase
+            unite: unite, // Assurez-vous que les noms correspondent DB vs Type
+            surface_impactee: surfaceImpactee
           }}
-          onConfirmUpdate={(updateType, serviceData) => {
-              // Appeler handleServiceUpdate et AJOUTER ensuite le travail si succès ?
-              // Ou laisser l'utilisateur resoumettre le formulaire principal ?
-              // Pour l'instant, on met juste à jour la référence.
-              handleServiceUpdate(updateType, serviceData).then((updatedOrNewService) => {
-                 if(updatedOrNewService){
-                    // Optionnel : Ajouter automatiquement le travail après la mise à jour de la référence
-                    // addOrUpdateTravail(); // Attention, pourrait utiliser l'ancien état
-                 }
-              });
-          }}
+          onConfirmUpdate={handleServiceUpdate} // Appelle la fonction qui gère update/clone
         />
       )}
     </form>
