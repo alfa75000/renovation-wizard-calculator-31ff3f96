@@ -12,6 +12,13 @@ import { Room, Travail } from "@/types";
 import { toast } from "sonner";
 import TravailForm from "@/features/travaux/components/TravailForm";
 import TravailCard from "@/features/travaux/components/TravailCard";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
 
 interface PieceSelectProps {
   pieces: Room[];
@@ -55,7 +62,8 @@ const Travaux: React.FC = () => {
   const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [travailAModifier, setTravailAModifier] = useState<Travail | null>(null);
-
+  const [selectedElement, setSelectedElement] = useState<string>("piece");
+  
   useEffect(() => {
     if (!selectedRoom && rooms.length > 0) {
       setSelectedRoom(rooms[0].id);
@@ -111,6 +119,20 @@ const Travaux: React.FC = () => {
     toast.success("Le travail a été supprimé avec succès.");
   };
 
+  // Construction de la liste des éléments pour le Select
+  const selectElements = selectedRoomInfo ? [
+    { id: "piece", name: selectedRoomInfo.name },
+    { id: "plinthes", name: "Plinthes" },
+    ...(selectedRoomInfo.menuiseries?.map(m => ({ 
+      id: `menuiserie-${m.id}`, 
+      name: m.name || `${m.type} (${m.largeur}x${m.hauteur})` 
+    })) || []),
+    ...(selectedRoomInfo.autresSurfaces?.map(a => ({ 
+      id: `surface-${a.id}`, 
+      name: a.name || a.designation || `${a.type}` 
+    })) || [])
+  ] : [];
+
   return (
     <Layout
       title="Définir les Travaux"
@@ -163,7 +185,26 @@ const Travaux: React.FC = () => {
             </div>
           </CardHeader>
           <CardContent>
-            {/* Suppression du composant AutresSurfacesList */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Filtrer par élément
+              </label>
+              <Select 
+                value={selectedElement} 
+                onValueChange={setSelectedElement}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Sélectionner un élément" />
+                </SelectTrigger>
+                <SelectContent>
+                  {selectElements.map(element => (
+                    <SelectItem key={element.id} value={element.id}>
+                      {element.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             
             <h3 className="text-lg font-medium mb-3">Travaux</h3>
             {travauxForSelectedRoom.length > 0 ? (
@@ -172,8 +213,8 @@ const Travaux: React.FC = () => {
                   <TravailCard
                     key={travail.id}
                     travail={travail}
-                    onEdit={handleEditTravail}
-                    onDelete={handleDeleteTravail}
+                    onEdit={() => handleEditTravail(travail)}
+                    onDelete={() => handleDeleteTravail(travail.id)}
                   />
                 ))}
               </div>

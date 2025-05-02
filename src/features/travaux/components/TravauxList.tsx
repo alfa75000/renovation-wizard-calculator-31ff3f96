@@ -1,20 +1,28 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useTravaux } from '../hooks/useTravaux';
 import TravailCard from './TravailCard';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Travail } from '@/types';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
 
 interface TravauxListProps {
   pieceId: string;
-  onStartEdit: (id: string) => void; // Signature corrigée
+  onStartEdit: (id: string) => void;
 }
 
 const TravauxList: React.FC<TravauxListProps> = ({ pieceId, onStartEdit }) => {
   const { getTravauxForPiece, deleteTravail } = useTravaux();
   const { toast } = useToast();
+  const [selectedElement, setSelectedElement] = useState<string>("piece");
   
   const travaux = getTravauxForPiece(pieceId);
   
@@ -29,8 +37,13 @@ const TravauxList: React.FC<TravauxListProps> = ({ pieceId, onStartEdit }) => {
   
   const handleEdit = (travail: Travail) => {
     console.log("Édition du travail:", travail);
-    onStartEdit(travail.id); // Appel avec l'ID
+    onStartEdit(travail.id);
   };
+  
+  // Récupération des informations sur la pièce sélectionnée depuis useProject
+  const selectedRoomInfo = pieceId 
+    ? window.projectState?.rooms.find(room => room.id === pieceId)
+    : null;
   
   if (travaux.length === 0) {
     return (
