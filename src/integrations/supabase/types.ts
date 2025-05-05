@@ -248,6 +248,94 @@ export type Database = {
         }
         Relationships: []
       }
+      designation_type: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      devis_save: {
+        Row: {
+          client_id: string
+          company_id: string
+          created_at: string
+          devis_date: string
+          devis_number: string
+          id: string
+          project_data: Json
+          project_name: string
+          status: Database["public"]["Enums"]["devis_status_enum"]
+          total_ht: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          client_id: string
+          company_id: string
+          created_at?: string
+          devis_date?: string
+          devis_number: string
+          id?: string
+          project_data?: Json
+          project_name: string
+          status?: Database["public"]["Enums"]["devis_status_enum"]
+          total_ht?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          client_id?: string
+          company_id?: string
+          created_at?: string
+          devis_date?: string
+          devis_number?: string
+          id?: string
+          project_data?: Json
+          project_name?: string
+          status?: Database["public"]["Enums"]["devis_status_enum"]
+          total_ht?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_client_id"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_company_id"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_user_id"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       menuiseries_types: {
         Row: {
           created_at: string
@@ -895,6 +983,56 @@ export type Database = {
         }
         Relationships: []
       }
+      surface_type: {
+        Row: {
+          created_at: string
+          designation_type_id: string
+          id: string
+          is_depth_enabled: boolean
+          is_height_enabled: boolean
+          is_length_enabled: boolean
+          is_linear_enabled: boolean
+          is_plinth_enabled: boolean
+          is_width_enabled: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          designation_type_id: string
+          id?: string
+          is_depth_enabled?: boolean
+          is_height_enabled?: boolean
+          is_length_enabled?: boolean
+          is_linear_enabled?: boolean
+          is_plinth_enabled?: boolean
+          is_width_enabled?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          designation_type_id?: string
+          id?: string
+          is_depth_enabled?: boolean
+          is_height_enabled?: boolean
+          is_length_enabled?: boolean
+          is_linear_enabled?: boolean
+          is_plinth_enabled?: boolean
+          is_width_enabled?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "surface_type_designation_type_id_fkey"
+            columns: ["designation_type_id"]
+            isOneToOne: false
+            referencedRelation: "designation_type"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_types: {
         Row: {
           created_at: string
@@ -952,6 +1090,12 @@ export type Database = {
     Enums: {
       adjustment_enum: "Ajouter" | "Déduire"
       adjustment_type_enum: "Ajouter" | "Déduire"
+      devis_status_enum:
+        | "Brouillon"
+        | "Envoyé"
+        | "Accepté"
+        | "Refusé"
+        | "Archivé"
       type_surface_enum: "Mur" | "Plafond" | "Sol" | "Aucune"
       unit_enum: "M²" | "Unité" | "Ens." | "Ml" | "M³" | "Forfait"
     }
@@ -1071,6 +1215,13 @@ export const Constants = {
     Enums: {
       adjustment_enum: ["Ajouter", "Déduire"],
       adjustment_type_enum: ["Ajouter", "Déduire"],
+      devis_status_enum: [
+        "Brouillon",
+        "Envoyé",
+        "Accepté",
+        "Refusé",
+        "Archivé",
+      ],
       type_surface_enum: ["Mur", "Plafond", "Sol", "Aucune"],
       unit_enum: ["M²", "Unité", "Ens.", "Ml", "M³", "Forfait"],
     },
